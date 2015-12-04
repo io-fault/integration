@@ -1,0 +1,829 @@
+/*
+ * Stylesheet for Python module documentation.
+ * Much of the complexity here is to avoid
+ * displaying unwanted formatting whitespace.
+ */
+
+@import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
+
+pre {
+	white-space: pre;
+	width: auto;
+	display: block;
+	background-color: #111111;
+}
+
+table {
+	padding: 0;
+	border-width: 0;
+	border-spacing: 0;
+}
+
+/* special case for blue links */
+a:hover span.identifier {
+	color: #FFFFFF;
+	text-shadow:
+		0px 0px 8px rgba(55, 130, 230, 1),
+		0px 0px 8px rgba(55, 130, 230, 1),
+		0px 0px 8px rgba(55, 130, 230, 1);
+}
+
+a[class="eclectic.reference"]:hover,
+span[class="python.parameter.area"] a:hover span.identifier,
+a:visited:hover, a:hover {
+	color: #FFFFFF;
+	text-shadow:
+		0px 0px 8px rgba(55, 130, 230, 1),
+		0px 0px 8px rgba(55, 130, 230, 1),
+		0px 0px 8px rgba(55, 130, 230, 1);
+}
+
+html {
+	color: #D0D0D0;
+	font-family: sans-serif;
+	font-weight: thin;
+}
+
+body {
+	background-color: #202020;
+}
+
+p {
+	margin-left: 8px;
+	text-shadow:
+		1px -1px 2px rgba(0,0,0,1),
+		1px 2px 1px rgba(0,0,0,1);
+}
+dl {
+	margin-left: 8px;
+}
+
+a, a:visited {
+	color: inherit;
+	text-decoration: none;
+}
+
+*.title {
+ 	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
+}
+
+h1, h2, h3, h4, h5 {
+	font-family: sans-serif;
+	font-weight: normal;
+	/*color: #64A7F7;*/
+	color: #898989;
+	margin-bottom: 0.2em;
+	margin-top: 0.3em;
+	text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
+}
+
+span.icon {
+	margin-left: 4px;
+	margin-right: 4px;
+	display: inline-block;
+	vertical-align: middle;
+	text-shadow: 0px 2px 2px rgba(255,255,255,0.1);
+}
+
+img.icon {
+	width: 1.1em;
+	height: 1.1em;
+	vertical-align: middle;
+}
+
+div.factor > div.title {
+	font-size: 230%;
+	background-color: #303030;
+	margin-bottom: 1em;
+	padding: 4px;
+
+	border-width: 0px;
+	border-top-width: 1px;
+	border-bottom-width: 1px;
+	border-color: gray;
+	border-style: solid;
+}
+
+div.navigation {
+	width: 90%;
+	margin: auto;
+}
+
+div.navigation > div[class="subfactors"] {
+	width: 100%;
+	font-size: 140%;
+	overflow: hidden;
+}
+
+div.subfactor {
+	height: 1.3em;
+	background-color: rgba(100, 100, 100, 0.3);
+	border-style: solid;
+	border-width: 1px;
+	margin-bottom: 6px;
+	padding-left: 4px;
+	padding: 4px;
+	box-shadow: inset 0 0 4px #000000;
+	border-color: rgba(150,150,150,0.4);
+
+	vertical-align: middle;
+
+	white-space: nowrap;
+}
+
+div.subfactor:hover {
+	border-color: #4499EA;
+	box-shadow: none;
+	background-color: #4499EA;
+	background: linear-gradient(135deg, rgba(100,173,229,0.5) 0%,rgba(41,137,216,0.4) 18%,rgba(30,87,153,0.2) 100%);
+}
+
+div.subfactor > div.icon,
+div.subfactor > div.abstract,
+div.subfactor > div.label {
+	display: table-cell;
+}
+
+div.subfactor > div.icon {
+	width: 1.6em;
+	min-width: 1.6em;
+	max-width: 1.6em;
+
+	text-align: center;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+div.subfactor > div.label {
+	margin-left: 0.2em;
+	min-width: 2em;
+}
+
+div.subfactor > div.abstract {
+	padding-left: 2em;
+	font-size: 50%;
+	color: rgba(150,150,150,0.7);
+	text-align: right;
+	width: 100%;
+
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+div.subfactor > div.label > span.identifier {
+	color: #ffffff;
+	text-shadow:
+		0px 2px 0px #000000,
+		0px 2px 0px #000000
+	;
+	font-size: smaller;
+
+	font-family: 'Montserrat', sans-serif;
+	vertical-align: middle;
+}
+
+div[class~="undocumented"] {
+	display: none;
+}
+
+/* visual tag */
+span.tag {
+	border-width: 1px;
+	height: 100%;
+	vertical-align: middle;
+	margin-left: 2px;
+	margin-right: 2px;
+	font-size: small;
+	font-family: monospace;
+}
+
+span.tag span.text {
+	border-radius: 8px 0px 0px 8px;
+	border-style: inset;
+	border-width: 1px;
+	border-color: rgba(100, 100, 100, 0.2);
+	border-width-right: 0;
+
+	height: 100%;
+	padding-left: 7px;
+	padding-right: 4px;
+	color: black;
+	background: lightgray;
+}
+
+span.tag span.type {
+	border-radius: 0px 4px 4px 0px;
+	border-style: inset;
+	font-weight: bold;
+
+	height: 100%;
+	padding-right: 6px;
+	padding-left: 6px;
+
+	color: #66cc66;
+	background: black;
+
+	border-color: rgba(0, 0, 0, 0.6);
+
+	border-width: 2px;
+	border-width-left: 1px;
+	border-style-left: solid;
+}
+
+div[class="context."] dd {
+	font-family: monospace;
+}
+
+div[class="context."] dt {
+	font-family: sans-serif;
+	font-variant: small-caps;
+	color: green;
+}
+
+/* Primary Content */
+div[id="content."]{
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	max-width: 40%;
+	width: 40%;
+	padding-left: 0;
+	padding-right: 0; /* mac scrollbar */
+	overflow: scroll;
+	overflow-x: hidden;
+
+	border-right-width: 2px;
+	border-right-style: groove;
+	border-right-color: rgba(100, 100, 100, 0.5);
+
+	box-shadow: 4px 0px 12px 4px rgba(0, 0, 0, 0.8);
+	z-index: 16;
+}
+
+div[id="content."] > h1 {
+	margin-left: 8px;
+}
+
+/* Selection (hash tag) Description */
+div[id="subject.description."] {
+	position: absolute;
+	top: 0;
+	left: 40%;
+	margin-left: 4px; /* compensate for scrollbar padding */
+	right: 0;
+	height: 100%;
+	width: auto;
+
+	background-color: rgba(0,0,0,0.1);
+	padding-left: 16px;
+
+	z-index: 8;
+	overflow: scroll;
+}
+
+div[id="subject.description.element."] {
+	position: absolute;
+	width: auto;
+	height: 100%;
+}
+
+div[class="source.code"] {
+	width: 90%;
+}
+
+div[class="source.code"] > pre {
+	box-shadow: inset 0 0 16px #000000;
+	padding-right: 8px;
+	background-color: rgba(0,0,0,0.2);
+	border-width: 1px;
+	border-color: rgba(100,100,100,0.3);
+	font-size: small;
+	font-family: monospace;
+}
+
+/* node that cloned in order to show the default right pane content */
+div[id="subject.default."] {
+	display: none;
+}
+
+div[class="index.function"] {
+	margin-left: 1em;
+}
+
+div[class="index.class"] {
+	margin-left: 1em;
+}
+
+div[class="imports."] > div {
+	margin-left: 1em;
+}
+
+span[class="line.count"]:hover {
+	font-size: medium;
+}
+
+span[class="line.count"] {
+	vertical-align: top;
+	font-size: xx-small;
+	color: #606060;
+}
+
+.antiselect {
+	-webkit-touch-callout: text;
+	-webkit-user-select: text;
+	-khtml-user-select: text;
+	-moz-user-select: text;
+	-ms-user-select: text;
+	user-select: text;
+}
+
+/* Data/Class/Method Name */
+span.identifier {
+	font-family: monospace;
+	font-size: 128%;
+	color: rgb(135, 182, 248);
+	display: inline-block;
+}
+
+/* Identifier Context Name (class name of method, module name of function) */
+span.identity-context {
+	color: gray;
+	font-size: 90%;
+}
+
+span.internal {
+	display: none;
+}
+
+/* defaults for arbitrary parameter areas (functions/methods/class bases) */
+
+div[class~="property"] > div.title,
+div[class~="function"] > div.title,
+div[class~="method"] > div.title {
+	width: 100%;
+	background: rgba(0,0,0,0.15);
+
+	padding-top: 2px;
+	padding-bottom: 3px;
+	padding-left: 2px;
+
+	border-style: inset;
+	border-width: 1px;
+	border-color: rgba(80,80,80,0.4);
+
+	border-left-width: 0;
+	border-right-width: 0;
+}
+
+/* class documentation */
+div[class="section.title"],
+div[class~="class"] > div.title {
+	width: 100%;
+	vertical-align: middle;
+	font-size: x-large;
+	background-color: #101010;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 0.2em;
+	margin-bottom: 4px;
+
+	border-style: ridge;
+	border-width: 2px;
+	border-color: rgba(130,130,130,0.5);
+	/*border-bottom-color: rgba(200,200,200, 0.2);*/
+
+	border-left-width: 0;
+	border-right-width: 0;
+}
+
+div[class="none.title"] {
+	font-size: 128%;
+	/*text-decoration: underline;*/
+
+	padding-top: 2px;
+	padding-bottom: 2px;
+	padding-left: 2px;
+
+	color: #64A7F7;
+	color: rgb(135, 182, 248);
+
+	text-shadow:
+		0px 3px 6px rgba(0,0,0,1),
+		0px 3px 6px rgba(0,0,0,1);
+	/*text-shadow: -1px -2px 0 rgba(0,0,0,1);
+	background-color: #222222;*/
+}
+
+span.inline {
+	border-width: 1px;
+	background-color: black;
+	padding: 1px;
+	font-family: monospace;
+}
+
+span.signature:before {
+	content: '(';
+}
+span.signature:after {
+	content: ')';
+}
+
+/* parameter area */
+span[class="python.parameter.area"] {
+}
+span[class="python.parameter.area"],
+span[class="python.parameter.area"] span.identifier {
+	font-size: 100%;
+	color: gray;
+	text-shadow: none;
+}
+
+span.sequence-delimiter:last-child {
+	display: none;
+}
+
+/*
+ * Very large leading document title.
+ */
+div.method, div.function, div.property {
+	margin-top: 1em;
+	margin-bottom: 1em;
+}
+
+span.path-delimiter, span.sequence-delimiter,
+span.delimiter, span.assignment { font-size: medium; }
+
+/* add some space after comma's */
+span.sequence-delimiter {
+	margin-right: 0.5em;
+}
+
+div.python-protocol-method {
+	display: none;
+}
+
+div.undocumented {
+	display: none;
+}
+
+div.head {
+	display: none;
+}
+
+div.class {
+	margin-top: 3em;
+}
+
+div.title, div.data {
+	font-family: monospace;
+}
+
+#navigation {
+	position: fixed;
+	right: 0;
+	top: 2px;
+	max-width: 2.5in;
+}
+
+/* Formatting for HTML representation of Python objects */
+div[class="python.object.inline"] {
+	max-height: 4cm;
+	overflow: scroll;
+}
+
+div[class="python.tuple"],
+span[class="python.dictionary.item"] {
+	margin-left: 1em;
+}
+
+/*
+ * Eclectic Portions Contained in doc-strings.
+ */
+div.doc {
+	font-size: 90%;
+}
+
+div.doc > div.section > p:first-child {
+	margin-top: 0.1em;
+}
+
+div.doc {
+}
+
+span[class="admonition.icon"] {
+	font-size: 200%;
+	font-family: "Apple Color Emoji", sans-serif;
+}
+
+span[class="admonition.severity"] {
+	font-size: 105%;
+	font-weight: bold;
+	font-family: 'Montserrat', sans-serif;
+}
+
+span[class="admonition.icon"]:before {
+	content: '❕';
+}
+
+div[class="admonition-ERROR"]
+span[class="admonition.icon"]:before {
+	content: '⛔️';
+}
+
+div[class="admonition-DEVELOPER"]
+span[class="admonition.icon"]:before {
+	content: '🚧';
+}
+
+div[class="admonition-WARNING"]
+span[class="admonition.icon"]:before {
+	content: '⚠️';
+}
+
+div[class="admonition-BEGINNER"]
+span[class="admonition.icon"]:before {
+	content: '🔰';
+}
+
+div[class="admonition-STATUS"]
+span[class="admonition.icon"]:before {
+	content: '📈';
+}
+
+div[class="admonition-NOTE"]
+span[class="admonition.icon"]:before {
+	content: '🗒';
+}
+
+div[class="admonition-NOTICE"]
+span[class="admonition.icon"]:before {
+	content: '📃';
+}
+
+div[class|="admonition"] {
+	display: relative;
+	background-color: rgba(0,0,0,0.2); /* inherit some of background */
+	border-color: rgba(75,75,75,0.7);
+	border-radius: 4px;
+	border-width: 2px;
+	border-style: groove;
+
+	margin-top: 2em;
+	margin-bottom: 2em;
+	margin-left: auto;
+	margin-right: auto;
+
+	width: 90%;
+	font-family: serif;
+
+	-webkit-touch-callout: none;
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+/* default */
+div[class|="admonition"] {
+	box-shadow: 0px 0px 8px 0px rgba(100, 167, 247, 0.8);
+}
+
+div[class="admonition-ERROR"] {
+	box-shadow: 0px 0px 8px 0px rgba(225, 50, 50, 0.8);
+}
+
+div[class="admonition-WARNING"],
+div[class="admonition-DEVELOPER"] {
+	box-shadow: 0px 0px 8px 0px rgba(225, 225, 20, 0.8);
+}
+
+div[class|="admonition"] > table {
+	width: 100%;
+	display: relative;
+}
+
+/* icon cell */
+div[class|="admonition"] > table > tr:first-child > td:first-child {
+	padding-top: 8px;
+	padding-left: 8px;
+	padding-right: 8px;
+}
+div[class|="admonition"] > table > tr:first-child > td:last-child {
+	vertical-align: middle;
+}
+div[class|="admonition"] > table > tr > td:last-child {
+	width: 100%;
+	vertical-align: middle;
+}
+
+div[class="admonition.content"] {
+	background-color: rgba(200,200,200,0.1); /* inherit some of background */
+	width: auto;
+
+	border-width: 2px;
+	border-style: groove;
+	border-color: rgba(100,100,100, 0.4);
+
+	padding: 2px;
+	padding-left: 8px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+
+	margin-top: 0;
+	margin-bottom: 1em;
+	margin-right: 1em;
+
+	display: relative;
+}
+
+div[class="admonition.content"] > *:first-child {
+	margin-top: 0;
+}
+
+div[class="admonition.content"] > *:last-child {
+	margin-bottom: 0;
+}
+
+div[class="admonition.content"] > * {
+	-webkit-touch-callout: all;
+	-webkit-user-select: all;
+	-khtml-user-select: all;
+	-moz-user-select: all;
+	-ms-user-select: all;
+	user-select: all;
+}
+
+div.toc a:hover {
+	text-shadow: none;
+	color: #3798F0;
+}
+
+div.toc {
+	font-size: larger;
+}
+
+div.toc-no-match {
+	font-size: x-large;
+
+	/*background-color: rgba(0,0,0,0.4);
+	background: linear-gradient(135deg, rgba(100,173,229,0.4) 0%,rgba(41,137,216,0.4) 50%,rgba(30,87,153,0.3) 100%);*/
+	background: linear-gradient(135deg, rgba(163,199,226,0.15) 0%,rgba(100,173,229,0.15) 6%,rgba(41,137,216,0.08) 39%,rgba(30,87,153,0.05) 100%);
+
+	box-shadow:
+		0 0 8px 0px rgba(0,0,0,0.9),
+		0 0 8px 0px rgba(0,0,0,0.9)
+	;
+
+	border-color: rgba(60,60,60,0.9);
+	border-style: solid;
+	border-width: 1px;
+
+	margin-right: 1em;
+	margin-left: 1em;
+
+	padding-left: 1em;
+	padding-right: 3em;
+}
+
+div.toc li.no-match *
+{
+	color: #B0B0D0;
+}
+div.toc li.no-match {
+	color: #FFFFFF;
+	text-shadow:
+		0px 1px 1px rgba(30, 30, 30, 0.8),
+		0px 1px 1px rgba(30, 30, 30, 0.8),
+		0px 1px 1px rgba(30, 30, 30, 0.8),
+		0px 1px 1px rgba(30, 30, 30, 0.8)
+	;
+}
+
+div.toc ol.no-match {
+	font-size: smaller;
+}
+
+div.section {
+	margin-top: 3em;
+}
+div.section:first-child {
+	margin-top: 2em;
+}
+
+div.section div.section {
+	margin-top: 1em;
+}
+
+div.module div.doc div.section {
+	margin-top: 0.5em;
+}
+
+div[class="section.title"] {
+	color: #64A7F7;
+	/*color: rgb(140, 180, 250);*/
+}
+
+div[class="section"] div[class="section"] div[class="section.title"] {
+	font-size: 105%;
+	text-decoration: none;
+
+	/*text-shadow: -1px -2px 0 rgba(0,0,0,1);
+	background-color: #222222;*/
+}
+
+div.module div.doc div[class="section.title"] {
+	/* reduce the font size in expression documentation */
+	font-size: 90%;
+	margin-top: 0;
+	background-color: inherit;
+	border-width: 0;
+}
+
+/* subscript text referencing the containing section */
+a[class="supersection"] {
+	vertical-align: bottom;
+	font-size: xx-small;
+	color: #4497E7;
+	margin-left: 1px;
+}
+
+a[class="dkn"]:before {
+	vertical-align: bottom;
+	content: "@";
+}
+a[class="dkn"] {
+	vertical-align: bottom;
+	font-size: xx-small;
+	color: #4497E7;
+	margin-left: 1px;
+}
+
+span[class="ern"]:before {
+	vertical-align: top;
+	content: "&";
+}
+span[class="ern"] {
+	vertical-align: top;
+	font-size: xx-small;
+	color: darkgray;
+	color: #4497E7;
+	margin-left: 1px;
+}
+
+div[class="eclectic.literals"] pre,
+div[class="eclectic.literals"] code {
+	border-width: 0px;
+	border-radius: 0;
+
+	font-family: monospace;
+	font-size: medium;
+	max-width: 85%;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div[class="eclectic.literals"] pre {
+	box-shadow: inset 0 0 16px #000000;
+	background-color: rgba(0,0,0,0.2);
+	border-width: 1px;
+	border-color: rgba(100,100,100,0.3);
+}
+
+code {
+	font-family: monospace;
+	font-size: 84%;
+	display: inline-block;
+}
+
+span[class="eclectic.emphasis"] {
+	font-style: italic;
+}
+
+span[class="eclectic.emphasis.heavy"] {
+	font-weight: bolder;
+}
+
+/* emphasis weight of 3 or higher */
+span[class="eclectic.emphasis.excessive"] {
+	font-weight: bold;
+}
+
+dl.eclectic > dd {
+	margin: 0;
+	border: 0;
+	padding: 0;
+	padding-left: 1em;
+}
+
+dl.eclectic > dd > *:first-child {
+	margin-top: 4px;
+}
+
+dl.eclectic > dt {
+	border: 0;
+	margin: 0;
+	padding: 0;
+	font-size: larger;
+}
