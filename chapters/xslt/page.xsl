@@ -30,7 +30,7 @@
  <func:function name="df:measure">
   <xsl:param name="src"/>
 		<xsl:variable name="n" select="df:nlines($src)"/>
-		<xsl:variable name="total.line.count" select="sum(ctx:factor($src)/f:module/f:source/@stop)"/>
+		<xsl:variable name="total.line.count" select="sum(ctx:factor($src)/f:*/f:source/@stop)"/>
 		<xsl:variable name="p" select="($n div $total.line.count) * 100"/>
 
   <func:result>
@@ -70,14 +70,29 @@
 	</xsl:template>
 
 	<xsl:template mode="source.index" match="f:factor">
-		<xsl:for-each select="f:*[f:source]">
-			<xsl:variable name="relative" select="substring-after(./f:source/@path, ../f:context/@system.path)"/>
-
-			<div class="index.source">
-				<a href=".source/{../f:context/@project}{$relative}"><xsl:value-of select="$relative"/></a>
-				<span class="line.count">(<xsl:value-of select="df:measure(f:source)"/>)</span>
-			</div>
-		</xsl:for-each>
+		<xsl:variable name="context" select="f:context"/>
+		<div class="index.source">
+			<xsl:for-each select="f:*[f:source]">
+				<xsl:for-each select="f:source">
+					<xsl:variable name="prefix" select="concat($context/@system.path, '/', ../@identifier, '/src/')"/>
+					<xsl:variable name="relative" select="substring-after(@path, $prefix)"/>
+					<xsl:variable name="rabsolute" select="substring-after(@path, $context/@system.path)"/>
+						<div class="source-file">
+							<a href="context.source/{$context/@project}{$rabsolute}">
+								<xsl:choose>
+									<xsl:when test="$relative">
+										<xsl:value-of select="$relative"/>
+									</xsl:when>
+									<xsl:otherwise>
+										<xsl:value-of select="$rabsolute"/>
+									</xsl:otherwise>
+								</xsl:choose>
+							</a>
+							<span class="line.count">(<xsl:value-of select="df:measure(.)"/>)</span>
+						</div>
+				</xsl:for-each>
+			</xsl:for-each>
+		</div>
 	</xsl:template>
 	<xsl:template mode="source.index" match="node()"/>
 
@@ -85,7 +100,8 @@
 		<xsl:variable name="src" select="f:source"/>
 		<div class="index.function">
 			<a href="{concat('#', @xml:id)}"><xsl:value-of select="@identifier"/></a>
-			<xsl:if test="string(df:nlines($src)) != NaN">
+
+			<xsl:if test="string(df:nlines($src)) != 'NaN'">
 				<span class="line.count">
 					(<xsl:value-of select="df:measure($src)"/>)
 				</span>
@@ -100,9 +116,15 @@
 			<a href="{concat('#', @xml:id)}">
 				<xsl:value-of select="@identifier"/>
 			</a>
-			<span class="line.count">(<xsl:value-of select="df:measure($src)"/>)</span>
+
+			<xsl:if test="string(df:nlines($src)) != 'NaN'">
+				<span class="line.count">
+					(<xsl:value-of select="df:measure($src)"/>)
+				</span>
+			</xsl:if>
+
 			<xsl:apply-templates mode="class.hierarchy"
-				select="../f:class[f:bases/f:reference[@module=../../../@name and @name=$this]]">
+				select="../f:class[f:bases/f:reference[@factor=../../../@name and @name=$this]]">
 				<xsl:sort order="ascending" select="@identifier"/>
 			</xsl:apply-templates>
 		</div>
@@ -309,17 +331,17 @@
 						</div>
 					</xsl:if>
 
-					<xsl:if test=".//f:class[f:doc]">
+					<xsl:if test=".//f:class">
 						<div class="class.hierarchy.">
 							<!-- only select base classes; the template will manage the hierarchy -->
 							<h2>Classes</h2>
-							<xsl:apply-templates mode="class.hierarchy" select="./f:module/f:class[f:bases/f:reference[@module!=../../../@name]]">
+							<xsl:apply-templates mode="class.hierarchy" select=".//f:class[f:bases/f:reference[@factor!=../../../@name]]">
 								<xsl:sort order="ascending" select="@identifier"/>
 							</xsl:apply-templates>
 						</div>
 					</xsl:if>
 
-					<xsl:if test="/f:import">
+					<xsl:if test="@type = 'module' and .//f:import">
 						<div class="imports.">
 						 <h2>Runtime Dependencies</h2>
 							<xsl:apply-templates select=".//f:import[@source='builtin']">

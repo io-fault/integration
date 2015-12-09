@@ -28,6 +28,21 @@
 			omit-xml-declaration="no"
 			indent="no"/>
 
+ <func:function name="ctx:typname">
+  <xsl:param name="name"/>
+
+  <func:result>
+			<xsl:choose>
+				<xsl:when test="starts-with($name, 'builtins.')">
+					<xsl:value-of select="substring-after($name, 'builtins.')"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="$name"/>
+				</xsl:otherwise>
+			</xsl:choose>
+  </func:result>
+ </func:function>
+
  <func:function name="ctx:python.hyperlink">
   <xsl:param name="element" select="."/>
 
@@ -119,10 +134,16 @@
 	<func:function name="ctx:id">
 		<!-- build the xml:id for the given element -->
 		<xsl:param name="element"/>
+		<xsl:variable name="parent" select="$element/.."/>
 
 		<xsl:choose>
 			<xsl:when test="$element/@xml:id">
 				<func:result select="$element/@xml:id"/>
+			</xsl:when>
+
+			<xsl:when test="local-name($parent)='factor'">
+				<!-- root object -->
+				<func:result select="''"/>
 			</xsl:when>
 
 			<xsl:when test="$element/@identifier">
@@ -242,6 +263,27 @@
 		</xsl:choose>
 	</func:function>
 
+	<func:function name="ctx:split">
+		<xsl:param name="path"/>
+		<xsl:variable name="factor" select="ctx:separate($index, str:tokenize($path, '.'))"/>
+		<func:result select="$factor"/>
+	</func:function>
+
+	<func:function name="ctx:site.element">
+		<xsl:param name="path"/>
+		<xsl:variable name="resource" select="ctx:split($path)"/>
+		<xsl:choose>
+			<xsl:when test="not($resource)">
+				<func:result select="''"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:variable name="fragment" select="substring-after($path, concat($resource, '.'))"/>
+				<xsl:variable name="selection" select="ctx:follow(ctx:document($resource)/f:factor/f:module, str:split($fragment, '.'))"/>
+				<func:result select="$selection"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</func:function>
+
 	<func:function name="ctx:absolute">
 		<xsl:param name="path"/>
 		<xsl:variable name="factor" select="ctx:separate($index, str:tokenize($path, '.'))"/>
@@ -255,6 +297,38 @@
 				<func:result select="$factor"/>
 			</xsl:otherwise>
 		</xsl:choose>
+	</func:function>
+
+	<func:function name="ctx:qualify">
+		<!-- qualify the reference string to make it an absolute path -->
+		<xsl:param name="ref"/>
+
+		<func:result>
+			<xsl:choose>
+				<xsl:when test="starts-with($ref, '.')">
+					<xsl:choose>
+						<xsl:when test="starts-with($ref, '..')">
+							<xsl:choose>
+								<xsl:when test="starts-with($ref, '...')">
+									<xsl:value-of select="substring($ref, 3)"/>
+								</xsl:when>
+								<xsl:otherwise>
+									<!-- two periods -->
+									<xsl:value-of select="concat(/f:factor/f:context/@context, substring($ref, 2))"/>
+								</xsl:otherwise>
+							</xsl:choose>
+						</xsl:when>
+						<xsl:otherwise>
+							<!-- one period -->
+							<xsl:value-of select="concat(/f:factor/f:context/@path, $ref)"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="''"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</func:result>
 	</func:function>
 
 	<func:function name="ctx:reference">
@@ -390,6 +464,9 @@
 				<xsl:variable name="project.icon" select="$doc/f:factor/f:context/@icon"/>
 
 				<xsl:choose>
+					<xsl:when test="$doc/f:factor/@type = 'namespace'">
+						<func:result select="'🏷'"/>
+					</xsl:when>
 					<xsl:when test="$name = $doc/f:factor/f:context/@path">
 						<func:result select="$project.icon"/>
 					</xsl:when>
@@ -405,8 +482,6 @@
 	</func:function>
 
 	<xsl:template match="/">
-		<xsl:message><xsl:value-of select="ctx:join($ctx.index, ';')"/></xsl:message>
-
 		<xsl:for-each select="idx:map/idx:item">
 			<xsl:variable name="fd" select="document(concat('file://', ./text()))"/>
 

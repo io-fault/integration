@@ -40,6 +40,26 @@
  <xsl:variable name="arg.sep"><span class="sequence-delimiter">,</span></xsl:variable>
  <xsl:variable name="arg.assignment"><span class="assignment">=</span></xsl:variable>
 
+ <func:function name="f:inherit.docs">
+  <xsl:param name="class"/>
+
+  <xsl:variable name="section" select="$class/f:doc/e:section[position()=1 and last()=1]"/>
+  <xsl:variable name="para" select="$section/e:paragraph[position()=1 and last()=1]"/>
+  <xsl:variable name="ref" select="$para/e:reference[position()=1 and last()=1]"/>
+
+  <func:result>
+   <xsl:choose>
+    <!-- first and only reference/paragraph/section -->
+    <xsl:when test="$ref">
+     <xsl:value-of select="string($ref/@source)"/>
+    </xsl:when>
+    <xsl:otherwise>
+     <xsl:value-of select="''"/>
+    </xsl:otherwise>
+   </xsl:choose>
+  </func:result>
+ </func:function>
+
  <func:function name="df:tag">
   <xsl:param name="text"/>
   <xsl:param name="type"/>
@@ -70,7 +90,7 @@
      <!-- builtin source, maybe not builtins module -->
      <xsl:choose>
       <!-- special cases for certain builtins -->
-      <xsl:when test="$element/@module = 'builtins'">
+      <xsl:when test="$element/@factor = 'builtins'">
        <xsl:choose>
         <!-- types.ModuleType is identified as existing in builtins, which is a lie -->
         <xsl:when test="$element/@name = 'module'">
@@ -90,19 +110,19 @@
       </xsl:when>
       <xsl:otherwise>
        <!-- not a builtins -->
-       <xsl:value-of select="concat($python.docs, $element/@module, '.html')"/>
+       <xsl:value-of select="concat($python.docs, $element/@factor, '.html')"/>
       </xsl:otherwise>
      </xsl:choose>
     </xsl:when>
     <xsl:when test="$element/@source = 'site-packages'">
-     <xsl:value-of select="concat($python.docs, $element/@module, '.html')"/>
+     <xsl:value-of select="concat($python.docs, $element/@factor, '.html')"/>
     </xsl:when>
-    <xsl:when test="$element/@module = $element/ancestor::f:factor/f:module/@name">
+    <xsl:when test="$element/@factor = $element/ancestor::f:factor/f:module/@name">
      <xsl:value-of select="concat('#', $element/@name)"/>
     </xsl:when>
     <xsl:otherwise>
      <!-- Same site (document collection) -->
-     <xsl:value-of select="concat($element/@module, '#', $element/@name)"/>
+     <xsl:value-of select="concat($element/@factor, '#', $element/@name)"/>
     </xsl:otherwise>
    </xsl:choose>
   </func:result>
@@ -112,7 +132,7 @@
   <xsl:param name="element" select="."/>
 
   <func:result>
-   <xsl:value-of select="concat($element/@module, '.', $element/@name)"/>
+   <xsl:value-of select="concat($element/@factor, '.', $element/@name)"/>
   </func:result>
  </func:function>
 
@@ -279,13 +299,13 @@
     <span class="python.type.bytes">[<xsl:value-of select="string-length(text())"/> bytes]</span>
    </xsl:when>
    <xsl:otherwise>
-    <span class="python.type.bytes">b"<xsl:value-of select="text()"/>"</span>
+    <span class="python.type.bytes"><xsl:value-of select="text()"/></span>
    </xsl:otherwise>
   </xsl:choose>
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:string">
-  <span class="python.type.string">"<xsl:value-of select="text()"/>"</span>
+  <span class="python.type.string"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:list">
@@ -330,6 +350,57 @@
 
  <xsl:template mode="python.inline.data" match="f:reference">
   <a href="{df:reference(.)}"><span class="reference"><xsl:value-of select="@name"/></span></a>
+ </xsl:template>
+
+ <xsl:template name="method">
+  <xsl:param name="element"/>
+
+  <xsl:variable name="name" select="$element/@identifier"/>
+  <xsl:variable name="path" select="$element/@xml:id"/>
+  <xsl:variable name="ismethod" select="($element/..)[local-name()='class']"/>
+  <xsl:variable name="includedef" select="not($ismethod)"/>
+  <xsl:variable name="context" select="$element/ancestor::f:*[@identifier][1]"/>
+  <xsl:variable name="leading.name" select="$context/@identifier"/>
+  <xsl:variable name="element.name" select="local-name($element)"/>
+
+  <div>
+   <xsl:choose>
+    <xsl:when test="$ismethod">
+     <xsl:choose>
+      <!-- Distinction is made as we normally want to hide these -->
+      <xsl:when test="$name = '__repr__'">
+       <xsl:attribute name="class"><xsl:value-of select="'python-protocol-method'"/></xsl:attribute>
+      </xsl:when>
+      <xsl:when test="$name = '__str__'">
+       <xsl:attribute name="class"><xsl:value-of select="'python-protocol-method'"/></xsl:attribute>
+      </xsl:when>
+      <xsl:otherwise>
+       <xsl:attribute name="class"><xsl:value-of select="$element.name"/></xsl:attribute>
+      </xsl:otherwise>
+     </xsl:choose>
+    </xsl:when>
+
+    <xsl:otherwise>
+     <xsl:attribute name="class"><xsl:value-of select="$element.name"/></xsl:attribute>
+    </xsl:otherwise>
+   </xsl:choose>
+
+   <xsl:attribute name="id"><xsl:value-of select="$element/@xml:id"/></xsl:attribute>
+
+   <div class="title">
+    <a href="#{ctx:id($context)}">
+     <span class="identity-context">
+      <xsl:value-of select="$leading.name"/>
+     </span>
+    </a>
+    <span class="path-delimiter">.</span>
+    <a href="{concat('#',$element/@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <span class="python.parameter.area">
+     <span class="signature"><xsl:apply-templates select="$element/f:parameter"/></span>
+    </span>
+   </div>
+   <xsl:apply-templates select="f:doc"/>
+  </div>
  </xsl:template>
 
  <xsl:template name="parameter">
@@ -386,14 +457,29 @@
  </xsl:template>
 
  <xsl:template match="f:data">
-  <xsl:variable name="leading.name" select="ancestor::f:*[@identifier][1]/@identifier"/>
-  <div class="data">
-   <xsl:if test="@xml:id">
-    <xsl:attribute name="id"><xsl:value-of select="@xml:id"/></xsl:attribute>
-   </xsl:if>
-   <a href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
-   <xsl:text> = </xsl:text>
-   <xsl:apply-templates mode="python.inline.data" select="./f:*"/>
+  <xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
+  <xsl:variable name="leading.name" select="$context/@identifier"/>
+  <xsl:variable name="typ.addr" select="string(f:object/@type)"/>
+
+  <div id="{ctx:id(.)}" class="data">
+   <div class="title">
+    <a href="#{ctx:id($context)}">
+     <span class="identity-context"><xsl:value-of select="$leading.name"/>.</span>
+    </a>
+    <a href="#{@identifier}">
+     <span class="identifier"><xsl:value-of select="@identifier"/></span>
+    </a>
+    <xsl:if test="$typ.addr">
+     ::
+     <a href="">
+      <span class="identifier"><xsl:value-of select="ctx:typname($typ.addr)"/></span>
+     </a>
+    </xsl:if>
+   </div>
+
+   <div class="representation">
+    <xsl:apply-templates mode="python.inline.data" select="./f:*"/>
+   </div>
   </div>
  </xsl:template>
 
@@ -403,7 +489,7 @@
     <xsl:if test="@source = 'builtin'">
      <xsl:attribute name="href"><xsl:value-of select="concat('https://docs.python.org/3/library/', @identifier, '.html')"/></xsl:attribute>
     </xsl:if>
-    <xsl:if test="@source = 'project-local'">
+    <xsl:if test="@source = 'context'">
      <xsl:attribute name="href"><xsl:value-of select="@name"/></xsl:attribute>
     </xsl:if>
     <span class="path">
@@ -440,12 +526,15 @@
  <xsl:template match="f:function">
   <xsl:variable name="name" select="@identifier"/>
   <xsl:variable name="path" select="@xml:id"/>
-  <xsl:variable name="leading.name" select="ancestor::f:*[@identifier][1]/@identifier"/>
+  <xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
+  <xsl:variable name="leading.name" select="$context/@identifier"/>
 
   <div class="function">
    <xsl:attribute name="id"><xsl:value-of select="@xml:id"/></xsl:attribute>
    <div class="title">
-    <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
+    <a href="#{ctx:id($context)}">
+     <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
+    </a>
     <span class="path-delimiter">.</span>
     <a href="{concat('#',@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <span class="python.parameter.area">
@@ -457,46 +546,9 @@
  </xsl:template>
 
  <xsl:template match="f:method">
-  <xsl:variable name="name" select="@identifier"/>
-  <xsl:variable name="path" select="@xml:id"/>
-  <xsl:variable name="ismethod" select="(..)[local-name()='class']"/>
-  <xsl:variable name="includedef" select="not($ismethod)"/>
-  <xsl:variable name="leading.name" select="ancestor::f:*[@identifier][1]/@identifier"/>
-
-  <div>
-   <xsl:choose>
-    <xsl:when test="$ismethod">
-     <xsl:choose>
-      <!-- Distinction is made as we normally want to hide these -->
-      <xsl:when test="$name = '__repr__'">
-       <xsl:attribute name="class"><xsl:value-of select="'python-protocol-method'"/></xsl:attribute>
-      </xsl:when>
-      <xsl:when test="$name = '__str__'">
-       <xsl:attribute name="class"><xsl:value-of select="'python-protocol-method'"/></xsl:attribute>
-      </xsl:when>
-      <xsl:otherwise>
-       <xsl:attribute name="class"><xsl:value-of select="local-name()"/></xsl:attribute>
-      </xsl:otherwise>
-     </xsl:choose>
-    </xsl:when>
-
-    <xsl:otherwise>
-     <xsl:attribute name="class"><xsl:value-of select="local-name()"/></xsl:attribute>
-    </xsl:otherwise>
-   </xsl:choose>
-
-   <xsl:attribute name="id"><xsl:value-of select="@xml:id"/></xsl:attribute>
-
-   <div class="title">
-    <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
-    <span class="path-delimiter">.</span>
-    <a href="{concat('#',@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
-    <span class="python.parameter.area">
-     <span class="signature"><xsl:apply-templates select="f:parameter"/></span>
-    </span>
-   </div>
-   <xsl:apply-templates select="./f:doc"/>
-  </div>
+  <xsl:call-template name="method">
+   <xsl:with-param name="element" select="."/>
+  </xsl:call-template>
  </xsl:template>
 
  <!-- Properties section inside class documentation -->
@@ -511,7 +563,11 @@
 
    <div id="{$id}" class="property">
     <div class="title">
-     <span class="identity-context"><xsl:value-of select="$leading.identifier"/></span>
+     <a href="#{ctx:id($context)}">
+      <span class="identity-context">
+       <xsl:value-of select="$leading.identifier"/>
+      </span>
+     </a>
      <span class="path-delimiter">.</span>
      <a href="{concat('#', $id)}">
       <span class="identifier"><xsl:value-of select="$name"/></span>
@@ -522,19 +578,82 @@
   </xsl:for-each>
  </xsl:template>
 
+ <xsl:template name="class">
+  <xsl:param name="element"/>
+  <xsl:variable name="properties.section" select="$element/f:doc/e:section[@identifier='Properties']"/>
+  <xsl:variable name="has.properties" select="$element/f:property[f:doc] | $properties.section"/>
+
+  <xsl:if test="$element/f:method[@type='class']">
+   <div class="class_methods">
+    <div class="head">
+     <span class="title"><xsl:value-of select="$class_methods_title"/></span>
+    </div>
+    <xsl:apply-templates select="$element/f:method[@type='class']">
+     <xsl:sort order="ascending" select="number($element/f:source/@start)"/>
+    </xsl:apply-templates>
+   </div>
+  </xsl:if>
+
+  <xsl:if test="$has.properties">
+   <div class="properties">
+    <div class="head">
+     <span class="title"><xsl:value-of select="$properties_title"/></span>
+    </div>
+    <xsl:apply-templates select="$element/f:property"/>
+    <xsl:apply-templates mode="properties" select="$element/f:doc/e:section[@identifier='Properties']"/>
+   </div>
+  </xsl:if>
+
+  <xsl:if test="$element/f:method[not(@type)]">
+   <!-- must be a plain method and have documentation -->
+   <div class="methods">
+    <div class="head">
+     <span class="title"><xsl:value-of select="$methods_title"/></span>
+    </div>
+    <xsl:apply-templates select="$element/f:method[not(@type)]">
+     <xsl:sort order="ascending" select="number($element/f:source/@start)"/>
+    </xsl:apply-templates>
+   </div>
+  </xsl:if>
+
+  <xsl:if test="$element/f:method[@type='static']">
+   <div class="static_methods">
+    <div class="head">
+     <span class="title"><xsl:value-of select="$static_methods_title"/></span>
+    </div>
+    <xsl:apply-templates select="$element/f:method[@type='static']">
+     <xsl:sort order="ascending" select="number($element/f:source/@start)"/>
+    </xsl:apply-templates>
+   </div>
+  </xsl:if>
+
+  <xsl:if test="$element/f:data">
+   <div class="datas">
+    <div class="head">
+     <span class="title"><xsl:value-of select="$class_data_title"/></span>
+    </div>
+    <xsl:apply-templates select="$element/f:data"/>
+   </div>
+  </xsl:if>
+ </xsl:template>
+
  <xsl:template match="f:class">
   <xsl:variable name="name" select="@identifier"/>
-  <xsl:variable name="path" select="@xml:id"/>
-  <xsl:variable name="leading.name" select="ancestor::f:*[@identifier][1]/@identifier"/>
-  <xsl:variable name="has.properties" select="./f:property[f:doc]|./f:doc/e:section[@identifier='Properties']"/>
+  <xsl:variable name="xmlid" select="@xml:id"/>
 
-  <div class="class">
-   <xsl:attribute name="id"><xsl:value-of select="@xml:id"/></xsl:attribute>
+  <xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
+  <xsl:variable name="leading.name" select="$context/@identifier"/>
 
+  <xsl:variable name="abstract.src" select="ctx:qualify(f:inherit.docs(.))"/>
+  <xsl:apply-templates select="./f:class"/>
+
+  <div id="{@xml:id}" class="class">
    <div class="title">
-    <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
+    <a href="#{ctx:id($context)}">
+     <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
+    </a>
     <span class="path-delimiter">.</span>
-    <a href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <a href="{concat('#', $xmlid)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <span class="python.parameter.area">
      <span class="parameters.open">(</span>
       <xsl:apply-templates select="f:bases"/>
@@ -547,58 +666,42 @@
    </div>
 
    <div class="content">
-    <xsl:if test="./f:method[@type='class']">
-     <div class="class_methods">
-      <div class="head">
-       <span class="title"><xsl:value-of select="$class_methods_title"/></span>
-      </div>
-      <xsl:apply-templates select="./f:method[@type='class']">
-       <xsl:sort order="ascending" select="number(./f:source/@start)"/>
-      </xsl:apply-templates>
-     </div>
+    <xsl:if test="false and $abstract.src != ''">
+     <xsl:variable name="docclass" select="ctx:site.element($abstract.src)"/>
+     <xsl:variable name="prefix" select="$docclass/@identifier"/>
+
+     <xsl:variable name="se">
+      <f:factor identifier="{/f:factor/@identifier}">
+       <xsl:copy-of select="ancestor::f:factor/f:context"/>
+
+       <f:module identifier="{/f:factor/@identifier}">
+        <f:class identifier="{$name}">
+         <xsl:attribute name="id" namespace="http://www.w3.org/XML/1998/namespace" select="$xmlid"/>
+         <xsl:for-each select="$docclass/f:*">
+          <xsl:element name="{local-name()}" namespace="namespace-uri()">
+           <xsl:if test="@xml:id">
+            <xsl:attribute name="id" namespace="http://www.w3.org/XML/1998/namespace"
+             select="concat($xmlid, substring-after(@xml:id, $prefix))"/>
+           </xsl:if>
+           <xsl:message><xsl:value-of select="concat($prefix, ' g ', local-name(), '  ', concat($xmlid, substring-after(@xml:id, $prefix)))"/></xsl:message>
+
+           <xsl:copy-of select="@*[local-name()!='xml:id']"/>
+           <xsl:copy-of select="./*|./text()"/>
+          </xsl:element>
+         </xsl:for-each>
+        </f:class>
+       </f:module>
+      </f:factor>
+     </xsl:variable>
+     <xsl:message><xsl:value-of select="exsl:node-set($se)/f:factor/f:module/f:class/@xml:id"/></xsl:message>
+     <xsl:call-template name="class">
+      <xsl:with-param name="element" select="exsl:node-set($se)/f:factor/f:module/f:class"/>
+     </xsl:call-template>
     </xsl:if>
 
-    <xsl:if test="$has.properties">
-     <div class="properties">
-      <div class="head">
-       <span class="title"><xsl:value-of select="$properties_title"/></span>
-      </div>
-      <xsl:apply-templates select="./f:property"/>
-      <xsl:apply-templates mode="properties" select="./f:doc/e:section[@identifier='Properties']"/>
-     </div>
-    </xsl:if>
-
-    <xsl:if test="./f:method[not(@type)]">
-     <!-- must be a plain method and have documentation -->
-     <div class="methods">
-      <div class="head">
-       <span class="title"><xsl:value-of select="$methods_title"/></span>
-      </div>
-      <xsl:apply-templates select="./f:method[not(@type)]">
-       <xsl:sort order="ascending" select="number(./f:source/@start)"/>
-      </xsl:apply-templates>
-     </div>
-    </xsl:if>
-
-    <xsl:if test="./f:method[@type='static']">
-     <div class="static_methods">
-      <div class="head">
-       <span class="title"><xsl:value-of select="$static_methods_title"/></span>
-      </div>
-      <xsl:apply-templates select="./f:method[@type='static']">
-       <xsl:sort order="ascending" select="number(./f:source/@start)"/>
-      </xsl:apply-templates>
-     </div>
-    </xsl:if>
-
-    <xsl:if test="./f:data">
-     <div class="datas">
-      <div class="head">
-       <span class="title"><xsl:value-of select="$class_data_title"/></span>
-      </div>
-      <xsl:apply-templates select="./f:data"/>
-     </div>
-    </xsl:if>
+    <xsl:call-template name="class">
+     <xsl:with-param name="element" select="."/>
+    </xsl:call-template>
    </div>
   </div>
  </xsl:template>
@@ -608,7 +711,7 @@
   <xsl:variable name="path" select="@name"/>
   <xsl:variable name="parent" select="substring-before(@name, concat('.', $name))"/>
 
-  <xsl:apply-templates select="./f:doc"/>
+  <xsl:apply-templates select="./f:doc/e:section[@identifier!='Properties']"/>
 
   <div class="content">
    <xsl:if test="./f:data">
@@ -643,6 +746,7 @@
      <div class="head">
       <span class="title"><xsl:value-of select="$classes_title"/></span>
      </div>
+
      <xsl:apply-templates select="./f:class[f:doc]">
       <xsl:sort order="ascending" select="number(./f:source/@start)"/>
      </xsl:apply-templates>
