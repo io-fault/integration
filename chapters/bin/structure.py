@@ -58,6 +58,7 @@ def main(target, package):
 			doc_modules.append(dm.__name__)
 
 			doc_pkg_module.__dict__[basename] = dm
+			doc_pkg_module.__type__ = 'documentation'
 			sys.modules[dm.__name__] = dm
 
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
@@ -75,8 +76,11 @@ def main(target, package):
 			# this allows stylesheet processing instructions
 			# to be interpolated without knowning the declaration
 			# size.
-			f.write(deflate.compress(b''.join((dociter))))
-			f.write(deflate.flush())
+			if deflate:
+				f.write(deflate.compress(b''.join((dociter))))
+				f.write(deflate.flush())
+			else:
+				f.write(b''.join((dociter)))
 
 	return 0
 
