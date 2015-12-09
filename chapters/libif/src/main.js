@@ -85,11 +85,23 @@ hashchanged()
 			var linerange = document.createElement("div");
 			var container = document.createElement("div");
 			var subcontainer = document.createElement("div");
+			var e;
 
 			var lc = range[1] - range[0];
 
-			linerange.appendChild(document.createTextNode(String(lc) + " lines " + String(range[0]) + "-" + String(range[1]-1)));
+			linerange.appendChild(
+				document.createTextNode(
+					String(lc) +
+					" lines " + String(range[0]) +
+					"-" + String(range[1]-1) +
+					" from "
+				)
+			);
 			container.appendChild(linerange);
+			e = document.createElement("span");
+			e.setAttribute("class", "source.file");
+			e.appendChild(document.createTextNode(""));
+			container.appendChild(e);
 
 			subcontainer.setAttribute("class", "source.code");
 
