@@ -601,8 +601,12 @@ def _xml_module(query, factor_type, module, compressed=False):
 			('stop', str(lc)),
 		)
 
-	if getattr(module, '__type__', None) == 'chapter':
+	if factor_type == 'chapter':
+		with open(module.__file__, 'r') as f:
+			d = f.read()
+		module.__doc__ = d
 		yield from _xml_doc(query, module, '')
+		module.__doc__ = ''
 	else:
 		yield from _xml_doc(query, module, 'factor..')
 
