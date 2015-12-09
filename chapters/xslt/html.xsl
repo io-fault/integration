@@ -492,15 +492,7 @@
     <xsl:if test="@source = 'context'">
      <xsl:attribute name="href"><xsl:value-of select="@name"/></xsl:attribute>
     </xsl:if>
-    <span class="path">
-     <xsl:value-of select="@name"/>
-    </span>
-    <xsl:if test="@identifier != @name">
-     <xsl:text> </xsl:text>
-     <span class="keyword">as</span>
-     <xsl:text> </xsl:text>
-     <span class="identifier"><xsl:value-of select="@identifier"/></span>
-    </xsl:if>
+    <span class="identifier"><xsl:value-of select="@name"/></span>
    </a>
   </div>
  </xsl:template>

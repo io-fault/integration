@@ -182,7 +182,6 @@
 				<script type="application/javascript" src="prism.js"/>
 
 				<script type="application/javascript">
-				 /* XXX: Might be wiser to just parse the original XML and access it. */
 					var xml = null;
 				 var documented_module = "<xsl:value-of select="@name"/>";
 					var factor_name = "<xsl:value-of select="@identifier"/>";
