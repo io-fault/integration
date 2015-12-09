@@ -13,6 +13,7 @@ import lzma
 import codecs
 import contextlib
 
+from ..development import library as libdev
 from ..routes import library as libroutes
 from ..xml import library as libxml
 from ..eclectic import library as libeclectic
@@ -234,7 +235,8 @@ class Query(object):
 			path = (self.canonical(module.__name__), None)
 		else:
 			module = getmodule(obj)
-			path = (self.canonical(module.__name__), getattr(obj, '__name__', repr(obj)))
+			objname = getattr(obj, '__name__', None)
+			path = (self.canonical(module.__name__), objname)
 
 		return path
 
@@ -246,7 +248,7 @@ class Query(object):
 		module, path = self.address(obj)
 
 		if module == self.prefix or module.startswith(self.prefix+'.'):
-			pkgtype = 'project-local'
+			pkgtype = 'context'
 		else:
 			m = libroutes.Import.from_fullname(module).module()
 			if 'site-packages' in getattr(m, '__file__', ''):
@@ -290,7 +292,7 @@ def _xml_object_or_reference(query, obj, encoding=None, prefix=''):
 		path = query.address(obj)
 
 		if path[0].startswith(query.prefix) or path[0][:-1] == query.prefix:
-			pkgtype = 'project-local'
+			pkgtype = 'context'
 		else:
 			# if it's installed in site-packages, it's probably distutils/pypi
 			module = libroutes.Import.from_fullname(path[0]).module()
@@ -303,7 +305,7 @@ def _xml_object_or_reference(query, obj, encoding=None, prefix=''):
 
 		yield from libxml.element('reference', (),
 			('source', pkgtype),
-			('module', path[0]),
+			('factor', path[0]),
 			('name', path[1]),
 		)
 	else:
@@ -313,7 +315,10 @@ def _xml_object_or_reference(query, obj, encoding=None, prefix=''):
 
 def _xml_object(query, name, obj):
 	with query.cursor(name, obj):
-		yield from libxml.element(name, _xml_object_or_reference(query, obj))
+		yield from libxml.element(name,
+			_xml_object_or_reference(query, obj),
+			('type', '.'.join(query.address(type(obj)))),
+		)
 
 def _xml_parameter(query, parameter):
 	if parameter.annotation is not parameter.empty:
@@ -355,7 +360,7 @@ def _xml_type(query, obj):
 	typ, module, path = query.origin(obj)
 	yield from libxml.element('reference', (),
 		('source', typ),
-		('module', module),
+		('factor', module),
 		('name', path)
 	)
 
@@ -400,9 +405,14 @@ def _xml_source_range(query, obj):
 	except (TypeError, SyntaxError, OSError):
 		return libxml.empty('source')
 
-def _xml_function(query, method, qname):
+def _xml_function(query, method, qname, ignored={
+			object.__new__.__doc__,
+			object.__init__.__doc__,
+		}
+	):
 	yield from _xml_source_range(query, method)
-	yield from _xml_doc(query, method, qname+'.')
+	if query.docstr(method) not in ignored:
+		yield from _xml_doc(query, method, qname+'.')
 	yield from _xml_call_signature(query, method)
 
 def _xml_class_content(query, module, obj, name, *path,
@@ -481,9 +491,12 @@ def _xml_class_content(query, module, obj, name, *path,
 
 			if local:
 				with query.cursor(k, v):
+					pfunc = getattr(v, 'fget', None)
 					yield from libxml.element(
-						'property',
-						_xml_doc(query, v, qn+'.'),
+						'property', chain([
+							_xml_source_range(query, pfunc) if pfunc is not None else (),
+							_xml_doc(query, v, qn+'.'),
+						]),
 						('xml:id', qn),
 						('identifier', k),
 					)
@@ -518,7 +531,7 @@ def _xml_class(query, module, obj, *path):
 			('identifier', path[-1]),
 		)
 
-def _xml_context(query, package, project):
+def _xml_context(query, package, project, getattr=getattr):
 	if package and project:
 		pkg = package.module()
 		prj = project.module()
@@ -535,55 +548,58 @@ def _xml_context(query, package, project):
 			('abstract', getattr(prj, 'abstract', '')),
 		)
 
-def _xml_module(query, module, compressed=False):
+def _xml_module(query, factor_type, module, compressed=False):
 	lc = 0
-	if compressed:
-		with open(module.__file__, mode='rb') as src:
-			h = hashlib.sha512()
-			x = lzma.LZMACompressor(format=lzma.FORMAT_ALONE)
-			cs = bytearray()
+	dfactor = libdev.Factor.from_module(module)
+	sources = dfactor.sources()
 
-			data = src.read(512)
-			lc += data.count(b'\n')
-			h.update(data)
-			cs += x.compress(data)
-			while len(data) == 512:
+	for route in sources:
+		if compressed:
+			with route.open('rb') as src:
+				h = hashlib.sha512()
+				x = lzma.LZMACompressor(format=lzma.FORMAT_ALONE)
+				cs = bytearray()
+
 				data = src.read(512)
+				lc += data.count(b'\n')
 				h.update(data)
 				cs += x.compress(data)
+				while len(data) == 512:
+					data = src.read(512)
+					h.update(data)
+					cs += x.compress(data)
 
-			hash = h.hexdigest()
-			cs += x.flush()
-	else:
-		file = getattr(module, '__file__', None)
-		if file:
-			with open(module.__file__, mode='rb') as src:
-				cs = src.read()
-				lc = cs.count(b'\n')
-				hash = hashlib.sha512(cs).hexdigest()
+				hash = h.hexdigest()
+				cs += x.flush()
 		else:
-			hash = ""
-			cs = b""
-			lc = 0
+			if route.exists():
+				with route.open('rb') as src:
+					cs = src.read()
+					lc = cs.count(b'\n')
+					hash = hashlib.sha512(cs).hexdigest()
+			else:
+				hash = ""
+				cs = b""
+				lc = 0
 
-	yield from libxml.element('source',
-		itertools.chain(
-			libxml.element('hash',
-				libxml.escape_element_string(hash),
-				('type', 'sha512'),
-				('format', 'hex'),
+		yield from libxml.element('source',
+			itertools.chain(
+				libxml.element('hash',
+					libxml.escape_element_string(hash),
+					('type', 'sha512'),
+					('format', 'hex'),
+				),
+				libxml.element('data',
+					libxml.escape_element_bytes(codecs.encode(cs, 'base64')),
+					('type', 'application/x-lzma'),
+					('format', 'base64'),
+				),
 			),
-			libxml.element('data',
-				libxml.escape_element_bytes(codecs.encode(cs, 'base64')),
-				('type', 'application/x-lzma'),
-				('format', 'base64'),
-			),
-		),
-		('path', file),
-		# inclusive range
-		('start', 1),
-		('stop', str(lc)),
-	)
+			('path', str(route)),
+			# inclusive range
+			('start', 1),
+			('stop', str(lc)),
+		)
 
 	if getattr(module, '__type__', None) == 'chapter':
 		yield from _xml_doc(query, module, '')
@@ -608,7 +624,8 @@ def _xml_module(query, module, compressed=False):
 		elif query.is_module_class(module, v):
 			yield from _xml_class(query, module, v, k)
 		else:
-			yield from libxml.element('data', _xml_object(query, 'object', v),
+			yield from libxml.element('data',
+				_xml_object(query, 'object', v),
 				('xml:id', k),
 				('identifier', k),
 			)
@@ -654,7 +671,9 @@ def python(query:Query, route:libroutes.Import, module:types.ModuleType):
 		# take the basename from cname in case
 		# the module is the context package.
 		basename = cname.split('.')[-1]
-		if getattr(module, '__type__', '') == 'chapter':
+		factor_type = getattr(module, '__type__', 'module')
+
+		if factor_type == 'chapter':
 			ename = 'chapter'
 		else:
 			ename = 'module'
@@ -664,14 +683,15 @@ def python(query:Query, route:libroutes.Import, module:types.ModuleType):
 				_xml_context(query, package, project),
 				_submodules(route),
 				libxml.element(ename,
-					_xml_module(query, module),
+					_xml_module(query, factor_type, module),
 					('identifier', basename),
 					('name', cname),
 				),
 			),
-			('domain', 'python'),
+			('version', '0'),
 			('name', cname),
 			('identifier', basename),
+			('type', factor_type),
 			('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
 			('xmlns:py', 'https://fault.io/xml/python'),
 			('xmlns:e', 'https://fault.io/xml/eclectic'),
