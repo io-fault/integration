@@ -342,7 +342,7 @@ span[class="line.count"] {
 span.identifier {
 	font-family: monospace;
 	font-size: 128%;
-	color: rgb(135, 182, 248);
+	color: rgb(115, 160, 230);
 	display: inline-block;
 }
 
@@ -360,20 +360,22 @@ span.internal {
 
 div[class~="property"] > div.title,
 div[class~="function"] > div.title,
+div[class~="data"] > div.title,
 div[class~="method"] > div.title {
 	width: 100%;
 	background: rgba(0,0,0,0.15);
 
-	padding-top: 2px;
+	padding-top: 3px;
 	padding-bottom: 3px;
 	padding-left: 2px;
 
-	border-style: inset;
+	border-style: solid;
 	border-width: 1px;
 	border-color: rgba(80,80,80,0.4);
 
-	border-left-width: 0;
 	border-right-width: 0;
+	border-left-width: 0;
+	padding-left: 4px;
 }
 
 /* class documentation */
@@ -382,19 +384,20 @@ div[class~="class"] > div.title {
 	width: 100%;
 	vertical-align: middle;
 	font-size: x-large;
-	background-color: #101010;
+	background: rgba(0,0,0,0.3);
 	padding-top: 4px;
 	padding-bottom: 4px;
 	padding-left: 0.2em;
 	margin-bottom: 4px;
+	margin-left: 1px;
 
-	border-style: ridge;
-	border-width: 2px;
-	border-color: rgba(130,130,130,0.5);
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgba(100,100,100,0.4);
 	/*border-bottom-color: rgba(200,200,200, 0.2);*/
 
-	border-left-width: 0;
 	border-right-width: 0;
+	border-left-width: 0;
 }
 
 div[class="none.title"] {
@@ -446,7 +449,7 @@ span.sequence-delimiter:last-child {
 /*
  * Very large leading document title.
  */
-div.method, div.function, div.property {
+div.method, div.function, div.property, div.data {
 	margin-top: 1em;
 	margin-bottom: 1em;
 }
@@ -486,6 +489,11 @@ div.title, div.data {
 	max-width: 2.5in;
 }
 
+div.representation {
+	margin-top: 1em;
+	margin-left: 2em;
+}
+
 /* Formatting for HTML representation of Python objects */
 div[class="python.object.inline"] {
 	max-height: 4cm;
@@ -494,7 +502,7 @@ div[class="python.object.inline"] {
 
 div[class="python.tuple"],
 span[class="python.dictionary.item"] {
-	margin-left: 1em;
+	margin-left: 2em;
 }
 
 /*
@@ -523,7 +531,7 @@ span[class="admonition.severity"] {
 }
 
 span[class="admonition.icon"]:before {
-	content: '❕';
+	content: '💬';
 }
 
 div[class="admonition-ERROR"]
@@ -691,6 +699,7 @@ div.toc li.no-match *
 {
 	color: #B0B0D0;
 }
+
 div.toc li.no-match {
 	color: #FFFFFF;
 	text-shadow:
@@ -764,6 +773,7 @@ span[class="ern"]:before {
 	vertical-align: top;
 	content: "&";
 }
+
 span[class="ern"] {
 	vertical-align: top;
 	font-size: xx-small;
