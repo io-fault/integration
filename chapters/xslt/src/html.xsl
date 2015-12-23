@@ -703,7 +703,7 @@
   <xsl:variable name="path" select="@name"/>
   <xsl:variable name="parent" select="substring-before(@name, concat('.', $name))"/>
 
-  <xsl:apply-templates select="./f:doc/e:section[@identifier!='Properties']"/>
+  <xsl:apply-templates select="./f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
 
   <div class="content">
    <xsl:if test="./f:data">

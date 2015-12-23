@@ -16,7 +16,14 @@ import contextlib
 from ..development import library as libdev
 from ..routes import library as libroutes
 from ..xml import library as libxml
+from ..xml import libpython as libxmlpython
 from ..eclectic import library as libeclectic
+
+class Serialization(libxmlpython.Serialization):
+	def root(self, query, obj, traversed=None):
+		return self.object(obj, traversed=traversed)
+
+serialization = Serialization() # currently only utf-8 is used.
 
 # If pkg_resources is available, use it to identify explicit namespace packages.
 try:
@@ -286,37 +293,10 @@ class Query(object):
 
 		return getattr(route.project(), '__dict__', None)
 
-def _xml_object_or_reference(query, obj, encoding=None, prefix=''):
-	if query.addressable(obj):
-		# addressable? usually type or function: make reference.
-		path = query.address(obj)
-
-		if path[0].startswith(query.prefix) or path[0][:-1] == query.prefix:
-			pkgtype = 'context'
-		else:
-			# if it's installed in site-packages, it's probably distutils/pypi
-			module = libroutes.Import.from_fullname(path[0]).module()
-			if 'site-packages' in getattr(module, '__file__', ''):
-				# *normally* distutils or distutils compliant package.
-				pkgtype = 'site-packages'
-			else:
-				# otherwise, it's known to be part of Python itself.
-				pkgtype = 'builtin'
-
-		yield from libxml.element('reference', (),
-			('source', pkgtype),
-			('factor', path[0]),
-			('name', path[1]),
-		)
-	else:
-		# otherwise, xml representation
-		p = functools.partial(_xml_object_or_reference, query, encoding=encoding)
-		yield from libxml.object(obj, subcall=p)
-
 def _xml_object(query, name, obj):
 	with query.cursor(name, obj):
 		yield from libxml.element(name,
-			_xml_object_or_reference(query, obj),
+			serialization.root(query, obj),
 			('type', '.'.join(query.address(type(obj)))),
 		)
 

@@ -15,18 +15,30 @@
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="f e xsl exsl str ctx">
 
-	<!-- Everythin inside the site transforms should have precedence -->
+	<!-- Everythin inside the root transforms should have precedence -->
 	<xsl:import href="page.xsl"/>
 
  <xsl:param name="python.version" select="'3'"/>
  <xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
+	<xsl:param name="document_index"/>
 
 	<!-- overview of build -->
 	<xsl:output
-			method="xml"
-			encoding="utf-8"
+			method="xml" version="1.0" encoding="utf-8"
 			omit-xml-declaration="no"
+			doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+			doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
 			indent="no"/>
+
+	<xsl:variable name="ctx.index" select="document($document_index)"/>
+
+	<xsl:variable name="ctx.documentation.fragment">
+		<xsl:for-each select="$ctx.index/idx:map/idx:item[contains(@key, 'documentation')]/@key">
+			<token><xsl:value-of select="string(.)"/></token>
+		</xsl:for-each>
+	</xsl:variable>
+
+	<xsl:variable name="ctx.documentation" select="exsl:node-set($ctx.documentation.fragment)/*"/>
 
  <func:function name="ctx:typname">
   <xsl:param name="name"/>
@@ -411,22 +423,13 @@
 		</func:result>
 	</func:function>
 
-	<xsl:variable name="ctx.documentation.fragment">
-		<xsl:for-each select="idx:map/idx:item[contains(@key, 'documentation')]/@key">
-			<token><xsl:value-of select="string(.)"/></token>
-		</xsl:for-each>
-	</xsl:variable>
-
-	<xsl:variable name="ctx.documentation" select="exsl:node-set($ctx.documentation.fragment)/*"/>
-
-	<xsl:variable name="ctx.index.fragment">
-		<xsl:copy-of select="/"/>
-	</xsl:variable>
-	<xsl:variable name="ctx.index" select="exsl:node-set($ctx.index.fragment)"/>
-
 	<func:function name="ctx:document">
 		<xsl:param name="name"/>
-		<func:result select="document(concat('file://', $ctx.index/idx:map/idx:item[@key=$name]/text()))"/>
+		<xsl:variable name="path" select="$ctx.index/idx:map/idx:item[@key=$name]/text()"/>
+		<xsl:if test="not($path)">
+			<xsl:message>empty path: <xsl:value-of select="$name"/></xsl:message>
+		</xsl:if>
+		<func:result select="document(concat('file://', $path))"/>
 	</func:function>
 
 	<func:function name="ctx:abstract">
@@ -482,6 +485,8 @@
 	</func:function>
 
 	<xsl:template match="/">
+		<xsl:apply-templates select="/f:factor"/>
+		<!--
 		<xsl:for-each select="idx:map/idx:item">
 			<xsl:variable name="fd" select="document(concat('file://', ./text()))"/>
 
@@ -491,9 +496,9 @@
 					doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
 					doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
 					indent="no">
-				<xsl:apply-templates select="$fd/f:factor"/>
 			</exsl:document>
 		</xsl:for-each>
+		-->
 	</xsl:template>
 
 </xsl:transform>
