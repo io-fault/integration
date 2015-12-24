@@ -40,6 +40,34 @@
  <xsl:variable name="arg.sep"><span class="sequence-delimiter">,</span></xsl:variable>
  <xsl:variable name="arg.assignment"><span class="assignment">=</span></xsl:variable>
 
+ <xsl:template name="admonition">
+  <!-- if there is no identified ancestor, it's probably the root object (module) -->
+  <xsl:param name="severity"/>
+  <xsl:param name="title"/>
+  <xsl:param name="content"/>
+
+  <div class="admonition-{$severity}">
+   <table>
+    <tr>
+     <td>
+      <span class="admonition.icon"/>
+     </td>
+     <td>
+      <span class="admonition.severity"><xsl:value-of select="$severity"/>: <xsl:value-of select="$title"/></span>
+     </td>
+    </tr>
+    <tr>
+     <td/>
+     <td>
+      <div class="admonition.content">
+       <xsl:copy-of select="$content"/>
+      </div>
+     </td>
+    </tr>
+   </table>
+  </div>
+ </xsl:template>
+
  <func:function name="f:inherit.docs">
   <xsl:param name="class"/>
 
@@ -90,7 +118,7 @@
      <!-- builtin source, maybe not builtins module -->
      <xsl:choose>
       <!-- special cases for certain builtins -->
-      <xsl:when test="$element/@factor = 'builtins'">
+      <xsl:when test="$element/@module = 'builtins'">
        <xsl:choose>
         <!-- types.ModuleType is identified as existing in builtins, which is a lie -->
         <xsl:when test="$element/@name = 'module'">
@@ -251,7 +279,7 @@
       <span class="admonition.icon"/>
      </td>
      <td>
-      <span class="admonition.severity"><xsl:value-of select="@severity"/>:<xsl:value-of select="@identifier"/></span>
+      <span class="admonition.severity"><xsl:value-of select="@severity"/>: <xsl:value-of select="@identifier"/></span>
      </td>
     </tr>
     <tr>
@@ -268,6 +296,75 @@
 
  <xsl:template match="f:doc">
   <div class="doc"><xsl:apply-templates select="e:*"/></div>
+ </xsl:template>
+
+ <xsl:template match="f:instructions">
+  <div class="python.instructions">
+   <pre><xsl:value-of select="text()"/></pre>
+  </div>
+ </xsl:template>
+
+ <xsl:template match="f:line[@absolute]">
+  <span class="source.line.focus">
+   <xsl:value-of select="./text()"/>
+  </span>
+  <xsl:text>&#10;</xsl:text>
+ </xsl:template>
+
+ <xsl:template match="f:line">
+  <span class="source.line">
+   <xsl:value-of select="./text()"/>
+  </span>
+  <xsl:text>&#10;</xsl:text>
+ </xsl:template>
+
+ <xsl:template match="f:frame">
+  <xsl:variable name="identifier" select="(@factor|@module)[1]"/>
+  <xsl:variable name="sym" select="@symbol"/>
+  <xsl:variable name="pos" select="position()"/>
+  <xsl:variable name="file" select="f:source/@file"/>
+  <xsl:variable name="line" select="f:source/f:line[@absolute]/@absolute"/>
+
+  <div class="python.frame">
+   <div class="frame-header">
+    <xsl:value-of select="$pos"/><xsl:text>. </xsl:text>
+    <xsl:value-of select="$identifier"/>
+    <xsl:text> Line </xsl:text>
+    <xsl:value-of select="$line"/>
+    <xsl:text> in </xsl:text>
+    <xsl:value-of select="$sym"/>
+   </div>
+   <pre class="frame.source">
+    <code data-start="{f:source/@start}">
+     <xsl:apply-templates select="f:source/f:line"/>
+    </code>
+   </pre>
+   <xsl:apply-templates select="f:context"/>
+   <xsl:apply-templates select="f:instructions"/>
+  </div>
+ </xsl:template>
+
+ <xsl:template match="f:traceback">
+  <div class="python.traceback">
+   <xsl:apply-templates select="f:frame"/>
+  </div>
+ </xsl:template>
+
+ <xsl:template match="f:exception">
+  <div class="python.exception">
+   <a href="{df:reference(@type)}">
+   </a>
+   <xsl:call-template name="admonition">
+    <xsl:with-param name="severity" select="'ERROR'"/>
+    <xsl:with-param name="title" select="@type"/>
+    <xsl:with-param name="content" select="string(f:message/text())"/>
+   </xsl:call-template>
+   <xsl:apply-templates select="f:traceback"/>
+  </div>
+ </xsl:template>
+
+ <xsl:template match="f:error">
+  <xsl:apply-templates select="f:exception"/>
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:none">
@@ -340,6 +437,11 @@
    <xsl:text>,</xsl:text>
    <br/>
   </span>
+ </xsl:template>
+
+ <xsl:template mode="python.inline.data" match="f:object">
+  <xsl:apply-templates select="f:error"/>
+  <xsl:apply-templates select="f:*[local-name()!='error']" mode="python.inline.data"/>
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:dictionary">
@@ -471,27 +573,41 @@
     </a>
     <xsl:if test="$typ.addr">
      ::
-     <a href="">
+     <a href="{ctx:absolute($typ.addr)}">
       <span class="identifier"><xsl:value-of select="ctx:typname($typ.addr)"/></span>
      </a>
     </xsl:if>
    </div>
 
-   <div class="representation">
-    <xsl:apply-templates mode="python.inline.data" select="./f:*"/>
-   </div>
+   <xsl:choose>
+    <xsl:when test="f:error">
+     <div class="error">
+      <xsl:apply-templates select="f:error"/>
+     </div>
+    </xsl:when>
+    <xsl:otherwise>
+     <div class="representation">
+      <xsl:apply-templates mode="python.inline.data" select="./f:*"/>
+     </div>
+    </xsl:otherwise>
+   </xsl:choose>
   </div>
  </xsl:template>
 
  <xsl:template match="f:import">
+  <xsl:variable name="abs" select="ctx:absolute(string(@name))"/>
   <div class="import">
    <a class="import">
-    <xsl:if test="@source = 'builtin'">
-     <xsl:attribute name="href"><xsl:value-of select="concat('https://docs.python.org/3/library/', @identifier, '.html')"/></xsl:attribute>
-    </xsl:if>
-    <xsl:if test="@source = 'context'">
-     <xsl:attribute name="href"><xsl:value-of select="@name"/></xsl:attribute>
-    </xsl:if>
+    <xsl:attribute name="href">
+     <xsl:choose>
+      <xsl:when test="$abs = ''">
+       <xsl:value-of select="concat('https://docs.python.org/3/library/', @identifier, '.html')"/>
+      </xsl:when>
+      <xsl:otherwise>
+       <xsl:value-of select="$abs"/>
+      </xsl:otherwise>
+     </xsl:choose>
+    </xsl:attribute>
     <span class="identifier"><xsl:value-of select="@name"/></span>
    </a>
   </div>
@@ -758,7 +874,7 @@
   <xsl:variable name="name" select="concat(../f:module/@name, '.', @identifier)"/>
   <xsl:variable name="icon" select="ctx:icon($name)"/>
 
-  <a href="{$name}">
+  <a href="{concat($name, $reference_suffix)}">
    <div class="subfactor">
     <xsl:choose>
      <xsl:when test="$icon">

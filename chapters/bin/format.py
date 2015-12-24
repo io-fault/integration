@@ -1,6 +1,5 @@
 """
-Format the referenced structure set into
-&..filesystem.library.Dictionary instance.
+Format the referenced structure set into a &..filesystem.library.Dictionary instance.
 """
 
 import sys
@@ -9,6 +8,7 @@ import os.path
 import lzma
 import types
 import importlib.machinery
+import io
 
 from ...routes import library as libroutes
 from ...xml import library as libxml
@@ -51,12 +51,21 @@ def main(source, target):
 		for k, r in index.items():
 			output = formats.route(k.encode('utf-8'))
 			try:
-				rtf = xslt.process_file(str(r), document_index=str(idx_path))
+				rtf = xslt.process_file(str(r),
+					document_index=str(idx_path),
+					reference_suffix=".html",
+				)
 			except Exception as err:
 				print(k, str(err))
 				continue
+
+			deflate = lzma.LZMACompressor()
 			with output.open('wb') as f:
-				rtf.write(f)
+				bio = io.BytesIO()
+				rtf.write(bio)
+				bio.seek(0)
+				f.write(deflate.compress(bio.read()))
+				f.write(deflate.flush())
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv[1:]))

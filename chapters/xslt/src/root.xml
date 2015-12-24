@@ -12,15 +12,18 @@
 	xmlns:ctx="https://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:str="http://exslt.org/strings"
+	xmlns:fault="https://fault.io/xml/xpath"
 	extension-element-prefixes="func exsl"
-	exclude-result-prefixes="f e xsl exsl str ctx">
+	exclude-result-prefixes="f e xsl exsl str fault ctx">
 
 	<!-- Everythin inside the root transforms should have precedence -->
 	<xsl:import href="page.xsl"/>
 
  <xsl:param name="python.version" select="'3'"/>
  <xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
+
 	<xsl:param name="document_index"/>
+	<xsl:param name="reference_suffix" select="''"/>
 
 	<!-- overview of build -->
 	<xsl:output
@@ -30,10 +33,10 @@
 			doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
 			indent="no"/>
 
-	<xsl:variable name="ctx.index" select="document($document_index)"/>
+	<xsl:variable name="ctx.index" select="document($document_index)/idx:map/idx:item"/>
 
 	<xsl:variable name="ctx.documentation.fragment">
-		<xsl:for-each select="$ctx.index/idx:map/idx:item[contains(@key, 'documentation')]/@key">
+		<xsl:for-each select="$ctx.index[contains(@key, 'documentation')]/@key">
 			<token><xsl:value-of select="string(.)"/></token>
 		</xsl:for-each>
 	</xsl:variable>
@@ -106,36 +109,10 @@
   </func:result>
  </func:function>
 
-	<func:function name="ctx:join">
-		<xsl:param name="tokens"/>
-		<xsl:param name="separator"/>
-		<xsl:variable name="first" select="$tokens[position()=1]/text()"/>
-		<xsl:variable name="remainder" select="exsl:node-set($tokens[position()!=1])"/>
-
-		<func:result>
-			<xsl:choose>
-				<xsl:when test="$remainder">
-					<xsl:value-of select="concat($first, $separator, ctx:join($remainder, $separator))"/>
-				</xsl:when>
-				<xsl:otherwise>
-					<!-- no more tokens, end of recursion -->
-					<xsl:value-of select="$first"/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</func:result>
-	</func:function>
-
 	<func:function name="ctx:factor">
 		<xsl:param name="element"/>
 		<func:result select="$element/ancestor::f:factor"/>
 	</func:function>
-
-	<func:function name="ctx:pop">
-		<xsl:param name="tokens"/>
-		<func:result select="$tokens[position()!=last()]"/>
-	</func:function>
-
-	<xsl:variable name="index" select="exsl:node-set(/idx:map/idx:item)"/>
 
 	<func:function name="ctx:identifiers">
 		<!-- directives can assign additional identifiers, so we work with a set -->
@@ -222,7 +199,7 @@
 		<xsl:choose>
 			<!-- scan came to an import -->
 			<xsl:when test="local-name($target) = 'import'">
-				<xsl:variable name="resource" select="exsl:node-set(document($index[@key=$target/@name]))/f:factor/f:module"/>
+				<xsl:variable name="resource" select="exsl:node-set(document($ctx.index[@key=$target/@name]))/f:factor/f:module"/>
 				<xsl:variable name="selection" select="ctx:follow($resource, $tokens[position()>1])"/>
 				<xsl:variable name="prefix" select="$resource/@name"/>
 				<xsl:choose>
@@ -256,11 +233,12 @@
 		<xsl:param name="index"/>
 		<xsl:param name="tokens"/>
 
-		<xsl:variable name="path" select="ctx:join($tokens, '.')"/>
-		<xsl:variable name="cwp" select="ctx:pop($tokens)"/>
+		<xsl:variable name="path" select="fault:join('.', $tokens)"/>
+		<xsl:variable name="cwp" select="fault:head($tokens)"/>
+		<xsl:variable name="item" select="$index[@key=$path]"/>
 
 		<xsl:choose>
-			<xsl:when test="$index[@key=$path]">
+			<xsl:when test="$item">
 				<func:result select="$path"/>
 			</xsl:when>
 
@@ -277,7 +255,7 @@
 
 	<func:function name="ctx:split">
 		<xsl:param name="path"/>
-		<xsl:variable name="factor" select="ctx:separate($index, str:tokenize($path, '.'))"/>
+		<xsl:variable name="factor" select="ctx:separate($ctx.index, str:tokenize($path, '.'))"/>
 		<func:result select="$factor"/>
 	</func:function>
 
@@ -298,15 +276,23 @@
 
 	<func:function name="ctx:absolute">
 		<xsl:param name="path"/>
-		<xsl:variable name="factor" select="ctx:separate($index, str:tokenize($path, '.'))"/>
+		<xsl:param name="this" select="''"/>
+
+		<xsl:variable name="tokens" select="fault:split('.', $path)"/>
+		<xsl:variable name="factor" select="ctx:separate($ctx.index, $tokens)"/>
 		<xsl:variable name="obj" select="substring(substring-after($path, $factor), 2)"/>
+
 		<xsl:choose>
-			<xsl:when test="$obj">
-				<func:result select="concat($factor, '#', $obj)"/>
+		 <xsl:when test="$factor = ''">
+			 <!-- No factor? No reference -->
+				<func:result select="''"/>
+			</xsl:when>
+			<xsl:when test="$factor != '' and $obj != ''">
+				<func:result select="concat($factor, $reference_suffix, '#', $obj)"/>
 			</xsl:when>
 			<xsl:otherwise>
 				<!-- just the document -->
-				<func:result select="$factor"/>
+				<func:result select="concat($factor, $reference_suffix)"/>
 			</xsl:otherwise>
 		</xsl:choose>
 	</func:function>
@@ -374,7 +360,8 @@
 				</xsl:when>
 
 				<xsl:when test="$is.directory">
-					<!-- TODO -->
+					<!-- TODO: &/unix/man/2/accept -->
+					<!-- part of the problem is that it isn't clear how it should be linked -->
 					<xsl:value-of select="$source"/>
 				</xsl:when>
 
@@ -402,14 +389,14 @@
 					<!-- site reference -->
 					<xsl:choose>
 						<xsl:when test="$is.absolute or $is.context.relative or $is.project.relative">
-							<xsl:value-of select="ctx:absolute($path)"/>
+							<xsl:value-of select="ctx:absolute(string($path))"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- could be text structure reference -->
 							<xsl:variable name="local" select="ctx:scan($ref, $source)"/>
 							<xsl:choose>
 								<xsl:when test="$local">
-									<xsl:value-of select="$local"/>
+									<xsl:value-of select="concat($local, $reference_suffix)"/>
 								</xsl:when>
 								<xsl:otherwise>
 									<!-- invalid reference -->
@@ -425,7 +412,7 @@
 
 	<func:function name="ctx:document">
 		<xsl:param name="name"/>
-		<xsl:variable name="path" select="$ctx.index/idx:map/idx:item[@key=$name]/text()"/>
+		<xsl:variable name="path" select="$ctx.index[@key=$name]/text()"/>
 		<xsl:if test="not($path)">
 			<xsl:message>empty path: <xsl:value-of select="$name"/></xsl:message>
 		</xsl:if>

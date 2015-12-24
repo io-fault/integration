@@ -1,9 +1,9 @@
 __type__ = 'xsl'
-from ...development import libxml
+from ...xml import libfactor
 
-class Index(libxml.XPathModule):
+class Index(libfactor.XPathModule):
 	def __init__(self, transform):
 		pass
 
-libxml.load()
-del libxml
+libfactor.load()
+del libfactor

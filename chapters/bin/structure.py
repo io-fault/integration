@@ -28,7 +28,10 @@ def main(target, package):
 	# containing project.
 	for pkg in packages:
 		td = pkg / 'documentation'
-		if not td.exists():
+		try:
+			if not td.exists():
+				continue
+		except ImportError:
 			continue
 		dr = td.directory()
 		doc_pkg_module = td.module()

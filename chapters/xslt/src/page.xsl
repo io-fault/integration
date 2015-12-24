@@ -12,8 +12,9 @@
  xmlns:ctx="https://fault.io/xml/factor#context"
  xmlns:df="https://fault.io/xml/factor#functions"
  xmlns:func="http://exslt.org/functions"
+	xmlns:fault="https://fault.io/xml/xpath"
  extension-element-prefixes="func"
- exclude-result-prefixes="e xsl f ctx df str exsl">
+ exclude-result-prefixes="e xsl f ctx df str exsl fault">
 
 	<!-- Everythin inside the site transforms should have precedence -->
  <xsl:import href="html.xsl"/>
@@ -212,12 +213,15 @@
 							<!-- it's not actually a keyword, but fills the role that keywords are used for -->
 							<span class="icon"><xsl:value-of select="f:context/@icon"/></span>
 
-							<xsl:if test="$product">
-								<a href="{$product}">
-									<span class="module-path"><xsl:value-of select="$product"/></span>
-								</a>
-								<span class="path-delimiter">.</span>
+						 <xsl:if test="$product">
+								<xsl:for-each select="fault:traverse('.', $product)">
+									<a href="{ctx:absolute(string(./path))}">
+										<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
+									</a>
+									<span class="path-delimiter">.</span>
+								</xsl:for-each>
 							</xsl:if>
+
 							<a href=""><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
 						</div>
 					</div>

@@ -359,17 +359,10 @@ def _xml_doc(query, obj, prefix):
 def _xml_import(query, context_module, imported, *path):
 	mn = imported.__name__
 
-	if 'site-packages' in getattr(imported, '__file__', ''):
-		# *normally* distutils or distutils compliant package.
-		pkgtype = 'distutils'
-	else:
-		pkgtype = 'builtin'
-
 	return libxml.element("import", None,
 		('xml:id', '.'.join(path)),
 		('identifier', path[-1]),
 		('name', query.canonical(mn)),
-		('source', pkgtype),
 	)
 
 def _xml_source_range(query, obj):
