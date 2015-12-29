@@ -41,6 +41,43 @@ window.source_code_display = null;
 window.source_context_quantity = 0;
 
 function
+collapse(element)
+{
+	if (!element.className.endsWith(" collapsed"))
+	{
+		el.className = el.className + " collapsed";
+	}
+}
+
+function
+reveal(element)
+{
+	if (element.className.endsWith(" collapsed"))
+	{
+		var idx = element.className.lastIndexOf(" collapsed");
+		element.className = element.className.substring(0, idx);
+	}
+}
+
+function
+toggle_collapsed(event)
+{
+	var el = event.target;
+
+	while (el.getAttribute("ondblclick") == null)
+		el = el.parentNode;
+
+	if (el.className.endsWith(' collapsed'))
+	{
+		el.className = el.className.substring(0, el.className.lastIndexOf(' collapsed'));
+	}
+	else
+	{
+		el.className = el.className + ' collapsed';
+	}
+}
+
+function
 hashchanged()
 {
 	var nid = window.location.hash.slice(1); /* strip preceding '#' */
