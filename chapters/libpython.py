@@ -12,6 +12,7 @@ import types
 import lzma
 import codecs
 import contextlib
+import importlib
 
 from ..development import library as libdev
 from ..routes import library as libroutes
@@ -215,6 +216,7 @@ class Query(object):
 
 		If there is no canonical package name, return &name exactly.
 		"""
+		return libdev.Factor.from_fullname(name).name
 
 		route = Import(name)
 		if getattr(route.module(), '__type__', '') == 'chapter':
@@ -309,7 +311,7 @@ def _xml_parameter(query, parameter):
 
 def _xml_signature_arguments(query, signature, km = {}):
 	if signature.return_annotation is not signature.empty:
-		yield from _xml_object(query, 'product', signature.return_annotation)
+		yield from _xml_object(query, 'return', signature.return_annotation)
 
 	for p, i in zip(signature.parameters.values(), range(len(signature.parameters))):
 		yield from libxml.element('parameter',
@@ -631,11 +633,15 @@ class Error(Exception):
 	Containing error noting the module and object that triggered the exception.
 	"""
 
-def python(query:Query, route:libroutes.Import, module:types.ModuleType):
+def document(query:Query, route:libroutes.Import):
 	"""
 	Yield out a module element for writing to an XML file exporting the documentation,
 	data, and signatures of the module's content.
 	"""
+	global libxml
+
+	cname = query.canonical(route.fullname)
+	basename = cname.split('.')[-1]
 
 	package = route.bottom()
 	if package is None:
@@ -643,59 +649,51 @@ def python(query:Query, route:libroutes.Import, module:types.ModuleType):
 	else:
 		project = package / 'project'
 
-	try:
-		cname = query.canonical(module.__name__)
-		# take the basename from cname in case
-		# the module is the context package.
-		basename = cname.split('.')[-1]
-		factor_type = getattr(module, '__type__', 'module')
+	module = route.module()
+	if module is not None:
+		if module.__file__:
+			factor_type = getattr(module, '__type__', 'module')
+		else:
+			factor_type = 'namespace'
 
 		if factor_type == 'chapter':
 			ename = 'chapter'
 		else:
 			ename = 'module'
 
-		yield from libxml.element('factor',
-			itertools.chain(
-				_xml_context(query, package, project),
-				_submodules(route),
-				libxml.element(ename,
-					_xml_module(query, factor_type, module),
-					('identifier', basename),
-					('name', cname),
-				),
-			),
-			('version', '0'),
-			('name', cname),
+		content = libxml.element(ename,
+			_xml_module(query, factor_type, module),
 			('identifier', basename),
-			('type', factor_type),
-			('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
-			('xmlns:py', 'https://fault.io/xml/python'),
-			('xmlns:e', 'https://fault.io/xml/eclectic'),
-			('xmlns', 'https://fault.io/xml/factor'),
+			('name', cname),
 		)
-	except Exception as failure:
-		raise Error(route) from failure
-
-def document(route:libroutes.Import):
-	"""
-	Document the given package rewriting the prefix using the containing package's
-	"canonical" attribute. This allows reasonable documentation to be generated even
-	if the root package has been renamed for development purposes.
-	"""
-
-	query = Query(route)
-	module = route.module()
-
-	if module is None:
-		error = None
-		try:
-			pass
-		except ImportError as error:
-			pass
-		return (query.canonical(route.fullname), ())
 	else:
-		return (query.canonical(module.__name__), python(query, route, module))
+		factor_type = 'factor'
+		# get the error
+		try:
+			importlib.import_module(route.fullname)
+		except Exception as exc:
+			content = libxml.element('module',
+				serialization.error(exc, route, traversed=None),
+				('identifier', basename),
+				('name', cname),
+			)
+
+	yield from libxml.element('factor',
+		itertools.chain(
+			_xml_context(query, package, project),
+			_submodules(route),
+			content,
+		),
+		('version', '0'),
+		('name', cname),
+		('identifier', basename),
+		('type', factor_type),
+		('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
+		('xmlns:py', 'https://fault.io/xml/python'),
+		('xmlns:l', 'https://fault.io/xml/literals'),
+		('xmlns:e', 'https://fault.io/xml/eclectic'),
+		('xmlns', 'https://fault.io/xml/factor'),
+	)
 
 if __name__ == '__main__':
 	# document a single module
@@ -704,11 +702,11 @@ if __name__ == '__main__':
 	w = sys.stdout.buffer.write
 	try:
 		w(b'<?xml version="1.0" encoding="utf-8"?>')
-		i = python(r)
+		i = document(Query(r), r)
 		for x in i:
 			w(x)
+		w(b'\n')
 		sys.stdout.flush()
 	except:
-		e = sys.exc_info()
 		import pdb
-		pdb.post_mortem(e[2])
+		pdb.pm()
