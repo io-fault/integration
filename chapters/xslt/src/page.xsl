@@ -153,7 +153,7 @@
 	<xsl:template mode="total.toc" match="node()"/>
 	<xsl:template mode="total.toc" match="e:section">
 		<li>
-			<a href="{concat(ancestor::f:factor/@name, '#', ctx:id(.))}">
+			<a href="{concat(ancestor::f:factor/@name, $reference_suffix, '#', ctx:id(.))}">
 				<xsl:value-of select="@identifier"/>
 			</a>
 			<xsl:if test="./e:section">
@@ -347,10 +347,7 @@
 					<xsl:if test="@type = 'module' and .//f:import">
 						<div class="imports.">
 						 <h2>Runtime Dependencies</h2>
-							<xsl:apply-templates select=".//f:import[@source='builtin']">
-								<xsl:sort order="ascending" select="@identifier"/>
-							</xsl:apply-templates>
-							<xsl:apply-templates select=".//f:import[@source!='builtin']">
+							<xsl:apply-templates select=".//f:import">
 								<xsl:sort order="ascending" select="@identifier"/>
 							</xsl:apply-templates>
 						</div>

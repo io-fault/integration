@@ -2,6 +2,6 @@
 """
 
 __type__ = 'directory'
-from ...development import libresource
-libresource.load()
-del libresource
+from ...filesystem import libfactor
+libfactor.load()
+del libfactor

@@ -14,7 +14,7 @@
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="https://fault.io/xml/xpath"
 	extension-element-prefixes="func exsl"
-	exclude-result-prefixes="f e xsl exsl str fault ctx">
+	exclude-result-prefixes="f e xsl exsl str fault ctx Index">
 
 	<!-- Everythin inside the root transforms should have precedence -->
 	<xsl:import href="page.xsl"/>
@@ -329,6 +329,15 @@
 		</func:result>
 	</func:function>
 
+	<func:function name="ctx:element.from.source">
+		<xsl:param name="factor"/>
+		<xsl:param name="lineno"/>
+		<xsl:variable name="d" select="ctx:document($factor)"/>
+		<xsl:variable name="s" select="$d//f:source[@start=$lineno]"/>
+
+	 <func:result select="$s/.."/>
+	</func:function>
+
 	<func:function name="ctx:reference">
 		<xsl:param name="ref"/>
 
@@ -396,7 +405,7 @@
 							<xsl:variable name="local" select="ctx:scan($ref, $source)"/>
 							<xsl:choose>
 								<xsl:when test="$local">
-									<xsl:value-of select="concat($local, $reference_suffix)"/>
+									<xsl:value-of select="$local"/>
 								</xsl:when>
 								<xsl:otherwise>
 									<!-- invalid reference -->
@@ -410,11 +419,24 @@
 		</func:result>
 	</func:function>
 
+	<func:function name="ctx:file">
+		<xsl:param name="path"/>
+		<xsl:param name="line"/>
+		<xsl:variable name="tokens" select="fault:split('/', $path)"/>
+		<func:result>
+		 <span class="path.directory"><xsl:value-of select="fault:join('/', $tokens[position()!=last()])"/>/</span>
+		 <span class="path.file.name"><xsl:value-of select="$tokens[last()][1]"/></span>
+			<xsl:if test="$line">
+		 	<span class="path.line.number"><xsl:value-of select="$line"/></span>
+			</xsl:if>
+		</func:result>
+	</func:function>
+
 	<func:function name="ctx:document">
 		<xsl:param name="name"/>
 		<xsl:variable name="path" select="$ctx.index[@key=$name]/text()"/>
 		<xsl:if test="not($path)">
-			<xsl:message>empty path: <xsl:value-of select="$name"/></xsl:message>
+			<xsl:message>No such path: <xsl:value-of select="$name"/></xsl:message>
 		</xsl:if>
 		<func:result select="document(concat('file://', $path))"/>
 	</func:function>

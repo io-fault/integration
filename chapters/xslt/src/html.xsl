@@ -16,6 +16,7 @@
  xmlns:df="https://fault.io/xml/factor#functions"
  xmlns:ctx="https://fault.io/xml/factor#context"
  xmlns:func="http://exslt.org/functions"
+ xmlns:l="https://fault.io/xml/literals"
  extension-element-prefixes="func"
  exclude-result-prefixes="set str exsl func xl xsl py e f df ctx">
 
@@ -39,6 +40,11 @@
 
  <xsl:variable name="arg.sep"><span class="sequence-delimiter">,</span></xsl:variable>
  <xsl:variable name="arg.assignment"><span class="assignment">=</span></xsl:variable>
+
+ <xsl:template match="l:*">
+  <xsl:variable name="n" select="string(local-name())"/>
+  <span class="xml.literal">0<xsl:value-of select="$n"/></span>
+ </xsl:template>
 
  <xsl:template name="admonition">
   <!-- if there is no identified ancestor, it's probably the root object (module) -->
@@ -299,7 +305,7 @@
  </xsl:template>
 
  <xsl:template match="f:instructions">
-  <div class="python.instructions">
+  <div class="frame.instructions python">
    <pre><xsl:value-of select="text()"/></pre>
   </div>
  </xsl:template>
@@ -307,46 +313,87 @@
  <xsl:template match="f:line[@absolute]">
   <span class="source.line.focus">
    <xsl:value-of select="./text()"/>
+   <xsl:text>&#10;</xsl:text>
   </span>
-  <xsl:text>&#10;</xsl:text>
  </xsl:template>
 
  <xsl:template match="f:line">
   <span class="source.line">
    <xsl:value-of select="./text()"/>
+   <xsl:text>&#10;</xsl:text>
   </span>
-  <xsl:text>&#10;</xsl:text>
  </xsl:template>
 
  <xsl:template match="f:frame">
   <xsl:variable name="identifier" select="(@factor|@module)[1]"/>
   <xsl:variable name="sym" select="@symbol"/>
+  <xsl:variable name="module_body" select="@symbol = '&lt;module&gt;'"/>
   <xsl:variable name="pos" select="position()"/>
-  <xsl:variable name="file" select="f:source/@file"/>
+  <xsl:variable name="file" select="string(f:source/@file)"/>
   <xsl:variable name="line" select="f:source/f:line[@absolute]/@absolute"/>
 
-  <div class="python.frame">
+  <li class="python.frame">
    <div class="frame-header">
-    <xsl:value-of select="$pos"/><xsl:text>. </xsl:text>
-    <xsl:value-of select="$identifier"/>
-    <xsl:text> Line </xsl:text>
-    <xsl:value-of select="$line"/>
-    <xsl:text> in </xsl:text>
-    <xsl:value-of select="$sym"/>
+    <xsl:choose>
+     <xsl:when test="@factor">
+      <xsl:variable name="e" select="ctx:element.from.source(@factor, f:source/@first)"/>
+      <xsl:variable name="eid" select="ctx:id($e)"/>
+      <xsl:variable name="fact" select="$e/ancestor::f:module/@name"/>
+
+      <!-- case where code object is module body vs function/method -->
+      <xsl:choose>
+       <xsl:when test="not($module_body)">
+        <a href="{$fact}{$reference_suffix}#{$eid}">
+         <xsl:value-of select="@factor"/>
+         <xsl:text>.</xsl:text>
+
+         <span class="identifier">
+          <xsl:value-of select="$eid"/>
+         </span>
+        </a>
+       </xsl:when>
+       <xsl:otherwise>
+        <a href="{@factor}{$reference_suffix}">
+         <span class="identifier">
+          <xsl:value-of select="@factor"/>
+         </span>
+        </a>
+       </xsl:otherwise>
+      </xsl:choose>
+     </xsl:when>
+
+     <xsl:when test="$identifier = '__main__'">
+     </xsl:when>
+
+     <xsl:otherwise>
+      <xsl:value-of select="$identifier"/>
+      <xsl:text>.</xsl:text>
+      <xsl:value-of select="$sym"/>
+     </xsl:otherwise>
+    </xsl:choose>
+
+    <xsl:text> </xsl:text>
+    [<xsl:copy-of select="ctx:file($file, $line)"/>]
    </div>
-   <pre class="frame.source">
-    <code data-start="{f:source/@start}">
-     <xsl:apply-templates select="f:source/f:line"/>
-    </code>
-   </pre>
+   <div
+     ondblclick="toggle_collapsed(event)"
+     class="frame.source collapsed"><!-- collapsed by default to focus lines -->
+    <pre>
+     <code data-start="{f:source/@start}">
+      <xsl:apply-templates select="f:source/f:line"/>
+     </code>
+    </pre>
+   </div>
    <xsl:apply-templates select="f:context"/>
    <xsl:apply-templates select="f:instructions"/>
-  </div>
+  </li>
  </xsl:template>
 
  <xsl:template match="f:traceback">
   <div class="python.traceback">
-   <xsl:apply-templates select="f:frame"/>
+   <ol class="frames">
+    <xsl:apply-templates select="f:frame"/>
+   </ol>
   </div>
  </xsl:template>
 
@@ -360,6 +407,13 @@
     <xsl:with-param name="content" select="string(f:message/text())"/>
    </xsl:call-template>
    <xsl:apply-templates select="f:traceback"/>
+
+   <!-- exception chains -->
+   <xsl:for-each select="f:exception">
+    <div class="exception.{./@identifier}">
+     <xsl:apply-templates select="."/>
+    </div>
+   </xsl:for-each>
   </div>
  </xsl:template>
 
@@ -402,7 +456,7 @@
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:string">
-  <span class="python.type.string"><xsl:value-of select="text()"/></span>
+  <span class="python.type.string"><xsl:apply-templates select="node()"/></span>
  </xsl:template>
 
  <xsl:template mode="python.inline.data" match="f:list">
@@ -820,6 +874,7 @@
   <xsl:variable name="parent" select="substring-before(@name, concat('.', $name))"/>
 
   <xsl:apply-templates select="./f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+  <xsl:apply-templates select="./f:error"/>
 
   <div class="content">
    <xsl:if test="./f:data">

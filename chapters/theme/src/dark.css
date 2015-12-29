@@ -6,6 +6,10 @@
 @charset "utf-8";
 @import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
 
+span[class="xml.literal"] {
+	text-decoration: underline;
+}
+
 pre {
 	white-space: pre;
 	width: auto;
@@ -54,6 +58,7 @@ p {
 		1px -1px 2px rgba(0,0,0,1),
 		1px 2px 1px rgba(0,0,0,1);
 }
+
 dl {
 	margin-left: 8px;
 }
@@ -284,12 +289,12 @@ div[id="subject.description."] {
 
 div[id="subject.description.element."] {
 	position: absolute;
-	width: auto;
+	width: 95%;
 	height: 100%;
 }
 
 div[class="source.code"] {
-	width: 90%;
+	width: 100%;
 }
 
 div[class="source.code"] > pre {
@@ -327,12 +332,6 @@ span[class="line.count"] {
 	vertical-align: top;
 	font-size: xx-small;
 	color: #606060;
-}
-
-span[class="source.line"] {
-}
-span[class="source.line.focus"] {
-	color: orange;
 }
 
 .antiselect {
@@ -509,10 +508,6 @@ div[class="python.object.inline"] {
 div[class="python.tuple"],
 span[class="python.dictionary.item"] {
 	margin-left: 2em;
-}
-
-div[class="python.instructions"] > pre {
-	display: none;
 }
 
 /*
@@ -792,6 +787,19 @@ a[href="#X-INVALID-REFERENCE"] > span[class="ern"]:before {
 	color: red;
 }
 
+span[class="path.directory"] {
+	color: gray;
+}
+span[class="path.file.name"] {
+	color: teal;
+}
+span[class="path.line.number"] {
+	color: orange;
+}
+span[class="path.line.number"]:before {
+	content: ':';
+}
+
 span[class="ern"] {
 	vertical-align: top;
 	font-size: xx-small;
@@ -823,6 +831,38 @@ code {
 	font-family: monospace;
 	font-size: 84%;
 	display: inline-block;
+}
+
+div[class^="frame.instructions"] {
+	display: none;
+}
+
+div[class^="frame.source"] > pre:hover  {
+	box-shadow: inset 0 0 16px yellow;
+}
+
+div[class^="frame.source" and class~="collapsed"] > pre {
+	color: red;
+	background-color: yellow;
+}
+
+div[class^="frame.source"] > pre {
+	box-shadow: inset 0 0 16px #000000;
+	background-color: rgba(0,0,0,0.2);
+	border-width: 1px;
+	border-color: rgba(100,100,100,0.3);
+	max-width: 85%;
+	padding: 8px;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div[class^="frame.source"] > pre > code > span[class="source.line.focus"] {
+	color: orange;
+}
+
+div[class^="frame.source"][class$=" collapsed"] > pre > code > span[class="source.line"] {
+	display: none;
 }
 
 span[class="eclectic.emphasis"] {
