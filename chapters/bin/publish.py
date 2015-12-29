@@ -26,6 +26,12 @@ def transfer(src, dst):
 		dst.write(deflate.decompress(data))
 		data = src.read(1024*64)
 
+def transparent_transfer(src, dst):
+	data = src.read(1024*64)
+	while data:
+		dst.write(data)
+		data = src.read(1024*64)
+
 def main(structs, formatting, output):
 	structs = os.path.realpath(structs)
 	formatting = os.path.realpath(formatting)
@@ -40,7 +46,7 @@ def main(structs, formatting, output):
 			dr = out / ((factor.decode('utf-8')) + '.xml')
 			dr.init('file')
 			with dr.open('wb') as fo:
-				transfer(fi, fo)
+				transparent_transfer(fi, fo)
 
 	for factor, r in fd.references():
 		with r.open('rb') as fi:

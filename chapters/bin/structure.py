@@ -11,7 +11,7 @@ import types
 import importlib.machinery
 
 from .. import libpython
-from .. import library
+from .. import library as libfactors
 
 from ...routes import library as libroutes
 from ...eclectic import library as libeclectic
@@ -20,7 +20,7 @@ from ...filesystem import library as fslib
 
 def main(target, package):
 	docs = fslib.Dictionary.create(fslib.Hash(), os.path.realpath(target))
-	root, (packages, modules) = library.factors(package)
+	root, (packages, modules) = libfactors.factors(package)
 
 	doc_modules = []
 	# &.documentation packages are handled specially.
@@ -28,10 +28,7 @@ def main(target, package):
 	# containing project.
 	for pkg in packages:
 		td = pkg / 'documentation'
-		try:
-			if not td.exists():
-				continue
-		except ImportError:
+		if not td.exists():
 			continue
 		dr = td.directory()
 		doc_pkg_module = td.module()
@@ -67,12 +64,15 @@ def main(target, package):
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
 
 	for x in itertools.chain((root,), packages, modules, iterdocs):
-		key, dociter = libpython.document(x)
-		key = key.encode('utf-8')
+		query = libpython.Query(x)
+		cname = query.canonical(x.fullname)
+		dociter = libpython.document(query, x)
+		key = cname.encode('utf-8')
 
 		r = docs.route(key)
 		r.init('file')
 		deflate = lzma.LZMACompressor()
+		deflate = None
 
 		with r.open('wb') as f:
 			# the xml declaration prefix is not written.
