@@ -13,6 +13,7 @@
 	xmlns:func="http://exslt.org/functions"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="https://fault.io/xml/xpath"
+	xmlns:Python="#Python"
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="f e xsl exsl str fault ctx Index">
 
@@ -58,54 +59,30 @@
   </func:result>
  </func:function>
 
- <func:function name="ctx:python.hyperlink">
-  <xsl:param name="element" select="."/>
+ <func:function name="ctx:python.builtin">
+  <xsl:param name="string"/>
 
   <func:result>
-   <xsl:choose>
-    <xsl:when test="not($element)">
-     <xsl:value-of select="concat($python.docs, 'functions.html#object')"/>
-    </xsl:when>
+			<xsl:choose>
+				<!-- types.ModuleType is identified as existing in builtins, which is a lie -->
+				<xsl:when test="$string = 'None' or $string = 'True' or $string = 'False' or $string = 'Ellipsis' or $string = 'NotImplemented'">
+					<xsl:value-of select="concat($python.docs, 'constants.html#', $string)"/>
+				</xsl:when>
 
-    <xsl:when test="$element/@source = 'builtin'">
-     <!-- builtin source, maybe not builtins module -->
-     <xsl:choose>
-      <!-- special cases for certain builtins -->
-      <xsl:when test="$element/@module = 'builtins'">
-       <xsl:choose>
-        <!-- types.ModuleType is identified as existing in builtins, which is a lie -->
-        <xsl:when test="$element/@name = 'module'">
-         <xsl:value-of select="concat($python.docs, 'types.html#types.ModuleType')"/>
-        </xsl:when>
+				<xsl:when test="$string = 'module'">
+					<xsl:value-of select="concat($python.docs, 'types.html#types.ModuleType')"/>
+				</xsl:when>
 
-        <!-- for whatever reason, the id is "func-str" and not "str" -->
-        <xsl:when test="$element/@name = 'str'">
-         <xsl:value-of select="concat($python.docs, 'functions.html#func-str')"/>
-        </xsl:when>
+				<!-- for whatever reason, the id is "func-str" and not "str" -->
+				<xsl:when test="$string = 'str'">
+					<xsl:value-of select="concat($python.docs, 'functions.html#func-str')"/>
+				</xsl:when>
 
-        <xsl:otherwise>
-         <!-- most builtins are documented in functions.html -->
-         <xsl:value-of select="concat($python.docs, 'functions.html#', $element/@name)"/>
-        </xsl:otherwise>
-       </xsl:choose>
-      </xsl:when>
-      <xsl:otherwise>
-       <!-- not a builtins -->
-       <xsl:value-of select="concat($python.docs, $element/@module, '.html')"/>
-      </xsl:otherwise>
-     </xsl:choose>
-    </xsl:when>
-    <xsl:when test="$element/@source = 'site-packages'">
-     <xsl:value-of select="concat($python.docs, $element/@module, '.html')"/>
-    </xsl:when>
-    <xsl:when test="$element/@module = $element/ancestor::f:factor/@name">
-     <xsl:value-of select="concat('#', $element/@name)"/>
-    </xsl:when>
-    <xsl:otherwise>
-     <!-- Same site (document collection) -->
-     <xsl:value-of select="concat($element/@module, '#', $element/@name)"/>
-    </xsl:otherwise>
-   </xsl:choose>
+				<xsl:otherwise>
+					<!-- most builtins are documented in functions.html -->
+					<xsl:value-of select="concat($python.docs, 'functions.html#', $string)"/>
+				</xsl:otherwise>
+			</xsl:choose>
   </func:result>
  </func:function>
 
@@ -408,8 +385,16 @@
 									<xsl:value-of select="$local"/>
 								</xsl:when>
 								<xsl:otherwise>
-									<!-- invalid reference -->
-									<xsl:value-of select="'#X-INVALID-REFERENCE'"/>
+									<!-- Absolute Path or invalid reference -->
+									<xsl:choose>
+									 <xsl:when test="contains($source, '.')">
+											<xsl:variable name="pair" select="Factor:reference(string($source))"/>
+											<xsl:value-of select="concat($python.docs, $pair[1], '#', $pair[2])"/>
+									 </xsl:when>
+									 <xsl:otherwise>
+											<xsl:value-of select="ctx:python.builtin($source)"/>
+									 </xsl:otherwise>
+									</xsl:choose>
 								</xsl:otherwise>
 							</xsl:choose>
 						</xsl:otherwise>
@@ -445,7 +430,7 @@
 		<xsl:param name="name"/>
 		<xsl:variable name="factor" select="ctx:document($name)/f:factor"/>
 		<xsl:variable name="fsection" select="$factor/f:*/f:doc/e:section[not(@identifier)][1]"/>
-		<xsl:variable name="fpara" select="$fsection/e:paragraph[1]/text()"/>
+		<xsl:variable name="fpara" select="$fsection/e:paragraph[1]"/>
 
 		<xsl:choose>
 			<xsl:when test="$factor/f:context/@path = $name">

@@ -348,7 +348,7 @@
 						<div class="imports.">
 						 <h2>Runtime Dependencies</h2>
 							<xsl:apply-templates select=".//f:import">
-								<xsl:sort order="ascending" select="@identifier"/>
+								<xsl:sort order="ascending" select="@name"/>
 							</xsl:apply-templates>
 						</div>
 					</xsl:if>

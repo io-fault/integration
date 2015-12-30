@@ -325,7 +325,6 @@
  </xsl:template>
 
  <xsl:template match="f:frame">
-  <xsl:variable name="identifier" select="(@factor|@module)[1]"/>
   <xsl:variable name="sym" select="@symbol"/>
   <xsl:variable name="module_body" select="@symbol = '&lt;module&gt;'"/>
   <xsl:variable name="pos" select="position()"/>
@@ -337,13 +336,27 @@
     <xsl:choose>
      <xsl:when test="@factor">
       <xsl:variable name="e" select="ctx:element.from.source(@factor, f:source/@first)"/>
-      <xsl:variable name="eid" select="ctx:id($e)"/>
+      <xsl:variable name="eids" select="ctx:id($e)"/>
       <xsl:variable name="fact" select="$e/ancestor::f:module/@name"/>
+
+      <!-- ctx:id when $e otherwise $sym-->
+      <xsl:variable name="eid">
+       <xsl:choose>
+        <xsl:when test="$eids">
+         <xsl:value-of select="$eids"/>
+        </xsl:when>
+        <xsl:otherwise>
+         <xsl:value-of select="concat('[', $sym, ']')"/>
+        </xsl:otherwise>
+       </xsl:choose>
+      </xsl:variable>
 
       <!-- case where code object is module body vs function/method -->
       <xsl:choose>
        <xsl:when test="not($module_body)">
-        <a href="{$fact}{$reference_suffix}#{$eid}">
+        <!-- purposefully using eids for the href -->
+        <!-- as the symbol fallback won't have an xml:id  -->
+        <a href="{@factor}{$reference_suffix}#{$eids}">
          <xsl:value-of select="@factor"/>
          <xsl:text>.</xsl:text>
 
@@ -362,11 +375,12 @@
       </xsl:choose>
      </xsl:when>
 
-     <xsl:when test="$identifier = '__main__'">
+     <xsl:when test="@module = '__main__'">
      </xsl:when>
 
      <xsl:otherwise>
-      <xsl:value-of select="$identifier"/>
+      <!-- outside of our tree -->
+      <xsl:value-of select="@module"/>
       <xsl:text>.</xsl:text>
       <xsl:value-of select="$sym"/>
      </xsl:otherwise>
