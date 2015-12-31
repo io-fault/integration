@@ -13,7 +13,7 @@
 	xmlns:func="http://exslt.org/functions"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="https://fault.io/xml/xpath"
-	xmlns:Python="#Python"
+	xmlns:Factor="#Factor"
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="f e xsl exsl str fault ctx Index">
 
@@ -65,6 +65,10 @@
   <func:result>
 			<xsl:choose>
 				<!-- types.ModuleType is identified as existing in builtins, which is a lie -->
+				<xsl:when test="Factor:exception($string)">
+					<xsl:value-of select="concat($python.docs, 'exceptions.html#', $string)"/>
+				</xsl:when>
+
 				<xsl:when test="$string = 'None' or $string = 'True' or $string = 'False' or $string = 'Ellipsis' or $string = 'NotImplemented'">
 					<xsl:value-of select="concat($python.docs, 'constants.html#', $string)"/>
 				</xsl:when>
@@ -371,6 +375,7 @@
 							</xsl:otherwise>
 						</xsl:choose>
 					</xsl:variable>
+					<xsl:variable name="strsrc" select="string($source)"/>
 
 					<!-- site reference -->
 					<xsl:choose>
@@ -379,7 +384,7 @@
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- could be text structure reference -->
-							<xsl:variable name="local" select="ctx:scan($ref, $source)"/>
+							<xsl:variable name="local" select="ctx:scan($ref, $strsrc)"/>
 							<xsl:choose>
 								<xsl:when test="$local">
 									<xsl:value-of select="$local"/>
@@ -387,12 +392,15 @@
 								<xsl:otherwise>
 									<!-- Absolute Path or invalid reference -->
 									<xsl:choose>
-									 <xsl:when test="contains($source, '.')">
-											<xsl:variable name="pair" select="Factor:reference(string($source))"/>
+									 <xsl:when test="contains($strsrc, '.')">
+											<xsl:variable name="pair" select="Factor:reference($strsrc)"/>
 											<xsl:value-of select="concat($python.docs, $pair[1], '#', $pair[2])"/>
 									 </xsl:when>
+									 <xsl:when test="Factor:builtin($strsrc)">
+											<xsl:value-of select="ctx:python.builtin($strsrc)"/>
+									 </xsl:when>
 									 <xsl:otherwise>
-											<xsl:value-of select="ctx:python.builtin($source)"/>
+											<xsl:value-of select="'#X-INVALID-REFERENCE'"/>
 									 </xsl:otherwise>
 									</xsl:choose>
 								</xsl:otherwise>

@@ -651,7 +651,7 @@ def document(query:Query, route:libroutes.Import):
 
 	module = route.module()
 	if module is not None:
-		if module.__file__:
+		if hasattr(module, '__file__'):
 			factor_type = getattr(module, '__type__', 'module')
 		else:
 			factor_type = 'namespace'
