@@ -425,6 +425,11 @@
 		</func:result>
 	</func:function>
 
+	<func:function name="ctx:within.scope">
+	 <xsl:param name="name"/>
+		<func:result select="count($ctx.index[@key=$name]) > 0"/>
+	</func:function>
+
 	<func:function name="ctx:document">
 		<xsl:param name="name"/>
 		<xsl:variable name="path" select="$ctx.index[@key=$name]/text()"/>
