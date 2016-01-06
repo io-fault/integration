@@ -150,7 +150,8 @@ class Query(object):
 		"""
 		The given object is a plainly defined function that belongs to the module.
 		"""
-		return isroutine(obj) and module.__name__ == obj.__module__
+		subject = getattr(obj, '__wrapped__', obj)
+		return isroutine(subject) and module.__name__ == subject.__module__
 
 	def docstr(self, obj:object):
 		"""
@@ -322,7 +323,7 @@ def _xml_signature_arguments(query, signature, km = {}):
 			('type', query.signature_kind_mapping[p.kind]),
 		)
 
-def _xml_call_signature(query, obj):
+def _xml_call_signature(query, obj, root=None):
 	global itertools
 
 	try:
@@ -385,10 +386,13 @@ def _xml_function(query, method, qname, ignored={
 			object.__init__.__doc__,
 		}
 	):
-	yield from _xml_source_range(query, method)
-	if query.docstr(method) not in ignored:
-		yield from _xml_doc(query, method, qname+'.')
-	yield from _xml_call_signature(query, method)
+	subject = getattr(method, '__wrapped__', method)
+	is_wrapped = subject is not method
+
+	yield from _xml_source_range(query, subject)
+	if query.docstr(subject) not in ignored:
+		yield from _xml_doc(query, subject, qname+'.')
+	yield from _xml_call_signature(query, subject, method)
 
 def _xml_class_content(query, module, obj, name, *path,
 		chain=itertools.chain.from_iterable
