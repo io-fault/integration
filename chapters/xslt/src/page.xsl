@@ -318,7 +318,9 @@
 								<xsl:variable name="chapter" select="ctx:document($chapter.path)/f:factor/f:chapter"/>
 
 								<li>
-									<a href="{$chapter.path}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
+									<a href="{$chapter.path}{$reference_suffix}">
+										<span class="identifier"><xsl:value-of select="@identifier"/></span>
+									</a>
 									<xsl:apply-templates mode="total.toc" select="$chapter"/>
 								</li>
 							</xsl:for-each>
