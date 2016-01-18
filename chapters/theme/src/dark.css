@@ -760,7 +760,8 @@ a[class="supersection"] {
 	vertical-align: bottom;
 	font-size: xx-small;
 	color: #4497E7;
-	margin-left: 1px;
+	margin-right: 1em;
+	float: right;
 }
 
 a[class="dkn"]:before {
