@@ -1,4 +1,5 @@
 """
 Javascript Library supporting the static HTML interface.
 """
-__type__ = 'javascript'
+from ...web import libfactor
+libfactor.load('javascript')

@@ -1,2 +1,2 @@
-__type__ = 'schema'
-__subtype__ = ('xml', 'relaxng')
+from ...xml import libfactor
+libfactor.load('schema')

@@ -1,10 +1,9 @@
-__type__ = 'xsl'
 from ...xml import libfactor
-from ...routes import library as libroutes
 
 class Factor(libfactor.XPathModule):
 	import builtins
 
+	from ...routes import library as libroutes
 	def reference(self, context, string, split=libroutes.Import.from_attributes):
 		"""
 		Return a node-set containing the real module path and the attributes following
@@ -31,5 +30,4 @@ class Factor(libfactor.XPathModule):
 		else:
 			return False
 
-libfactor.load()
-del libfactor
+libfactor.load('xsl')
