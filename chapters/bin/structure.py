@@ -16,10 +16,10 @@ from .. import library as libfactors
 from ...routes import library as libroutes
 from ...eclectic import library as libeclectic
 from ...xml import library as libxml
-from ...filesystem import library as fslib
+from ...filesystem import library as libfs
 
 def main(target, package):
-	docs = fslib.Dictionary.create(fslib.Hash(), os.path.realpath(target))
+	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 	root, (packages, modules) = libfactors.factors(package)
 
 	doc_modules = []
@@ -43,7 +43,7 @@ def main(target, package):
 				continue
 
 			# process text file
-			basename = f.identity[:len(f.identity)-4]
+			basename = f.identifier[:len(f.identifier)-4]
 			subs.append(basename)
 			#path = '.'.join((qname, basename))
 			#tr = docs.route(path.encode('utf-8'))

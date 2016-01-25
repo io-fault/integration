@@ -179,9 +179,6 @@
     <link rel="icon" href="{./@site}"/>
 
 				<!-- syntax highlighting -->
-				<link rel="stylesheet" type="text/css" href="prism.css"/>
-				<script type="application/javascript" src="prism.js"/>
-
 				<script type="application/javascript">
 					var xml = null;
 				 var documented_module = "<xsl:value-of select="@name"/>";

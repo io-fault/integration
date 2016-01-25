@@ -1,2 +1,5 @@
-__type__ = 'style'
-__subtype__ = ('css',)
+"""
+CSS for the HTML formatted documentation.
+"""
+from ...web import libfactor
+libfactor.load('css')
