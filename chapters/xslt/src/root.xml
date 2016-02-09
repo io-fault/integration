@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
- ! Transform documentation directory into presentable XHTML
- !-->
+<!--Transform documentation directory into presentable XHTML-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
- xmlns:exsl="http://exslt.org/common"
+	xmlns:exsl="http://exslt.org/common"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:f="https://fault.io/xml/factor"
+	xmlns:t="https://fault.io/xml/test"
 	xmlns:e="https://fault.io/xml/eclectic"
 	xmlns:idx="https://fault.io/xml/filesystem#index"
 	xmlns:ctx="https://fault.io/xml/factor#context"
@@ -20,19 +19,28 @@
 	<!-- Everythin inside the root transforms should have precedence -->
 	<xsl:import href="page.xsl"/>
 
- <xsl:param name="python.version" select="'3'"/>
- <xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
+	<xsl:param name="python.version" select="'3'"/>
+	<xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
 
 	<xsl:param name="document_index"/>
 	<xsl:param name="reference_suffix" select="''"/>
 
+	<!-- reference to profile measurements -->
+	<xsl:param name="survey_profile" select="''"/>
+
+	<xsl:param name="survey.profile">
+		<xsl:if test="$survey_profile != ''">
+			<xsl:copy-of select="document($survey_profile)"/>
+		</xsl:if>
+	</xsl:param>
+
 	<!-- overview of build -->
 	<xsl:output
-			method="xml" version="1.0" encoding="utf-8"
-			omit-xml-declaration="no"
-			doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
-			doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
-			indent="no"/>
+		method="xml" version="1.0" encoding="utf-8"
+		omit-xml-declaration="no"
+		doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+		doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
+		indent="no"/>
 
 	<xsl:variable name="ctx.index" select="document($document_index)/idx:map/idx:item"/>
 
@@ -44,10 +52,10 @@
 
 	<xsl:variable name="ctx.documentation" select="exsl:node-set($ctx.documentation.fragment)/*"/>
 
- <func:function name="ctx:typname">
-  <xsl:param name="name"/>
+	<func:function name="ctx:typname">
+		<xsl:param name="name"/>
 
-  <func:result>
+		<func:result>
 			<xsl:choose>
 				<xsl:when test="starts-with($name, 'builtins.')">
 					<xsl:value-of select="substring-after($name, 'builtins.')"/>
@@ -56,13 +64,13 @@
 					<xsl:value-of select="$name"/>
 				</xsl:otherwise>
 			</xsl:choose>
-  </func:result>
- </func:function>
+		</func:result>
+	</func:function>
 
- <func:function name="ctx:python.builtin">
-  <xsl:param name="string"/>
+	<func:function name="ctx:python.builtin">
+		<xsl:param name="string"/>
 
-  <func:result>
+		<func:result>
 			<xsl:choose>
 				<!-- types.ModuleType is identified as existing in builtins, which is a lie -->
 				<xsl:when test="Factor:exception($string)">
@@ -87,8 +95,8 @@
 					<xsl:value-of select="concat($python.docs, 'functions.html#', $string)"/>
 				</xsl:otherwise>
 			</xsl:choose>
-  </func:result>
- </func:function>
+		</func:result>
+	</func:function>
 
 	<func:function name="ctx:factor">
 		<xsl:param name="element"/>
@@ -117,20 +125,20 @@
 			</xsl:when>
 
 			<xsl:when test="$element/@identifier">
-				<!-- find the nearest ancestor with an xml:id attr -->
-				<!-- and append the element's identifiier or title to it -->
-				<!-- prioritize the element's identifier and fallback to :header: for initial
-									sections. -->
-  		<func:result select="concat(ctx:id($element/ancestor::*[@xml:id or @identifier][1]), '.', $element/@identifier)"/>
+				<!--find the nearest ancestor with an xml:id attr -->
+				<!--and append the element's identifiier or title to it -->
+				<!--prioritize the element's identifier and fallback to :header: for initial
+					sections-->
+				<func:result select="concat(ctx:id($element/ancestor::*[@xml:id or @identifier][1]), '.', $element/@identifier)"/>
 			</xsl:when>
 
 			<xsl:when test="$element[local-name()='section' and not(@identifier)]">
-				<func:result select="'.header'"/>
+				<func:result select="'context..section'"/>
 			</xsl:when>
 
 			<xsl:otherwise>
 				<!--<xsl:variable name="prefix" select="(($element/ancestor::*[@xml:id][1]/@xml:id) | exsl:node-set('factor.'))"/>-->
-  		<func:result select="''"/>
+				<func:result select="''"/>
 			</xsl:otherwise>
 		</xsl:choose>
 	</func:function>
@@ -264,8 +272,8 @@
 		<xsl:variable name="obj" select="substring(substring-after($path, $factor), 2)"/>
 
 		<xsl:choose>
-		 <xsl:when test="$factor = ''">
-			 <!-- No factor? No reference -->
+			<xsl:when test="$factor = ''">
+				<!-- No factor? No reference -->
 				<func:result select="''"/>
 			</xsl:when>
 			<xsl:when test="$factor != '' and $obj != ''">
@@ -316,9 +324,19 @@
 		<xsl:variable name="d" select="ctx:document($factor)"/>
 		<xsl:variable name="s" select="$d//f:source[@start=$lineno]"/>
 
-	 <func:result select="$s/.."/>
+		<func:result select="$s/.."/>
 	</func:function>
 
+	<func:function name="ctx:duration">
+		<xsl:param name="string"/>
+		<func:result>
+			<span class="typed.data">
+				<span class="time.duration"><xsl:value-of select="$string"/></span>
+			</span>
+		</func:result>
+	</func:function>
+
+	<!--process reference elements generated by eclectic-->
 	<func:function name="ctx:reference">
 		<xsl:param name="ref"/>
 
@@ -394,7 +412,7 @@
 									<xsl:choose>
 									 <xsl:when test="contains($strsrc, '.')">
 											<xsl:variable name="pair" select="Factor:reference($strsrc)"/>
-											<xsl:value-of select="concat($python.docs, $pair[1], '#', $pair[2])"/>
+											<xsl:value-of select="concat($python.docs, $pair[1], $reference_suffix, '#', $pair[2])"/>
 									 </xsl:when>
 									 <xsl:when test="Factor:builtin($strsrc)">
 											<xsl:value-of select="ctx:python.builtin($strsrc)"/>
@@ -436,7 +454,15 @@
 		<xsl:if test="not($path)">
 			<xsl:message>No such path: <xsl:value-of select="$name"/></xsl:message>
 		</xsl:if>
-		<func:result select="document(concat('file://', $path))"/>
+
+		<xsl:choose>
+		<xsl:when test="$path">
+			<func:result select="document(concat('file://', $path))"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<func:result select="$path"/>
+		</xsl:otherwise>
+		</xsl:choose>
 	</func:function>
 
 	<func:function name="ctx:abstract">
@@ -454,6 +480,54 @@
 				<func:result select="string($fpara)"/>
 			</xsl:otherwise>
 		</xsl:choose>
+	</func:function>
+
+	<func:function name="ctx:local-abstract">
+		<xsl:param name="name"/>
+		<xsl:variable name="expr" select="//f:*[@xml:id=$name]"/>
+		<xsl:variable name="fsection" select="$expr/f:doc/e:section[not(@identifier)][1]"/>
+		<xsl:variable name="fpara" select="$fsection/e:paragraph[1]"/>
+
+		<func:result select="string($fpara)"/>
+	</func:function>
+
+	<func:function name="ctx:has_test">
+		<xsl:param name="id"/>
+
+		<xsl:choose>
+			<xsl:when test="/f:factor/f:test/t:report/t:context[@identifier=$id]">
+				<func:result select="1=1"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<func:result select="1=0"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</func:function>
+
+	<!--Whether the factor has noted an error; test failure or load failure-->
+	<func:function name="ctx:has_error">
+		<xsl:param name="factor"/>
+		<xsl:variable name="d" select="ctx:document($factor)/f:factor"/>
+
+		<xsl:choose>
+			<xsl:when test="$d/f:test//t:test[@impact=-1]">
+				<func:result select="1=1"/>
+			</xsl:when>
+			<xsl:when test="$d//f:error">
+				<func:result select="1=1"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<func:result select="1=0"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</func:function>
+
+	<func:function name="ctx:tests">
+		<xsl:param name="factor"/>
+		<xsl:variable name="project" select="/f:factor/f:context/@path"/>
+		<xsl:variable name="pdoc" select="ctx:document($project)/f:factor"/>
+		<xsl:variable name="tctx" select="$pdoc/f:test/t:report/t:context[@identifier=$factor]"/>
+		<func:result select="$tctx"/>
 	</func:function>
 
 	<func:function name="ctx:icon">
@@ -509,6 +583,3 @@
 	</xsl:template>
 
 </xsl:transform>
-<!--
- ! vim: noet:sw=1:ts=1
- !-->

@@ -6,6 +6,7 @@ import sys
 
 from ...filesystem import library as libfs
 from ...routes import library as libroutes
+from ...development import libsurvey
 
 from . import structure
 from . import format
@@ -13,9 +14,9 @@ from . import format
 from .. import theme
 from .. import libif
 
-def main(target, package):
-	root = os.path.realpath(target)
-	r = libroutes.File.from_absolute(root)
+def main(target, state):
+	state_fsd = libfs.Dictionary.use(libroutes.File.from_path(state))
+	r = libroutes.File.from_path(target)
 
 	structs = r / 'text' / 'xml'
 	formats = r / 'text' / 'html'
@@ -25,8 +26,10 @@ def main(target, package):
 	css = r / 'text' / 'css'
 	js = r / 'application' / 'javascript'
 
-	structure.main(str(structs), package)
-	format.main(str(structs), str(formats), suffix='')
+	packages = state_fsd[b'survey:packages'].decode('utf-8').split('\n')
+	for package in packages:
+		structure.structure_package(str(structs), package)
+		format.main(str(structs), str(formats), survey=state_fsd, suffix='')
 
 	d = libfs.Dictionary.use(css)
 	d[b'factor.css'] = theme.bytes

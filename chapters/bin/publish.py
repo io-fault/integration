@@ -53,10 +53,16 @@ def main(structs, formatting, output):
 			dr = out / ((factor.decode('utf-8')) + '.html')
 			dr.init('file')
 			with dr.open('wb') as fo:
-				transfer(fi, fo)
+				transparent_transfer(fi, fo)
 
-	css = out / 'factor.css'
-	js = out / 'libif.js'
+	specific = [
+		(out / 'factor.css', theme.output),
+		(out / 'factor.js', libif.output),
+	]
+	for dst, src in specific:
+		with dst.open('wb') as out:
+			with src.open('rb') as inp:
+				transparent_transfer(inp, out)
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv[1:]))

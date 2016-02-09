@@ -9,6 +9,7 @@ import os.path
 import lzma
 import types
 import importlib.machinery
+import pickle
 
 from .. import libpython
 from .. import library as libfactors
@@ -18,7 +19,7 @@ from ...eclectic import library as libeclectic
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
-def main(target, package):
+def structure_package(target, package, survey=None):
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 	root, (packages, modules) = libfactors.factors(package)
 
@@ -66,9 +67,48 @@ def main(target, package):
 	for x in itertools.chain((root,), packages, modules, iterdocs):
 		query = libpython.Query(x)
 		cname = query.canonical(x.fullname)
-		dociter = libpython.document(query, x)
-		key = cname.encode('utf-8')
+		module_name = x.fullname.encode('utf-8')
 
+		# Load coverage and profile data regarding the factor.
+		tdata = cdata = pdata = None
+
+		if survey is not None:
+			# survey data available.
+
+			profile_data = b'profile:' + module_name
+			coverage_data = b'coverage:' + module_name
+			test_data = b'tests:' + module_name
+
+			if isinstance(survey, str):
+				survey = libfs.Dictionary.open(survey)
+
+			if survey.has_key(profile_data):
+				with survey.route(profile_data).open('rb') as f:
+					try:
+						pdata = pickle.load(f)
+					except EOFError:
+						pdata = None
+
+			if survey.has_key(coverage_data):
+				with survey.route(coverage_data).open('rb') as f:
+					try:
+						cdata = pickle.load(f)
+					except EOFError:
+						cdata = None
+
+			if survey.has_key(test_data):
+				# only matches with project packages
+				with survey.route(test_data).open('rb') as f:
+					try:
+						tdata = pickle.load(f)
+					except EOFError:
+						tdata = None
+
+		query.parameters['profile'] = pdata
+		query.parameters['coverage'] = cdata
+		dociter = libpython.document(query, x, survey=survey)
+
+		key = cname.encode('utf-8')
 		r = docs.route(key)
 		r.init('file')
 		deflate = lzma.LZMACompressor()
@@ -88,4 +128,4 @@ def main(target, package):
 	return 0
 
 if __name__ == '__main__':
-	sys.exit(main(*sys.argv[1:]))
+	sys.exit(structure_package(*sys.argv[1:]))

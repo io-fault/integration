@@ -31,7 +31,7 @@ def index_xml(directory, index):
 
 	return b''.join(content)
 
-def main(source, target, suffix='.html'):
+def main(source, target, survey=None, suffix='.html'):
 	src = os.path.realpath(source)
 	structs = libfs.Dictionary.open(src)
 	formats = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
@@ -49,11 +49,20 @@ def main(source, target, suffix='.html'):
 			f.write(xml)
 
 		for k, r in index.items():
-			output = formats.route(k.encode('utf-8'))
+			ek = k.encode('utf-8')
+			pek = b'profile:' + ek
+			output = formats.route(ek)
+
+			if survey is not None and survey.has_key(pek):
+				spd = str(survey.route(pek))
+			else:
+				spd = ''
+
 			try:
 				rtf = xslt.process_file(str(r),
 					document_index = str(idx_path),
 					reference_suffix = suffix,
+					survey_profile = spd,
 				)
 			except Exception as err:
 				print(k, str(err))

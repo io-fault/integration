@@ -1,0 +1,51 @@
+span[class="python.type.string"]
+{
+	color: gray;
+}
+
+span[class="python.type.string"]:before
+{
+	content: '"';
+	color: teal;
+}
+
+span[class="python.type.string"]:after
+{
+	content: '"';
+	color: teal;
+}
+
+span[class="python.type.tuple"]:before
+{
+	content: '(';
+}
+
+span[class="python.type.tuple"]:after
+{
+	content: ')';
+}
+
+div[class="python.exception"]
+{
+	background-color: rgba(22,22,22,0.5);
+	border-style: dashed;
+	border-width: 1px;
+	margin: 1em;
+	border-color: darkgray;
+}
+
+div[class="python.exception"]
+div[class|="admonition"]
+{
+	max-width: 90%;
+}
+
+li[class="python.frame"]::marker
+{
+	color: gray;
+}
+
+li[class="python.frame"] span[class="python.module.name"]
+{
+	color: gray;
+}

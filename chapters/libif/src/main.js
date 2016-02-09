@@ -103,7 +103,7 @@ hashchanged()
 	{
 		match = lrange.exec(nid)
 		srange = [Number(match[1]), Number(match[2])];
-		range = [1, source.length];
+		range = [1, source.length, ""];
 	}
 
 	if (range != null)
@@ -112,6 +112,7 @@ hashchanged()
 		{
 			var start = Math.max(1, range[0]-source_context_quantity);
 			var stop = Math.min(source.length, range[1]+source_context_quantity);
+			var untraversed = range[2];
 			srange = range;
 
 			var lines = source.slice(start-1, stop);
@@ -141,20 +142,28 @@ hashchanged()
 			container.appendChild(e);
 
 			subcontainer.setAttribute("class", "source.code");
+			pre.setAttribute("id", "source.code.");
 
 			pre.setAttribute("data-start", String(start));
-			pre.setAttribute("data-line-offset", String(start));
-			pre.setAttribute("data-line", String(srange[0]) + "-" + String(srange[1]));
+			code.setAttribute("data-start", String(start));
 
-			pre.setAttribute("id", "source.code.");
+			offset = start-1;
+			pre.setAttribute("data-line-offset", String(offset));
+			code.setAttribute("data-line-offset", String(offset));
+
+			untraversed = untraversed.split(' ').join(',')
+			pre.setAttribute("data-line", String(untraversed));
+			code.setAttribute("data-line", String(untraversed));
+
+			pre.setAttribute("class", " language-python");
 			code.setAttribute("class", " language-python");
 
-			code.appendChild(text);
-			pre.appendChild(code);
-			subcontainer.appendChild(pre);
 			container.appendChild(subcontainer);
+			subcontainer.appendChild(pre);
+			pre.appendChild(code);
+			code.appendChild(text);
 
-			hie = pre;
+			hie = code;
 			replacement = container;
 			// update the current displayed range
 			source_code_display = range;
@@ -180,9 +189,8 @@ hashchanged()
 		// prism needs the element to be in the document
 		// so highlighting is performed after it's been added
 
-		hie.setAttribute("class", " line-numbers language-python");
-		//Prism.highlightAll();
 		highlight(hie);
+		//Prism.highlightAll();
 	}
 }
 

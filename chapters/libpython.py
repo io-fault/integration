@@ -13,18 +13,20 @@ import lzma
 import codecs
 import contextlib
 import importlib
+import typing
+import pickle
 
 from ..development import library as libdev
 from ..routes import library as libroutes
 from ..xml import library as libxml
 from ..xml import libpython as libxmlpython
 from ..eclectic import library as libeclectic
+from ..computation import librange
 
-class Serialization(libxmlpython.Serialization):
-	def root(self, query, obj, traversed=None):
-		return self.object(obj, traversed=traversed)
+from ..development.xml import libsurvey
+from ..development.xml import libtest
 
-serialization = Serialization() # currently only utf-8 is used.
+serialization = libxmlpython.Serialization() # currently only utf-8 is used.
 
 # If pkg_resources is available, use it to identify explicit namespace packages.
 try:
@@ -90,12 +92,13 @@ class Query(object):
 		self.context, self.root = self.module_context(route)
 		self.prefix = self.canonical((self.context or self.root).fullname)
 		self.stack = []
+		self.parameters = {}
 
 	@contextlib.contextmanager
 	def cursor(self, name, obj):
 		self.stack += (name, obj)
 		try:
-			yield 
+			yield
 		finally:
 			del self.stack[-1]
 
@@ -237,7 +240,9 @@ class Query(object):
 		return name
 
 	def address(self, obj:object, getmodule=inspect.getmodule):
-		"Return the address of the given object; &None if unknown."
+		"""
+		Return the address of the given object; &None if unknown.
+		"""
 
 		if self.is_module(obj):
 			# object is a module.
@@ -297,11 +302,9 @@ class Query(object):
 		return getattr(route.project(), '__dict__', None)
 
 def _xml_object(query, name, obj):
-	with query.cursor(name, obj):
-		yield from libxml.element(name,
-			serialization.root(query, obj),
-			('type', '.'.join(query.address(type(obj)))),
-		)
+	yield from serialization.prefixed(name,
+		serialization.switch('py:').object(obj),
+	)
 
 def _xml_parameter(query, parameter):
 	if parameter.annotation is not parameter.empty:
@@ -330,11 +333,8 @@ def _xml_call_signature(query, obj, root=None):
 		sig = query.signature(obj)
 	except ValueError as err:
 		# unsupported callable
-		yield from libxml.element('exception',
-				_xml_object(query, 'subject', getattr(obj, '__dict__', obj)),
-				('type', err.__class__.__name__),
-				('message', str(err)),
-		)
+		s = serialization.switch('py:')
+		yield from s.error(err, obj, set())
 	else:
 		yield from _xml_signature_arguments(query, sig)
 
@@ -423,15 +423,10 @@ def _xml_class_content(query, module, obj, name, *path,
 
 		try:
 			v = getattr(obj, k)
-		except AttributeError:
+		except AttributeError as err:
 			# XXX: needs tests
-			yield from libxml.element('exception',
-				libxml.escape_element_string(
-					"erroneous identifier present in object directory"
-				),
-				('context', 'class'),
-				('identifier', k)
-			)
+			s = serialization.switch('py:')
+			yield from s.error(err, obj, set())
 
 		if query.is_class_method(v):
 			if v.__name__.split('.')[-1] != k:
@@ -613,14 +608,25 @@ def _xml_module(query, factor_type, module, compressed=False):
 				('identifier', k),
 			)
 
-def _submodules(route, element='subfactor'):
+def _submodules(query, route, element='subfactor'):
 	for typ, l in zip(('package', 'module'), route.subnodes()):
 		for x in l:
+			sf = x.module()
+			if sf is not None:
+				noted_type = getattr(sf, '__type__', None)
+				noted_icon = getattr(sf, '__icon__', None)
+			else:
+				noted_type = 'error'
+				noted_icon = ''
+
 			yield from libxml.element(element, (),
-				('type', typ),
+				('type', noted_type),
+				('icon', noted_icon),
+				('container', 'true' if typ == 'package' else 'false'),
 				('identifier', x.basename),
 			)
 	else:
+		# Used by documentation packages to mimic Python modules.
 		mods = getattr(route.module(), '__submodules__', ())
 		for x in mods:
 			yield from libxml.element(element, (),
@@ -630,14 +636,17 @@ def _submodules(route, element='subfactor'):
 
 	if element == 'subfactor' and route.container:
 		# build out siblings
-		yield from _submodules(route.container, 'cofactor')
+		yield from _submodules(query, route.container, 'cofactor')
 
-class Error(Exception):
-	"""
-	Containing error noting the module and object that triggered the exception.
-	"""
+# function set for cleaning up the profile data keys for serialization.
+profile_key_processor = {
+	'call': lambda x: x[0] if x[1] != '<module>' else 0,
+	'outercall': lambda x: ':'.join(map(str, x)),
+	'test': lambda x: x.decode('utf-8'),
+	'area': str,
+}
 
-def document(query:Query, route:libroutes.Import):
+def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 	"""
 	Yield out a module element for writing to an XML file exporting the documentation,
 	data, and signatures of the module's content.
@@ -653,8 +662,37 @@ def document(query:Query, route:libroutes.Import):
 	else:
 		project = package / 'project'
 
-	module = route.module()
-	if module is not None:
+	coverage = query.parameters.get('coverage')
+	if coverage is not None:
+		# Complete coverage data.
+		untraversed = coverage.pop('untraversed', None)
+		traversed = coverage.pop('traversed', None)
+		traversable = coverage.pop('traversable', None)
+		data = libsurvey.coverage(serialization, coverage, prefix="coverage..")
+
+		coverage = serialization.element(
+			'coverage', data,
+			('untraversed', str(untraversed)),
+			('traversed', str(traversed)),
+			('traversable', str(traversable)),
+
+			('n-traversed', len(traversed)),
+			('n-traversable', len(traversable)),
+		)
+	else:
+		coverage = ()
+
+	profile = query.parameters.get('profile')
+	if profile is not None:
+		# Complete measurements. Parts are still going to be referenced.
+		profile = serialization.element('profile',
+			libsurvey.profile(serialization, profile, keys=profile_key_processor, prefix="profile.."),
+		)
+	else:
+		profile = ()
+
+	try:
+		module = importlib.import_module(route.fullname)
 		if hasattr(module, '__file__'):
 			factor_type = getattr(module, '__type__', 'module')
 		else:
@@ -670,22 +708,66 @@ def document(query:Query, route:libroutes.Import):
 			('identifier', basename),
 			('name', cname),
 		)
-	else:
+	except Exception as error:
+		# When module is &None, an error occurred during import.
 		factor_type = 'factor'
-		# get the error
-		try:
-			importlib.import_module(route.fullname)
-		except Exception as exc:
-			content = libxml.element('module',
-				serialization.error(exc, route, traversed=None),
-				('identifier', basename),
-				('name', cname),
-			)
+
+		# Serialize the error as the module content if import fails.
+		content = libxml.element('module',
+			serialization.prefixed('error',
+				serialization.switch('py:').object(error),
+			),
+			('identifier', basename),
+			('name', cname),
+		)
+
+	tests = ()
+	if survey is not None:
+		# Acquire relevant test reports.
+		# Project holds the full set, and each 'tests' package
+		# contains their relevant results along with the module
+		# containing the test.
+
+		if factor_type == 'project':
+			# full test report
+			tests = survey.get(b'tests:'+str(package).encode('utf-8'))
+			if tests is not None:
+				tests = pickle.loads(tests)
+				tests = serialization.prefixed('test',
+					libtest.serialize(serialization, tests)
+				)
+		else:
+			if factor_type == 'tests':
+				include_tests = True
+			else:
+				try:
+					include_tests = getattr(route.container.module(), '__type__', None) == 'tests'
+				except AttributeError:
+					include_tests = False
+
+			if include_tests:
+				# test report for the package
+				tests = survey.get(b'tests:'+str(package).encode('utf-8'))
+				if tests is not None:
+					tests = pickle.loads(tests)
+					tests = serialization.prefixed('test',
+						libtest.serialize(serialization, {
+								k: v for k, v in tests.items()
+								if str(k).startswith(cname)
+							}
+						)
+					)
+
+		if tests is None:
+			tests = ()
 
 	yield from libxml.element('factor',
 		itertools.chain(
 			_xml_context(query, package, project),
-			_submodules(route),
+			_submodules(query, route),
+			coverage,
+			profile,
+			tests,
 			content,
 		),
 		('version', '0'),
@@ -700,7 +782,7 @@ def document(query:Query, route:libroutes.Import):
 	)
 
 if __name__ == '__main__':
-	# document a single module
+	# structure a single module
 	import sys
 	r = libroutes.Import.from_fullname(sys.argv[1])
 	w = sys.stdout.buffer.write

@@ -120,73 +120,6 @@ div.navigation > div[class="subfactors"] {
 	overflow: hidden;
 }
 
-div.subfactor {
-	height: 1.3em;
-	background-color: rgba(100, 100, 100, 0.3);
-	border-style: solid;
-	border-width: 1px;
-	margin-bottom: 6px;
-	padding-left: 4px;
-	padding: 4px;
-	box-shadow: inset 0 0 4px #000000;
-	border-color: rgba(150,150,150,0.4);
-
-	vertical-align: middle;
-
-	white-space: nowrap;
-}
-
-div.subfactor:hover {
-	border-color: #4499EA;
-	box-shadow: none;
-	background-color: #4499EA;
-	background: linear-gradient(135deg, rgba(100,173,229,0.5) 0%,rgba(41,137,216,0.4) 18%,rgba(30,87,153,0.2) 100%);
-}
-
-div.subfactor > div.icon,
-div.subfactor > div.abstract,
-div.subfactor > div.label {
-	display: table-cell;
-}
-
-div.subfactor > div.icon {
-	width: 1.6em;
-	min-width: 1.6em;
-	max-width: 1.6em;
-
-	text-align: center;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-div.subfactor > div.label {
-	margin-left: 0.2em;
-	min-width: 2em;
-}
-
-div.subfactor > div.abstract {
-	padding-left: 2em;
-	font-size: 50%;
-	color: rgba(150,150,150,0.7);
-	text-align: right;
-	width: 100%;
-
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-div.subfactor > div.label > span.identifier {
-	color: #ffffff;
-	text-shadow:
-		0px 2px 0px #000000,
-		0px 2px 0px #000000
-	;
-	font-size: smaller;
-
-	font-family: 'Montserrat', sans-serif;
-	vertical-align: middle;
-}
-
 div[class~="undocumented"] {
 	display: none;
 }
@@ -251,8 +184,8 @@ div[id="content."]{
 	top: 0;
 	left: 0;
 	height: 100%;
-	max-width: 40%;
-	width: 40%;
+	max-width: 50%;
+	width: 45%;
 	padding-left: 0;
 	padding-right: 0; /* mac scrollbar */
 	overflow: scroll;
@@ -274,7 +207,7 @@ div[id="content."] > h1 {
 div[id="subject.description."] {
 	position: absolute;
 	top: 0;
-	left: 40%;
+	left: 45%;
 	margin-left: 4px; /* compensate for scrollbar padding */
 	right: 0;
 	height: 100%;
@@ -363,6 +296,10 @@ span.internal {
 
 /* defaults for arbitrary parameter areas (functions/methods/class bases) */
 
+div[class="factor..classes"] > div.title,
+div[class="factor..functions"] > div.title,
+div[class="factor..imports"] > div.title,
+div[class="factor..sources"] > div.title,
 div[class~="property"] > div.title,
 div[class~="function"] > div.title,
 div[class~="data"] > div.title,
@@ -519,148 +456,6 @@ div.doc {
 
 div.doc > div.section > p:first-child {
 	margin-top: 0.1em;
-}
-
-span[class="admonition.icon"] {
-	font-size: 200%;
-	font-family: "Apple Color Emoji", sans-serif;
-}
-
-span[class="admonition.severity"] {
-	font-size: 105%;
-	font-weight: bold;
-	font-family: 'Montserrat', sans-serif;
-}
-
-span[class="admonition.icon"]:before {
-	content: "\1F4AC";
-}
-
-div[class="admonition-ERROR"]
-span[class="admonition.icon"]:before {
-	content: "\26D4";
-}
-
-div[class="admonition-DEVELOPER"]
-span[class="admonition.icon"]:before {
-	content: "\1F6A7";
-}
-
-div[class="admonition-WARNING"]
-span[class="admonition.icon"]:before {
-	content: "\26A0";
-}
-
-div[class="admonition-BEGINNER"]
-span[class="admonition.icon"]:before {
-	content: "\1F530";
-}
-
-div[class="admonition-STATUS"]
-span[class="admonition.icon"]:before {
-	content: "\1F4CA";
-}
-
-div[class="admonition-NOTE"]
-span[class="admonition.icon"]:before {
-	content: "\1F5D2";
-}
-
-div[class="admonition-NOTICE"]
-span[class="admonition.icon"]:before {
-	content: "\1F4C3";
-}
-
-div[class|="admonition"] {
-	display: relative;
-	background-color: rgba(0,0,0,0.2); /* inherit some of background */
-	border-color: rgba(75,75,75,0.7);
-	border-radius: 4px;
-	border-width: 2px;
-	border-style: groove;
-
-	margin-top: 2em;
-	margin-bottom: 2em;
-	margin-left: auto;
-	margin-right: auto;
-
-	max-width: 80%;
-	font-family: serif;
-
-	-webkit-touch-callout: none;
-	-webkit-user-select: none;
-	-khtml-user-select: none;
-	-moz-user-select: none;
-	-ms-user-select: none;
-	user-select: none;
-}
-
-/* outline glow */
-div[class|="admonition"] {
-	box-shadow: 0px 0px 8px 0px rgba(100, 167, 247, 0.8);
-}
-
-div[class="admonition-ERROR"] {
-	box-shadow: 0px 0px 8px 0px rgba(225, 50, 50, 0.8);
-}
-
-div[class="admonition-WARNING"],
-div[class="admonition-DEVELOPER"] {
-	box-shadow: 0px 0px 8px 0px rgba(225, 225, 20, 0.8);
-}
-
-div[class|="admonition"] > table {
-	width: 100%;
-	display: relative;
-	padding: 8px;
-	vertical-align: middle;
-}
-
-/* icon cell */
-div[class|="admonition"] > table > tbody > tr:first-child > td:first-child {
-	padding-right: 1em;
-}
-div[class|="admonition"] > table > tr:first-child > td:last-child {
-}
-div[class|="admonition"] > table > tbody > tr:last-child > td:last-child {
-	width: 100%;
-}
-
-div[class="admonition.content"] {
-	background-color: rgba(200,200,200,0.1); /* inherit some of background */
-	width: auto;
-
-	border-width: 2px;
-	border-style: groove;
-	border-color: rgba(100,100,100, 0.4);
-
-	padding: 2px;
-	padding-left: 8px;
-	padding-top: 4px;
-	padding-bottom: 4px;
-
-	margin-top: 0;
-	margin-bottom: 0.75em;
-	margin-right: 0.75em;
-
-	display: relative;
-}
-
-div[class="admonition.content"] > *:first-child {
-	margin-top: 0;
-}
-
-div[class="admonition.content"] > *:last-child {
-	margin-bottom: 0;
-}
-
-div[class="admonition.content"] > * {
-	-webkit-touch-callout: all;
-	-webkit-user-select: all;
-	-khtml-user-select: all;
-	-moz-user-select: all;
-	-ms-user-select: all;
-	user-select: all;
 }
 
 div.toc a:hover {
@@ -836,10 +631,6 @@ div[class^="frame.instructions"] {
 	display: none;
 }
 
-div[class^="frame.source"] > pre:hover  {
-	box-shadow: inset 0 0 16px yellow;
-}
-
 div[class^="frame.source" and class~="collapsed"] > pre {
 	color: red;
 	background-color: yellow;
@@ -893,4 +684,21 @@ dl.eclectic > dt {
 	margin: 0;
 	padding: 0;
 	font-size: larger;
+}
+
+div[id="section..index"]
+{
+	float: right;
+	margin-left: 1em;
+	margin-right: 1em;
+	padding-right: 1em;
+	padding-left: 1em;
+	min-width: 45%;
+	max-width: 60%;
+	border-width: 1px;
+	border-radius: 3px;
+	border-color: black;
+	border-style: solid;
+	border-right-width: 0;
+	background-color: rgba(200, 200, 200, 0.1);
 }
