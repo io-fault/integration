@@ -28,7 +28,7 @@ def main(target, state):
 
 	packages = state_fsd[b'survey:packages'].decode('utf-8').split('\n')
 	for package in packages:
-		structure.structure_package(str(structs), package)
+		structure.structure_package(str(structs), package, state)
 		format.main(str(structs), str(formats), survey=state_fsd, suffix='')
 
 	d = libfs.Dictionary.use(css)
