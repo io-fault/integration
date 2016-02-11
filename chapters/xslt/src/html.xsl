@@ -255,7 +255,7 @@
   <xsl:variable name="id" select="ctx:id(.)"/>
 
   <div id="{$id}" class="section">
-   <div class="section.title">
+   <div class="title">
     <a class="eclectic.reference" href="{concat('#', $id)}">
      <xsl:value-of select="@identifier"/>
     </a>
@@ -716,7 +716,7 @@
 
  <xsl:template match="f:import">
   <xsl:variable name="abs" select="ctx:absolute(string(@name))"/>
-  <xsl:variable name="icon" select="ctx:icon($abs)"/>
+  <xsl:variable name="icon" select="ctx:document(string(@name))/f:factor/f:context/@icon"/>
 
   <a class="import">
     <xsl:attribute name="href">
@@ -1005,13 +1005,14 @@
   <xsl:variable name="name" select="concat(../f:module/@name, '.', @identifier)"/>
   <xsl:variable name="icon" select="ctx:icon($name)"/>
   <xsl:variable name="has_error" select="ctx:has_error($name)"/>
+  <xsl:variable name="cvg" select="ctx:coverage($name)"/>
 
   <a href="{concat($name, $reference_suffix)}">
-   <xsl:if test="$has_error">
-    <xsl:attribute name="class">
+   <xsl:attribute name="class">
+    <xsl:if test="$has_error">
      <xsl:text>error.source</xsl:text>
-    </xsl:attribute>
-   </xsl:if>
+    </xsl:if>
+   </xsl:attribute>
 
    <div class="if.item">
     <xsl:choose>
@@ -1024,7 +1025,12 @@
     </xsl:choose>
     <div class="label">
      <span class="identifier"><xsl:value-of select="@identifier"/></span>
-     <span class="post"></span>
+     <span class="post">
+      <xsl:if test="string($cvg) != 'NaN' and string($cvg) != 'Infinity'">
+       <xsl:value-of select="format-number($cvg, '###.##')"/>
+       <xsl:text>%</xsl:text>
+      </xsl:if>
+     </span>
     </div>
     <div class="abstract"><xsl:copy-of select="ctx:abstract($name)"/></div>
    </div>

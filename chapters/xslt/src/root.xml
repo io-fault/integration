@@ -435,10 +435,10 @@
 		<xsl:param name="line"/>
 		<xsl:variable name="tokens" select="fault:split('/', $path)"/>
 		<func:result>
-		 <span class="path.directory"><xsl:value-of select="fault:join('/', $tokens[position()!=last()])"/>/</span>
-		 <span class="path.file.name"><xsl:value-of select="$tokens[last()][1]"/></span>
+			<span class="path.directory"><xsl:value-of select="fault:join('/', $tokens[position()!=last()])"/>/</span>
+			<span class="path.file.name"><xsl:value-of select="$tokens[last()][1]"/></span>
 			<xsl:if test="$line">
-		 	<span class="path.line.number"><xsl:value-of select="$line"/></span>
+				<span class="path.line.number"><xsl:value-of select="$line"/></span>
 			</xsl:if>
 		</func:result>
 	</func:function>
@@ -520,6 +520,15 @@
 				<func:result select="1=0"/>
 			</xsl:otherwise>
 		</xsl:choose>
+	</func:function>
+
+	<func:function name="ctx:coverage">
+		<xsl:param name="factor"/>
+		<xsl:variable name="d" select="ctx:document($factor)/f:factor"/>
+		<xsl:variable name="ntraversed" select="$d/f:coverage/@n-traversed"/>
+		<xsl:variable name="ntraversable" select="$d/f:coverage/@n-traversable"/>
+
+		<func:result select="($ntraversed div $ntraversable) * 100"/>
 	</func:function>
 
 	<func:function name="ctx:tests">

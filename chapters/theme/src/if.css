@@ -55,7 +55,7 @@ div[class="if.item"] > div.label > span.post:after
 
 div[class="if.vertical.sequence"]
 a[class~="warning.source"]
-div[class="if.item"] > div.label > span.post:before
+div[class="if.item"] > div.label > span.post:after
 {
 	content: "\26A0";
 }

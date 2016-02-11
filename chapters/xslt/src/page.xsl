@@ -372,6 +372,9 @@
 						</div>
 					</xsl:for-each>
 
+					<div id="index." class="index">
+						<div class="title">Index</div>
+
 					<div id="source..index" class="factor..sources">
 						<div class="title">Sources</div>
 						<xsl:apply-templates mode="source.index" select="."/>
@@ -431,6 +434,7 @@
 							</xsl:for-each>
 						</ol>
 					</xsl:if>
+					</div>
 				</div>
 				<div id="subject.description."></div> <!-- function source display -->
 

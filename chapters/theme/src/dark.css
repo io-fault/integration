@@ -69,7 +69,7 @@ a, a:visited {
 }
 
 *.title {
- 	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
+	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
 }
 
 h1, h2, h3, h4, h5 {
@@ -303,8 +303,9 @@ div[class="factor..sources"] > div.title,
 div[class~="property"] > div.title,
 div[class~="function"] > div.title,
 div[class~="data"] > div.title,
-div[class~="method"] > div.title {
-	width: 100%;
+div[class~="method"] > div.title
+{
+	width: 95%;
 	background: rgba(0,0,0,0.15);
 
 	padding-top: 3px;
@@ -317,15 +318,20 @@ div[class~="method"] > div.title {
 
 	border-right-width: 0;
 	border-left-width: 0;
-	padding-left: 4px;
+	padding-left: 8px;
+
+	margin-left: -4px;
+	border-right-width: 1px;
+	border-radius: 4px;
 }
 
-/* class documentation */
-div[class="section.title"],
-div[class~="class"] > div.title {
+div[class="section"] > div.title,
+div[class="index"] > div.title,
+div[class~="class"] > div.title
+{
+	font-size: large;
 	width: 100%;
 	vertical-align: middle;
-	font-size: x-large;
 	background: rgba(0,0,0,0.3);
 	padding-top: 4px;
 	padding-bottom: 4px;
@@ -340,6 +346,34 @@ div[class~="class"] > div.title {
 
 	border-right-width: 0;
 	border-left-width: 0;
+}
+
+div[class="section"] > div.title:before
+{
+	content: '\1F4C3';
+}
+
+div[class="index"] > div.title:before
+{
+	content: '\1F4C7';
+}
+
+div.index > div.title
+{
+	margin-top: 2em;
+}
+
+div[class~="data"] div[class="section"] > div.title,
+div[class~="method"] div[class="section"] > div.title,
+div[class~="property"] div[class="section"] > div.title,
+div[class~="function"] div[class="section"] > div.title
+{
+	font-size: medium;
+	width: 90%;
+
+	margin-left: -4px;
+	border-right-width: 1px;
+	border-radius: 4px;
 }
 
 div[class="none.title"] {
@@ -367,24 +401,32 @@ span.inline {
 	font-family: monospace;
 }
 
-span.signature:before {
+span.signature:before
+{
 	content: '(';
 }
-span.signature:after {
+
+span.signature:after
+{
 	content: ')';
 }
 
 /* parameter area */
-span[class="python.parameter.area"] {
+span[class="python.parameter.area"]
+{
+
 }
+
 span[class="python.parameter.area"],
-span[class="python.parameter.area"] span.identifier {
+span[class="python.parameter.area"] span.identifier
+{
 	font-size: 100%;
 	color: gray;
 	text-shadow: none;
 }
 
-span.sequence-delimiter:last-child {
+span.sequence-delimiter:last-child
+{
 	display: none;
 }
 
