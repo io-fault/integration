@@ -133,7 +133,9 @@
 			</xsl:when>
 
 			<xsl:when test="$element[local-name()='section' and not(@identifier)]">
-				<func:result select="'context..section'"/>
+				<xsl:variable name="expr" select="ancestor::f:*[@xml:id]"/>
+				<xsl:variable name="prefix" select="ctx:id($expr)"/>
+				<func:result select="concat($prefix, '.', 'context..section')"/>
 			</xsl:when>
 
 			<xsl:otherwise>
