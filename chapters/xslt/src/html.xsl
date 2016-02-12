@@ -113,6 +113,32 @@
   <!-- <xsl:copy-of select="df:tag(@fork, 'fork')"/> -->
  </xsl:template>
 
+ <xsl:template mode="survey-data" match="f:*">
+  <xsl:variable name="summary" select="Factor:summary()"/>
+  <xsl:variable name="coverage" select="$summary[1] div $summary[2]"/>
+
+  <span class="survey">
+   <span title="Average Runtime During Tests" class="profile">
+   </span>
+   <xsl:text> </xsl:text>
+   <span title="Coverage" class="coverage">
+    <xsl:choose>
+     <xsl:when test="string($coverage) = 'NaN' or string($coverage) = 'Infinity'">
+      <xsl:text>0%</xsl:text>
+     </xsl:when>
+     <xsl:otherwise>
+      <xsl:value-of select="format-number($coverage * 100, '###.##')"/>%
+     </xsl:otherwise>
+    </xsl:choose>
+   </span>
+   <xsl:text> coverage </xsl:text>
+   <span title="Line Count" class="line-count">
+    <xsl:value-of select="$summary[3]"/>
+   </span>
+   <xsl:text> lines</xsl:text>
+  </span>
+ </xsl:template>
+
  <func:function name="df:reference">
   <xsl:param name="element" select="."/>
 
@@ -624,6 +650,7 @@
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="$element/f:parameter"/></span>
     </span>
+    <xsl:apply-templates mode="survey-data" select="."/>
    </div>
    <xsl:apply-templates select="f:doc"/>
   </div>
@@ -761,6 +788,7 @@
      <span class="path-delimiter">.</span>
     </xsl:if>
     <a href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <xsl:apply-templates mode="survey-data" select="."/>
    </div>
    <xsl:apply-templates select="./f:doc"/>
   </div>
@@ -785,6 +813,7 @@
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="f:parameter"/></span>
     </span>
+    <xsl:apply-templates mode="survey-data" select="."/>
    </div>
 
    <xsl:apply-templates select="$test/py:*"/>
@@ -906,6 +935,7 @@
       <xsl:apply-templates select="f:bases"/>
      <span class="parameters.close">)</span>
     </span>
+    <xsl:apply-templates mode="survey-data" select="."/>
    </div>
 
    <div class="doc">

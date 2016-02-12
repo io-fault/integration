@@ -214,6 +214,7 @@ div[id="subject.description."] {
 
 	background-color: rgba(0,0,0,0.1);
 	padding-left: 16px;
+	padding-top: 1em;
 
 	z-index: 8;
 	overflow: scroll;
@@ -326,6 +327,9 @@ div[class~="method"] > div.title
 
 div[class="section"] > div.title,
 div[class="index"] > div.title,
+div[class~="struct"] > div.title,
+div[class~="interface"] > div.title,
+div[class~="template"] > div.title,
 div[class~="class"] > div.title
 {
 	font-size: large;
@@ -335,6 +339,7 @@ div[class~="class"] > div.title
 	padding-top: 4px;
 	padding-bottom: 4px;
 	padding-left: 0.2em;
+	padding-right: 1em;
 	margin-bottom: 4px;
 	margin-left: 1px;
 
@@ -571,12 +576,7 @@ div.module div.doc div.section {
 	margin-top: 0.5em;
 }
 
-div[class="section.title"] {
-	color: #64A7F7;
-	/*color: rgb(140, 180, 250);*/
-}
-
-div[class="section"] div[class="section"] div[class="section.title"] {
+div[class="section"] div[class="section"] div[class="title"] {
 	font-size: 105%;
 	text-decoration: none;
 
@@ -584,7 +584,7 @@ div[class="section"] div[class="section"] div[class="section.title"] {
 	background-color: #222222;*/
 }
 
-div.module div.doc div[class="section.title"] {
+div.module div.doc div[class="section"] div[class="title"] {
 	/* reduce the font size in expression documentation */
 	font-size: 90%;
 	margin-top: 0;
@@ -757,9 +757,12 @@ div.factor > div[class="index.reference"]
 
 span.tab
 {
+	background-color: rgba(0, 0, 0, 0.3);
+	color: gray;
+
 	border-width: 1px;
 	border-style: solid;
-	border-radius: 0 0 8px 8px;
+	border-radius: 0 0 2px 2px;
 	border-color: gray;
 	padding: 4px;
 	padding-left: 8px;
@@ -767,4 +770,17 @@ span.tab
 	margin-right: 4px;
 	border-top-width: 0;
 	font-family: monospace;
+}
+
+span.tab:hover
+{
+	color: white;
+}
+
+div.title > span.survey
+{
+	font-size: 64%;
+	vertical-align: middle;
+	float: right;
+	padding-right: 1em;
 }

@@ -108,6 +108,9 @@ hashchanged()
 
 	if (range != null)
 	{
+		var subject = document.getElementById(nid);
+		var title = subject.getElementsByClassName("title")[0];
+
 		if (window.source_code_display != range)
 		{
 			var start = Math.max(1, range[0]-source_context_quantity);
@@ -127,6 +130,8 @@ hashchanged()
 
 			var lc = range[1] - range[0];
 
+			var dtitle = title.cloneNode(true);
+
 			linerange.appendChild(
 				document.createTextNode(
 					String(lc) +
@@ -135,7 +140,9 @@ hashchanged()
 					" from "
 				)
 			);
+			container.appendChild(dtitle);
 			container.appendChild(linerange);
+
 			e = document.createElement("span");
 			e.setAttribute("class", "source.file");
 			e.appendChild(document.createTextNode(""));

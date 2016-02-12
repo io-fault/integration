@@ -443,13 +443,10 @@
 					</xsl:if>
 					</div>
 				</div>
-				<div id="subject.description."></div> <!-- function source display -->
-
-					<!--subjection.description content when no hash is present. -->
-					<!--subject.default div is display: none in python.css; id is changed in
-						hashchanged()-->
-				<div id="subject.default.">
-				</div>
+				<div id="subject.description."></div>
+					<!--subjection.description content when no hash is present-->
+					<!--subject.default div is displayed by default; changes on hashchanged()-->
+				<div id="subject.default."></div>
 			</body>
 		</html>
 	</xsl:template>
