@@ -588,7 +588,6 @@ div.module div.doc div[class="section"] div[class="title"] {
 	/* reduce the font size in expression documentation */
 	font-size: 90%;
 	margin-top: 0;
-	background-color: inherit;
 	border-width: 0;
 }
 
