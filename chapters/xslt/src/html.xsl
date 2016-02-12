@@ -574,6 +574,10 @@
   <a href="{df:reference(.)}"><span class="reference"><xsl:value-of select="@name"/></span></a>
  </xsl:template>
 
+ <xsl:template mode="python.inline.data" match="f:reference">
+  <a href="{df:reference(.)}"><span class="reference"><xsl:value-of select="@name"/></span></a>
+ </xsl:template>
+
  <xsl:template name="method">
   <xsl:param name="element"/>
 

@@ -309,6 +309,13 @@
 
 							<a href=""><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
 						</div>
+						<div class="index.reference">
+							<a href="#index."><span class="tab">Index</span></a>
+							<a href="#source..index"><span class="tab">Sources</span></a>
+							<a href="#functions..index"><span class="tab">Functions</span></a>
+							<a href="#class..index"><span class="tab">Classes</span></a>
+							<a href="#struct..index"><span class="tab">Structures</span></a>
+						</div>
 					</div>
 
 					<!--Project Package displays test summary-->

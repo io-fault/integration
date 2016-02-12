@@ -99,7 +99,6 @@ img.icon {
 div.factor > div.title {
 	font-size: 230%;
 	background-color: #303030;
-	margin-bottom: 1em;
 	padding: 4px;
 
 	border-width: 0px;
@@ -494,6 +493,7 @@ span[class="python.dictionary.item"] {
  */
 div.doc {
 	font-size: 90%;
+	padding-right: 2em;
 }
 
 div.doc > div.section > p:first-child {
@@ -743,4 +743,28 @@ div[id="section..index"]
 	border-style: solid;
 	border-right-width: 0;
 	background-color: rgba(200, 200, 200, 0.1);
+}
+
+div.factor > div[class="index.reference"]
+{
+	margin-top: 0;
+	z-index: -1;
+	padding-left: 1em;
+	overflow: hidden;
+	padding-bottom: 8px;
+	margin-bottom: 0.5em;
+}
+
+span.tab
+{
+	border-width: 1px;
+	border-style: solid;
+	border-radius: 0 0 8px 8px;
+	border-color: gray;
+	padding: 4px;
+	padding-left: 8px;
+	padding-right: 8px;
+	margin-right: 4px;
+	border-top-width: 0;
+	font-family: monospace;
 }
