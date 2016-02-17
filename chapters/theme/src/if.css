@@ -102,16 +102,6 @@ div[class="if.item"] > div.label > span.identifier {
 	font-family: 'Montserrat', sans-serif;
 }
 
-div[class="exception.title"]
-{
-	width: 100%;
-	text-align: center;
-	border-width: 0;
-	border-top-width: 1px;
-	border-color: white;
-	border-style: dotted;
-}
-
 div[class="factor..functions"] div[class="if.vertical.sequence"],
 div[class="factor..imports"] div[class="if.vertical.sequence"],
 div[class="factor..sources"] div[class="if.vertical.sequence"]

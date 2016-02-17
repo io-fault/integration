@@ -300,6 +300,7 @@ div[class="factor..classes"] > div.title,
 div[class="factor..functions"] > div.title,
 div[class="factor..imports"] > div.title,
 div[class="factor..sources"] > div.title,
+div[class="factor..sections"] > div.title,
 div[class~="property"] > div.title,
 div[class~="function"] > div.title,
 div[class~="data"] > div.title,
@@ -686,6 +687,7 @@ div[class^="frame.source"] > pre {
 	padding: 8px;
 	margin-left: auto;
 	margin-right: auto;
+	overflow: hidden;
 }
 
 div[class^="frame.source"] > pre > code > span[class="source.line.focus"] {
@@ -727,7 +729,7 @@ dl.eclectic > dt {
 	font-size: larger;
 }
 
-div[id="section..index"]
+div[id="factor..section.index"]
 {
 	float: right;
 	margin-left: 1em;
@@ -779,7 +781,7 @@ span.tab:hover
 div.title > span.survey
 {
 	font-size: 64%;
-	vertical-align: middle;
+	margin-top: 1em;
 	float: right;
 	padding-right: 1em;
 }

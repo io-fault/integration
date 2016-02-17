@@ -335,7 +335,7 @@
  <xsl:template mode="chapter" match="e:section[not(@identifier)]">
   <!-- Don't include the div if the leading section is empty -->
   <div id="{ctx:id(.)}">
-   <div id="section..index">
+   <div id="factor..section.index">
     <h3 class="title">Table of Contents</h3>
     <div class="toc">
      <xsl:apply-templates mode="toc" select="ancestor::f:chapter"/>

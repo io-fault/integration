@@ -422,7 +422,8 @@
 					</xsl:if>
 
 					<xsl:if test="@identifier = 'documentation'">
-						<h2>Table of Contents</h2>
+						<div id="section..index" class="factor..sections">
+						<div class="title">Table of Contents</div>
 						<ol>
 							<xsl:for-each select="f:subfactor">
 								<xsl:sort order="descending" select="@identifier = 'introduction'"/>
@@ -440,6 +441,7 @@
 								</li>
 							</xsl:for-each>
 						</ol>
+						</div>
 					</xsl:if>
 					</div>
 				</div>

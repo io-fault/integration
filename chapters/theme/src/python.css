@@ -28,10 +28,25 @@ span[class="python.type.tuple"]:after
 div[class="python.exception"]
 {
 	background-color: rgba(22,22,22,0.5);
-	border-style: dashed;
+	border-style: solid;
 	border-width: 1px;
 	margin: 1em;
-	border-color: darkgray;
+	border-color: rgba(50,50,50,1);
+}
+
+div[class="exception.title"]
+{
+	width: 100%;
+	text-align: center;
+	border-width: 0;
+	border-top-width: 0;
+	border-color: rgba(50,50,50,1);
+	border-style: solid;
+	color: orange;
+	font-variant: small-caps;
+	border-bottom-width: 1px;
+	letter-spacing: 2px;
+	font-weight: bolder;
 }
 
 div[class="python.exception"]
