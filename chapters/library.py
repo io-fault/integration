@@ -3,7 +3,7 @@
 import typing
 from ..routes import library as libroutes
 from ..filesystem import library as libfs
-from ..eclectic import library as libeclectic
+from ..text import library as libtext
 
 def factors(package:str, Route=libroutes.Import.from_fullname) -> typing.Tuple[
 		libroutes.Import,

@@ -20,7 +20,7 @@ from ..development import library as libdev
 from ..routes import library as libroutes
 from ..xml import library as libxml
 from ..xml import libpython as libxmlpython
-from ..eclectic import library as libeclectic
+from ..text import library as libtext
 from ..computation import librange
 
 from ..development.xml import libsurvey
@@ -356,7 +356,7 @@ def _xml_doc(query, obj, prefix):
 			)
 		else:
 			yield from libxml.element('doc',
-				libeclectic.XML.transform('e:', doc, identify=prefix.__add__),
+				libtext.XML.transform('e:', doc, identify=prefix.__add__),
 			)
 
 def _xml_import(query, context_module, imported, *path):

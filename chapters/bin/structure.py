@@ -15,7 +15,7 @@ from .. import libpython
 from .. import library as libfactors
 
 from ...routes import library as libroutes
-from ...eclectic import library as libeclectic
+from ...text import library as libtext
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
@@ -38,7 +38,7 @@ def structure_package(target, package, survey=None):
 		rname = td.fullname
 		subs = doc_pkg_module.__submodules__ = []
 
-		# build libeclectic.Context for documentation
+		# build libtext.Context for documentation
 		for f in files:
 			if f.extension != 'txt':
 				continue
