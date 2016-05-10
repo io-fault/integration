@@ -56,8 +56,8 @@ def main(structs, formatting, output):
 				transparent_transfer(fi, fo)
 
 	specific = [
-		(out / 'factor.css', theme.output),
-		(out / 'factor.js', libif.output),
+		(out / 'factor.css', theme.output()),
+		(out / 'factor.js', libif.output()),
 	]
 	for dst, src in specific:
 		with dst.open('wb') as out:
