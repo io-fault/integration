@@ -119,3 +119,21 @@ div[id="class..index"] > div[class="if.vertical.sequence"]
 {
 	margin: 1em;
 }
+
+div[class="doc.termination"]
+{
+	border-width: 1px;
+	border-style: solid;
+	border-color: rgba(50,50,50,0.8);
+	background-color: rgba(0,0,0,0.2);
+	width: 32%;
+	height: 0.5em;
+	margin-bottom: 2em;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+div[class="html.clear"]
+{
+	clear: both;
+}

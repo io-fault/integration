@@ -329,7 +329,10 @@
  </xsl:template>
 
  <xsl:template match="f:doc">
-  <div class="doc"><xsl:apply-templates select="e:*"/></div>
+  <div class="doc">
+   <xsl:apply-templates select="e:*"/>
+  </div>
+  <div class="doc.termination"/>
  </xsl:template>
 
  <xsl:template mode="chapter" match="e:section[not(@identifier)]">
@@ -342,7 +345,7 @@
     </div>
    </div>
    <xsl:apply-templates select="e:*"/>
-   <div style="clear: both"/>
+   <div class="html.clear"/>
   </div>
  </xsl:template>
 
@@ -351,6 +354,7 @@
    <xsl:apply-templates mode="chapter" select="e:section[not(@identifier)]"/>
    <xsl:apply-templates select="e:section[@identifier]"/>
   </div>
+  <div class="doc.termination"/>
  </xsl:template>
 
  <xsl:template match="py:instructions">
@@ -466,7 +470,7 @@
 
  <xsl:template match="py:traceback">
   <div class="python.traceback">
-   <ol class="frames">
+   <ol reversed="reversed" class="frames">
     <xsl:apply-templates select="py:frame"/>
    </ol>
   </div>
@@ -938,7 +942,7 @@
     <xsl:apply-templates mode="survey-data" select="."/>
    </div>
 
-   <div class="doc">
+   <div style="margin-bottom: 1em;" class="doc">
     <xsl:apply-templates select="f:doc/e:*[not(@identifier='Properties')]"/>
    </div>
 
