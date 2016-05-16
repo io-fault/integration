@@ -1,6 +1,7 @@
 """
 Developer APIs extracting the documentation and structure of Python objects.
 """
+
 import sys
 import os
 import os.path
@@ -413,7 +414,6 @@ def _xml_class_content(query, module, obj, name, *path,
 	class_dict = obj.__dict__
 	class_names = list(class_dict.keys())
 	class_names.sort()
-	nested_classes = []
 
 	for k in sorted(dir(obj)):
 		qn = '.'.join(path + (k,))
@@ -478,6 +478,16 @@ def _xml_class_content(query, module, obj, name, *path,
 			# handled the same way as module imports
 			with query.cursor(k, v):
 				yield from _xml_import(query, module, v, qn)
+		elif isinstance(v, type):
+			# XXX: Nested classes are not being properly represented.
+			# Visually, they should appear as siblings in the formatted representation,
+			# but nested physically.
+			if v.__module__ == module and v.__qualname__.startswith(obj.__qualname__+'.'):
+				# Nested Class; must be within.
+				yield from _xml_class(query, module, x, path + (x.__qualname__,))
+			else:
+				# perceive as class data
+				pass
 		else:
 			# data
 			pass
@@ -489,12 +499,6 @@ def _xml_class_content(query, module, obj, name, *path,
 				('identifier', k),
 				('address', v.__name__),
 			)
-
-	# _xml_class will populated nested_classes for processing
-	while nested_classes:
-		c = nested_classes[-1]
-		del nested_classes[-1]
-		yield from _xml_class(query, module, c, path + (c.__name__,))
 
 def _xml_class(query, module, obj, *path):
 	name = '.'.join(path)
