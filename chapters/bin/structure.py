@@ -19,7 +19,7 @@ from ...text import library as libtext
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
-def structure_package(target, package, survey=None):
+def structure_package(target, package, metrics=None):
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 	root, (packages, modules) = libfactors.factors(package)
 
@@ -72,33 +72,33 @@ def structure_package(target, package, survey=None):
 		# Load coverage and profile data regarding the factor.
 		tdata = cdata = pdata = None
 
-		if survey is not None:
-			# survey data available.
+		if metrics is not None:
+			# metrics data available.
 
 			profile_data = b'profile:' + module_name
 			coverage_data = b'coverage:' + module_name
 			test_data = b'tests:' + module_name
 
-			if isinstance(survey, str):
-				survey = libfs.Dictionary.open(survey)
+			if isinstance(metrics, str):
+				metrics = libfs.Dictionary.open(metrics)
 
-			if survey.has_key(profile_data):
-				with survey.route(profile_data).open('rb') as f:
+			if metrics.has_key(profile_data):
+				with metrics.route(profile_data).open('rb') as f:
 					try:
 						pdata = pickle.load(f)
 					except EOFError:
 						pdata = None
 
-			if survey.has_key(coverage_data):
-				with survey.route(coverage_data).open('rb') as f:
+			if metrics.has_key(coverage_data):
+				with metrics.route(coverage_data).open('rb') as f:
 					try:
 						cdata = pickle.load(f)
 					except EOFError:
 						cdata = None
 
-			if survey.has_key(test_data):
+			if metrics.has_key(test_data):
 				# only matches with project packages
-				with survey.route(test_data).open('rb') as f:
+				with metrics.route(test_data).open('rb') as f:
 					try:
 						tdata = pickle.load(f)
 					except EOFError:
@@ -106,7 +106,7 @@ def structure_package(target, package, survey=None):
 
 		query.parameters['profile'] = pdata
 		query.parameters['coverage'] = cdata
-		dociter = libpython.document(query, x, survey=survey)
+		dociter = libpython.document(query, x, metrics=metrics)
 
 		key = cname.encode('utf-8')
 		r = docs.route(key)

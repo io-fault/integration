@@ -26,11 +26,11 @@
 	<xsl:param name="reference_suffix" select="''"/>
 
 	<!-- reference to profile measurements -->
-	<xsl:param name="survey_profile" select="''"/>
+	<xsl:param name="metrics_profile" select="''"/>
 
-	<xsl:param name="survey.profile">
-		<xsl:if test="$survey_profile != ''">
-			<xsl:copy-of select="document($survey_profile)"/>
+	<xsl:param name="metrics.profile">
+		<xsl:if test="$metrics_profile != ''">
+			<xsl:copy-of select="document($metrics_profile)"/>
 		</xsl:if>
 	</xsl:param>
 

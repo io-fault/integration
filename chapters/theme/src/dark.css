@@ -778,7 +778,7 @@ span.tab:hover
 	color: white;
 }
 
-div.title > span.survey
+div.title > span.metrics
 {
 	font-size: 64%;
 	margin-top: 1em;

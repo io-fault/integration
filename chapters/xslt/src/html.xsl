@@ -113,11 +113,11 @@
   <!-- <xsl:copy-of select="df:tag(@fork, 'fork')"/> -->
  </xsl:template>
 
- <xsl:template mode="survey-data" match="f:*">
+ <xsl:template mode="metrics-data" match="f:*">
   <xsl:variable name="summary" select="Factor:summary()"/>
   <xsl:variable name="coverage" select="$summary[1] div $summary[2]"/>
 
-  <span class="survey">
+  <span class="metrics">
    <span title="Average Runtime During Tests" class="profile">
    </span>
    <xsl:text> </xsl:text>
@@ -654,7 +654,7 @@
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="$element/f:parameter"/></span>
     </span>
-    <xsl:apply-templates mode="survey-data" select="."/>
+    <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
    <xsl:apply-templates select="f:doc"/>
   </div>
@@ -792,7 +792,7 @@
      <span class="path-delimiter">.</span>
     </xsl:if>
     <a href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
-    <xsl:apply-templates mode="survey-data" select="."/>
+    <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
    <xsl:apply-templates select="./f:doc"/>
   </div>
@@ -817,7 +817,7 @@
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="f:parameter"/></span>
     </span>
-    <xsl:apply-templates mode="survey-data" select="."/>
+    <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
 
    <xsl:apply-templates select="$test/py:*"/>
@@ -939,7 +939,7 @@
       <xsl:apply-templates select="f:bases"/>
      <span class="parameters.close">)</span>
     </span>
-    <xsl:apply-templates mode="survey-data" select="."/>
+    <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
 
    <div style="margin-bottom: 1em;" class="doc">

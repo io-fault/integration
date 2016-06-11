@@ -6,7 +6,6 @@ import sys
 
 from ...filesystem import library as libfs
 from ...routes import library as libroutes
-from ...development import libsurvey
 
 from . import structure
 from . import format
@@ -26,7 +25,7 @@ def main(target, state):
 	css = r / 'text' / 'css'
 	js = r / 'application' / 'javascript'
 
-	packages = state_fsd[b'survey:packages'].decode('utf-8').split('\n')
+	packages = state_fsd[b'metrics:packages'].decode('utf-8').split('\n')
 	for package in packages:
 		structure.structure_package(str(structs), package, state)
 		format.main(str(structs), str(formats), suffix='')

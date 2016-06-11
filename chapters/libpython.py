@@ -24,7 +24,7 @@ from ..xml import libpython as libxmlpython
 from ..text import library as libtext
 from ..computation import librange
 
-from ..development.xml import libsurvey
+from ..development.xml import libmetrics
 from ..development.xml import libtest
 
 serialization = libxmlpython.Serialization() # currently only utf-8 is used.
@@ -650,7 +650,7 @@ profile_key_processor = {
 	'area': str,
 }
 
-def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
+def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
 	"""
 	Yield out a module element for writing to an XML file exporting the documentation,
 	data, and signatures of the module's content.
@@ -672,7 +672,7 @@ def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 		untraversed = coverage.pop('untraversed', None)
 		traversed = coverage.pop('traversed', None)
 		traversable = coverage.pop('traversable', None)
-		data = libsurvey.coverage(serialization, coverage, prefix="coverage..")
+		data = libmetrics.coverage(serialization, coverage, prefix="coverage..")
 
 		coverage = serialization.element(
 			'coverage', data,
@@ -690,7 +690,7 @@ def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 	if profile is not None:
 		# Complete measurements. Parts are still going to be referenced.
 		profile = serialization.element('profile',
-			libsurvey.profile(serialization, profile, keys=profile_key_processor, prefix="profile.."),
+			libmetrics.profile(serialization, profile, keys=profile_key_processor, prefix="profile.."),
 		)
 	else:
 		profile = ()
@@ -726,7 +726,7 @@ def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 		)
 
 	tests = ()
-	if survey is not None:
+	if metrics is not None:
 		# Acquire relevant test reports.
 		# Project holds the full set, and each 'tests' package
 		# contains their relevant results along with the module
@@ -734,7 +734,7 @@ def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 
 		if factor_type == 'project':
 			# full test report
-			tests = survey.get(b'tests:'+str(package).encode('utf-8'))
+			tests = metrics.get(b'tests:'+str(package).encode('utf-8'))
 			if tests is not None:
 				tests = pickle.loads(tests)
 				tests = serialization.prefixed('test',
@@ -751,7 +751,7 @@ def document(query:Query, route:libroutes.Import, survey:typing.Mapping=None):
 
 			if include_tests:
 				# test report for the package
-				tests = survey.get(b'tests:'+str(package).encode('utf-8'))
+				tests = metrics.get(b'tests:'+str(package).encode('utf-8'))
 				if tests is not None:
 					tests = pickle.loads(tests)
 					tests = serialization.prefixed('test',
