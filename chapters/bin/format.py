@@ -68,17 +68,12 @@ def main(source, target, metrics=None, suffix='.html'):
 				print(k, str(err))
 				continue
 
-			if 0:
-				deflate = lzma.LZMACompressor()
-				with output.open('wb') as f:
-					bio = io.BytesIO()
-					rtf.write(bio)
-					bio.seek(0)
-					f.write(deflate.compress(bio.read()))
-					f.write(deflate.flush())
-			else:
+			try:
 				with output.open('wb') as f:
 					rtf.write(f)
+			except Exception as err:
+				print(str(output), err)
+				continue
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv[1:]))
