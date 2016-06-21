@@ -19,18 +19,21 @@ from .. import xslt
 from .. import theme
 from .. import libif
 
-def transfer(src, dst):
-	deflate = lzma.LZMADecompressor()
-	data = src.read(1024*64)
-	while data:
-		dst.write(deflate.decompress(data))
-		data = src.read(1024*64)
-
 def transparent_transfer(src, dst):
 	data = src.read(1024*64)
 	while data:
 		dst.write(data)
 		data = src.read(1024*64)
+
+def path(out, factor, extension):
+	if b'/' in factor:
+		fs = factor.decode('utf-8')
+		start, *remainder = fs.split('/')
+		start += '.d'
+		out = out / start
+		return out.extend(remainder)
+	else:
+		return out / ((factor.decode('utf-8')) + extension)
 
 def main(structs, formatting, output):
 	structs = os.path.realpath(structs)
@@ -42,15 +45,15 @@ def main(structs, formatting, output):
 	fd = libfs.Dictionary.open(formatting)
 
 	for factor, r in sd.references():
+		dr = path(out, factor, '.xml')
 		with r.open('rb') as fi:
-			dr = out / ((factor.decode('utf-8')) + '.xml')
 			dr.init('file')
 			with dr.open('wb') as fo:
 				transparent_transfer(fi, fo)
 
 	for factor, r in fd.references():
+		dr = path(out, factor, '.html')
 		with r.open('rb') as fi:
-			dr = out / ((factor.decode('utf-8')) + '.html')
 			dr.init('file')
 			with dr.open('wb') as fo:
 				transparent_transfer(fi, fo)
