@@ -1,5 +1,5 @@
 """
-Document the entire package tree into a
+Extract the structure of the entire package tree into a
 &..filesystem.library.Dictionary instance.
 """
 
@@ -14,10 +14,13 @@ import pickle
 from .. import libpython
 from .. import library as libfactors
 
+from ...development import libfactor
 from ...routes import library as libroutes
 from ...text import library as libtext
 from ...xml import library as libxml
 from ...filesystem import library as libfs
+
+from ...chronometry import library as libtime
 
 def structure_package(target, package, metrics=None):
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
@@ -64,10 +67,16 @@ def structure_package(target, package, metrics=None):
 
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
 
-	for x in itertools.chain((root,), packages, modules, iterdocs):
-		query = libpython.Query(x)
+	factors = [
+		(x, libpython.Query(x), x.fullname.encode('utf-8'))
+		for x in itertools.chain((root,), packages, modules, iterdocs)
+	]
+
+	# The Python module level is processed independently;
+	fractions = libfactors.fractions(packages)
+
+	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
-		module_name = x.fullname.encode('utf-8')
 
 		# Load coverage and profile data regarding the factor.
 		tdata = cdata = pdata = None
@@ -111,19 +120,39 @@ def structure_package(target, package, metrics=None):
 		key = cname.encode('utf-8')
 		r = docs.route(key)
 		r.init('file')
-		deflate = lzma.LZMACompressor()
-		deflate = None
 
 		with r.open('wb') as f:
 			# the xml declaration prefix is not written.
 			# this allows stylesheet processing instructions
-			# to be interpolated without knowning the declaration
-			# size.
-			if deflate:
-				f.write(deflate.compress(b''.join((dociter))))
-				f.write(deflate.flush())
-			else:
-				f.write(b''.join((dociter)))
+			# to be interpolated without knowning the declaration size.
+			f.writelines(dociter)
+
+		# The existence of a source directory in a package module
+		# indicates that it represents a collection of sources.
+		if x.is_package():
+			from .. import libsources
+			i = libfactor.work(x, 'interface', 'struct')
+
+			sources = libfactor.sources(x)
+			prefix = str(sources)
+			prefix_len = len(prefix)
+			if sources.exists():
+				# A target module that has a collection of sources.
+				# Identify the source tree and find the interface description.
+				srctree = sources.tree()
+				for y in srctree[1]:
+					dociter = libsources.document(cname, x, y, i)
+
+					key = (cname + str(y)[prefix_len:]).encode('utf-8')
+					print(key)
+					r = docs.route(key)
+					r.init('file')
+
+					with r.open('wb') as f:
+						# the xml declaration prefix is not written.
+						# this allows stylesheet processing instructions
+						# to be interpolated without knowning the declaration size.
+						f.writelines(dociter)
 
 	return 0
 
