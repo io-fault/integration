@@ -75,17 +75,17 @@ class Query(object):
 		Given an import route, return the context package
 		and the project module.
 		"""
-		bottom = route.bottom()
-		if bottom is None:
+		floor = route.floor()
+		if floor is None:
 			return None, route
 		else:
-			context = bottom.container
+			context = floor.container
 
 			if not context:
 				# route is likely
-				return None, bottom
+				return None, floor
 			else:
-				return context, bottom
+				return context, floor
 
 	def __init__(self, route):
 		# initialize the package context
@@ -281,7 +281,7 @@ class Query(object):
 		Return the project information about a particular module.
 
 		Returns `None` if a builtin, an unregistered package, or package without a project
-		module relative to the bottom.
+		module relative to the floor.
 		"""
 		route = _get_route(module.__name__)
 
@@ -660,7 +660,7 @@ def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
 	cname = query.canonical(route.fullname)
 	basename = cname.split('.')[-1]
 
-	package = route.bottom()
+	package = route.floor()
 	if package is None:
 		project = None
 	else:
