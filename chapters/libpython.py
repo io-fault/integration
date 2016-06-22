@@ -18,6 +18,7 @@ import typing
 import pickle
 
 from ..development import library as libdev
+from ..development import libfactor
 from ..routes import library as libroutes
 from ..xml import library as libxml
 from ..xml import libpython as libxmlpython
@@ -221,24 +222,7 @@ class Query(object):
 
 		If there is no canonical package name, return &name exactly.
 		"""
-		return libdev.Factor.from_fullname(name).name
-
-		route = Import(name)
-		if getattr(route.module(), '__type__', '') == 'chapter':
-			# chapter module, resolve package's module cname
-			prefix = self.canonical(route.container.fullname)
-			return '.'.join((prefix, route.basename))
-
-		context, root = self.module_context(route)
-
-		pkg = (context or root).module()
-		prefix = pkg.__name__
-		canonical_prefix = getattr(pkg, '__pkg_cname__', prefix)
-
-		if name == prefix or name.startswith(prefix+'.'):
-			return canonical_prefix + name[len(prefix):]
-
-		return name
+		return libfactor.canonical_name(Import(name))
 
 	def address(self, obj:object, getmodule=inspect.getmodule):
 		"""
@@ -528,8 +512,11 @@ def _xml_context(query, package, project, getattr=getattr):
 
 def _xml_module(query, factor_type, module, compressed=False):
 	lc = 0
-	dfactor = libdev.Factor.from_module(module)
-	sources = dfactor.sources()
+	ir = libroutes.Import.from_fullname(module.__name__)
+	if libfactor.composite(ir):
+		sources = libfactor.sources(ir).tree()[1]
+	else:
+		sources = [libroutes.File.from_absolute(module.__file__)]
 
 	for route in sources:
 		if compressed:
@@ -638,9 +625,21 @@ def _submodules(query, route, element='subfactor'):
 				('identifier', x),
 			)
 
-	if element == 'subfactor' and route.container:
-		# build out siblings
-		yield from _submodules(query, route.container, 'cofactor')
+	if element == 'subfactor':
+		# conditionally for cofactor build.
+		if route.module() is not None and libfactor.composite(route):
+			source_factors = libfactor.sources(route)
+			for x in source_factors.tree()[1]:
+				path = '/'.join(x.points)
+				yield from libxml.element(element,
+					(),
+					('type', 'source'),
+					('identifier', '.'.join(x.points)),
+				)
+
+		if route.container:
+			# build out siblings
+			yield from _submodules(query, route.container, 'cofactor')
 
 # function set for cleaning up the profile data keys for serialization.
 profile_key_processor = {
