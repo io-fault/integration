@@ -103,20 +103,22 @@ hashchanged()
 	{
 		match = lrange.exec(nid)
 		srange = [Number(match[1]), Number(match[2])];
-		range = [1, source.length, ""];
+		range = [1, source.length, String(srange[0]) + "-" + String(srange[1])];
 	}
 
 	if (range != null)
 	{
 		var subject = document.getElementById(nid);
-		var title = subject.getElementsByClassName("title")[0];
+		if (subject != null)
+			var title = subject.getElementsByClassName("title")[0];
+		else
+			var title = null;
 
 		if (window.source_code_display != range)
 		{
 			var start = Math.max(1, range[0]-source_context_quantity);
 			var stop = Math.min(source.length, range[1]+source_context_quantity);
 			var untraversed = range[2];
-			srange = range;
 
 			var lines = source.slice(start-1, stop);
 			var text = document.createTextNode(lines.join("\n"));
@@ -130,8 +132,6 @@ hashchanged()
 
 			var lc = range[1] - range[0];
 
-			var dtitle = title.cloneNode(true);
-
 			linerange.appendChild(
 				document.createTextNode(
 					String(lc) +
@@ -140,7 +140,10 @@ hashchanged()
 					" from "
 				)
 			);
-			container.appendChild(dtitle);
+
+			if (title != null)
+				container.appendChild(title.cloneNode(true));
+
 			container.appendChild(linerange);
 
 			e = document.createElement("span");
