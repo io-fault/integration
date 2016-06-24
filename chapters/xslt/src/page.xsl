@@ -74,14 +74,16 @@
 	</xsl:template>
 
 	<xsl:template mode="source.index" match="f:factor">
+		<xsl:variable name="ref.prefix" select="@depth"/>
 		<xsl:variable name="context" select="f:context"/>
+
 		<div class="if.vertical.sequence">
 			<xsl:for-each select="f:*[f:source]">
 				<xsl:for-each select="f:source">
 					<xsl:variable name="prefix" select="concat($context/@system.path, '/', ../@identifier, '/src/')"/>
 					<xsl:variable name="relative" select="substring-after(@path, $prefix)"/>
 					<xsl:variable name="rabsolute" select="substring-after(@path, $context/@system.path)"/>
-						<a href="context.source/{$context/@project}{$rabsolute}">
+						<a href="{$ref.prefix}.source/{$context/@name}{$context/@project}{$rabsolute}">
 							<div class="if.item">
 								<div class="icon">📄</div>
 								<div class="label">
@@ -260,11 +262,18 @@
 	<xsl:template match="f:factor">
 		<xsl:variable name="product" select="substring-before(@name, concat('.', @identifier))"/>
 		<xsl:variable name="context.cache" select="Factor:cache()"/>
+		<xsl:variable name="path.prefix">
+			<xsl:choose>
+				<xsl:when test="@path"><xsl:text>../</xsl:text></xsl:when>
+				<!-- empty if no path attribute -->
+				<xsl:otherwise><xsl:text></xsl:text></xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
 
 		<html>
 			<head>
 				<title><xsl:value-of select="f:module/@name"/> Documentation</title>
-				<link rel="stylesheet" type="text/css" href="factor.css"/>
+				<link rel="stylesheet" type="text/css" href="{$path.prefix}factor.css"/>
 				<link rel="icon" href="{./@site}"/>
 
 				<!-- syntax highlighting -->
@@ -286,13 +295,15 @@
 						/>"
 					).split('\n');
 				</script>
-				<script type="application/javascript" src="factor.js"/>
+				<script type="application/javascript" src="{$path.prefix}factor.js"/>
 			</head>
 
 			<body>
 				<div id="content." class="content">
 					<xsl:variable name="test.package" select="/f:factor/@type = 'tests'"/>
 					<xsl:variable name="prefix" select="concat(/f:factor/@name, '.')"/>
+					<xsl:variable name="depth" select="/f:factor/@depth"/>
+
 					<div class="factor">
 						<div class="title">
 							<!-- it's not actually a keyword, but fills the role that keywords are used for -->
@@ -300,14 +311,14 @@
 
 							<xsl:if test="$product">
 									<xsl:for-each select="fault:traverse('.', $product)">
-										<a href="{ctx:absolute(string(./path))}">
+										<a href="{$depth}{ctx:absolute(string(./path))}">
 											<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
 										</a>
 										<span class="path-delimiter">.</span>
 									</xsl:for-each>
 							</xsl:if>
 
-							<a href=""><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
+							<a href="{substring($depth, 0, string-length($depth)-1)}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
 						</div>
 						<div class="index.reference">
 							<a href="#index."><span class="tab">Index</span></a>
@@ -332,7 +343,7 @@
 							<xsl:choose>
 								<xsl:when test="$test.package">
 									<div class="subfactors">
-										<!--Show tests first-->
+										<!--Show test status of subfactors-->
 										<xsl:apply-templates select="f:subfactor[not(ctx:has_test(concat($prefix, @identifier)))]">
 											<xsl:sort order="ascending" select="@identifier"/>
 										</xsl:apply-templates>

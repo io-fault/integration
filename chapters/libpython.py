@@ -510,10 +510,10 @@ def _xml_context(query, package, project, getattr=getattr):
 			('abstract', getattr(prj, 'abstract', '')),
 		)
 
-def _xml_module(query, factor_type, module, compressed=False):
+def _xml_module(query, factor_type, route, module, compressed=False):
 	lc = 0
-	ir = libroutes.Import.from_fullname(module.__name__)
-	if libfactor.composite(ir):
+	ir = route
+	if module.__factor_composite__:
 		sources = libfactor.sources(ir).tree()[1]
 	else:
 		sources = [libroutes.File.from_absolute(module.__file__)]
@@ -599,7 +599,7 @@ def _xml_module(query, factor_type, module, compressed=False):
 				('identifier', k),
 			)
 
-def _submodules(query, route, element='subfactor'):
+def _submodules(query, route, module, element='subfactor'):
 	for typ, l in zip(('package', 'module'), route.subnodes()):
 		for x in l:
 			sf = x.module()
@@ -618,7 +618,7 @@ def _submodules(query, route, element='subfactor'):
 			)
 	else:
 		# Used by documentation packages to mimic Python modules.
-		mods = getattr(route.module(), '__submodules__', ())
+		mods = getattr(module, '__submodules__', ())
 		for x in mods:
 			yield from libxml.element(element, (),
 				('type', 'module'),
@@ -626,20 +626,22 @@ def _submodules(query, route, element='subfactor'):
 			)
 
 	if element == 'subfactor':
-		# conditionally for cofactor build.
-		if route.module() is not None and libfactor.composite(route):
+		# Composite parts are subfactors too.
+		if module.__factor_composite__:
 			source_factors = libfactor.sources(route)
+
 			for x in source_factors.tree()[1]:
 				path = '/'.join(x.points)
-				yield from libxml.element(element,
-					(),
+				yield from libxml.element(element, (),
 					('type', 'source'),
-					('identifier', '.'.join(x.points)),
+					('path', path),
+					('identifier', x.points[-1]),
 				)
 
+		# conditionally for cofactor build.
 		if route.container:
 			# build out siblings
-			yield from _submodules(query, route.container, 'cofactor')
+			yield from _submodules(query, route.container, route.container.module(), 'cofactor')
 
 # function set for cleaning up the profile data keys for serialization.
 profile_key_processor = {
@@ -649,7 +651,17 @@ profile_key_processor = {
 	'area': str,
 }
 
-def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
+def emit(fs, key, iterator):
+	r = fs.route(key)
+	r.init('file')
+
+	with r.open('wb') as f:
+		# the xml declaration prefix is not written.
+		# this allows stylesheet processing instructions
+		# to be interpolated without knowning the declaration size.
+		f.writelines(iterator)
+
+def document(query:Query, route:libroutes.Import, module:types.ModuleType, metrics:typing.Mapping=None):
 	"""
 	Yield out a module element for writing to an XML file exporting the documentation,
 	data, and signatures of the module's content.
@@ -695,19 +707,18 @@ def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
 		profile = ()
 
 	try:
-		module = importlib.import_module(route.fullname)
 		if hasattr(module, '__file__'):
-			factor_type = getattr(module, '__type__', 'module')
+			factor_type = getattr(module, '__factor_type__', 'module')
+
+			if factor_type == 'chapter':
+				ename = 'chapter'
+			else:
+				ename = 'module'
 		else:
 			factor_type = 'namespace'
 
-		if factor_type == 'chapter':
-			ename = 'chapter'
-		else:
-			ename = 'module'
-
 		content = libxml.element(ename,
-			_xml_module(query, factor_type, module),
+			_xml_module(query, factor_type, route, module),
 			('identifier', basename),
 			('name', cname),
 		)
@@ -767,7 +778,7 @@ def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
 	yield from libxml.element('factor',
 		itertools.chain(
 			_xml_context(query, package, project),
-			_submodules(query, route),
+			_submodules(query, route, module),
 			coverage,
 			profile,
 			tests,
@@ -776,6 +787,11 @@ def document(query:Query, route:libroutes.Import, metrics:typing.Mapping=None):
 		('version', '0'),
 		('name', cname),
 		('identifier', basename),
+		('path', getattr(module, '__factor_path__', None)),
+		('depth', (
+			None if '__directory_depth__' not in module.__dict__
+			else (module.__directory_depth__ * '../')
+		)),
 		('type', factor_type),
 		('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
 		('xmlns:py', 'https://fault.io/xml/python'),

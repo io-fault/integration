@@ -22,9 +22,43 @@ from ...filesystem import library as libfs
 
 from ...chronometry import library as libtime
 
+def load_metrics(metrics, key):
+	profile_data = b'profile:' + key
+	coverage_data = b'coverage:' + key
+	test_data = b'tests:' + key
+
+	pdata = cdata = tdata = None
+
+	if metrics.has_key(profile_data):
+		with metrics.route(profile_data).open('rb') as f:
+			try:
+				pdata = pickle.load(f)
+			except EOFError:
+				pdata = None
+
+	if metrics.has_key(coverage_data):
+		with metrics.route(coverage_data).open('rb') as f:
+			try:
+				cdata = pickle.load(f)
+			except EOFError:
+				cdata = None
+
+	if metrics.has_key(test_data):
+		# only matches with project packages
+		with metrics.route(test_data).open('rb') as f:
+			try:
+				tdata = pickle.load(f)
+			except EOFError:
+				tdata = None
+
+	return pdata, cdata, tdata
+
 def structure_package(target, package, metrics=None):
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 	root, (packages, modules) = libfactors.factors(package)
+
+	if metrics is not None and isinstance(metrics, str):
+		metrics = libfs.Dictionary.open(metrics)
 
 	doc_modules = []
 	# &.documentation packages are handled specially.
@@ -56,13 +90,13 @@ def structure_package(target, package, metrics=None):
 			# normal processing context for our text files. (reference namespaces)
 
 			dm = types.ModuleType(rname + '.' + basename)
-			dm.__type__ = 'chapter' # note as chapter module
+			dm.__factor_type__ = 'chapter' # note as chapter module
 			dm.__package__ = rname
 			dm.__file__ = f.fullpath
 			doc_modules.append(dm.__name__)
 
 			doc_pkg_module.__dict__[basename] = dm
-			doc_pkg_module.__type__ = 'documentation'
+			doc_pkg_module.__factor_type__ = 'documentation'
 			sys.modules[dm.__name__] = dm
 
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
@@ -77,82 +111,56 @@ def structure_package(target, package, metrics=None):
 
 	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
+		key = cname.encode('utf-8')
+
+		module = x.module()
+		if libfactor.composite(x):
+			module.__factor_composite__ = True
+		else:
+			module.__factor_composite__ = False
 
 		# Load coverage and profile data regarding the factor.
-		tdata = cdata = pdata = None
-
 		if metrics is not None:
-			# metrics data available.
-
-			profile_data = b'profile:' + module_name
-			coverage_data = b'coverage:' + module_name
-			test_data = b'tests:' + module_name
-
-			if isinstance(metrics, str):
-				metrics = libfs.Dictionary.open(metrics)
-
-			if metrics.has_key(profile_data):
-				with metrics.route(profile_data).open('rb') as f:
-					try:
-						pdata = pickle.load(f)
-					except EOFError:
-						pdata = None
-
-			if metrics.has_key(coverage_data):
-				with metrics.route(coverage_data).open('rb') as f:
-					try:
-						cdata = pickle.load(f)
-					except EOFError:
-						cdata = None
-
-			if metrics.has_key(test_data):
-				# only matches with project packages
-				with metrics.route(test_data).open('rb') as f:
-					try:
-						tdata = pickle.load(f)
-					except EOFError:
-						tdata = None
+			pdata, cdata, tdata = load_metrics(metrics, key)
+		else:
+			tdata = cdata = pdata = None
 
 		query.parameters['profile'] = pdata
 		query.parameters['coverage'] = cdata
-		dociter = libpython.document(query, x, metrics=metrics)
+		dociter = libpython.document(query, x, module, metrics=metrics)
 
-		key = cname.encode('utf-8')
-		r = docs.route(key)
-		r.init('file')
+		libpython.emit(docs, key, dociter)
 
-		with r.open('wb') as f:
-			# the xml declaration prefix is not written.
-			# this allows stylesheet processing instructions
-			# to be interpolated without knowning the declaration size.
-			f.writelines(dociter)
-
-		# The existence of a source directory in a package module
-		# indicates that it represents a collection of sources.
-		if x.is_package():
-			from .. import libsources
+		# Composites have a set of subfactors,
+		# build special module instances that can be processed by libpython.document().
+		if module.__factor_composite__:
 			i = libfactor.work(x, 'interface', 'struct')
-
 			sources = libfactor.sources(x)
 			prefix = str(sources)
 			prefix_len = len(prefix)
-			if sources.exists():
-				# A target module that has a collection of sources.
-				# Identify the source tree and find the interface description.
-				srctree = sources.tree()
-				for y in srctree[1]:
-					dociter = libsources.document(cname, x, y, i)
 
-					key = (cname + str(y)[prefix_len:]).encode('utf-8')
-					print(key)
-					r = docs.route(key)
-					r.init('file')
+			# A target module that has a collection of sources.
+			# Identify the source tree and find the interface description.
+			srctree = sources.tree()
+			for y in srctree[1]:
+				sfm = types.ModuleType(module.__name__, "")
+				sfm.__file__ = str(y)
+				sfm.__factor_composite__ = False
+				sfm.__factor_type__ = 'unit'
+				sfm.__factor_composite_type__ = module.__factor_type__
+				sfm.__factor_path__ = str(y)[prefix_len+1:]
+				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
+				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
-					with r.open('wb') as f:
-						# the xml declaration prefix is not written.
-						# this allows stylesheet processing instructions
-						# to be interpolated without knowning the declaration size.
-						f.writelines(dociter)
+				if metrics is not None:
+					pdata, cdata, tdata = load_metrics(metrics, key)
+				else:
+					tdata = cdata = pdata = None
+				query.parameters['profile'] = pdata
+				query.parameters['coverage'] = cdata
+
+				dociter = libpython.document(query, x, sfm, metrics=metrics)
+				libpython.emit(docs, sfm.__factor_key__.encode('utf-8'), dociter)
 
 	return 0
 

@@ -1045,7 +1045,18 @@
   <xsl:variable name="has_error" select="ctx:has_error($name)"/>
   <xsl:variable name="cvg" select="ctx:coverage($name)"/>
 
-  <a href="{concat($name, $reference_suffix)}">
+  <xsl:variable name="sfhref">
+   <xsl:choose>
+    <xsl:when test="@path">
+     <xsl:value-of select="concat(../f:module/@name, '/', @path, $reference_suffix)"/>
+    </xsl:when>
+    <xsl:otherwise>
+     <xsl:value-of select="concat($name, $reference_suffix)"/>
+    </xsl:otherwise>
+   </xsl:choose>
+  </xsl:variable>
+
+  <a href="{$sfhref}">
    <xsl:attribute name="class">
     <xsl:if test="$has_error">
      <xsl:text>error.source</xsl:text>
