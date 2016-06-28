@@ -12,7 +12,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:t="https://fault.io/xml/test"
-	xmlns:e="https://fault.io/xml/eclectic"
+	xmlns:e="https://fault.io/xml/text"
 	xmlns:py="https://fault.io/xml/python"
 	xmlns:df="https://fault.io/xml/factor#functions"
 	xmlns:ctx="https://fault.io/xml/factor#context"
@@ -1043,7 +1043,17 @@
   <xsl:variable name="name" select="concat(../f:module/@name, '.', @identifier)"/>
   <xsl:variable name="icon" select="ctx:icon($name)"/>
   <xsl:variable name="has_error" select="ctx:has_error($name)"/>
-  <xsl:variable name="cvg" select="ctx:coverage($name)"/>
+
+  <xsl:variable name="cvg">
+   <xsl:choose>
+    <xsl:when test="@path">
+     <xsl:value-of select="ctx:coverage(concat(../f:module/@name, '/', @path))"/>
+    </xsl:when>
+    <xsl:otherwise>
+     <xsl:value-of select="ctx:coverage($name)"/>
+    </xsl:otherwise>
+   </xsl:choose>
+  </xsl:variable>
 
   <xsl:variable name="sfhref">
    <xsl:choose>

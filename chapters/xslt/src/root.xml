@@ -6,7 +6,7 @@
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:t="https://fault.io/xml/test"
-	xmlns:e="https://fault.io/xml/eclectic"
+	xmlns:e="https://fault.io/xml/text"
 	xmlns:idx="https://fault.io/xml/filesystem#index"
 	xmlns:ctx="https://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"
@@ -529,8 +529,9 @@
 		<xsl:variable name="d" select="ctx:document($factor)/f:factor"/>
 		<xsl:variable name="ntraversed" select="$d/f:coverage/@n-traversed"/>
 		<xsl:variable name="ntraversable" select="$d/f:coverage/@n-traversable"/>
+		<xsl:variable name="fraction" select="($ntraversed div $ntraversable)"/>
 
-		<func:result select="($ntraversed div $ntraversable) * 100"/>
+		<func:result select="$fraction * 100"/>
 	</func:function>
 
 	<func:function name="ctx:tests">

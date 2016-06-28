@@ -685,14 +685,26 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 		traversable = coverage.pop('traversable', None)
 		data = libmetrics.coverage(serialization, coverage, prefix="coverage..")
 
+		if getattr(module, '__factor_type__', None) == 'unit':
+			s = set([x[:2] for x in traversed])
+			ntravb = sum(map(len, s))
+			s = set([x[:2] for x in traversed if x[2] > 0])
+			ntravd = len(s)
+			untraversed = ''
+			traversed = ''
+			traversable = ''
+		else:
+			ntravb = len(traversable)
+			ntravd = len(traversed)
+
 		coverage = serialization.element(
 			'coverage', data,
-			('untraversed', str(untraversed)),
-			('traversed', str(traversed)),
-			('traversable', str(traversable)),
+			('untraversed', str(untraversed or '')),
+			('traversed', str(traversed or '')),
+			('traversable', str(traversable or '')),
 
-			('n-traversed', len(traversed)),
-			('n-traversable', len(traversable)),
+			('n-traversed', ntravd),
+			('n-traversable', ntravb),
 		)
 	else:
 		coverage = ()
@@ -787,7 +799,10 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 		('version', '0'),
 		('name', cname),
 		('identifier', basename),
-		('path', getattr(module, '__factor_path__', None)),
+		('path', (
+			None if '__factor_path__' not in module.__dict__
+			else module.__factor_path__
+		)),
 		('depth', (
 			None if '__directory_depth__' not in module.__dict__
 			else (module.__directory_depth__ * '../')
@@ -796,7 +811,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 		('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
 		('xmlns:py', 'https://fault.io/xml/python'),
 		('xmlns:l', 'https://fault.io/xml/literals'),
-		('xmlns:e', 'https://fault.io/xml/eclectic'),
+		('xmlns:e', 'https://fault.io/xml/text'),
 		('xmlns', 'https://fault.io/xml/factor'),
 	)
 

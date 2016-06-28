@@ -145,6 +145,7 @@ def structure_package(target, package, metrics=None):
 			for y in srctree[1]:
 				sfm = types.ModuleType(module.__name__, "")
 				sfm.__file__ = str(y)
+				sfm.__factor_language__ = y.extension
 				sfm.__factor_composite__ = False
 				sfm.__factor_type__ = 'unit'
 				sfm.__factor_composite_type__ = module.__factor_type__
@@ -153,7 +154,7 @@ def structure_package(target, package, metrics=None):
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
 				if metrics is not None:
-					pdata, cdata, tdata = load_metrics(metrics, key)
+					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
 				else:
 					tdata = cdata = pdata = None
 				query.parameters['profile'] = pdata
