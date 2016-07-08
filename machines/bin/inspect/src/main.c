@@ -805,5 +805,6 @@ main(int argc, const char *argv[])
 		clang_disposeIndex(Index);
 	#endif
 
+	fprintf(stdout, "\n");
 	return(0);
 }
