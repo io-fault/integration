@@ -25,7 +25,7 @@ def deploy(*args):
 
 	return {
 		'system': {
-			'library.set': {'clang'},
+			'library.set': {'clang', 'c'},
 			'library.directories': {str(cl)},
 			'include.directories': {str(ci)},
 		},
