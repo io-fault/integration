@@ -801,8 +801,8 @@ main(int argc, const char *argv[])
 
 	/* Short lived process */
 	#if TEST()
-		clang_disposeTranslationUnit(TU);
-		clang_disposeIndex(Index);
+		clang_disposeTranslationUnit(u);
+		clang_disposeIndex(idx);
 	#endif
 
 	fprintf(stdout, "\n");
