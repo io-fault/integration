@@ -30,6 +30,10 @@ from ..development.xml import libtest
 
 serialization = libxmlpython.Serialization() # currently only utf-8 is used.
 
+namespaces = {
+	'f': 'https://fault.io/xml/factor',
+}
+
 # If pkg_resources is available, use it to identify explicit namespace packages.
 try:
 	import pkg_resources
@@ -578,26 +582,35 @@ def _xml_module(query, factor_type, route, module, compressed=False):
 	# accumulate nested classes for subsequent processing
 	documented_classes = set()
 
-	for k in sorted(dir(module)):
-		if k.startswith('__'):
-			continue
-		v = getattr(module, k)
+	if hasattr(module, '__factor_xml__') and module.__factor_xml__ is not None:
+		# Override used by composites.
+		xml = module.__factor_xml__
+		mod_element = xml.getroot().find('f:module', namespaces)
+		if mod_element is not None:
+			from ..xml import lxml
+			for x in mod_element.iterchildren():
+				yield lxml.etree.tostring(x)
+	else:
+		for k in sorted(dir(module)):
+			if k.startswith('__'):
+				continue
+			v = getattr(module, k)
 
-		if query.is_module_function(module, v):
-			yield from libxml.element('function', _xml_function(query, v, k),
-				('xml:id', k),
-				('identifier', k),
-			)
-		elif query.is_module(v):
-			yield from _xml_import(query, module, v, k)
-		elif query.is_module_class(module, v):
-			yield from _xml_class(query, module, v, k)
-		else:
-			yield from libxml.element('data',
-				_xml_object(query, 'object', v),
-				('xml:id', k),
-				('identifier', k),
-			)
+			if query.is_module_function(module, v):
+				yield from libxml.element('function', _xml_function(query, v, k),
+					('xml:id', k),
+					('identifier', k),
+				)
+			elif query.is_module(v):
+				yield from _xml_import(query, module, v, k)
+			elif query.is_module_class(module, v):
+				yield from _xml_class(query, module, v, k)
+			else:
+				yield from libxml.element('data',
+					_xml_object(query, 'object', v),
+					('xml:id', k),
+					('identifier', k),
+				)
 
 def _submodules(query, route, module, element='subfactor'):
 	for typ, l in zip(('package', 'module'), route.subnodes()):
