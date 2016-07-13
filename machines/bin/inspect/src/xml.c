@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <sys/types.h>
 #include "clang-c/Index.h"
 
 int
@@ -40,7 +41,37 @@ print_xml_identifier(FILE *fp, char *str)
 int
 print_xml_text(FILE *fp, char *str)
 {
-	fprintf(fp, "%s", str);
+	int c = 1;
+	intptr_t ip = (intptr_t) str;
+	unsigned long x = 0, y = 0;
+
+	do {
+		switch (str[y])
+		{
+			case '\0':
+				fwrite((char *) ip+x, 1, y-x, fp);
+				c = 0;
+			break;
+
+			case '&':
+				fwrite((char *) ip+x, 1, y-x, fp);
+				fprintf(fp, "&#38;");
+				x = y+1;
+			break;
+
+			case '<':
+				fwrite((char *) ip+x, 1, y-x, fp);
+				fprintf(fp, "&#60;");
+				x = y+1;
+			break;
+
+			default:
+			break;
+		}
+
+		y++;
+	} while (c);
+
 	return(0);
 }
 
