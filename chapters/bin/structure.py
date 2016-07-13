@@ -133,8 +133,18 @@ def structure_package(target, package, metrics=None):
 
 		# Composites have a set of subfactors,
 		# build special module instances that can be processed by libpython.document().
-		if module.__factor_composite__:
-			i = libfactor.work(x, 'interface', 'struct')
+		if module.__factor_composite__ and module.__factor_type__ != 'system.interfaces':
+			from ...llvm import xslt as llvm_xslt
+			from ...development import library as libdev
+			from ...xml import lxml #! Use libxml reference instead.
+
+			is_ext = libfactor.python_extension(module)
+			index = libfactor.cache_directory(module, 'host' if not is_ext else libfactor.python_triplet, 'inspect', 'factor')
+			ilparams, sources = libdev.extract_inspect(lxml.etree.parse(str(index)))
+			iformat = ilparams['format']
+			index = index.container
+			xi = (index / 'out') / iformat
+
 			sources = libfactor.sources(x)
 			prefix = str(sources)
 			prefix_len = len(prefix)
@@ -152,6 +162,9 @@ def structure_package(target, package, metrics=None):
 				sfm.__factor_path__ = str(y)[prefix_len+1:]
 				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
+
+				xis = xi.extend(y.points)
+				sfm.__factor_xml__ = llvm_xslt.process_file(str(xis))
 
 				if metrics is not None:
 					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
