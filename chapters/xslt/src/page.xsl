@@ -25,7 +25,7 @@
 
 	<func:function name="df:nlines">
 		<xsl:param name="src"/>
-		<func:result select="(number($src/@stop) - number($src/@start)) + 1"/>
+		<func:result select="((number($src/@stop)+1) - number($src/@start))"/>
 	</func:function>
 
 	<func:function name="df:measure">

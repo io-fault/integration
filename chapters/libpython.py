@@ -365,7 +365,7 @@ def _xml_source_range(query, obj):
 		return libxml.element('source', None,
 			('unit', 'line'),
 			('start', str(lineno)),
-			('stop', str(end)),
+			('stop', str(end-1)),
 		)
 	except (TypeError, SyntaxError, OSError):
 		return libxml.empty('source')
@@ -693,28 +693,23 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 	coverage = query.parameters.get('coverage')
 	if coverage is not None:
 		# Complete coverage data.
-		untraversed = coverage.pop('untraversed', None)
-		traversed = coverage.pop('traversed', None)
-		traversable = coverage.pop('traversable', None)
+		untraversed = coverage.pop('untraversed', '')
+		traversed = coverage.pop('traversed', '')
+		traversable = coverage.pop('traversable', '')
+		# instrumentation coverage data.
+		fc = coverage.pop('full_counters', None)
+		zc = coverage.pop('zero_counters', None)
+
 		data = libmetrics.coverage(serialization, coverage, prefix="coverage..")
 
-		if getattr(module, '__factor_type__', None) == 'unit':
-			s = set([x[:2] for x in traversed])
-			ntravb = sum(map(len, s))
-			s = set([x[:2] for x in traversed if x[2] > 0])
-			ntravd = len(s)
-			untraversed = ''
-			traversed = ''
-			traversable = ''
-		else:
-			ntravb = len(traversable)
-			ntravd = len(traversed)
+		ntravb = len(traversable)
+		ntravd = len(traversed)
 
 		coverage = serialization.element(
 			'coverage', data,
-			('untraversed', str(untraversed or '')),
-			('traversed', str(traversed or '')),
-			('traversable', str(traversable or '')),
+			('untraversed', str(untraversed)),
+			('traversed', str(traversed)),
+			('traversable', str(traversable)),
 
 			('n-traversed', ntravd),
 			('n-traversable', ntravb),

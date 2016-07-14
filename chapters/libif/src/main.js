@@ -130,7 +130,7 @@ hashchanged()
 			var subcontainer = document.createElement("div");
 			var e;
 
-			var lc = range[1] - range[0];
+			var lc = (range[1]+1) - range[0];
 
 			linerange.appendChild(
 				document.createTextNode(

@@ -83,7 +83,7 @@ class Factor(libfactor.XPathModule):
 		return str(luntraversed)
 
 	def summary(self, context, *args, source=name('source'),
-			int=int, RangeSet=librange.RangeSet
+			list=list, int=int, RangeSet=librange.RangeSet
 		):
 		"""
 		Collect the per-concept untraversed lines summary data.
@@ -103,16 +103,12 @@ class Factor(libfactor.XPathModule):
 		stop = int(stop)
 
 		# source element with start and stop available.
-		rs = RangeSet.from_normal_sequence([
-			librange.IRange((start, stop))
-		])
+		rs = RangeSet.from_normal_sequence([librange.IRange((start, stop))])
 
-		ltraversed = RangeSet.from_normal_sequence(list(self.traversed.intersection(rs)))
+		traversable = RangeSet.from_normal_sequence(list(self.traversable.intersection(rs)))
+		atraversed = RangeSet.from_normal_sequence(list(self.traversed.intersection(traversable)))
 
-		traversable = list(self.traversable.intersection(rs))
-		traversable = RangeSet.from_normal_sequence(traversable)
-
-		return [str(len(ltraversed)), str(len(traversable)), str(stop - start)]
+		return [str(len(atraversed)), str(len(traversable)), str((stop+1) - start)]
 
 	def duration(self, context, nanoseconds,
 			initial='hour',

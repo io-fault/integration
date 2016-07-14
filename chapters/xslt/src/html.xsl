@@ -115,7 +115,7 @@
 
  <xsl:template mode="metrics-data" match="f:*">
   <xsl:variable name="summary" select="Factor:summary()"/>
-  <xsl:variable name="coverage" select="$summary[1] div $summary[2]"/>
+  <xsl:variable name="coverage" select="number($summary[1]) div number($summary[2])"/>
 
   <span class="metrics">
    <span title="Average Runtime During Tests" class="profile">
