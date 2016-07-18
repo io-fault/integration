@@ -199,15 +199,15 @@
  </func:function>
 
  <xsl:template match="e:emphasis[@weight=1]">
-  <span class="eclectic.emphasis"><xsl:value-of select="text()"/></span>
+  <span class="text.emphasis"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
  <xsl:template match="e:emphasis[@weight=2]">
-  <span class="eclectic.emphasis.heavy"><xsl:value-of select="text()"/></span>
+  <span class="text.emphasis.heavy"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
  <xsl:template match="e:emphasis[@weight>2]">
-  <span class="eclectic.emphasis.excessive"><xsl:value-of select="text()"/></span>
+  <span class="text.emphasis.excessive"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
  <xsl:template match="e:literal">
@@ -229,7 +229,7 @@
 
   <!-- the source XML may contain leading and trailing empty lines -->
   <!-- the selection filters empty e:line's on the edges -->
-  <div class="eclectic.literals">
+  <div class="text.literals">
    <pre class="language-{$lang}">
     <code class="language-{$lang}">
      <xsl:for-each
@@ -242,7 +242,7 @@
  </xsl:template>
 
  <xsl:template match="e:dictionary">
-  <dl class="eclectic">
+  <dl class="text">
    <xsl:for-each select="e:item">
     <xsl:variable name="ref" select="ctx:prepare-id(ctx:id(.))"/>
     <dt id="{$ref}"><xsl:apply-templates select="e:key/e:*|e:key/text()"/><a href="#{$ref}" class="dkn"/></dt>
@@ -252,7 +252,7 @@
  </xsl:template>
 
  <xsl:template match="e:sequence">
-  <ol class="eclectic">
+  <ol class="text">
    <xsl:for-each select="e:item">
     <li><xsl:apply-templates select="e:*|text()"/></li>
    </xsl:for-each>
@@ -260,7 +260,7 @@
  </xsl:template>
 
  <xsl:template match="e:set">
-  <ul class="eclectic">
+  <ul class="text">
    <xsl:for-each select="e:item">
     <li><xsl:apply-templates select="e:*|text()"/></li>
    </xsl:for-each>
@@ -273,7 +273,7 @@
 
  <xsl:template match="e:reference">
   <xsl:variable name="address" select="ctx:reference(.)"/>
-  <a class="eclectic.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
+  <a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
  </xsl:template>
 
  <xsl:template match="e:section[@identifier]">
@@ -282,7 +282,7 @@
 
   <div id="{$id}" class="section">
    <div class="title">
-    <a class="eclectic.reference" href="{concat('#', $id)}">
+    <a class="text.reference" href="{concat('#', $id)}">
      <xsl:value-of select="@identifier"/>
     </a>
     <!-- Provide context links for subsections -->
@@ -992,7 +992,11 @@
   <xsl:variable name="path" select="@name"/>
   <xsl:variable name="parent" select="substring-before(@name, concat('.', $name))"/>
 
-  <xsl:apply-templates select="./f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+  <xsl:if test="/f:factor/@type = 'chapter'">
+   <!--Only show in content for chapter factors-->
+   <xsl:apply-templates select="./f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+  </xsl:if>
+
   <xsl:apply-templates select="./f:error"/>
 
   <div class="content">

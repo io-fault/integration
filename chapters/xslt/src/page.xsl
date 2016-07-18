@@ -459,7 +459,11 @@
 				<div id="subject.description."></div>
 					<!--subjection.description content when no hash is present-->
 					<!--subject.default div is displayed by default; changes on hashchanged()-->
-				<div id="subject.default."></div>
+				<div id="subject.default.">
+					<xsl:if test="/f:factor/@type != 'chapter'">
+						<xsl:apply-templates select="/f:factor/f:module/f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+					</xsl:if>
+				</div>
 			</body>
 		</html>
 	</xsl:template>

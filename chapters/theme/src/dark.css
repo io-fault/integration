@@ -32,7 +32,7 @@ a:hover span.identifier {
 		0px 0px 8px rgba(55, 130, 230, 1);
 }
 
-a[class="eclectic.reference"]:hover,
+a[class="text.reference"]:hover,
 span[class="python.parameter.area"] a:hover span.identifier,
 a:visited:hover, a:hover {
 	color: #FFFFFF;
@@ -53,7 +53,7 @@ body {
 }
 
 p {
-	margin-left: 8px;
+	margin-left: 1.2em;
 	text-shadow:
 		1px -1px 2px rgba(0,0,0,1),
 		1px 2px 1px rgba(0,0,0,1);
@@ -101,7 +101,9 @@ div.factor > div.title {
 	background-color: #303030;
 	padding: 4px;
 
-	border-width: 0px;
+	border-width: 1px;
+	margin-left: -1px;
+	margin-right: -1px;
 	border-top-width: 1px;
 	border-bottom-width: 1px;
 	border-color: gray;
@@ -317,8 +319,6 @@ div[class~="method"] > div.title
 	border-width: 1px;
 	border-color: rgba(80,80,80,0.4);
 
-	border-right-width: 0;
-	border-left-width: 0;
 	padding-left: 8px;
 
 	margin-left: -4px;
@@ -348,9 +348,6 @@ div[class~="class"] > div.title
 	border-width: 1px;
 	border-color: rgba(100,100,100,0.4);
 	/*border-bottom-color: rgba(200,200,200, 0.2);*/
-
-	border-right-width: 0;
-	border-left-width: 0;
 }
 
 div[class="section"] > div.title:before
@@ -495,7 +492,7 @@ span[class="python.dictionary.item"] {
 }
 
 /*
- * Eclectic Portions Contained in doc-strings.
+ * Text Portions Contained in doc-strings.
  */
 div.doc {
 	font-size: 90%;
@@ -644,8 +641,8 @@ span[class="ern"] {
 	margin-left: 1px;
 }
 
-div[class="eclectic.literals"] pre,
-div[class="eclectic.literals"] code {
+div[class="text.literals"] pre,
+div[class="text.literals"] code {
 	border-width: 0px;
 	border-radius: 0;
 
@@ -656,7 +653,7 @@ div[class="eclectic.literals"] code {
 	margin-right: auto;
 }
 
-div[class="eclectic.literals"] pre {
+div[class="text.literals"] pre {
 	box-shadow: inset 0 0 16px #000000;
 	background-color: rgba(0,0,0,0.2);
 	border-width: 1px;
@@ -698,31 +695,31 @@ div[class^="frame.source"][class$=" collapsed"] > pre > code > span[class="sourc
 	display: none;
 }
 
-span[class="eclectic.emphasis"] {
+span[class="text.emphasis"] {
 	font-style: italic;
 }
 
-span[class="eclectic.emphasis.heavy"] {
+span[class="text.emphasis.heavy"] {
 	font-weight: bolder;
 }
 
 /* emphasis weight of 3 or higher */
-span[class="eclectic.emphasis.excessive"] {
+span[class="text.emphasis.excessive"] {
 	font-weight: bold;
 }
 
-dl.eclectic > dd {
+dl.text > dd {
 	margin: 0;
 	border: 0;
 	padding: 0;
 	padding-left: 1em;
 }
 
-dl.eclectic > dd > *:first-child {
+dl.text > dd > *:first-child {
 	margin-top: 4px;
 }
 
-dl.eclectic > dt {
+dl.text > dt {
 	border: 0;
 	margin: 0;
 	padding: 0;
