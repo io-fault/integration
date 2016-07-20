@@ -1,10 +1,9 @@
 identity = 'https://fault.io/project/python/llvm'
 name = 'llvm'
-fork = 'green'
-release = None
+abstract = 'Introspection interfaces for LLVM and clang'
 icon = '<http://llvm.org>'
 
-abstract = 'introspection interfaces for LLVM and clang'
+fork = 'green'
 
 controller = 'fault.io'
 contact = 'mailto:critical@fault.io'
