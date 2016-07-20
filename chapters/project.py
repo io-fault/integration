@@ -1,9 +1,9 @@
-identity = 'https://fault.io/project/python/factor'
+identity = 'https://fault.io/project/python/fault.factor'
 name = 'factor'
-fork = 'root'
-release = None
+abstract = 'Project documentation and release publishing tools.'
 icon = '🦂'
-abstract = 'product structure interfaces for software projects'
+
+fork = 'root'
 
 controller = 'fault.io' # Responsible Party
 contact = 'mailto:critical@fault.io' # Contact point for the Responsible Party
