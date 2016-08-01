@@ -6,6 +6,7 @@ import sys
 
 from ...filesystem import library as libfs
 from ...routes import library as libroutes
+from ...development import libfactor
 
 from . import structure
 from . import format
@@ -31,7 +32,10 @@ def main(target, state):
 		format.main(str(structs), str(formats), suffix='')
 
 	d = libfs.Dictionary.use(css)
-	d[b'factor.css'] = theme.bytes
+	i = libroutes.Import.from_fullname(theme.__name__)
+	fr = libfactor.reduction(i, 'host', 'optimal')
+	with fr.open('rb') as f:
+		d[b'factor.css'] = f.read()
 
 	d = libfs.Dictionary.use(js)
 	d[b'factor.js'] = libif.bytes
