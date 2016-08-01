@@ -585,11 +585,14 @@ def _xml_module(query, factor_type, route, module, compressed=False):
 	if hasattr(module, '__factor_xml__') and module.__factor_xml__ is not None:
 		# Override used by composites.
 		xml = module.__factor_xml__
-		mod_element = xml.getroot().find('f:module', namespaces)
-		if mod_element is not None:
-			from ..xml import lxml
-			for x in mod_element.iterchildren():
-				yield lxml.etree.tostring(x)
+		if xml:
+			root = xml.getroot()
+			if root is not None:
+				mod_element = root.find('f:module', namespaces)
+				if mod_element is not None:
+					from ..xml import lxml
+					for x in mod_element.iterchildren():
+						yield lxml.etree.tostring(x)
 	else:
 		for k in sorted(dir(module)):
 			if k.startswith('__'):
