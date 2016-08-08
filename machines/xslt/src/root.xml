@@ -10,17 +10,43 @@
 	extension-element-prefixes="exsl"
 	exclude-result-prefixes="f xsl exsl Factor">
 
-	<!-- overview of build -->
+	<!--Overview of build-->
 	<xsl:output
 		method="xml" version="1.0" encoding="utf-8"
 		omit-xml-declaration="yes"
 		indent="no"/>
 
+	<xsl:template match="field">
+		<f:property identifier="{@identifier}">
+			<xsl:if test="start and stop">
+				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
+				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
+			</xsl:if>
+
+			<xsl:copy-of select="Factor:structure_comment(./comment/node())"/>
+		</f:property>
+	</xsl:template>
+
+	<xsl:template match="structure">
+		<f:structure identifier="{@identifier}">
+			<xsl:if test="start and stop">
+				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
+				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
+			</xsl:if>
+
+			<xsl:copy-of select="Factor:structure_comment(./comment/node())"/>
+
+			<xsl:apply-templates select="field"/>
+		</f:structure>
+	</xsl:template>
+
 	<xsl:template match="function">
 		<f:function identifier="{@identifier}">
-			<xsl:attribute name="xml:id"><xsl:value-of select="@identifier"/></xsl:attribute>
-			<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
-			<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
+			<xsl:if test="start and stop">
+				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
+				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
+			</xsl:if>
+
 			<xsl:copy-of select="Factor:structure_comment(./comment/node())"/>
 
 			<xsl:for-each select="parameter">

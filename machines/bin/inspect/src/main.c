@@ -346,6 +346,7 @@ print_collection(FILE *fp, CXCursor c, CXClientData cd, const char *element_name
 	print_xml_open(fp, element_name);
 	print_spelling_identifier(fp, c);
 	print_xml_enter(fp);
+	print_source_location(fp, c);
 	print_comment(fp, c);
 
 	print_contexts(fp, c);
