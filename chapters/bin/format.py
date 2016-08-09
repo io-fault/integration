@@ -15,6 +15,7 @@ from ...xml import library as libxml
 from ...filesystem import library as libfs
 
 from .. import xslt
+from .. import library as libfactors
 
 def index_xml(directory, index):
 	content = libxml.element('map',
@@ -59,7 +60,7 @@ def main(source, target, metrics=None, suffix='.html'):
 				spd = ''
 
 			try:
-				rtf = xslt.process_file(str(r),
+				src, rtf = libfactors.transform(str(r),
 					document_index = str(idx_path),
 					reference_suffix = suffix,
 					metrics_profile = spd,

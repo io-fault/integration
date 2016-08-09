@@ -9,15 +9,17 @@
 	xmlns:e="https://fault.io/xml/text"
 	xmlns:idx="https://fault.io/xml/filesystem#index"
 	xmlns:ctx="https://fault.io/xml/factor#context"
+	xmlns:df="https://fault.io/xml/factor#functions"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="https://fault.io/xml/xpath"
 	xmlns:Factor="#Factor"
+	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func exsl"
-	exclude-result-prefixes="f e xsl exsl str fault ctx Index">
+	exclude-result-prefixes="f e xsl exsl str fault ctx df Index">
 
 	<!-- Everythin inside the root transforms should have precedence -->
-	<xsl:import href="page.xsl"/>
+	<xi:include href="page.xsl" parse="xml" xpointer="xmlns(xsl=http://www.w3.org/1999/XSL/Transform)xpointer(/xsl:transform/*)"/>
 
 	<xsl:param name="python.version" select="'3'"/>
 	<xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>

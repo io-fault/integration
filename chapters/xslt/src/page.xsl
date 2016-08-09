@@ -13,11 +13,12 @@
 	xmlns:func="http://exslt.org/functions"
 	xmlns:fault="https://fault.io/xml/xpath"
 	xmlns:Factor="#Factor"
+	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func"
 	exclude-result-prefixes="e xsl f ctx df str exsl fault">
 
 	<!-- Everythin inside the site transforms should have precedence -->
-	<xsl:import href="html.xsl"/>
+	<xi:include href="html.xsl" parse="xml" xpointer="xmlns(http://www.w3.org/1999/XSL/Transform)xpointer(/xsl:transform/*)"/>
 
 	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
 	<xsl:param name="long.args.limit" select="64"/>

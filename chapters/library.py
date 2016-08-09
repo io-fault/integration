@@ -8,6 +8,7 @@ from ..routes import library as libroutes
 from ..filesystem import library as libfs
 from ..text import library as libtext
 from ..development import libfactor
+from ..xml import libfactor as xmlfactor
 
 def factors(package:str) -> typing.Tuple[
 		libroutes.Import,
@@ -57,3 +58,11 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 		for x in packages
 		if libfactor.composite(x)
 	}
+
+from . import xslt
+xslt_document, transformation = xmlfactor.xslt(xslt)
+
+def transform(path, **params):
+	global transformation
+	input = xmlfactor.readfile(path)
+	return input, transformation(input, **{k:transformation.strparam(v) for k, v in params.items()})
