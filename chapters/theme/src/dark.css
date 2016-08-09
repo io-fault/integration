@@ -598,17 +598,6 @@ a[class="supersection"] {
 	float: right;
 }
 
-a[class="dkn"]:before {
-	vertical-align: bottom;
-	content: "@";
-}
-a[class="dkn"] {
-	vertical-align: bottom;
-	font-size: xx-small;
-	color: #4497E7;
-	margin-left: 1px;
-}
-
 span[class="ern"]:before {
 	vertical-align: top;
 	content: "&";
@@ -717,6 +706,17 @@ dl.text > dd {
 
 dl.text > dd > *:first-child {
 	margin-top: 4px;
+}
+
+a[class="dkn"]:before {
+	content: "→";
+}
+a[class="dkn"] {
+	vertical-align: middle;
+	font-size: 110%;
+	color: #4497E7;
+	margin-left: 2px;
+	margin-right: 2px;
 }
 
 dl.text > dt {
