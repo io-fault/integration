@@ -12,7 +12,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:t="https://fault.io/xml/test"
-	xmlns:e="https://fault.io/xml/text"
+	xmlns:txt="https://fault.io/xml/text"
 	xmlns:py="https://fault.io/xml/python"
 	xmlns:df="https://fault.io/xml/factor#functions"
 	xmlns:ctx="https://fault.io/xml/factor#context"
@@ -20,7 +20,7 @@
 	xmlns:l="https://fault.io/xml/literals"
 	xmlns:Factor="#Factor"
 	extension-element-prefixes="func"
-	exclude-result-prefixes="set str exsl func xl xsl py e f df ctx">
+	exclude-result-prefixes="set str exsl func xl xsl py txt f df ctx">
 
  <xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
  <xsl:param name="long.args.limit" select="64"/>
@@ -79,9 +79,9 @@
  <func:function name="f:inherit.docs">
   <xsl:param name="class"/>
 
-  <xsl:variable name="section" select="$class/f:doc/e:section[position()=1 and last()=1]"/>
-  <xsl:variable name="para" select="$section/e:paragraph[position()=1 and last()=1]"/>
-  <xsl:variable name="ref" select="$para/e:reference[position()=1 and last()=1]"/>
+  <xsl:variable name="section" select="$class/f:doc/txt:section[position()=1 and last()=1]"/>
+  <xsl:variable name="para" select="$section/txt:paragraph[position()=1 and last()=1]"/>
+  <xsl:variable name="ref" select="$para/txt:reference[position()=1 and last()=1]"/>
 
   <func:result>
    <xsl:choose>
@@ -198,19 +198,19 @@
   </func:result>
  </func:function>
 
- <xsl:template match="e:emphasis[@weight=1]">
+ <xsl:template match="txt:emphasis[@weight=1]">
   <span class="text.emphasis"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
- <xsl:template match="e:emphasis[@weight=2]">
+ <xsl:template match="txt:emphasis[@weight=2]">
   <span class="text.emphasis.heavy"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
- <xsl:template match="e:emphasis[@weight>2]">
+ <xsl:template match="txt:emphasis[@weight>2]">
   <span class="text.emphasis.excessive"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
- <xsl:template match="e:literal">
+ <xsl:template match="txt:literal">
   <!-- inline literal -->
   <xsl:choose>
    <xsl:when test="not(@qualifications)">
@@ -222,18 +222,18 @@
   </xsl:choose>
  </xsl:template>
 
- <xsl:template match="e:literals">
-  <xsl:variable name="start" select="e:line[text()][1]"/>
-  <xsl:variable name="stop" select="e:line[text()][last()]"/>
+ <xsl:template match="txt:literals">
+  <xsl:variable name="start" select="txt:line[text()][1]"/>
+  <xsl:variable name="stop" select="txt:line[text()][last()]"/>
   <xsl:variable name="lang" select="substring-after(@type, '/pl/')"/>
 
   <!-- the source XML may contain leading and trailing empty lines -->
-  <!-- the selection filters empty e:line's on the edges -->
+  <!-- the selection filters empty txt:line's on the edges -->
   <div class="text.literals">
    <pre class="language-{$lang}">
     <code class="language-{$lang}">
      <xsl:for-each
-      select="e:line[.=$start or .=$stop or (preceding-sibling::e:*[.=$start] and following-sibling::e:*[.=$stop])]">
+      select="txt:line[.=$start or .=$stop or (preceding-sibling::txt:*[.=$start] and following-sibling::txt:*[.=$stop])]">
       <xsl:value-of select="concat(text(), '&#10;')"/>
      </xsl:for-each>
     </code>
@@ -241,42 +241,42 @@
   </div>
  </xsl:template>
 
- <xsl:template match="e:dictionary">
+ <xsl:template match="txt:dictionary">
   <dl class="text">
-   <xsl:for-each select="e:item">
+   <xsl:for-each select="txt:item">
     <xsl:variable name="ref" select="ctx:prepare-id(ctx:id(.))"/>
-    <dt id="{$ref}"><xsl:apply-templates select="e:key/e:*|e:key/text()"/><a href="#{$ref}" class="dkn"/></dt>
-    <dd><xsl:apply-templates select="e:value/e:*"/></dd>
+    <dt id="{$ref}"><a href="#{$ref}" class="dkn"/><xsl:apply-templates select="txt:key/txt:*|txt:key/text()"/></dt>
+    <dd><xsl:apply-templates select="txt:value/txt:*"/></dd>
    </xsl:for-each>
   </dl>
  </xsl:template>
 
- <xsl:template match="e:sequence">
+ <xsl:template match="txt:sequence">
   <ol class="text">
-   <xsl:for-each select="e:item">
-    <li><xsl:apply-templates select="e:*|text()"/></li>
+   <xsl:for-each select="txt:item">
+    <li><xsl:apply-templates select="txt:*|text()"/></li>
    </xsl:for-each>
   </ol>
  </xsl:template>
 
- <xsl:template match="e:set">
+ <xsl:template match="txt:set">
   <ul class="text">
-   <xsl:for-each select="e:item">
-    <li><xsl:apply-templates select="e:*|text()"/></li>
+   <xsl:for-each select="txt:item">
+    <li><xsl:apply-templates select="txt:*|text()"/></li>
    </xsl:for-each>
   </ul>
  </xsl:template>
 
- <xsl:template match="e:paragraph">
+ <xsl:template match="txt:paragraph">
   <p><xsl:apply-templates select="node()"/></p>
  </xsl:template>
 
- <xsl:template match="e:reference">
+ <xsl:template match="txt:reference">
   <xsl:variable name="address" select="ctx:reference(.)"/>
   <a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
  </xsl:template>
 
- <xsl:template match="e:section[@identifier]">
+ <xsl:template match="txt:section[@identifier]">
   <!-- if there is no identified ancestor, it's probably the root object (module) -->
   <xsl:variable name="id" select="ctx:id(.)"/>
 
@@ -286,25 +286,25 @@
      <xsl:value-of select="@identifier"/>
     </a>
     <!-- Provide context links for subsections -->
-    <xsl:if test="ancestor::e:section">
-     <xsl:variable name="super" select="ancestor::e:section"/>
+    <xsl:if test="ancestor::txt:section">
+     <xsl:variable name="super" select="ancestor::txt:section"/>
      <a href="{concat('#', ctx:id($super))}" class="supersection">
       [<xsl:value-of select="$super/@identifier"/>]
      </a>
     </xsl:if>
    </div>
-   <xsl:apply-templates select="e:*"/>
+   <xsl:apply-templates select="txt:*"/>
   </div>
  </xsl:template>
 
- <xsl:template match="e:section[not(@identifier)]">
+ <xsl:template match="txt:section[not(@identifier)]">
   <!-- Don't include the div if the leading section is empty -->
-  <xsl:if test="e:*/node()">
-   <div id="{ctx:id(.)}"><xsl:apply-templates select="e:*"/></div>
+  <xsl:if test="txt:*/node()">
+   <div id="{ctx:id(.)}"><xsl:apply-templates select="txt:*"/></div>
   </xsl:if>
  </xsl:template>
 
- <xsl:template match="e:admonition">
+ <xsl:template match="txt:admonition">
   <!-- if there is no identified ancestor, it's probably the root object (module) -->
   <div class="admonition-{@severity}">
    <table>
@@ -320,7 +320,7 @@
      <td/>
      <td>
       <div class="admonition.content">
-       <xsl:apply-templates select="e:*"/>
+       <xsl:apply-templates select="txt:*"/>
       </div>
      </td>
     </tr>
@@ -330,12 +330,12 @@
 
  <xsl:template match="f:doc">
   <div class="doc">
-   <xsl:apply-templates select="e:*"/>
+   <xsl:apply-templates select="txt:*"/>
   </div>
   <div class="doc.termination"/>
  </xsl:template>
 
- <xsl:template mode="chapter" match="e:section[not(@identifier)]">
+ <xsl:template mode="chapter" match="txt:section[not(@identifier)]">
   <!-- Don't include the div if the leading section is empty -->
   <div id="{ctx:id(.)}">
    <div id="factor..section.index">
@@ -344,15 +344,15 @@
      <xsl:apply-templates mode="toc" select="ancestor::f:chapter"/>
     </div>
    </div>
-   <xsl:apply-templates select="e:*"/>
+   <xsl:apply-templates select="txt:*"/>
    <div class="html.clear"/>
   </div>
  </xsl:template>
 
  <xsl:template mode="chapter" match="f:doc">
   <div class="doc">
-   <xsl:apply-templates mode="chapter" select="e:section[not(@identifier)]"/>
-   <xsl:apply-templates select="e:section[@identifier]"/>
+   <xsl:apply-templates mode="chapter" select="txt:section[not(@identifier)]"/>
+   <xsl:apply-templates select="txt:section[@identifier]"/>
   </div>
   <div class="doc.termination"/>
  </xsl:template>
@@ -717,8 +717,9 @@
   <xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
   <xsl:variable name="leading.name" select="$context/@identifier"/>
   <xsl:variable name="typ.addr" select="string(py:object/@type)"/>
+  <xsl:variable name="ctx.id" select="ctx:id(.)"/>
 
-  <div id="{ctx:id(.)}" class="data">
+  <div id="{$ctx.id}" class="data">
    <div class="title">
     <a href="#{ctx:id($context)}">
      <span class="identity-context"><xsl:value-of select="$leading.name"/>.</span>
@@ -744,6 +745,15 @@
      <div class="representation">
       <xsl:apply-templates mode="python.inline.data" select="./py:*"/>
      </div>
+	  <!--Join Properties section of context element with @identifier-->
+     <xsl:variable name="txt.dict.item" select="$context/f:doc/txt:section[@identifier='Properties']/txt:dictionary/txt:item"/>
+	  <xsl:if test="$txt.dict.item[txt:key//text()=@identifier]">
+	   <div class="doc">
+	    <div id="{$ctx.id}..section">
+        <xsl:apply-templates select="$txt.dict.item[txt:key//text()=@identifier]/txt:value/txt:*"/>
+	    </div>
+		</div>
+	  </xsl:if>
     </xsl:otherwise>
    </xsl:choose>
   </div>
@@ -832,13 +842,13 @@
  </xsl:template>
 
  <!-- Properties section inside class documentation -->
- <xsl:template mode="properties" match="e:section">
+ <xsl:template mode="properties" match="txt:section">
   <xsl:variable name="context" select="ancestor::f:*[@xml:id][1]"/>
   <xsl:variable name="leading.identifier" select="$context/@identifier"/>
   <xsl:variable name="prefix" select="$context/@xml:id"/>
 
-  <xsl:for-each select="e:dictionary/e:item">
-   <xsl:variable name="name" select="e:key//text()"/>
+  <xsl:for-each select="txt:dictionary/txt:item">
+   <xsl:variable name="name" select="txt:key//text()"/>
    <xsl:variable name="id" select="concat($prefix, '.', $name)"/>
 
    <div id="{$id}" class="property">
@@ -853,15 +863,16 @@
       <span class="identifier"><xsl:value-of select="$name"/></span>
      </a>
     </div>
-    <xsl:apply-templates select="e:value/e:*"/>
+    <xsl:apply-templates select="txt:value/txt:*"/>
    </div>
   </xsl:for-each>
  </xsl:template>
 
+ <!--Class Contents Template-->
  <xsl:template name="class">
   <xsl:param name="element"/>
-  <xsl:variable name="properties.section" select="$element/f:doc/e:section[@identifier='Properties']"/>
-  <xsl:variable name="has.properties" select="$element/f:property[f:doc] | $properties.section"/>
+  <xsl:variable name="properties.section" select="$element/f:doc/txt:section[@identifier='Properties']"/>
+  <xsl:variable name="has.properties" select="$element/f:property | $properties.section"/>
 
   <xsl:if test="$element/f:method[@type='class']">
    <div class="class_methods">
@@ -880,7 +891,7 @@
      <span class="title"><xsl:value-of select="$properties_title"/></span>
     </div>
     <xsl:apply-templates select="$element/f:property"/>
-    <xsl:apply-templates mode="properties" select="$element/f:doc/e:section[@identifier='Properties']"/>
+    <xsl:apply-templates mode="properties" select="$element/f:doc/txt:section[@identifier='Properties']"/>
    </div>
   </xsl:if>
 
@@ -917,7 +928,7 @@
   </xsl:if>
  </xsl:template>
 
- <xsl:template match="f:class">
+ <xsl:template match="f:class|f:structure|f:union|f:enumeration">
   <xsl:variable name="name" select="@identifier"/>
   <xsl:variable name="xmlid" select="@xml:id"/>
 
@@ -925,9 +936,9 @@
   <xsl:variable name="leading.name" select="$context/@identifier"/>
 
   <xsl:variable name="abstract.src" select="ctx:qualify(f:inherit.docs(.))"/>
-  <xsl:apply-templates select="./f:class"/>
+  <xsl:apply-templates select="./f:class"/><!--Nested Classes-->
 
-  <div id="{@xml:id}" class="class">
+  <div id="{@xml:id}" class="{local-name()}">
    <div class="title">
     <a href="#{ctx:id($context)}">
      <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
@@ -943,10 +954,11 @@
    </div>
 
    <div style="margin-bottom: 1em;" class="doc">
-    <xsl:apply-templates select="f:doc/e:*[not(@identifier='Properties')]"/>
+    <xsl:apply-templates select="f:doc/txt:*[not(@identifier='Properties')]"/>
    </div>
 
    <div class="content">
+    <!--Initial attempt of join abstract documentation-->
     <xsl:if test="false and $abstract.src != ''">
      <xsl:variable name="docclass" select="ctx:site.element($abstract.src)"/>
      <xsl:variable name="prefix" select="$docclass/@identifier"/>
@@ -994,7 +1006,7 @@
 
   <xsl:if test="/f:factor/@type = 'chapter'">
    <!--Only show in content for chapter factors-->
-   <xsl:apply-templates select="./f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+   <xsl:apply-templates select="./f:doc/txt:section[not(@identifier) or @identifier!='Properties']"/>
   </xsl:if>
 
   <xsl:apply-templates select="./f:error"/>
