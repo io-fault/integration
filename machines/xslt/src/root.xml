@@ -6,6 +6,7 @@
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:txt="https://fault.io/xml/text"
+	xmlns:data="https://fault.io/xml/data"
 	xmlns:Factor="#Factor"
 	extension-element-prefixes="exsl"
 	exclude-result-prefixes="f xsl exsl Factor">
@@ -40,8 +41,34 @@
 		</f:structure>
 	</xsl:template>
 
+	<xsl:template mode="enum" match="value">
+		<f:data identifier="{@identifier}">
+			<data:integer><xsl:value-of select="text()"/></data:integer>
+		</f:data>
+	</xsl:template>
+
+	<xsl:template match="enumeration[@identifier]">
+		<f:enumeration identifier="{@identifier}">
+			<xsl:attribute name="xml:id">
+				<xsl:value-of select="'enum..'"/>
+				<xsl:value-of select="@identifier"/>
+			</xsl:attribute>
+			<xsl:if test="start and stop">
+				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
+				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
+			</xsl:if>
+
+			<xsl:copy-of select="Factor:structure_comment(./comment/node())"/>
+
+			<xsl:apply-templates mode="enum" select="value"/>
+		</f:enumeration>
+	</xsl:template>
+
 	<xsl:template match="function">
 		<f:function identifier="{@identifier}">
+			<xsl:attribute name="xml:id">
+				<xsl:value-of select="@identifier"/>
+			</xsl:attribute>
 			<xsl:if test="start and stop">
 				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
 				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>

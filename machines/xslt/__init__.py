@@ -48,5 +48,3 @@ class Factor(libfactor.XPathModule):
 			return self.libfactor.etree.XML(start + xml + b'</f:doc>')
 		else:
 			return ()
-
-libfactor.load('xsl')
