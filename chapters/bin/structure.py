@@ -153,6 +153,8 @@ def structure_package(target, package, metrics=None):
 			# Identify the source tree and find the interface description.
 			srctree = sources.tree()
 			for y in srctree[1]:
+				if y.identifier.startswith('.'):
+					continue
 				sfm = types.ModuleType(module.__name__, "")
 				sfm.__file__ = str(y)
 				sfm.__factor_language__ = y.extension
