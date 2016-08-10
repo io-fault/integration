@@ -6,7 +6,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:t="https://fault.io/xml/test"
-	xmlns:e="https://fault.io/xml/text"
+	xmlns:txt="https://fault.io/xml/text"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:ctx="https://fault.io/xml/factor#context"
 	xmlns:df="https://fault.io/xml/factor#functions"
@@ -16,9 +16,6 @@
 	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func"
 	exclude-result-prefixes="e xsl f ctx df str exsl fault">
-
-	<!-- Everythin inside the site transforms should have precedence -->
-	<xi:include href="html.xsl" parse="xml" xpointer="xmlns(http://www.w3.org/1999/XSL/Transform)xpointer(/xsl:transform/*)"/>
 
 	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
 	<xsl:param name="long.args.limit" select="64"/>
@@ -39,6 +36,8 @@
 			<xsl:value-of select="concat($n, ' lines ', format-number($p, '###.##'), '%')"/>
 		</func:result>
 	</func:function>
+
+	<xi:include href="html.xsl#xpointer(/*/*:*)" parse="xml"/>
 
 	<xsl:template mode="class.hierarchy" match="node()"/>
 	<xsl:template mode="function.index" match="node()"/>
@@ -221,14 +220,14 @@
 		</xsl:if>
 	</xsl:template>
 
-	<xsl:template mode="toc" match="e:section">
+	<xsl:template mode="toc" match="txt:section">
 		<li>
 			<a href="{concat('#', ctx:id(.))}">
 				<xsl:value-of select="@identifier"/>
 			</a>
-			<xsl:if test="./e:section">
+			<xsl:if test="./txt:section">
 				<ol>
-					<xsl:apply-templates mode="toc" select="e:section"/>
+					<xsl:apply-templates mode="toc" select="txt:section"/>
 				</ol>
 			</xsl:if>
 		</li>
@@ -236,19 +235,19 @@
 
 	<xsl:template mode="toc" match="f:chapter">
 		<ol>
-			<xsl:apply-templates mode="toc" select="f:doc/e:section[@identifier]"/>
+			<xsl:apply-templates mode="toc" select="f:doc/txt:section[@identifier]"/>
 		</ol>
 	</xsl:template>
 
 	<xsl:template mode="total.toc" match="node()"/>
-	<xsl:template mode="total.toc" match="e:section">
+	<xsl:template mode="total.toc" match="txt:section">
 		<li>
 			<a href="{concat(ancestor::f:factor/@name, $reference_suffix, '#', ctx:id(.))}">
 				<xsl:value-of select="@identifier"/>
 			</a>
-			<xsl:if test="./e:section">
+			<xsl:if test="./txt:section">
 				<ol>
-					<xsl:apply-templates mode="total.toc" select="e:section"/>
+					<xsl:apply-templates mode="total.toc" select="txt:section"/>
 				</ol>
 			</xsl:if>
 		</li>
@@ -256,7 +255,7 @@
 
 	<xsl:template mode="total.toc" match="f:chapter">
 		<ol>
-			<xsl:apply-templates mode="total.toc" select="f:doc/e:section[@identifier]"/>
+			<xsl:apply-templates mode="total.toc" select="f:doc/txt:section[@identifier]"/>
 		</ol>
 	</xsl:template>
 
@@ -462,7 +461,7 @@
 					<!--subject.default div is displayed by default; changes on hashchanged()-->
 				<div id="subject.default.">
 					<xsl:if test="/f:factor/@type != 'chapter'">
-						<xsl:apply-templates select="/f:factor/f:module/f:doc/e:section[not(@identifier) or @identifier!='Properties']"/>
+						<xsl:apply-templates select="/f:factor/f:module/f:doc/txt:section[not(@identifier) or @identifier!='Properties']"/>
 					</xsl:if>
 				</div>
 			</body>

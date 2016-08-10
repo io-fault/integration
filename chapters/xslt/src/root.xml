@@ -2,11 +2,13 @@
 <!--Transform documentation directory into presentable XHTML-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:l="https://fault.io/xml/literals"
 	xmlns:exsl="http://exslt.org/common"
+	xmlns:set="http://exslt.org/sets"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:f="https://fault.io/xml/factor"
 	xmlns:t="https://fault.io/xml/test"
-	xmlns:e="https://fault.io/xml/text"
+	xmlns:txt="https://fault.io/xml/text"
 	xmlns:idx="https://fault.io/xml/filesystem#index"
 	xmlns:ctx="https://fault.io/xml/factor#context"
 	xmlns:df="https://fault.io/xml/factor#functions"
@@ -14,12 +16,10 @@
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="https://fault.io/xml/xpath"
 	xmlns:Factor="#Factor"
+	xmlns:py="https://fault.io/xml/python"
 	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func exsl"
-	exclude-result-prefixes="f e xsl exsl str fault ctx df Index">
-
-	<!-- Everythin inside the root transforms should have precedence -->
-	<xi:include href="page.xsl" parse="xml" xpointer="xmlns(xsl=http://www.w3.org/1999/XSL/Transform)xpointer(/xsl:transform/*)"/>
+	exclude-result-prefixes="py l f xsl exsl set str fault ctx df">
 
 	<xsl:param name="python.version" select="'3'"/>
 	<xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
@@ -108,7 +108,7 @@
 	<func:function name="ctx:identifiers">
 		<!-- directives can assign additional identifiers, so we work with a set -->
 		<xsl:param name="element"/>
-		<func:result select="($element/@identifier | $element/e:directive[@name='id'])"/>
+		<func:result select="($element/@identifier | $element/txt:directive[@name='id'])"/>
 	</func:function>
 
 	<func:function name="ctx:id">
@@ -472,8 +472,8 @@
 	<func:function name="ctx:abstract">
 		<xsl:param name="name"/>
 		<xsl:variable name="factor" select="ctx:document($name)/f:factor"/>
-		<xsl:variable name="fsection" select="$factor/f:*/f:doc/e:section[not(@identifier)][1]"/>
-		<xsl:variable name="fpara" select="$fsection/e:paragraph[1]"/>
+		<xsl:variable name="fsection" select="$factor/f:*/f:doc/txt:section[not(@identifier)][1]"/>
+		<xsl:variable name="fpara" select="$fsection/txt:paragraph[1]"/>
 
 		<xsl:choose>
 			<xsl:when test="$factor/f:context/@path = $name">
@@ -489,8 +489,8 @@
 	<func:function name="ctx:local-abstract">
 		<xsl:param name="name"/>
 		<xsl:variable name="expr" select="//f:*[@xml:id=$name]"/>
-		<xsl:variable name="fsection" select="$expr/f:doc/e:section[not(@identifier)][1]"/>
-		<xsl:variable name="fpara" select="$fsection/e:paragraph[1]"/>
+		<xsl:variable name="fsection" select="$expr/f:doc/txt:section[not(@identifier)][1]"/>
+		<xsl:variable name="fpara" select="$fsection/txt:paragraph[1]"/>
 
 		<func:result select="string($fpara)"/>
 	</func:function>
@@ -579,6 +579,7 @@
 		</xsl:choose>
 	</func:function>
 
+	<xi:include href="page.xsl#xpointer(/*/*:*)" parse="xml"/>
 	<xsl:template match="/">
 		<xsl:apply-templates select="/f:factor"/>
 		<!--
@@ -595,5 +596,4 @@
 		</xsl:for-each>
 		-->
 	</xsl:template>
-
 </xsl:transform>

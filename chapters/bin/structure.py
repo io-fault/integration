@@ -166,7 +166,7 @@ def structure_package(target, package, metrics=None):
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
 				xis = xi.extend(y.points)
-				sfm.__factor_xml__ = llvm_xslt.transform(str(xis))
+				sfm.__factor_xml__ = llvm_xslt.transform(str(xis))[1]
 
 				if metrics is not None:
 					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
