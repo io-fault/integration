@@ -36,7 +36,8 @@ def factors(package:str) -> typing.Tuple[
 	return (root, root.tree())
 
 def fractions(packages:libroutes.Import) -> typing.Mapping[
-		libroutes.Import, typing.Sequence[libroutes.Import],
+		libroutes.Import,
+		typing.Sequence[libroutes.Import],
 	]:
 	"""
 	Construct a mapping detailing the factors that consist of a set of fractions.
@@ -46,7 +47,7 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 	[Effects]
 	/Product
 		The constructed mapping. The keys are the &libroutes.Import instances,
-		and the values are sequences
+		and the values are sequences.
 
 	[Parameters]
 	/packages
