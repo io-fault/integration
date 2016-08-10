@@ -48,3 +48,5 @@ class Factor(libfactor.XPathModule):
 			return self.libfactor.etree.XML(start + xml + b'</f:doc>')
 		else:
 			return ()
+
+__factor_type__ = 'xml.executable'
