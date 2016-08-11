@@ -139,7 +139,7 @@ def structure_package(target, package, metrics=None):
 			from ...xml import lxml #! Use libxml reference instead.
 
 			is_ext = libfactor.python_extension(module)
-			index = libfactor.cache_directory(module, 'host' if not is_ext else libfactor.python_triplet, 'inspect', 'factor')
+			index = libfactor.cache_directory(module, 'inspect', 'optimal', 'factor')
 			ilparams, sources = libdev.extract_inspect(lxml.etree.parse(str(index)))
 			iformat = ilparams['format']
 			index = index.container
