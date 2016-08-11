@@ -402,13 +402,16 @@
 					<!-- site reference -->
 					<xsl:choose>
 						<xsl:when test="$is.absolute or $is.context.relative or $is.project.relative">
+							<xsl:value-of select="/f:factor/@depth"/>
 							<xsl:value-of select="ctx:absolute(string($path))"/>
 						</xsl:when>
 						<xsl:otherwise>
 							<!-- could be text structure reference -->
 							<xsl:variable name="local" select="ctx:scan($ref, $strsrc)"/>
+
 							<xsl:choose>
 								<xsl:when test="$local">
+									<xsl:value-of select="/f:factor/@depth"/>
 									<xsl:value-of select="$local"/>
 								</xsl:when>
 								<xsl:otherwise>
@@ -416,6 +419,7 @@
 									<xsl:choose>
 									 <xsl:when test="contains($strsrc, '.')">
 											<xsl:variable name="pair" select="Factor:reference($strsrc)"/>
+											<xsl:value-of select="/f:factor/@depth"/>
 											<xsl:value-of select="concat($python.docs, $pair[1], $reference_suffix, '#', $pair[2])"/>
 									 </xsl:when>
 									 <xsl:when test="Factor:builtin($strsrc)">

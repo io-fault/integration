@@ -210,11 +210,32 @@
   <span class="text.emphasis.excessive"><xsl:value-of select="text()"/></span>
  </xsl:template>
 
+ <!-- inline literal -->
  <xsl:template match="txt:literal">
-  <!-- inline literal -->
+  <xsl:variable name="lang">
+   <xsl:choose>
+    <!--Explicit Language Selection-->
+    <xsl:when test="starts-with(@cast, '#!/pl/')">
+     <xsl:value-of select="concat('language-', substring-after(@cast, '#!/pl/'))"/>
+    </xsl:when>
+    <!--Transparent Class Identifier-->
+    <xsl:when test="@cast">
+     <xsl:value-of select="concat('literal-', @cast)"/>
+    </xsl:when>
+    <!--Default Literal-->
+    <xsl:otherwise>
+     <xsl:value-of select="concat('language-', 'python')"/>
+    </xsl:otherwise>
+   </xsl:choose>
+  </xsl:variable>
   <xsl:choose>
    <xsl:when test="not(@qualifications)">
-    <code class="language-python"><xsl:value-of select="text()"/></code>
+    <code>
+     <xsl:attribute name="class">
+      <xsl:value-of select="$lang"/>
+     </xsl:attribute>
+     <xsl:value-of select="text()"/>
+    </code>
    </xsl:when>
    <xsl:otherwise>
     <span class="{concat('quals', @qualifications)}"><xsl:value-of select="text()"/></span>
@@ -228,7 +249,7 @@
   <xsl:variable name="lang" select="substring-after(@type, '/pl/')"/>
 
   <!-- the source XML may contain leading and trailing empty lines -->
-  <!-- the selection filters empty txt:line's on the edges -->
+  <!-- the selection filters empty txt:line elements on the edges -->
   <div class="text.literals">
    <pre class="language-{$lang}">
     <code class="language-{$lang}">
