@@ -1,5 +1,3 @@
 """
 """
-from ...filesystem import libfactor
-libfactor.load('directory')
-del libfactor
+__factor_type__ = 'resource.library'
