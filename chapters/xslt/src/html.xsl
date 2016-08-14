@@ -671,7 +671,7 @@
      </span>
     </a>
     <span class="path-delimiter">.</span>
-    <a href="{concat('#',$element/@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <a class="terminal" href="{concat('#',$element/@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="$element/f:parameter"/></span>
     </span>
@@ -745,7 +745,7 @@
     <a href="#{ctx:id($context)}">
      <span class="identity-context"><xsl:value-of select="$leading.name"/>.</span>
     </a>
-    <a href="#{@identifier}">
+    <a class="terminal" href="#{@identifier}">
      <span class="identifier"><xsl:value-of select="@identifier"/></span>
     </a>
     <xsl:if test="$typ.addr">
@@ -822,7 +822,7 @@
      <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
      <span class="path-delimiter">.</span>
     </xsl:if>
-    <a href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <a class="terminal" href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
    <xsl:apply-templates select="./f:doc"/>
@@ -844,7 +844,7 @@
      <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
     </a>
     <span class="path-delimiter">.</span>
-    <a href="{concat('#',@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <a class="terminal" href="{concat('#',@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <span class="python.parameter.area">
      <span class="signature"><xsl:apply-templates select="f:parameter"/></span>
     </span>
@@ -880,7 +880,7 @@
       </span>
      </a>
      <span class="path-delimiter">.</span>
-     <a href="{concat('#', $id)}">
+     <a class="terminal" href="{concat('#', $id)}">
       <span class="identifier"><xsl:value-of select="$name"/></span>
      </a>
     </div>
@@ -965,7 +965,7 @@
      <span class="identity-context"><xsl:value-of select="$leading.name"/></span>
     </a>
     <span class="path-delimiter">.</span>
-    <a href="{concat('#', $xmlid)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+    <a class="terminal" href="{concat('#', $xmlid)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <span class="python.parameter.area">
      <span class="parameters.open">(</span>
       <xsl:apply-templates select="f:bases"/>

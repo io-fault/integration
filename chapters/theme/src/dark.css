@@ -23,6 +23,11 @@ table {
 	border-spacing: 0;
 }
 
+/* The last identifier in the title providing an href to itself */
+div.title > a.terminal {
+	font-weight: bold;
+}
+
 /* special case for blue links */
 a:hover span.identifier {
 	color: #FFFFFF;
