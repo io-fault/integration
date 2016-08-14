@@ -32,13 +32,13 @@ def main(target, state):
 		format.main(str(structs), str(formats), suffix='')
 
 	d = libfs.Dictionary.use(css)
-	i = libroutes.Import.from_fullname(theme.__name__)
-	fr = libfactor.reduction(i, 'host', 'optimal')
+	fr = libfactor.reduction(None, 'host', 'optimal', theme)
 	with fr.open('rb') as f:
 		d[b'factor.css'] = f.read()
 
 	d = libfs.Dictionary.use(js)
-	d[b'factor.js'] = libif.bytes
+	with libfactor.reduction(None, 'host', 'optimal', module=libif).open('rb') as f:
+		d[b'factor.js'] = f.read()
 
 	return 0
 
