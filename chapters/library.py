@@ -7,7 +7,7 @@ import typing
 from ..routes import library as libroutes
 from ..filesystem import library as libfs
 from ..text import library as libtext
-from ..development import libfactor
+from ..system import libfactor
 from ..xml import libfactor as xmlfactor
 
 def factors(package:str) -> typing.Tuple[

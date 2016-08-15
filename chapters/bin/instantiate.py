@@ -6,7 +6,7 @@ import sys
 
 from ...filesystem import library as libfs
 from ...routes import library as libroutes
-from ...development import libfactor
+from ...system import libfactor
 
 from . import structure
 from . import format
