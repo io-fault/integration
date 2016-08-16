@@ -32,6 +32,7 @@
  <!-- arguably configuration -->
  <xsl:variable name="functions_title" select="'functions'"/>
  <xsl:variable name="classes_title" select="'classes'"/>
+ <xsl:variable name="structures_title" select="'structures'"/>
  <xsl:variable name="methods_title" select="'methods'"/>
  <xsl:variable name="static_methods_title" select="'static methods'"/>
  <xsl:variable name="class_methods_title" select="'class methods'"/>
@@ -957,7 +958,7 @@
   <xsl:variable name="leading.name" select="$context/@identifier"/>
 
   <xsl:variable name="abstract.src" select="ctx:qualify(f:inherit.docs(.))"/>
-  <xsl:apply-templates select="./f:class"/><!--Nested Classes-->
+  <xsl:apply-templates select="./f:class|./f:structure|./f:union"/><!--Nested-->
 
   <div id="{@xml:id}" class="{local-name()}">
    <div class="title">
@@ -1072,6 +1073,25 @@
      </div>
     </div>
    </xsl:if>
+
+   <xsl:if test="./f:structure">
+    <div class="structures">
+     <div class="head">
+      <span class="title"><xsl:value-of select="$structures_title"/></span>
+     </div>
+
+     <xsl:apply-templates select="./f:structure[f:doc]">
+      <xsl:sort order="ascending" select="number(./f:source/@start)"/>
+     </xsl:apply-templates>
+
+     <div class="undocumented">
+      <xsl:apply-templates select="./f:structure[not(f:doc)]">
+       <xsl:sort order="ascending" select="number(./f:source/@start)"/>
+      </xsl:apply-templates>
+     </div>
+    </div>
+   </xsl:if>
+
   </div>
  </xsl:template>
 

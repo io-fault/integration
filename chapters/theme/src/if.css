@@ -102,6 +102,7 @@ div[class="if.item"] > div.label > span.identifier {
 	font-family: 'Montserrat', sans-serif;
 }
 
+div[class="factor..structures"] div[class="if.vertical.sequence"],
 div[class="factor..functions"] div[class="if.vertical.sequence"],
 div[class="factor..imports"] div[class="if.vertical.sequence"],
 div[class="factor..sources"] div[class="if.vertical.sequence"]

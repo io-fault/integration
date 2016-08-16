@@ -40,7 +40,7 @@
 	<xi:include href="html.xsl#xpointer(/*/*:*)" parse="xml"/>
 
 	<xsl:template mode="class.hierarchy" match="node()"/>
-	<xsl:template mode="function.index" match="node()"/>
+	<xsl:template mode="concept.index" match="node()"/>
 	<xsl:template mode="toc" match="node()"/>
 
 	<xsl:template mode="javascript.source.index" match="*">
@@ -168,7 +168,7 @@
 		</a>
 	</xsl:template>
 
-	<xsl:template mode="function.index" match="f:function[f:doc]">
+	<xsl:template mode="concept.index" match="f:*[@identifier]">
 		<xsl:variable name="src" select="f:source"/>
 		<a href="{concat('#', @xml:id)}">
 			<div class="if.item">
@@ -414,7 +414,18 @@
 						<div id="function..index" class="factor..functions">
 							<div class="title">Functions</div>
 							<div class="if.vertical.sequence">
-							<xsl:apply-templates mode="function.index" select=".//f:function">
+							<xsl:apply-templates mode="concept.index" select=".//f:function[f:doc]">
+								<xsl:sort order="ascending" select="@identifier"/>
+							</xsl:apply-templates>
+							</div>
+						</div>
+					</xsl:if>
+
+					<xsl:if test=".//f:structure[f:doc]">
+						<div id="structure..index" class="factor..structures">
+							<div class="title">Structures</div>
+							<div class="if.vertical.sequence">
+							<xsl:apply-templates mode="concept.index" select=".//f:structure[f:doc]">
 								<xsl:sort order="ascending" select="@identifier"/>
 							</xsl:apply-templates>
 							</div>

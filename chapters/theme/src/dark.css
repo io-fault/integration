@@ -256,6 +256,10 @@ div[class="index.function"] {
 	margin-left: 1em;
 }
 
+div[class="index.structure"] {
+	margin-left: 1em;
+}
+
 div[class="index.class"] {
 	margin-left: 1em;
 }
@@ -303,6 +307,7 @@ span.internal {
 
 /* defaults for arbitrary parameter areas (functions/methods/class bases) */
 
+div[class="factor..structures"] > div.title,
 div[class="factor..classes"] > div.title,
 div[class="factor..functions"] > div.title,
 div[class="factor..imports"] > div.title,
@@ -333,9 +338,10 @@ div[class~="method"] > div.title
 
 div[class="section"] > div.title,
 div[class="index"] > div.title,
-div[class~="struct"] > div.title,
+div[class~="structure"] > div.title,
 div[class~="interface"] > div.title,
 div[class~="template"] > div.title,
+div[class~="structure"] > div.title
 div[class~="class"] > div.title
 {
 	font-size: large;
