@@ -30,6 +30,10 @@
 
 	<xsl:template match="structure">
 		<f:structure identifier="{@identifier}">
+			<xsl:attribute name="xml:id">
+				<xsl:value-of select="'struct..'"/>
+				<xsl:value-of select="@identifier"/>
+			</xsl:attribute>
 			<xsl:if test="start and stop">
 				<f:source unit="line" start="{start/@line}" stop="{stop/@line}"/>
 				<f:source unit="octet" start="{start/@offset}" stop="{stop/@offset}"/>
