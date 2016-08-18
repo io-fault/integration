@@ -318,6 +318,7 @@
 		 </div>
 		 <div class="qualifiers"/>
 		 <xsl:apply-templates select="txt:*"/>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
@@ -683,6 +684,7 @@
 		 </div>
 		 <div class="qualifiers"/>
 		 <xsl:apply-templates select="f:doc"/>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
@@ -773,17 +775,19 @@
 				 <div class="representation">
 					 <xsl:apply-templates mode="python.inline.data" select="./py:*"/>
 				 </div>
-		 <!--Join Properties section of context element with @identifier-->
+
+				 <!--Join Properties section of context element with @identifier-->
 				 <xsl:variable name="txt.dict.item" select="$context/f:doc/txt:section[@identifier='Properties']/txt:dictionary/txt:item[@identifier=$id]"/>
-		 <xsl:if test="$txt.dict.item">
-			 <div class="doc">
-				 <div id="{$ctx.id}..section">
+				 <xsl:if test="$txt.dict.item">
+					 <div class="doc">
+						 <div id="{$ctx.id}..section">
 							 <xsl:apply-templates select="$txt.dict.item/txt:value/txt:*"/>
-				 </div>
-	 </div>
-		 </xsl:if>
+						 </div>
+					 </div>
+				 </xsl:if>
 			 </xsl:otherwise>
 		 </xsl:choose>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
@@ -834,6 +838,7 @@
 		 </div>
 		 <div class="qualifiers"/>
 		 <xsl:apply-templates select="./f:doc"/>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
@@ -862,6 +867,7 @@
 
 		 <xsl:apply-templates select="$test/py:*"/>
 		 <xsl:apply-templates select="./f:doc"/>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
@@ -895,6 +901,7 @@
 			 </div>
 			 <div class="qualifiers"/>
 			 <xsl:apply-templates select="txt:value/txt:*"/>
+				<div class="footing"/>
 		 </div>
 	 </xsl:for-each>
  </xsl:template>
@@ -1028,6 +1035,7 @@
 				 <xsl:with-param name="element" select="."/>
 			 </xsl:call-template>
 		 </div>
+			<div class="footing"/>
 	 </div>
  </xsl:template>
 
