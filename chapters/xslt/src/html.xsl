@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- ! Transform extracted project documentation into XHTML
- ! Signatures hide keyword arguments that are not annotated.
- !-->
+	Transform extracted project documentation into XHTML
+	Signatures hide keyword arguments that are not annotated.
+	!-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -22,12 +22,13 @@
 	extension-element-prefixes="func"
 	exclude-result-prefixes="set str exsl func xl xsl py txt f df ctx">
 
- <xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
- <xsl:param name="long.args.limit" select="64"/>
- <xsl:param name="bytes.limit" select="256"/>
+	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
+	<xsl:param name="long.args.limit" select="64"/>
+	<xsl:param name="bytes.limit" select="256"/>
 
- <xsl:param name="python.version" select="'3'"/>
- <xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
+	<xsl:param name="python.version" select="'3'"/>
+	<xsl:param name="python.docs"
+		select="concat('https://docs.python.org/', $python.version, '/library/')"/>
 
  <!-- arguably configuration -->
  <xsl:variable name="functions_title" select="'functions'"/>
@@ -293,31 +294,32 @@
   <p><xsl:apply-templates select="node()"/></p>
  </xsl:template>
 
- <xsl:template match="txt:reference">
-  <xsl:variable name="address" select="ctx:reference(.)"/>
-  <a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
- </xsl:template>
+	<xsl:template match="txt:reference">
+		<xsl:variable name="address" select="ctx:reference(.)"/>
+		<a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
+	</xsl:template>
 
- <xsl:template match="txt:section[@identifier]">
-  <!-- if there is no identified ancestor, it's probably the root object (module) -->
-  <xsl:variable name="id" select="ctx:id(.)"/>
+	<xsl:template match="txt:section[@identifier]">
+		<!--if there is no identified ancestor, it's probably the root object (module)-->
+		<xsl:variable name="id" select="ctx:id(.)"/>
 
-  <div id="{$id}" class="section">
-   <div class="title">
-    <a class="text.reference" href="{concat('#', $id)}">
-     <xsl:value-of select="@identifier"/>
-    </a>
-    <!-- Provide context links for subsections -->
-    <xsl:if test="ancestor::txt:section">
-     <xsl:variable name="super" select="ancestor::txt:section"/>
-     <a href="{concat('#', ctx:id($super))}" class="supersection">
-      [<xsl:value-of select="$super/@identifier"/>]
-     </a>
-    </xsl:if>
-   </div>
-   <xsl:apply-templates select="txt:*"/>
-  </div>
- </xsl:template>
+		<div id="{$id}" class="section">
+			<div class="title">
+				<a class="text.reference" href="{concat('#', $id)}">
+					<xsl:value-of select="@identifier"/>
+				</a>
+				<!-- Provide context links for subsections -->
+				<xsl:if test="ancestor::txt:section">
+					<xsl:variable name="super" select="ancestor::txt:section"/>
+					<a href="{concat('#', ctx:id($super))}" class="supersection">
+						[<xsl:value-of select="$super/@identifier"/>]
+					</a>
+				</xsl:if>
+			</div>
+			<div class="qualifiers"/>
+			<xsl:apply-templates select="txt:*"/>
+		</div>
+	</xsl:template>
 
  <xsl:template match="txt:section[not(@identifier)]">
   <!-- Don't include the div if the leading section is empty -->
@@ -362,7 +364,8 @@
   <div id="{ctx:id(.)}">
    <div id="factor..section.index">
     <h3 class="title">Table of Contents</h3>
-    <div class="toc">
+				<div class="qualifiers"/>
+				<div class="toc">
      <xsl:apply-templates mode="toc" select="ancestor::f:chapter"/>
     </div>
    </div>
@@ -678,6 +681,7 @@
     </span>
     <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
+			<div class="qualifiers"/>
    <xsl:apply-templates select="f:doc"/>
   </div>
  </xsl:template>
@@ -740,6 +744,7 @@
   <xsl:variable name="leading.name" select="$context/@identifier"/>
   <xsl:variable name="typ.addr" select="string(py:object/@type)"/>
   <xsl:variable name="ctx.id" select="ctx:id(.)"/>
+  <xsl:variable name="id" select="@identifier"/>
 
   <div id="{$ctx.id}" class="data">
    <div class="title">
@@ -756,6 +761,7 @@
      </a>
     </xsl:if>
    </div>
+			<div class="qualifiers"/>
 
    <xsl:choose>
     <xsl:when test="f:error">
@@ -768,11 +774,11 @@
       <xsl:apply-templates mode="python.inline.data" select="./py:*"/>
      </div>
 	  <!--Join Properties section of context element with @identifier-->
-     <xsl:variable name="txt.dict.item" select="$context/f:doc/txt:section[@identifier='Properties']/txt:dictionary/txt:item"/>
-	  <xsl:if test="$txt.dict.item[txt:key//text()=@identifier]">
+     <xsl:variable name="txt.dict.item" select="$context/f:doc/txt:section[@identifier='Properties']/txt:dictionary/txt:item[@identifier=$id]"/>
+	  <xsl:if test="$txt.dict.item">
 	   <div class="doc">
 	    <div id="{$ctx.id}..section">
-        <xsl:apply-templates select="$txt.dict.item[txt:key//text()=@identifier]/txt:value/txt:*"/>
+        <xsl:apply-templates select="$txt.dict.item/txt:value/txt:*"/>
 	    </div>
 		</div>
 	  </xsl:if>
@@ -826,6 +832,7 @@
     <a class="terminal" href="{concat('#', @xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
     <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
+			<div class="qualifiers"/>
    <xsl:apply-templates select="./f:doc"/>
   </div>
  </xsl:template>
@@ -851,6 +858,7 @@
     </span>
     <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
+			<div class="qualifiers"/>
 
    <xsl:apply-templates select="$test/py:*"/>
    <xsl:apply-templates select="./f:doc"/>
@@ -885,6 +893,7 @@
       <span class="identifier"><xsl:value-of select="$name"/></span>
      </a>
     </div>
+				<div class="qualifiers"/>
     <xsl:apply-templates select="txt:value/txt:*"/>
    </div>
   </xsl:for-each>
@@ -974,6 +983,7 @@
     </span>
     <xsl:apply-templates mode="metrics-data" select="."/>
    </div>
+			<div class="qualifiers"/>
 
    <div style="margin-bottom: 1em;" class="doc">
     <xsl:apply-templates select="f:doc/txt:*[not(@identifier='Properties')]"/>
