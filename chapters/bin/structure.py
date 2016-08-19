@@ -136,7 +136,6 @@ def structure_package(target, package, metrics=None):
 		if module.__factor_composite__ and module.__factor_type__ != 'system.interfaces':
 			from ...llvm import libxslt as llvm_xslt
 			from ...development import library as libdev
-			from ...xml import libfactor
 
 			is_ext = libfactor.python_extension(module)
 			index = libfactor.cache_directory(module, 'inspect', 'optimal', 'factor')
