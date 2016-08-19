@@ -17,7 +17,7 @@ from .. import library as libfactors
 from ...system import libfactor
 from ...routes import library as libroutes
 from ...text import library as libtext
-from ...xml import library as libxml
+from ...xml import libfactor as xmlfactor
 from ...filesystem import library as libfs
 
 from ...chronometry import library as libtime
@@ -136,11 +136,11 @@ def structure_package(target, package, metrics=None):
 		if module.__factor_composite__ and module.__factor_type__ != 'system.interfaces':
 			from ...llvm import libxslt as llvm_xslt
 			from ...development import library as libdev
-			from ...xml import lxml #! Use libxml reference instead.
+			from ...xml import libfactor
 
 			is_ext = libfactor.python_extension(module)
 			index = libfactor.cache_directory(module, 'inspect', 'optimal', 'factor')
-			ilparams, sources = libdev.extract_inspect(lxml.etree.parse(str(index)))
+			ilparams, sources = libdev.extract_inspect(xmlfactor.readfile(str(index)))
 			iformat = ilparams['format']
 			index = index.container
 			xi = (index / 'out') / iformat
@@ -178,7 +178,6 @@ def structure_package(target, package, metrics=None):
 				dociter = libpython.document(query, x, sfm, metrics=metrics)
 				libpython.emit(docs, sfm.__factor_key__.encode('utf-8'), dociter)
 
-	return 0
-
 if __name__ == '__main__':
-	sys.exit(structure_package(*sys.argv[1:]))
+	structure_package(*sys.argv[1:])
+	sys.exit(0)
