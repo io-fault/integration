@@ -772,10 +772,6 @@
 					</div>
 				</xsl:when>
 				<xsl:otherwise>
-					<div class="representation">
-						<xsl:apply-templates mode="python.inline.data" select="./f:object/py:*"/>
-					</div>
-
 					<!--Join Properties section of context element with @identifier-->
 					<xsl:variable name="txt.dict.item"
 						select="$context/f:doc/txt:section[@identifier='Properties']/txt:dictionary/txt:item[@identifier=$id]"/>
@@ -786,6 +782,10 @@
 							</div>
 						</div>
 					</xsl:if>
+
+					<div class="representation">
+						<xsl:apply-templates mode="python.inline.data" select="./f:object/py:*"/>
+					</div>
 				</xsl:otherwise>
 			</xsl:choose>
 			<div class="footing"/>
