@@ -1,8 +1,8 @@
 /*
- * Stylesheet for Python module documentation.
- * Much of the complexity here is to avoid
- * displaying unwanted formatting whitespace.
- */
+	Stylesheet for Python module documentation.
+	Much of the complexity here is to avoid
+	displaying unwanted formatting whitespace.
+*/
 @charset "utf-8";
 @import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
 
@@ -58,7 +58,6 @@ body {
 }
 
 p {
-	margin-left: 1.2em;
 	text-shadow:
 		1px -1px 2px rgba(0,0,0,1),
 		1px 2px 1px rgba(0,0,0,1);
@@ -107,10 +106,6 @@ div.factor > div.title {
 	padding: 4px;
 
 	border-width: 1px;
-	margin-left: -1px;
-	margin-right: -1px;
-	border-top-width: 1px;
-	border-bottom-width: 1px;
 	border-color: gray;
 	border-style: solid;
 }
@@ -312,11 +307,7 @@ div[class="factor..classes"] > div.title,
 div[class="factor..functions"] > div.title,
 div[class="factor..imports"] > div.title,
 div[class="factor..sources"] > div.title,
-div[class="factor..sections"] > div.title,
-div[class~="property"] > div.title,
-div[class~="function"] > div.title,
-div[class~="data"] > div.title,
-div[class~="method"] > div.title
+div[class="factor..sections"] > div.title
 {
 	width: 95%;
 	background: rgba(0,0,0,0.15);
@@ -336,22 +327,33 @@ div[class~="method"] > div.title
 	border-radius: 4px;
 }
 
+div[class~="property"] > div.title,
+div[class~="function"] > div.title,
+div[class~="data"] > div.title,
+div[class~="method"] > div.title
+{
+	padding-top: 3px;
+	padding-bottom: 8px;
+
+	border-width: 0;
+	border-style: solid;
+	border-color: rgba(80,80,80,0.4);
+	border-radius: 4px;
+}
+
 div[class="section"] > div.title,
-div[class="index"] > div.title,
-div[class~="structure"] > div.title,
-div[class~="interface"] > div.title,
-div[class~="template"] > div.title,
-div[class~="structure"] > div.title
-div[class~="class"] > div.title
+div[class="index"] > div.title
 {
 	font-size: large;
 	width: 100%;
 	vertical-align: middle;
 	background: rgba(0,0,0,0.3);
+
 	padding-top: 4px;
 	padding-bottom: 4px;
 	padding-left: 0.2em;
 	padding-right: 1em;
+
 	margin-bottom: 4px;
 	margin-left: 1px;
 
@@ -361,9 +363,74 @@ div[class~="class"] > div.title
 	/*border-bottom-color: rgba(200,200,200, 0.2);*/
 }
 
+div[class~="structure"],
+div[class~="interface"],
+div[class~="protocol"],
+div[class~="template"],
+div[class~="structure"],
+div[class~="class"]
+{
+	background: rgba(70,70,70,.15);
+
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-left: 2px;
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgba(100,100,100,.4);
+	border-radius: 4px;
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+
+	margin-left: -1px;
+	margin-right: 12px;
+
+	overflow-x: hidden;
+}
+
+/* doc div's inside containers */
+div[class~="container"] > div.doc,
+div[class~="structure"] > div.doc,
+div[class~="interface"] > div.doc,
+div[class~="protocol"] > div.doc,
+div[class~="template"] > div.doc,
+div[class~="structure"] > div.doc,
+div[class~="class"] > div.doc
+{
+	margin-left: 1em;
+}
+
+div[class~="property"],
+div[class~="function"],
+div[class~="data"],
+div[class~="method"]
+{
+	width: 95%;
+	background: rgba(10,10,10,.15);
+
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	margin-left: auto;
+	margin-right: auto;
+
+	padding-top: 3px;
+	padding-bottom: 3px;
+	padding-left: 8px;
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgba(90,90,90,.4);
+	border-radius: 4px;
+
+	overflow-x: hidden;
+}
+
 div[class="section"] > div.title:before
 {
 	content: '\1F4C3';
+	margin-right: 0.5em;
+	padding-left: 0.5em;
 }
 
 div[class="index"] > div.title:before
@@ -443,14 +510,6 @@ span.sequence-delimiter:last-child
 	display: none;
 }
 
-/*
- * Very large leading document title.
- */
-div.method, div.function, div.property, div.data {
-	margin-top: 1em;
-	margin-bottom: 1em;
-}
-
 span.path-delimiter, span.sequence-delimiter,
 span.delimiter, span.assignment { font-size: medium; }
 
@@ -475,7 +534,7 @@ div.class {
 	margin-top: 3em;
 }
 
-div.title, div.data {
+div.title {
 	font-family: monospace;
 }
 
@@ -489,6 +548,7 @@ div.title, div.data {
 div.representation {
 	margin-top: 1em;
 	margin-left: 2em;
+	font-family: monospace;
 }
 
 /* Formatting for HTML representation of Python objects */
@@ -507,7 +567,10 @@ span[class="python.dictionary.item"] {
  */
 div.doc {
 	font-size: 90%;
-	padding-right: 2em;
+}
+
+div.doc p {
+	margin-right: 1em;
 }
 
 div.doc > div.section > p:first-child {
@@ -588,16 +651,23 @@ div.module div.doc div.section {
 div[class="section"] div[class="section"] div[class="title"] {
 	font-size: 105%;
 	text-decoration: none;
-
-	/*text-shadow: -1px -2px 0 rgba(0,0,0,1);
-	background-color: #222222;*/
 }
 
 div.module div.doc div[class="section"] div[class="title"] {
 	/* reduce the font size in expression documentation */
 	font-size: 90%;
-	margin-top: 0;
-	border-width: 0;
+	background-color: rgba(20,20,20,0.6);
+
+	position: relative;
+	left: -8px;
+	margin: 0;
+	width: 100%;
+
+	border-width: 0px;
+	border-bottom-width: 1px;
+	border-top-width: 1px;
+	border-style: solid;
+	border-radius: 0;
 }
 
 /* subscript text referencing the containing section */
@@ -721,6 +791,13 @@ dl.text > dd > *:first-child {
 
 a[class="dkn"]:before {
 	content: "→";
+	vertical-align: sub;
+
+	color: gray;
+	font-family: sans-serif;
+	font-size: inherit;
+
+	margin-right: 2px;
 }
 a[class="dkn"] {
 	vertical-align: middle;
@@ -793,3 +870,57 @@ div.title > span.metrics
 	float: right;
 	padding-right: 1em;
 }
+
+/* Subsections inside concept representations */
+div.module div.doc div[class="section"] div[class="section"] > div.title {
+	padding-left: 8px;
+	background-color: rgba(20,20,20,0.4);
+
+	border-width: 0px;
+	border-bottom-width: 1px;
+	border-radius: 0;
+}
+
+div.module div.doc div[class="section"] div[class="section"] {
+	position: relative;
+	overflow-x: hidden;
+
+	background-color: rgba(20,20,20,.6);
+
+	margin: 1em;
+
+	border-color: rgba(100,100,100,0.3);
+	border-width: 1px;
+	border-style: solid;
+	border-radius: 6px;
+}
+
+div.module div.doc div.section[id$=".Parameters"] > dl.text > dt {
+	font-family: monospace;
+	font-size: small;
+	font-weight: bold;
+	color: #55BB55;
+}
+
+div.qualifiers
+{
+	position: relative;
+	left: -8px;
+
+	width: calc(100% + 8px);
+	background-color: rgba(20,20,20,0.2);
+	font-size: 80%;
+
+	border-style: solid;
+	border-color: rgba(80,80,80,0.3);
+	border-width: 1px;
+
+	padding-left: 0.5em;
+	margin-top: 1px;
+}
+
+div.qualifiers:empty
+{
+	display: none;
+}
+

@@ -132,6 +132,7 @@ div[class="doc.termination"]
 	margin-bottom: 2em;
 	margin-left: auto;
 	margin-right: auto;
+	display: none;
 }
 
 div[class="html.clear"]

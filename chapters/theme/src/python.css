@@ -1,18 +1,18 @@
-span[class="python.type.string"]
-{
-	color: gray;
-}
-
 span[class="python.type.string"]:before
 {
 	content: '"';
-	color: teal;
+	color: #999999;
 }
 
 span[class="python.type.string"]:after
 {
 	content: '"';
-	color: teal;
+	color: #999999;
+}
+
+span[class="python.type.string"]
+{
+	color: #AAAAAA;
 }
 
 span[class="python.type.tuple"]:before
@@ -49,8 +49,7 @@ div[class="exception.title"]
 	font-weight: bolder;
 }
 
-div[class="python.exception"]
-div[class|="admonition"]
+div[class="python.exception"] div[class|="admonition"]
 {
 	max-width: 90%;
 }
