@@ -402,6 +402,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			print_xml_open(fp, "typedef");
 			print_spelling_identifier(fp, cursor);
 			print_xml_enter(fp);
+			print_source_location(fp, cursor);
 			print_type(fp, cursor, real_type);
 			print_xml_close(fp, "typedef");
 		}
