@@ -327,20 +327,6 @@ div[class="factor..sections"] > div.title
 	border-radius: 4px;
 }
 
-div[class~="property"] > div.title,
-div[class~="function"] > div.title,
-div[class~="data"] > div.title,
-div[class~="method"] > div.title
-{
-	padding-top: 3px;
-	padding-bottom: 8px;
-
-	border-width: 0;
-	border-style: solid;
-	border-color: rgba(80,80,80,0.4);
-	border-radius: 4px;
-}
-
 div[class="section"] > div.title,
 div[class="index"] > div.title
 {
@@ -363,6 +349,7 @@ div[class="index"] > div.title
 	/*border-bottom-color: rgba(200,200,200, 0.2);*/
 }
 
+div[class~="container"],
 div[class~="structure"],
 div[class~="interface"],
 div[class~="protocol"],
@@ -406,6 +393,7 @@ div[class~="function"],
 div[class~="data"],
 div[class~="method"]
 {
+	position: relative;
 	width: 95%;
 	background: rgba(10,10,10,.15);
 
@@ -453,6 +441,20 @@ div[class~="function"] div[class="section"] > div.title
 
 	margin-left: -4px;
 	border-right-width: 1px;
+	border-radius: 4px;
+}
+
+div[class~="property"] > div.title,
+div[class~="function"] > div.title,
+div[class~="data"] > div.title,
+div[class~="method"] > div.title
+{
+	padding-top: 3px;
+	padding-bottom: 8px;
+
+	border-width: 0;
+	border-style: solid;
+	border-color: rgba(80,80,80,0.4);
 	border-radius: 4px;
 }
 
@@ -790,14 +792,13 @@ dl.text > dd > *:first-child {
 }
 
 a[class="dkn"]:before {
-	content: "→";
-	vertical-align: sub;
+	content: "↬";
 
-	color: gray;
+	color: #bc6d26;
 	font-family: sans-serif;
-	font-size: inherit;
+	font-size: 115%;
 
-	margin-right: 2px;
+	margin-right: 4px;
 }
 a[class="dkn"] {
 	vertical-align: middle;
