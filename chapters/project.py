@@ -1,4 +1,4 @@
-identity = 'https://fault.io/project/python/fault.factor'
+identity = 'http://fault.io/python/fault.factor'
 name = 'factor'
 abstract = 'Project documentation and release publishing tools.'
 icon = '🦂'
