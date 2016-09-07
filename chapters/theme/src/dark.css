@@ -784,7 +784,7 @@ dl.text > dd {
 	margin: 0;
 	border: 0;
 	padding: 0;
-	padding-left: 1em;
+	padding-left: 4em;
 }
 
 dl.text > dd > *:first-child {
@@ -813,6 +813,7 @@ dl.text > dt {
 	margin: 0;
 	padding: 0;
 	font-size: larger;
+	font-family: monospace;
 }
 
 div[id="factor..section.index"]
