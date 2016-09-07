@@ -11,6 +11,8 @@ def name(name_string):
 	global namespace
 	return '{%s}%s' %(namespace, name_string)
 
+RangeSet = librange.Set
+
 class Factor(libfactor.XPathModule):
 	"""
 	Support for operations that would be difficult in some fashion if written in XSLT.
@@ -54,9 +56,9 @@ class Factor(libfactor.XPathModule):
 		if cov is None:
 			cov = {}
 
-		self.traversed = librange.RangeSet.from_string(cov.get('traversed', ''))
-		self.traversable = librange.RangeSet.from_string(cov.get('traversable', ''))
-		self.untraversed = librange.RangeSet.from_string(cov.get('untraversed', ''))
+		self.traversed = RangeSet.from_string(cov.get('traversed', ''))
+		self.traversable = RangeSet.from_string(cov.get('traversable', ''))
+		self.untraversed = RangeSet.from_string(cov.get('untraversed', ''))
 
 		return None
 
@@ -77,13 +79,13 @@ class Factor(libfactor.XPathModule):
 
 		# source element with start and stop available.
 		ir = librange.IRange((int(start), int(stop)))
-		rs = librange.RangeSet.from_normal_sequence([ir])
-		luntraversed = librange.RangeSet.from_normal_sequence(list(self.untraversed.intersection(rs)))
+		rs = RangeSet.from_normal_sequence([ir])
+		luntraversed = RangeSet.from_normal_sequence(list(self.untraversed.intersection(rs)))
 
 		return str(luntraversed)
 
 	def summary(self, context, *args, source=name('source'),
-			list=list, int=int, RangeSet=librange.RangeSet
+			list=list, int=int,
 		):
 		"""
 		Collect the per-concept untraversed lines summary data.
