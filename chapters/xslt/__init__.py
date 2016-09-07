@@ -84,8 +84,8 @@ class Factor(libfactor.XPathModule):
 
 		return str(luntraversed)
 
-	def summary(self, context, *args, source=name('source'),
-			list=list, int=int,
+	def summary(self, context, *args,
+			source=name('source'), list=list, int=int
 		):
 		"""
 		Collect the per-concept untraversed lines summary data.
