@@ -1,10 +1,10 @@
-identity = 'http://fault.io/python/fault.llvm'
+identity = 'http://fault.io/python/llvm'
 name = 'llvm'
 abstract = 'Introspection interfaces for LLVM and clang'
 icon = '<http://llvm.org>'
 
-versioning = 'continuous'
 fork = 'green'
+versioning = 'continuous'
 status = 'flux'
 
 controller = 'fault.io'
