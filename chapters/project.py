@@ -1,9 +1,10 @@
-identity = 'http://fault.io/python/fault.factor'
+identity = 'http://fault.io/python/factor'
 name = 'factor'
 abstract = 'Project documentation and release publishing tools.'
 icon = '🦂'
 
 fork = 'root'
+versioning = 'continuous'
 status = 'flux'
 
 controller = 'fault.io' # Responsible Party
