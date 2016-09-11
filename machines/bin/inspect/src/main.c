@@ -1,6 +1,6 @@
 #include "clang-c/Index.h"
 #include <stdio.h>
-#include <fault/roles.h>
+#include <fault/libc.h>
 
 int print_xml_attribute(FILE *, char *, char *); /* attribute identifier and data */
 int print_xml_number_attribute(FILE *, char *, unsigned long); /* attribute identifier and data */
@@ -394,7 +394,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	switch (kind)
 	{
 		case CXCursor_TranslationUnit:
-			break;
+		break;
 
 		case CXCursor_TypedefDecl:
 		{
@@ -802,7 +802,7 @@ main(int argc, const char *argv[])
 	print_xml_close(stdout, "introspection");
 
 	/* Short lived process */
-	#if TEST()
+	#if FV_TEST()
 		clang_disposeTranslationUnit(u);
 		clang_disposeIndex(idx);
 	#endif

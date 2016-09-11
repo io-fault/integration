@@ -6,4 +6,6 @@ LLVM utilities for extracting profile and coverage data.
 """
 from ...probes import libllvm
 from ....development.probes import libpython
-__factor_type__ = 'system.extension'
+
+__factor_type__ = 'system'
+__factor_dynamics__ = 'extension'

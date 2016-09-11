@@ -5,7 +5,7 @@
 #include <limits.h>
 
 extern "C" {
-#include <fault/roles.h>
+#include <fault/libc.h>
 #include <Python.h>
 #include <fault/python/environ.h>
 #include <fault/internal.h>

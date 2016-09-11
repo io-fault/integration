@@ -9,7 +9,8 @@ import shutil
 
 from ...routes import library as libroutes
 
-__factor_type__ = 'system.probe'
+__factor_type__ = 'system'
+__factor_dynamics__ = 'probe'
 
 parameters = {
 	'executable':
