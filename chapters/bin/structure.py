@@ -109,6 +109,7 @@ def structure_package(target, package, metrics=None):
 	# The Python module level is processed independently;
 	fractions = libfactors.fractions(packages)
 
+	variants = {'name':'inspect','purpose':'optimal','format':'xml'}
 	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
 		key = cname.encode('utf-8')
@@ -133,13 +134,13 @@ def structure_package(target, package, metrics=None):
 
 		# Composites have a set of subfactors,
 		# build special module instances that can be processed by libpython.document().
-		if module.__factor_composite__ and module.__factor_type__ != 'system.interfaces':
+		if module.__factor_composite__ and module.__factor_dynamics__ != 'interfaces':
 			from ...llvm import libxslt as llvm_xslt
 			from ...development import library as libdev
 
 			is_ext = libfactor.python_extension(module)
-			index = libfactor.cache_directory(module, 'inspect', 'optimal', 'factor')
-			ilparams, sources = libdev.extract_inspect(xmlfactor.readfile(str(index)))
+			index = libconstruct.context_work(module, variants) / 'ftr' / 'pf.lnk'
+			ilparams, sources = libfactors.extract_inspect(xmlfactor.readfile(str(index)))
 			iformat = ilparams['format']
 			index = index.container
 			xi = (index / 'out') / iformat

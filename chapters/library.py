@@ -10,6 +10,39 @@ from ..text import library as libtext
 from ..system import libfactor
 from ..xml import libfactor as xmlfactor
 
+namespaces = {
+	'xlink': 'http://www.w3.org/1999/xlink',
+	'inspect': 'https://fault.io/xml/inspect#set',
+}
+
+def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
+	"""
+	Load the factor of an inspect role run.
+
+	[Effects]
+
+	/Product
+		A pair, the former being the command parameters and the latter
+		being the set of sources.
+	"""
+	global namespaces
+
+	e = xml.getroot()
+
+	# Stored parameters of the link. (library.set)
+	params = e.find("./inspect:parameters", namespaces)
+	if params is not None:
+		data, = params
+		s = libxml.Data.structure(data)
+	else:
+		s = None
+
+	# Source file.
+	sources = e.findall("./inspect:source", namespaces)
+	sources = [libroutes.File.from_absolute(x.attrib[href].replace('file://', '', 1)) for x in sources]
+
+	return s, sources
+
 def factors(package:str) -> typing.Tuple[
 		libroutes.Import,
 		typing.Sequence[libroutes.Import],

@@ -134,4 +134,5 @@ class Factor(libfactor.XPathModule):
 
 		return ' '.join(('%d%s' % (x[0], ustr(nte, abb, x[1]))) for x in out if x[0] > 0)
 
-__factor_type__ = 'xml.executable'
+__factor_type__ = 'xml'
+__factor_dynamics__ = 'executable'

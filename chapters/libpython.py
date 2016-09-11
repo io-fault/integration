@@ -24,8 +24,7 @@ from ..xml import libpython as libxmlpython
 from ..text import library as libtext
 from ..computation import librange
 
-from ..development.xml import libmetrics
-from ..development.xml import libtest
+from ..development import libxml as devxml
 
 serialization = libxmlpython.Serialization() # currently only utf-8 is used.
 
@@ -702,7 +701,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 		fc = coverage.pop('full_counters', None)
 		zc = coverage.pop('zero_counters', None)
 
-		data = libmetrics.coverage(serialization, coverage, prefix="coverage..")
+		data = devxml.Metrics.serialize_coverage(serialization, coverage, prefix="coverage..")
 
 		ntravb = len(traversable)
 		ntravd = len(traversed)
@@ -723,7 +722,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 	if profile is not None:
 		# Complete measurements. Parts are still going to be referenced.
 		profile = serialization.element('profile',
-			libmetrics.profile(serialization, profile, keys=profile_key_processor, prefix="profile.."),
+			devxml.Metrics.serialize_profile(serialization, profile, keys=profile_key_processor, prefix="profile.."),
 		)
 	else:
 		profile = ()
@@ -770,7 +769,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 			if tests is not None:
 				tests = pickle.loads(tests)
 				tests = serialization.prefixed('test',
-					libtest.serialize(serialization, tests)
+					devxml.Test.serialize(serialization, tests)
 				)
 		else:
 			if factor_type == 'tests':
@@ -787,7 +786,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 				if tests is not None:
 					tests = pickle.loads(tests)
 					tests = serialization.prefixed('test',
-						libtest.serialize(serialization, {
+						devxml.Test.serialize(serialization, {
 								k: v for k, v in tests.items()
 								if str(k).startswith(cname)
 							}
