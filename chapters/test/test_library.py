@@ -1,5 +1,6 @@
 from .. import library
 from ...xml import lxml
+libroutes = library.libroutes
 
 def test_XSLT_access(test):
 	pass

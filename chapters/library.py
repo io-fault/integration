@@ -9,6 +9,7 @@ from ..filesystem import library as libfs
 from ..text import library as libtext
 from ..system import libfactor
 from ..xml import libfactor as xmlfactor
+from ..xml import library as libxml
 
 namespaces = {
 	'xlink': 'http://www.w3.org/1999/xlink',
