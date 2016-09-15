@@ -15,30 +15,33 @@ parameters = {
 		"The `llvm-config` executable to extract information from.",
 }
 
-libs_pipe = ['llvm-config', 'profiledata', '--libs'] #r"""{} profiledata --libs"""
-syslibs_pipe = ['llvm-config', 'profiledata', '--system-libs'] #r"""{} profiledata --system-libs"""
-incs_pipe = ['llvm-config', '--includedir'] #r"""{} --includedir"""
-libdir_pipe = ['llvm-config', '--libdir'] #r"""{} --libdir"""
+libs_pipe = ['llvm-config', 'profiledata', '--libs']
+syslibs_pipe = ['llvm-config', 'profiledata', '--system-libs']
+covlibs_pipe = ['llvm-config', 'coverage', '--libs']
+incs_pipe = ['llvm-config', '--includedir']
+libdir_pipe = ['llvm-config', '--libdir']
 rtti_pipe = ['llvm-config', '--has-rtti']
 
 def deploy(*args):
 	Popen = subprocess.Popen
 	STDOUT = subprocess.STDOUT
 	PIPE = subprocess.PIPE
-
+	po = lambda x: Popen(x, stdin=None, stderr=PIPE, stdout=PIPE).communicate()
 
 	outs = [
-		Popen(libs_pipe, stdin=None, stderr=STDOUT, stdout=PIPE).communicate(),
-		Popen(syslibs_pipe, stdin=None, stderr=STDOUT, stdout=PIPE).communicate(),
-		Popen(libdir_pipe, stdin=None, stderr=STDOUT, stdout=PIPE).communicate(),
-		Popen(incs_pipe, stdin=None, stderr=STDOUT, stdout=PIPE).communicate(),
-		Popen(rtti_pipe, stdin=None, stderr=STDOUT, stdout=PIPE).communicate(),
+		po(libs_pipe),
+		po(syslibs_pipe),
+		po(covlibs_pipe),
+		po(libdir_pipe),
+		po(incs_pipe),
+		po(rtti_pipe),
 	]
 
-	libs, syslibs, libdirs, incdirs, rtti = [x[0].decode('utf-8') for x in outs]
+	libs, syslibs, covlibs, libdirs, incdirs, rtti = [x[0].decode('utf-8') for x in outs]
 
 	libs = set(map(str.strip, libs.split('-l')))
 	libs.update(map(str.strip, syslibs.split('-l')))
+	libs.update(map(str.strip, covlibs.split('-l')))
 	libs.discard('')
 	libs.add('c++')
 

@@ -40,15 +40,22 @@ extern "C" {
 
 #include <ctype.h>
 
-// CounterMappingRegion (mapping stored in binaries)
-#include "llvm/ProfileData/CoverageMapping.h"
-
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/Optional.h"
 #include "llvm/ADT/SmallBitVector.h"
 
+#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
+// CounterMappingRegion (mapping stored in binaries)
+#include "llvm/ProfileData/CoverageMapping.h"
 // File reader for iterating over mapping regions.
 #include "llvm/ProfileData/CoverageMappingReader.h"
+#else
+// CounterMappingRegion (mapping stored in binaries)
+#include "llvm/ProfileData/Coverage/CoverageMapping.h"
+// File reader for iterating over mapping regions.
+#include "llvm/ProfileData/Coverage/CoverageMappingReader.h"
+#endif
+
 #include "llvm/ProfileData/InstrProfReader.h"
 
 #include "llvm/Support/Debug.h"
@@ -71,6 +78,14 @@ static int kind_map[] = {
 	1, -1, 0,
 };
 
+#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
+	#define CRE_GET_ERROR(X) X.getError()
+	#define ERR_STRING(X) X.message().c_str()
+#else
+	#define CRE_GET_ERROR(X) (X.takeError())
+	#define ERR_STRING(X) toString(std::move(X)).c_str()
+#endif
+
 // CounterMappingRegion is per-function and contains start-stop line/column pairs.
 //
 // CoverageArch is the target triple commonly used by clang/gcc
@@ -87,9 +102,9 @@ _list_regions(PyObj seq, char *object, char *arch)
 	auto CoverageReaderOrErr = coverage::BinaryCoverageReader::create(buffer.get(), arch);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CoverageReaderOrErr.getError())
+		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
 		{
-			PyErr_SetString(PyExc_RuntimeError, E.message().c_str());
+			PyErr_SetString(PyExc_RuntimeError, ERR_STRING(E));
 			return(1);
 		}
 
@@ -170,9 +185,9 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 	auto CoverageReaderOrErr = coverage::BinaryCoverageReader::create(CounterMappingBuff.get(), arch);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CoverageReaderOrErr.getError())
+		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
 		{
-			PyErr_SetString(PyExc_RuntimeError, E.message().c_str());
+			PyErr_SetString(PyExc_RuntimeError, ERR_STRING(E));
 			return(1);
 		}
 
@@ -211,9 +226,9 @@ _extract_counters(PyObj seq, char *object, char *profile, char *arch)
 {
 	auto CoverageOrErr = coverage::CoverageMapping::load(object, profile, arch);
 
-	if (auto E = CoverageOrErr.getError())
+	if (auto E = CRE_GET_ERROR(CoverageOrErr))
 	{
-		PyErr_SetString(PyExc_RuntimeError, E.message().c_str());
+		PyErr_SetString(PyExc_RuntimeError, ERR_STRING(E));
 		return(1);
 	}
 
@@ -255,9 +270,9 @@ _extract_nonzero_counters(PyObj seq, char *object, char *profile, char *arch)
 {
 	auto CoverageOrErr = coverage::CoverageMapping::load(object, profile, arch);
 
-	if (auto E = CoverageOrErr.getError())
+	if (auto E = CRE_GET_ERROR(CoverageOrErr))
 	{
-		PyErr_SetString(PyExc_RuntimeError, E.message().c_str());
+		PyErr_SetString(PyExc_RuntimeError, ERR_STRING(E));
 		return(1);
 	}
 
@@ -320,9 +335,9 @@ _extract_zero_counters(PyObj seq, char *object, char *profile, char *arch)
 {
 	auto CoverageOrErr = coverage::CoverageMapping::load(object, profile, arch);
 
-	if (auto E = CoverageOrErr.getError())
+	if (auto E = CRE_GET_ERROR(CoverageOrErr))
 	{
-		PyErr_SetString(PyExc_RuntimeError, E.message().c_str());
+		PyErr_SetString(PyExc_RuntimeError, ERR_STRING(E));
 		return(1);
 	}
 
