@@ -3,6 +3,7 @@ LLVM Probe for collecting compilation and linkage information.
 
 Gathers information using (system:executable)`llvm-config`.
 """
+import os
 import sys
 import sysconfig
 import subprocess
@@ -15,12 +16,14 @@ parameters = {
 		"The `llvm-config` executable to extract information from.",
 }
 
-libs_pipe = ['llvm-config', 'profiledata', '--libs']
-syslibs_pipe = ['llvm-config', 'profiledata', '--system-libs']
-covlibs_pipe = ['llvm-config', 'coverage', '--libs']
-incs_pipe = ['llvm-config', '--includedir']
-libdir_pipe = ['llvm-config', '--libdir']
-rtti_pipe = ['llvm-config', '--has-rtti']
+llvm_config = os.environ.get('LLVM_CONFIG', 'llvm-config')
+
+libs_pipe = [llvm_config, 'profiledata', '--libs']
+syslibs_pipe = [llvm_config, 'profiledata', '--system-libs']
+covlibs_pipe = [llvm_config, 'coverage', '--libs']
+incs_pipe = [llvm_config, '--includedir']
+libdir_pipe = [llvm_config, '--libdir']
+rtti_pipe = [llvm_config, '--has-rtti']
 
 def deploy(*args):
 	Popen = subprocess.Popen
