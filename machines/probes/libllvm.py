@@ -7,6 +7,7 @@ import os
 import sys
 import sysconfig
 import subprocess
+from ...development import library as libdev
 
 __factor_type__ = 'system'
 __factor_dynamics__ = 'probe'
@@ -43,13 +44,18 @@ def deploy(*args):
 	libs, syslibs, covlibs, libdirs, incdirs, rtti = [x[0].decode('utf-8') for x in outs]
 
 	libs = set(map(str.strip, libs.split('-l')))
-	libs.update(map(str.strip, syslibs.split('-l')))
-	libs.update(map(str.strip, covlibs.split('-l')))
 	libs.discard('')
 	libs.add('c++')
 
+	covlibs = set(map(str.strip, covlibs.split('-l')))
+	covlibs.discard('')
+
+	syslibs = set(map(str.strip, syslibs.split('-l')))
+	syslibs.discard('')
+
 	libdirs = set(map(str.strip, libdirs.split('-L')))
 	libdirs.discard('')
+	dir, *reset = libdirs
 
 	incdirs = set(map(str.strip, incdirs.split('-I')))
 	incdirs.discard('')
@@ -59,25 +65,52 @@ def deploy(*args):
 	else:
 		rtti = False
 
-	return {
-		'system': {
-			'library.set': libs,
-			'library.directories': libdirs,
-			'include.directories': incdirs,
-			'standards': {
-				'c++': 'c++11',
-			},
-			'command.option.injection': [
-				'-fno-exceptions', '-fno-rtti',
-			]
-		},
+	include_factors = [
+		libdev.iFactor(
+			type = 'source',
+			dynamics = 'library',
+			name = None,
+			integral = x,
+		)
+		for x in incdirs
+	]
 
-		'software': {
-			'llvm': {
-				'rtti': rtti,
-			}
-		}
+	coverage_factors = [
+		libdev.iFactor(
+			type = 'system',
+			dynamics = 'library',
+			name = x,
+			integral = dir,
+		)
+		for x in covlibs
+	]
+
+	system_factors = [
+		libdev.iFactor(
+			type = 'system',
+			dynamics = 'library',
+			name = x,
+			integral = None,
+		)
+		for x in syslibs
+	]
+
+	system_factors.append(
+		libdev.iFactor(
+			type = 'system',
+			dynamics = 'library',
+			name = 'c++',
+			integral = None,
+		)
+	)
+
+	variants = {
+		'rtti':'off', 'exceptions':'off',
+		'c++-standard': 'c++11',
 	}
+	srcparams = ()
+
+	return variants, srcparams, include_factors + coverage_factors + system_factors
 
 if __name__ == '__main__':
 	print(deploy())
