@@ -3,7 +3,7 @@
 <grammar
  xmlns="http://relaxng.org/ns/structure/1.0"
  xmlns:xlink="http://www.w3.org/1999/xlink"
- ns="https://fault.io/xml/traceback"
+ ns="http://fault.io/xml/traceback"
  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
  xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">
 
@@ -98,14 +98,3 @@
  </define>
 
 </grammar>
-
-<snapshot xmlns="https://fault.io/xml/traceback">
- <title></title>
- <traceback identity="">
-  <frame xlink:href="file:///.../module.py?line=100#identifier" file="" line="">identifier</frame>
- </traceback>
- <interrupt effect="fatal" traceback="tid">
-  <exception>
-  </exception>
- </interrupt>
-</snapshot>

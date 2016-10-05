@@ -139,7 +139,9 @@ def structure_package(target, package, metrics=None):
 			from ...development import library as libdev
 
 			is_ext = libfactor.python_extension(module)
-			index = libconstruct.context_work(module, variants) / 'ftr' / 'pf.lnk'
+			f = libdev.Factor(None, module, None)
+			f.fpi_update_key(variants)
+			index = f.integral() / 'pf.lnk'
 			ilparams, sources = libfactors.extract_inspect(xmlfactor.readfile(str(index)))
 			iformat = ilparams['format']
 			index = index.container

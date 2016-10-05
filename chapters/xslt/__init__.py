@@ -6,7 +6,7 @@ from ...computation import librange
 from ...chronometry import library as libtime
 from ...chronometry import metric
 
-namespace = 'https://fault.io/xml/factor'
+namespace = 'http://fault.io/xml/factor'
 def name(name_string):
 	global namespace
 	return '{%s}%s' %(namespace, name_string)

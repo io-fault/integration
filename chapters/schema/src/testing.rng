@@ -2,7 +2,7 @@
 <!-- XML description of a language agnostic Traceback; a stack of frames !-->
 <grammar
  xmlns="http://relaxng.org/ns/structure/1.0"
- ns="https://fault.io/xml/factor#test"
+ ns="http://fault.io/xml/factor#test"
  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
  xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">
 
@@ -66,6 +66,3 @@
   </element>
  </define>
 </grammar>
-<!--
- ! vim: et:ts=1:sw=1:
- !-->

@@ -2,7 +2,7 @@
 <!-- factors XML schema !-->
 <grammar
  xmlns="http://relaxng.org/ns/structure/1.0"
- ns="https://fault.io/xml/factor"
+ ns="http://fault.io/xml/factor"
  datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
 
  <include href="python.rng"/>

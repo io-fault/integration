@@ -32,15 +32,10 @@ def main(target, state):
 		format.main(str(structs), str(formats), suffix='')
 
 	d = libfs.Dictionary.use(css)
-	fr = libfactor.reduction(None, 'host', 'optimal', theme)
-	with fr.open('rb') as f:
-		d[b'factor.css'] = f.read()
+	d[b'factor.css'] = libfactor.package_inducted(theme).load()
 
 	d = libfs.Dictionary.use(js)
-	with libfactor.reduction(None, 'host', 'optimal', module=libif).open('rb') as f:
-		d[b'factor.js'] = f.read()
-
-	return 0
+	d[b'factor.js'] = libfactor.package_inducted(libif).load()
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv[1:]))
