@@ -13,7 +13,7 @@ from ..xml import library as libxml
 
 namespaces = {
 	'xlink': 'http://www.w3.org/1999/xlink',
-	'inspect': 'https://fault.io/xml/inspect#set',
+	'inspect': 'http://fault.io/xml/inspect#set',
 }
 
 def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):

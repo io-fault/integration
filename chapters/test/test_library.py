@@ -6,7 +6,7 @@ def test_XSLT_access(test):
 	pass
 
 open_element = b'<introspection xmlns:xlink="http://www.w3.org/1999/xlink" '
-open_element += b'xmlns:data="https://fault.io/xml/data" xmlns="https://fault.io/xml/inspect#set">'
+open_element += b'xmlns:data="http://fault.io/xml/data" xmlns="http://fault.io/xml/inspect#set">'
 
 def test_extract_inspect(test):
 	"""

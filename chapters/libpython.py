@@ -29,7 +29,7 @@ from ..development import libxml as devxml
 serialization = libxmlpython.Serialization() # currently only utf-8 is used.
 
 namespaces = {
-	'f': 'https://fault.io/xml/factor',
+	'f': 'http://fault.io/xml/factor',
 }
 
 # If pkg_resources is available, use it to identify explicit namespace packages.
@@ -818,10 +818,10 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 		)),
 		('type', factor_type),
 		('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
-		('xmlns:py', 'https://fault.io/xml/python'),
-		('xmlns:l', 'https://fault.io/xml/literals'),
-		('xmlns:e', 'https://fault.io/xml/text'),
-		('xmlns', 'https://fault.io/xml/factor'),
+		('xmlns:py', 'http://fault.io/xml/python'),
+		('xmlns:l', 'http://fault.io/xml/literals'),
+		('xmlns:e', 'http://fault.io/xml/text'),
+		('xmlns', 'http://fault.io/xml/factor'),
 	)
 
 if __name__ == '__main__':

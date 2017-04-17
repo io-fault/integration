@@ -27,7 +27,7 @@ def index_xml(directory, index):
 			for k, r in index.items()
 		),
 		('dictionary', directory),
-		('xmlns', 'https://fault.io/xml/filesystem#index'),
+		('xmlns', 'http://fault.io/xml/filesystem#index'),
 	)
 
 	return b''.join(content)
