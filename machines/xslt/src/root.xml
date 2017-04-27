@@ -4,10 +4,10 @@
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
-	xmlns:f="https://fault.io/xml/factor"
-	xmlns:txt="https://fault.io/xml/text"
-	xmlns:data="https://fault.io/xml/data"
-	xmlns:Factor="#Factor"
+	xmlns:f="http://fault.io/xml/factor"
+	xmlns:txt="http://fault.io/xml/text"
+	xmlns:data="http://fault.io/xml/data"
+	xmlns:Factor="http://fault.io/xpath#Factor"
 	extension-element-prefixes="exsl"
 	exclude-result-prefixes="f xsl exsl Factor">
 
