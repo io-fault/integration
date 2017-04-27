@@ -1,7 +1,7 @@
 """
-LLVM Probe for collecting compilation and linkage information.
+# LLVM Probe for collecting compilation and linkage information.
 
-Gathers information using (system:executable)`llvm-config`.
+# Gathers information using (system:executable)`llvm-config`.
 """
 import os
 import sys

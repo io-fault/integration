@@ -1,3 +1,3 @@
 """
-Python interfaces to emitted profile data.
+# Python interfaces to emitted profile data.
 """

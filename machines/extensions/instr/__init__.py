@@ -1,8 +1,8 @@
 """
-LLVM utilities for extracting profile and coverage data.
+# LLVM utilities for extracting profile and coverage data.
 
-! WARNING:
-	Currently does not provide information about expansion regions.
+# ! WARNING:
+	# Currently does not provide information about expansion regions.
 """
 from ...probes import libllvm
 from ....development.probes import libpython

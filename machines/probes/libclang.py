@@ -1,7 +1,7 @@
 """
-Probe for libclang.
+# Probe for libclang.
 
-Gathers information relative to (system:executable)`clang`.
+# Gathers information relative to (system/executable)`clang`.
 """
 import sys
 import sysconfig

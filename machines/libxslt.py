@@ -1,5 +1,5 @@
 """
-&.llvm.xslt access library.
+# &.llvm.xslt access library.
 """
 from ..xml import libfactor as xmlfactor
 from . import xslt
