@@ -9,7 +9,7 @@ from ...chronometry import library as libtime
 from ...chronometry import metric
 from ...text import library as libtext
 
-namespace = 'https://fault.io/xml/factor'
+namespace = 'http://fault.io/xml/factor'
 def name(name_string):
 	global namespace
 	return '{%s}%s' %(namespace, name_string)
@@ -37,7 +37,7 @@ class Factor(libfactor.XPathModule):
 	def structure_comment(self, context, string):
 		"""
 		"""
-		start = b'<f:doc xmlns:f="https://fault.io/xml/factor" xmlns:txt="https://fault.io/xml/text">'
+		start = b'<f:doc xmlns:f="http://fault.io/xml/factor" xmlns:txt="http://fault.io/xml/text">'
 
 		ftxt = self.clean_comment(string)
 		if not ftxt:
