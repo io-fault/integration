@@ -1,5 +1,5 @@
 """
-Structure and format the documentation into a pair of typed filesystem dictionaries.
+# Structure and format the documentation into a pair of typed filesystem dictionaries.
 """
 import os.path
 import sys

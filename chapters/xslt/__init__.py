@@ -1,5 +1,5 @@
 """
-Primary formatting pipeline for `Structured Factors`.
+# Primary formatting pipeline for `Structured Factors`.
 """
 from ...xml import libfactor
 from ...computation import librange
@@ -15,7 +15,7 @@ RangeSet = librange.Set
 
 class Factor(libfactor.XPathModule):
 	"""
-	Support for operations that would be difficult in some fashion if written in XSLT.
+	# Support for operations that would be difficult in some fashion if written in XSLT.
 	"""
 
 	import builtins
@@ -23,8 +23,8 @@ class Factor(libfactor.XPathModule):
 
 	def reference(self, context, string, split=libroutes.Import.from_attributes):
 		"""
-		Return a node-set containing the real module path and the attributes following
-		the module.
+		# Return a node-set containing the real module path and the attributes following
+		# the module.
 		"""
 		route, attributes = split(string)
 		module = str(route)
@@ -33,13 +33,13 @@ class Factor(libfactor.XPathModule):
 
 	def builtin(self, context, string):
 		"""
-		Whether or not the given string refers to a builtin.
+		# Whether or not the given string refers to a builtin.
 		"""
 		return self.builtins.__dict__.__contains__(string)
 
 	def exception(self, context, string):
 		"""
-		Whether or not the given string refers to a builtin exception.
+		# Whether or not the given string refers to a builtin exception.
 		"""
 		if self.builtins.__dict__.__contains__(string):
 			obj = self.builtins.__dict__[string]
@@ -49,7 +49,7 @@ class Factor(libfactor.XPathModule):
 
 	def cache(self, context, *args, coverage=name('coverage')):
 		"""
-		Cache the coverage information for context specific queries (functions/methods).
+		# Cache the coverage information for context specific queries (functions/methods).
 		"""
 		factor = context.context_node
 		cov = factor.find(coverage)
@@ -64,7 +64,7 @@ class Factor(libfactor.XPathModule):
 
 	def untraversed(self, context, *args, source=name('source')):
 		"""
-		Collect the per-concept untraversed lines.
+		# Collect the per-concept untraversed lines.
 		"""
 		node = context.context_node
 		src = node.find(source)
@@ -88,7 +88,7 @@ class Factor(libfactor.XPathModule):
 			source=name('source'), list=list, int=int
 		):
 		"""
-		Collect the per-concept untraversed lines summary data.
+		# Collect the per-concept untraversed lines summary data.
 		"""
 		node = context.context_node
 		src = node.find(source)
@@ -120,7 +120,7 @@ class Factor(libfactor.XPathModule):
 			ustr=lambda ne, ab, x: ab[ne[x]] if x in ne else ' ' + x + 's'
 		):
 		"""
-		Create a string representing the given nanoseconds in a human readable form.
+		# Create a string representing the given nanoseconds in a human readable form.
 		"""
 		ns = int(nanoseconds)
 		ns = libtime.Measure(ns)

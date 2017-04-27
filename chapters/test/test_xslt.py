@@ -1,5 +1,5 @@
 """
-Check the XPath functions and some of the XSLT features.
+# Check the XPath functions and some of the XSLT features.
 """
 from .. import xslt as library
 

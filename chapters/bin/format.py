@@ -1,5 +1,5 @@
 """
-Format the referenced structure set into a &..filesystem.library.Dictionary instance.
+# Format the referenced structure set into a &..filesystem.library.Dictionary instance.
 """
 
 import sys

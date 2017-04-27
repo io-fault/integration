@@ -1,5 +1,5 @@
 """
-Developer APIs extracting the documentation and structure of Python objects.
+# Developer APIs extracting the documentation and structure of Python objects.
 """
 
 import sys
@@ -50,7 +50,7 @@ except ImportError:
 
 class Query(object):
 	"""
-	Query set for inspecting objects for documentation generation.
+	# Query set for inspecting objects for documentation generation.
 	"""
 
 	class_ignore = {
@@ -75,8 +75,8 @@ class Query(object):
 	@staticmethod
 	def module_context(route:libroutes.Import):
 		"""
-		Given an import route, return the context package
-		and the project module.
+		# Given an import route, return the context package
+		# and the project module.
 		"""
 		floor = route.floor()
 		if floor is None:
@@ -116,7 +116,7 @@ class Query(object):
 			)
 		):
 		"""
-		Determine if the given object is a class method.
+		# Determine if the given object is a class method.
 		"""
 		try:
 			getfullargspec(obj)
@@ -132,20 +132,20 @@ class Query(object):
 			)
 		):
 		"""
-		Determine if the given object is a property.
-		Get-Set Descriptors are also identified as properties.
+		# Determine if the given object is a property.
+		# Get-Set Descriptors are also identified as properties.
 		"""
 		return any(x(obj) for x in checks)
 
 	def is_module(self, obj:object):
 		"""
-		Overrideable interface to &inspect.ismodule.
+		# Overrideable interface to &inspect.ismodule.
 		"""
 		return inspect.ismodule(obj)
 
 	def is_module_class(self, module:types.ModuleType, obj:object, isclass=inspect.isclass):
 		"""
-		The given object is a plainly defined class that belongs to the module.
+		# The given object is a plainly defined class that belongs to the module.
 		"""
 		return isclass(obj) and module.__name__ == obj.__module__
 
@@ -155,14 +155,14 @@ class Query(object):
 			isroutine=inspect.isroutine
 		):
 		"""
-		The given object is a plainly defined function that belongs to the module.
+		# The given object is a plainly defined function that belongs to the module.
 		"""
 		subject = getattr(obj, '__wrapped__', obj)
 		return isroutine(subject) and module.__name__ == subject.__module__
 
 	def docstr(self, obj:object):
 		"""
-		Variant of &inspect.getdoc that favors tab-indentations.
+		# Variant of &inspect.getdoc that favors tab-indentations.
 		"""
 		rawdocs = getattr(obj, '__doc__', None)
 
@@ -196,39 +196,39 @@ class Query(object):
 
 		def signature(self, obj:object, getsig=inspect.signature):
 			"""
-			Overridable accessor to &inspect.getfullargspec.
+			# Overridable accessor to &inspect.getfullargspec.
 			"""
 			return getsig(obj)
 	else:
 		def signature(self, obj:object, getsig=inspect.getfullargspec):
 			"""
-			Overridable accessor to &inspect.getfullargspec.
+			# Overridable accessor to &inspect.getfullargspec.
 			"""
 			sig = getsig(obj)
 
 	def addressable(self, obj:object, getmodule=inspect.getmodule):
 		"""
-		Whether the object is independently addressable.
-		Specifically, it is a module or inspect.getmodule() not return None
-		*and* can `obj` be found within the module's objects.
+		# Whether the object is independently addressable.
+		# Specifically, it is a module or inspect.getmodule() not return None
+		# *and* can `obj` be found within the module's objects.
 
-		The last condition is used to prevent broken links.
+		# The last condition is used to prevent broken links.
 		"""
 		return self.is_module(obj) or getmodule(obj) is not None
 
 	@functools.lru_cache(64)
 	def canonical(self, name:str, Import=libroutes.Import.from_fullname):
 		"""
-		Given an arbitrary module name, rewrite it to use the canonical
-		name defined by the package set (package of Python packages).
+		# Given an arbitrary module name, rewrite it to use the canonical
+		# name defined by the package set (package of Python packages).
 
-		If there is no canonical package name, return &name exactly.
+		# If there is no canonical package name, return &name exactly.
 		"""
 		return libfactor.canonical_name(Import(name))
 
 	def address(self, obj:object, getmodule=inspect.getmodule):
 		"""
-		Return the address of the given object; &None if unknown.
+		# Return the address of the given object; &None if unknown.
 		"""
 
 		if self.is_module(obj):
@@ -244,8 +244,8 @@ class Query(object):
 
 	def origin(self, obj:object):
 		"""
-		Decide the module's origin; local to the documentation site, Python's
-		site-packages (distutils), or a Python builtin.
+		# Decide the module's origin; local to the documentation site, Python's
+		# site-packages (distutils), or a Python builtin.
 		"""
 		module, path = self.address(obj)
 
@@ -264,10 +264,10 @@ class Query(object):
 	@functools.lru_cache(32)
 	def project(self, module:types.ModuleType, _get_route = libroutes.Import.from_fullname):
 		"""
-		Return the project information about a particular module.
+		# Return the project information about a particular module.
 
-		Returns `None` if a builtin, an unregistered package, or package without a project
-		module relative to the floor.
+		# Returns `None` if a builtin, an unregistered package, or package without a project
+		# module relative to the floor.
 		"""
 		route = _get_route(module.__name__)
 
@@ -677,8 +677,8 @@ def emit(fs, key, iterator):
 
 def document(query:Query, route:libroutes.Import, module:types.ModuleType, metrics:typing.Mapping=None):
 	"""
-	Yield out a module element for writing to an XML file exporting the documentation,
-	data, and signatures of the module's content.
+	# Yield out a module element for writing to an XML file exporting the documentation,
+	# data, and signatures of the module's content.
 	"""
 	global libxml
 

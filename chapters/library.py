@@ -1,6 +1,6 @@
 """
-Factors library providing high level access to structuring and formatting the
-factors that make up a product.
+# Factors library providing high level access to structuring and formatting the
+# factors that make up a product.
 """
 import typing
 
@@ -18,13 +18,13 @@ namespaces = {
 
 def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 	"""
-	Load the factor of an inspect role run.
+	# Load the factor of an inspect role run.
 
-	[Effects]
+	# [Effects]
 
-	/Product
-		A pair, the former being the command parameters and the latter
-		being the set of sources.
+	# /Product
+		# A pair, the former being the command parameters and the latter
+		# being the set of sources.
 	"""
 	global namespaces
 
@@ -50,20 +50,20 @@ def factors(package:str) -> typing.Tuple[
 		typing.Sequence[libroutes.Import]
 	]:
 	"""
-	Construct and return the factors (modules and packages) contained within
-	the given &package string.
+	# Construct and return the factors (modules and packages) contained within
+	# the given &package string.
 
-	[ Effects ]
-	/Product
-		`(root, (packages, modules))`; where root is the &package parameter
-		as an &libroutes.Import.
+	# [ Effects ]
+	# /Product
+		# `(root, (packages, modules))`; where root is the &package parameter
+		# as an &libroutes.Import.
 
-	All objects are &..routes.library.Import instances pointing to the module.
+	# All objects are &..routes.library.Import instances pointing to the module.
 
-	[ Parameters ]
+	# [ Parameters ]
 
-	/package
-		The path to the package.
+	# /package
+		# The path to the package.
 	"""
 	global libroutes
 	root = libroutes.Import.from_fullname(package)
@@ -74,18 +74,18 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 		typing.Sequence[libroutes.Import],
 	]:
 	"""
-	Construct a mapping detailing the factors that consist of a set of fractions.
-	Factors that represent the construction of a set of fractions are used to manage
-	build targets.
+	# Construct a mapping detailing the factors that consist of a set of fractions.
+	# Factors that represent the construction of a set of fractions are used to manage
+	# build targets.
 
-	[Effects]
-	/Product
-		The constructed mapping. The keys are the &libroutes.Import instances,
-		and the values are sequences.
+	# [Effects]
+	# /Product
+		# The constructed mapping. The keys are the &libroutes.Import instances,
+		# and the values are sequences.
 
-	[Parameters]
-	/packages
-		The set of factor packages to inspect in order to find the associated fractions.
+	# [Parameters]
+	# /packages
+		# The set of factor packages to inspect in order to find the associated fractions.
 	"""
 	global libfactor
 	return {

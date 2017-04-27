@@ -1,6 +1,6 @@
 """
-Extract the structure of the entire package tree into a
-&..filesystem.library.Dictionary instance.
+# Extract the structure of the entire package tree into a
+# &..filesystem.library.Dictionary instance.
 """
 
 import sys
