@@ -11,7 +11,7 @@ import types
 import importlib.machinery
 import pickle
 
-from .. import libpython
+from .. import python
 from .. import library as libfactors
 
 from ...system import libfactor
@@ -102,7 +102,7 @@ def structure_package(target, package, metrics=None):
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
 
 	factors = [
-		(x, libpython.Query(x), x.fullname.encode('utf-8'))
+		(x, python.Query(x), x.fullname.encode('utf-8'))
 		for x in itertools.chain((root,), packages, modules, iterdocs)
 	]
 
@@ -128,12 +128,12 @@ def structure_package(target, package, metrics=None):
 
 		query.parameters['profile'] = pdata
 		query.parameters['coverage'] = cdata
-		dociter = libpython.document(query, x, module, metrics=metrics)
+		dociter = python.document(query, x, module, metrics=metrics)
 
-		libpython.emit(docs, key, dociter)
+		python.emit(docs, key, dociter)
 
 		# Composites have a set of subfactors,
-		# build special module instances that can be processed by libpython.document().
+		# build special module instances that can be processed by python.document().
 		if module.__factor_composite__ and module.__factor_dynamics__ != 'interfaces':
 			from ...llvm import libxslt as llvm_xslt
 			from ...development import library as libdev
@@ -177,8 +177,8 @@ def structure_package(target, package, metrics=None):
 				query.parameters['profile'] = pdata
 				query.parameters['coverage'] = cdata
 
-				dociter = libpython.document(query, x, sfm, metrics=metrics)
-				libpython.emit(docs, sfm.__factor_key__.encode('utf-8'), dociter)
+				dociter = python.document(query, x, sfm, metrics=metrics)
+				python.emit(docs, sfm.__factor_key__.encode('utf-8'), dociter)
 
 if __name__ == '__main__':
 	structure_package(*sys.argv[1:])
