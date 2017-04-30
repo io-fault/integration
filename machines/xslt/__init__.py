@@ -2,7 +2,6 @@
 # Transformation to &..fault.factors XML for &.bin.inspect output.
 """
 from ...xml import libfactor
-from ...computation import librange
 from ...chronometry import library as libtime
 from ...chronometry import metric
 from ...text import library as libtext
