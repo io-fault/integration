@@ -2,7 +2,7 @@
 # Primary formatting pipeline for `Structured Factors`.
 """
 from ...xml import libfactor
-from ...computation import librange
+from ...computation import library as libc
 from ...chronometry import library as libtime
 from ...chronometry import metric
 
@@ -11,12 +11,13 @@ def name(name_string):
 	global namespace
 	return '{%s}%s' %(namespace, name_string)
 
-RangeSet = librange.Set
 
 class Factor(libfactor.XPathModule):
 	"""
 	# Support for operations that would be difficult in some fashion if written in XSLT.
 	"""
+	RangeSet = libc.range.Set
+	IRange = libc.range.IRange
 
 	import builtins
 	from ...routes import library as libroutes
@@ -56,9 +57,9 @@ class Factor(libfactor.XPathModule):
 		if cov is None:
 			cov = {}
 
-		self.traversed = RangeSet.from_string(cov.get('traversed', ''))
-		self.traversable = RangeSet.from_string(cov.get('traversable', ''))
-		self.untraversed = RangeSet.from_string(cov.get('untraversed', ''))
+		self.traversed = self.RangeSet.from_string(cov.get('traversed', ''))
+		self.traversable = self.RangeSet.from_string(cov.get('traversable', ''))
+		self.untraversed = self.RangeSet.from_string(cov.get('untraversed', ''))
 
 		return None
 
@@ -78,9 +79,9 @@ class Factor(libfactor.XPathModule):
 			return []
 
 		# source element with start and stop available.
-		ir = librange.IRange((int(start), int(stop)))
-		rs = RangeSet.from_normal_sequence([ir])
-		luntraversed = RangeSet.from_normal_sequence(list(self.untraversed.intersection(rs)))
+		ir = self.IRange((int(start), int(stop)))
+		rs = self.RangeSet.from_normal_sequence([ir])
+		luntraversed = self.RangeSet.from_normal_sequence(list(self.untraversed.intersection(rs)))
 
 		return str(luntraversed)
 
@@ -105,10 +106,10 @@ class Factor(libfactor.XPathModule):
 		stop = int(stop)
 
 		# source element with start and stop available.
-		rs = RangeSet.from_normal_sequence([librange.IRange((start, stop))])
+		rs = self.RangeSet.from_normal_sequence([libc.range.IRange((start, stop))])
 
-		traversable = RangeSet.from_normal_sequence(list(self.traversable.intersection(rs)))
-		atraversed = RangeSet.from_normal_sequence(list(self.traversed.intersection(traversable)))
+		traversable = self.RangeSet.from_normal_sequence(list(self.traversable.intersection(rs)))
+		atraversed = self.RangeSet.from_normal_sequence(list(self.traversed.intersection(traversable)))
 
 		return [str(len(atraversed)), str(len(traversable)), str((stop+1) - start)]
 

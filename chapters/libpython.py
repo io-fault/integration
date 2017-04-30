@@ -22,7 +22,6 @@ from ..routes import library as libroutes
 from ..xml import library as libxml
 from ..xml import libpython as libxmlpython
 from ..text import library as libtext
-from ..computation import librange
 
 from ..development import libxml as devxml
 
