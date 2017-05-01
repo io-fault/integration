@@ -20,12 +20,12 @@ import pickle
 from ..system import libfactor
 from ..routes import library as libroutes
 from ..xml import library as libxml
-from ..xml import libpython as libxmlpython
+from ..xml import python as xep
 from ..text import library as libtext
 
-from ..development import libxml as devxml
+from ..development import xml as devxml
 
-serialization = libxmlpython.Serialization() # currently only utf-8 is used.
+serialization = xep.Serialization() # currently only utf-8 is used.
 
 namespaces = {
 	'f': 'http://fault.io/xml/factor',
