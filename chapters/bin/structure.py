@@ -109,6 +109,10 @@ def structure_package(target, package, metrics=None):
 	# The Python module level is processed independently;
 	fractions = libfactors.fractions(packages)
 
+	from ...llvm import xslt
+	from ...development import library as libdev
+	xslt_doc, xslt_transform = xmlfactor.xslt(xslt)
+
 	variants = {'name':'inspect','purpose':'optimal','format':'xml'}
 	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
@@ -135,9 +139,6 @@ def structure_package(target, package, metrics=None):
 		# Composites have a set of subfactors,
 		# build special module instances that can be processed by python.document().
 		if module.__factor_composite__ and module.__factor_dynamics__ != 'interfaces':
-			from ...llvm import libxslt as llvm_xslt
-			from ...development import library as libdev
-
 			is_ext = libfactor.python_extension(module)
 			f = libdev.Factor(None, module, None)
 			f.fpi_update_key(variants)
@@ -168,7 +169,7 @@ def structure_package(target, package, metrics=None):
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
 				xis = xi.extend(y.points)
-				sfm.__factor_xml__ = llvm_xslt.transform(str(xis))[1]
+				sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, str(xis))[1]
 
 				if metrics is not None:
 					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))

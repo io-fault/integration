@@ -18,15 +18,20 @@ namespaces = {
 
 def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 	"""
-	# Load the factor of an inspect role run.
+	# Load the inspect processed factor.
 
-	# [Effects]
+	# [Parameters]
+	# /xml
+		# The XML document containing the constructed inspect output.
 
-	# /Product
-		# A pair, the former being the command parameters and the latter
-		# being the set of sources.
+	# [Returns]
+
+	# /&tuple
+		# /(&object)`0`
+			# Command Parameters.
+		# /(&set)`1`
+			# The set of sources.
 	"""
-	global namespaces
 
 	e = xml.getroot()
 
@@ -65,7 +70,7 @@ def factors(package:str) -> typing.Tuple[
 	# /package
 		# The path to the package.
 	"""
-	global libroutes
+
 	root = libroutes.Import.from_fullname(package)
 	return (root, root.tree())
 
@@ -87,7 +92,7 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 	# /packages
 		# The set of factor packages to inspect in order to find the associated fractions.
 	"""
-	global libfactor
+
 	return {
 		x: libfactor.sources(x)
 		for x in packages
@@ -98,6 +103,5 @@ from . import xslt
 xslt_document, transformation = xmlfactor.xslt(xslt)
 
 def transform(path, **params):
-	global transformation
 	input = xmlfactor.readfile(path)
 	return input, transformation(input, **{k:transformation.strparam(v) for k, v in params.items()})
