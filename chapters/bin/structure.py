@@ -90,13 +90,13 @@ def structure_package(target, package, metrics=None):
 			# normal processing context for our text files. (reference namespaces)
 
 			dm = types.ModuleType(rname + '.' + basename)
-			dm.__factor_type__ = 'chapter' # note as chapter module
+			dm.__factor_domain__ = 'chapter' # note as chapter module
 			dm.__package__ = rname
 			dm.__file__ = f.fullpath
 			doc_modules.append(dm.__name__)
 
 			doc_pkg_module.__dict__[basename] = dm
-			doc_pkg_module.__factor_type__ = 'documentation'
+			doc_pkg_module.__factor_domain__ = 'documentation'
 			sys.modules[dm.__name__] = dm
 
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
@@ -138,7 +138,7 @@ def structure_package(target, package, metrics=None):
 
 		# Composites have a set of subfactors,
 		# build special module instances that can be processed by python.document().
-		if module.__factor_composite__ and module.__factor_dynamics__ != 'interfaces':
+		if module.__factor_composite__ and module.__factor_type__ != 'interfaces':
 			is_ext = libfactor.python_extension(module)
 			f = libdev.Factor(None, module, None)
 			f.fpi_update_key(variants)
@@ -162,8 +162,8 @@ def structure_package(target, package, metrics=None):
 				sfm.__file__ = str(y)
 				sfm.__factor_language__ = y.extension
 				sfm.__factor_composite__ = False
-				sfm.__factor_type__ = 'unit'
-				sfm.__factor_composite_type__ = module.__factor_type__
+				sfm.__factor_domain__ = 'unit'
+				sfm.__factor_composite_type__ = module.__factor_domain__
 				sfm.__factor_path__ = str(y)[prefix_len+1:]
 				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
