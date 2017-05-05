@@ -10,8 +10,8 @@ import shutil
 from ...routes import library as libroutes
 from ...development import library as libdev
 
-__factor_type__ = 'system'
-__factor_dynamics__ = 'probe'
+__factor_domain__ = 'system'
+__factor_type__ = 'probe'
 
 parameters = {
 	'clang-library-path':
@@ -29,14 +29,14 @@ def deploy(*args):
 
 	return (), (), [
 		libdev.iFactor(
-			type = 'system',
-			dynamics = 'library',
+			domain = 'system',
+			type = 'library',
 			name = 'clang',
 			integral = cl,
 		),
 		libdev.iFactor(
-			type = 'source',
-			dynamics = 'library',
+			domain = 'source',
+			type = 'library',
 			name = None,
 			integral = ci,
 		),

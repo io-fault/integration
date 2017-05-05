@@ -11,5 +11,5 @@ standards = {
 	'c++': 'c++11',
 }
 
-__factor_type__ = 'system'
-__factor_dynamics__ = 'extension'
+__factor_domain__ = 'system'
+__factor_type__ = 'extension'

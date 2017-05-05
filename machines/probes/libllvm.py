@@ -9,8 +9,8 @@ import sysconfig
 import subprocess
 from ...development import library as libdev
 
-__factor_type__ = 'system'
-__factor_dynamics__ = 'probe'
+__factor_domain__ = 'system'
+__factor_type__ = 'probe'
 
 parameters = {
 	'executable':
@@ -67,8 +67,8 @@ def deploy(*args):
 
 	include_factors = [
 		libdev.iFactor(
-			type = 'source',
-			dynamics = 'library',
+			domain = 'source',
+			type = 'library',
 			name = None,
 			integral = x,
 		)
@@ -77,8 +77,8 @@ def deploy(*args):
 
 	coverage_factors = [
 		libdev.iFactor(
-			type = 'system',
-			dynamics = 'library',
+			domain = 'system',
+			type = 'library',
 			name = x,
 			integral = dir,
 		)
@@ -87,8 +87,8 @@ def deploy(*args):
 
 	system_factors = [
 		libdev.iFactor(
-			type = 'system',
-			dynamics = 'library',
+			domain = 'system',
+			type = 'library',
 			name = x,
 			integral = None,
 		)
@@ -97,8 +97,8 @@ def deploy(*args):
 
 	system_factors.append(
 		libdev.iFactor(
-			type = 'system',
-			dynamics = 'library',
+			domain = 'system',
+			type = 'library',
 			name = 'c++',
 			integral = None,
 		)
