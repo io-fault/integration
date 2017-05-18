@@ -349,11 +349,16 @@ def _xml_doc(query, obj, prefix):
 
 def _xml_import(query, context_module, imported, *path):
 	mn = imported.__name__
+	try:
+		cname = query.canonical(mn)
+	except Exception as exc:
+		# XXX: Associate exception with import element.
+		cname = mn
 
 	return libxml.element("import", None,
 		('xml:id', '.'.join(path)),
 		('identifier', path[-1]),
-		('name', query.canonical(mn)),
+		('name', cname),
 	)
 
 def _xml_source_range(query, obj):

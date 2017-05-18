@@ -145,7 +145,12 @@ def structure_package(target, package, metrics=None):
 
 			vars, mech = devctx.select(f.domain)
 			refs = libdev.references(f.dependencies())
-			(sp, (vl, key, loc)), = f.link(dict(vars), devctx, mech, refs, ())
+
+			f_sources = list(f.link(dict(vars), devctx, mech, refs, ()))
+			if not f_sources:
+				# XXX: Use an empty directory and continue.
+				continue
+			(sp, (vl, key, loc)), = f_sources
 
 			dirs, sources = loc['integral'].tree()
 			iformat = 'xml'
@@ -173,7 +178,12 @@ def structure_package(target, package, metrics=None):
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
 				xis = index.extend(y.points)
-				sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, str(xis))[1]
+				try:
+					sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, str(xis))[1]
+				except Exception as exc:
+					# XXX: Reveal exception in document.
+					sfm.error = exc
+					sfm.__factor_xml__ = None
 
 				if metrics is not None:
 					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
