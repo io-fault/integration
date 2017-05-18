@@ -1,5 +1,19 @@
+/**
+	# Python bindings for the Coverage and CoverageMapping readers.
+**/
 #include <fault/libc.h>
 #include <fault/python/environ.h>
+#include "llvm/Config/llvm-config.h"
+
+#ifndef PRODUCT_ARCHITECTURE
+	#ifdef F_TARGET_ARCHITECTURE
+		#define PRODUCT_ARCHITECTURE F_TARGET_ARCHITECTURE
+	#else
+		#define PRODUCT_ARCHITECTURE x86_64
+		#warning DEFAULT PRODUCT_ARCHITECTURE NOT SET!
+		#warning instr functions will require the arch parameter if "x86_64" is stale
+	#endif
+#endif
 
 int _list_regions(PyObj, char *obj_path, char *arch);
 static PyObj
@@ -174,10 +188,22 @@ extract_zero_counters(PyObj self, PyObj args)
 #include <fault/python/module.h>
 INIT("Access LLVM instrumentation structures and profile counters.")
 {
+	PyObj vi;
 	PyObj mod;
+
 	CREATE_MODULE(&mod);
 	if (mod == NULL)
 		return(NULL);
 
+	vi = Py_BuildValue("(iii)", LLVM_VERSION_MAJOR, LLVM_VERSION_MINOR, LLVM_VERSION_PATCH);
+	if (vi == NULL)
+		goto error;
+
+	PyModule_AddObject(mod, "version_info", vi);
+
 	return(mod);
+
+	error:
+		DROP_MODULE(mod);
+		return(NULL);
 }

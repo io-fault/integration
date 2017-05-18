@@ -1,6 +1,6 @@
-/*
- * Query profile output and binaries for counts and region area information.
- */
+/**
+	# Query profile output and binaries for counts and region area information.
+**/
 #include <stddef.h>
 #include <limits.h>
 
@@ -45,15 +45,15 @@ extern "C" {
 #include "llvm/ADT/SmallBitVector.h"
 
 #if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
-// CounterMappingRegion (mapping stored in binaries)
-#include "llvm/ProfileData/CoverageMapping.h"
-// File reader for iterating over mapping regions.
-#include "llvm/ProfileData/CoverageMappingReader.h"
+	// CounterMappingRegion (mapping stored in binaries)
+	#include "llvm/ProfileData/CoverageMapping.h"
+	// File reader for iterating over mapping regions.
+	#include "llvm/ProfileData/CoverageMappingReader.h"
 #else
-// CounterMappingRegion (mapping stored in binaries)
-#include "llvm/ProfileData/Coverage/CoverageMapping.h"
-// File reader for iterating over mapping regions.
-#include "llvm/ProfileData/Coverage/CoverageMappingReader.h"
+	// CounterMappingRegion (mapping stored in binaries)
+	#include "llvm/ProfileData/Coverage/CoverageMapping.h"
+	// File reader for iterating over mapping regions.
+	#include "llvm/ProfileData/Coverage/CoverageMappingReader.h"
 #endif
 
 #include "llvm/ProfileData/InstrProfReader.h"
@@ -171,7 +171,9 @@ _list_regions(PyObj seq, char *object, char *arch)
 	return(0);
 }
 
-// List unique files covered.
+/**
+	# Retrieve the source files that were used to build the binary.
+**/
 int
 _list_source_files(PyObj seq, const char *object, const char *arch)
 {
@@ -198,9 +200,9 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 	std::set<std::string> paths;
 
 	/*
-	 * The nested for loop will start a new section every time the fileid
-	 * changes so the reader can properly associate ranges.
-	 */
+		# The nested for loop will start a new section every time the fileid
+		# changes so the reader can properly associate ranges.
+	*/
 	for (const auto &Record : (*CoverageReader))
 	{
 		for (const auto path : Record.Filenames)
@@ -221,6 +223,9 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 	return(0);
 }
 
+/**
+	# Load a CoverageMapping and get the per-file coverage information.
+**/
 int
 _extract_counters(PyObj seq, char *object, char *profile, char *arch)
 {
