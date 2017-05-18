@@ -178,7 +178,9 @@ class Query(object):
 		if fl.startswith('\t'):
 			indentation = len(fl) - len(fl.lstrip('\t'))
 			return '\n'.join([
-				x[indentation:] for x in lines
+				y[2:] if y[:2] == '# ' else y for y in [
+					x[indentation:] for x in lines
+				]
 			])
 		else:
 			# assume no indentation and likely single line

@@ -6,6 +6,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:set="http://exslt.org/sets"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+	xmlns:ctl="http://fault.io/xml/control"
 	xmlns:f="http://fault.io/xml/factor"
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
@@ -21,6 +22,22 @@
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="py l f xsl exsl set str fault ctx df">
 
+	<ctl:namespaces
+		exsl:keep="true"
+		func:keep="true"
+		set:keep="true"
+		str:keep="true"
+		f:keep="true"
+		l:keep="true"
+		t:keep="true"
+		txt:keep="true"
+		idx:keep="true"
+		ctx:keep="true"
+		df:keep="true"
+		fault:keep="true"
+		Factor:keep="true"
+		py:keep="true"
+	/>
 	<xsl:param name="python.version" select="'3'"/>
 	<xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
 

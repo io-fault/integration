@@ -32,10 +32,10 @@ def main(target, state):
 		format.main(str(structs), str(formats), suffix='')
 
 	d = libfs.Dictionary.use(css)
-	d[b'factor.css'] = libfactor.package_inducted(theme).load()
+	d[b'factor.css'] = (libfactor.package_inducted(theme) / 'theme.css').load()
 
 	d = libfs.Dictionary.use(js)
-	d[b'factor.js'] = libfactor.package_inducted(libif).load()
+	d[b'factor.js'] = (libfactor.package_inducted(libif) / 'libif.js').load()
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv[1:]))

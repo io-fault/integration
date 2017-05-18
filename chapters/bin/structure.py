@@ -113,7 +113,8 @@ def structure_package(target, package, metrics=None):
 	from ...development import library as libdev
 	xslt_doc, xslt_transform = xmlfactor.xslt(xslt)
 
-	variants = {'name':'inspect','purpose':'optimal','format':'xml'}
+	variants = {'name':'inspect','intention':'optimal','format':'xml'}
+	devctx = libdev.Context.from_environment()
 	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
 		key = cname.encode('utf-8')
@@ -141,11 +142,14 @@ def structure_package(target, package, metrics=None):
 		if module.__factor_composite__ and module.__factor_type__ != 'interfaces':
 			is_ext = libfactor.python_extension(module)
 			f = libdev.Factor(None, module, None)
-			f.fpi_update_key(variants)
-			index = f.integral() / 'pf.lnk'
-			ilparams, sources = libfactors.extract_inspect(xmlfactor.readfile(str(index)))
-			iformat = ilparams['format']
-			index = index.container
+
+			vars, mech = devctx.select(f.domain)
+			refs = libdev.references(f.dependencies())
+			(sp, (vl, key, loc)), = f.link(dict(vars), devctx, mech, refs, ())
+
+			dirs, sources = loc['integral'].tree()
+			iformat = 'xml'
+			index = loc['integral']
 			xi = (index / 'out') / iformat
 
 			sources = libfactor.sources(x)
@@ -168,7 +172,7 @@ def structure_package(target, package, metrics=None):
 				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
-				xis = xi.extend(y.points)
+				xis = index.extend(y.points)
 				sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, str(xis))[1]
 
 				if metrics is not None:
