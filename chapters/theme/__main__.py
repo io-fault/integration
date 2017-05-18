@@ -12,7 +12,7 @@ if __name__ == '__main__':
 		css = r / 'text' / 'css'
 
 		d = libfs.Dictionary.use(css)
-		fr = libfactor.reduction(None, 'host', 'optimal', theme)
+		fr = libfactor.inducted(libroutes.Import.from_module(theme)) / 'pf.lnk'
 		with fr.open('rb') as f:
 			d[b'factor.css'] = f.read()
 	install()

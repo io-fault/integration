@@ -262,6 +262,7 @@
 	<xsl:template match="f:factor">
 		<xsl:variable name="product" select="substring-before(@name, concat('.', @identifier))"/>
 		<xsl:variable name="context.cache" select="Factor:cache()"/>
+		<xsl:variable name="depth" select="/f:factor/@depth"/>
 		<xsl:variable name="path.prefix">
 			<xsl:choose>
 				<xsl:when test="@path"><xsl:text>../</xsl:text></xsl:when>
@@ -299,35 +300,33 @@
 			</head>
 
 			<body>
-				<div id="content." class="content">
+				<div class="factor">
+					<div class="title">
+						<span class="icon"><xsl:value-of select="f:context/@icon"/></span>
+
+						<xsl:if test="$product">
+								<xsl:for-each select="fault:traverse('.', $product)">
+									<a href="{$depth}{ctx:absolute(string(./path))}">
+										<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
+									</a>
+									<span class="path-delimiter">.</span>
+								</xsl:for-each>
+						</xsl:if>
+
+						<a href="{substring($depth, 1, string-length($depth)-1)}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
+					</div>
+					<div style="display:none" class="index.reference">
+						<a href="#index."><span class="tab">Index</span></a>
+						<a href="#source..index"><span class="tab">Sources</span></a>
+						<a href="#functions..index"><span class="tab">Functions</span></a>
+						<a href="#class..index"><span class="tab">Classes</span></a>
+						<a href="#struct..index"><span class="tab">Structures</span></a>
+					</div>
+				</div>
+
+				<div id="content." class="pane.">
 					<xsl:variable name="test.package" select="/f:factor/@type = 'tests'"/>
 					<xsl:variable name="prefix" select="concat(/f:factor/@name, '.')"/>
-					<xsl:variable name="depth" select="/f:factor/@depth"/>
-
-					<div class="factor">
-						<div class="title">
-							<!-- it's not actually a keyword, but fills the role that keywords are used for -->
-							<span class="icon"><xsl:value-of select="f:context/@icon"/></span>
-
-							<xsl:if test="$product">
-									<xsl:for-each select="fault:traverse('.', $product)">
-										<a href="{$depth}{ctx:absolute(string(./path))}">
-											<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
-										</a>
-										<span class="path-delimiter">.</span>
-									</xsl:for-each>
-							</xsl:if>
-
-							<a href="{substring($depth, 0, string-length($depth)-1)}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
-						</div>
-						<div class="index.reference">
-							<a href="#index."><span class="tab">Index</span></a>
-							<a href="#source..index"><span class="tab">Sources</span></a>
-							<a href="#functions..index"><span class="tab">Functions</span></a>
-							<a href="#class..index"><span class="tab">Classes</span></a>
-							<a href="#struct..index"><span class="tab">Structures</span></a>
-						</div>
-					</div>
 
 					<!--Project Package displays test summary-->
 					<xsl:if test="$test.package and /f:factor/f:test[t:*]">
@@ -336,7 +335,7 @@
 						</div>
 					</xsl:if>
 
-					<!-- if there are subfactors, we're primarily concerned with navigation -->
+					<!-- if there are subfactors, it effects navigation -->
 					<xsl:if test="f:subfactor">
 						<div class="navigation">
 						<div class="if.vertical.sequence">
@@ -467,7 +466,7 @@
 					</xsl:if>
 					</div>
 				</div>
-				<div id="subject.description."></div>
+				<div class="pane." id="subject.description."></div>
 					<!--subjection.description content when no hash is present-->
 					<!--subject.default div is displayed by default; changes on hashchanged()-->
 				<div id="subject.default.">

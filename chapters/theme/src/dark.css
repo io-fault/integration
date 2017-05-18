@@ -55,6 +55,10 @@ html {
 
 body {
 	background-color: #202020;
+	/*
+		# The dual panes manage scroll on overflow.
+	*/
+	overflow: hidden;
 }
 
 p {
@@ -100,19 +104,37 @@ img.icon {
 	vertical-align: middle;
 }
 
-div.factor > div.title {
-	font-size: 230%;
+div.factor {
+	z-index: 99999;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 1cm;
+
 	background-color: #303030;
 	padding: 4px;
 
 	border-width: 1px;
 	border-color: gray;
 	border-style: solid;
+
+	font-size: 1cm;
+}
+
+div.factor > div.title {
+	/*
+		# The font-size is 100% as the parent sets the size to 3vh.
+		# This allows us to control the size with respect to a reasonable
+		# relative size.
+	*/
+	font-size: 70%;
 }
 
 div.navigation {
 	width: 90%;
 	margin: auto;
+	margin-top: 0.5cm;
 }
 
 div.navigation > div[class="subfactors"] {
@@ -179,12 +201,15 @@ div[class="context."] dt {
 	color: green;
 }
 
-/* Primary Content */
+body > div[class="pane."] {
+	position: fixed;
+	top: calc(1cm + 10px);
+	height: calc(100% - (1cm + 10px));
+}
+
+/* Factor Content */
 div[id="content."]{
-	position: absolute;
-	top: 0;
 	left: 0;
-	height: 100%;
 	max-width: 50%;
 	width: 45%;
 	padding-left: 0;
@@ -192,6 +217,7 @@ div[id="content."]{
 	overflow: scroll;
 	overflow-x: hidden;
 
+	border-width: 0;
 	border-right-width: 2px;
 	border-right-style: groove;
 	border-right-color: rgba(100, 100, 100, 0.5);
@@ -206,30 +232,27 @@ div[id="content."] > h1 {
 
 /* Selection (hash tag) Description */
 div[id="subject.description."] {
-	position: absolute;
-	top: 0;
 	left: 45%;
-	margin-left: 4px; /* compensate for scrollbar padding */
 	right: 0;
-	height: 100%;
 	width: auto;
+	margin-left: 4px; /* compensate for scrollbar padding */
+	margin-bottom: 2em;
 
-	background-color: rgba(0,0,0,0.1);
+	padding: 0.5em;
 	padding-left: 16px;
-	padding-top: 1em;
 
 	z-index: 8;
 	overflow: scroll;
 }
 
 div[id="subject.description.element."] {
-	position: absolute;
+	position: relative;
 	width: 95%;
-	height: 100%;
 }
 
 div[class="source.code"] {
 	width: 100%;
+	margin-bottom: 2em;
 }
 
 div[class="source.code"] > pre {
@@ -240,6 +263,7 @@ div[class="source.code"] > pre {
 	border-color: rgba(100,100,100,0.3);
 	font-size: small;
 	font-family: monospace;
+	overflow: visible;
 }
 
 /* node that cloned in order to show the default right pane content */
@@ -835,11 +859,14 @@ div[id="factor..section.index"]
 
 div.factor > div[class="index.reference"]
 {
-	margin-top: 0;
+	display: none;
 	z-index: -1;
-	padding-left: 1em;
 	overflow: hidden;
+
+	padding-left: 1em;
 	padding-bottom: 8px;
+
+	margin-top: 0;
 	margin-bottom: 0.5em;
 }
 
