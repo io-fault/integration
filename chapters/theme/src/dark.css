@@ -661,25 +661,33 @@ div.toc ol.no-match {
 
 div.section {
 	margin-top: 3em;
+	padding-left: 1em;
 }
+div.section>div.title {
+	margin-left: -1em;
+}
+
 div.section:first-child {
 	margin-top: 2em;
 }
 
 div.section div.section {
-	margin-top: 1em;
+	margin-top: 3em;
 }
 
 div.module div.doc div.section {
 	margin-top: 0.5em;
 }
 
-div[class="section"] div[class="section"] div[class="title"] {
-	font-size: 105%;
+div.section div.section div.title {
+	font-size: 110%;
 	text-decoration: none;
+	color: #438dcd;
+    background-color: rgb(48, 48, 48);
+	text-shadow: none;
 }
 
-div.module div.doc div[class="section"] div[class="title"] {
+div.module div.doc div.section div.title {
 	/* reduce the font size in expression documentation */
 	font-size: 90%;
 	background-color: rgba(20,20,20,0.6);
