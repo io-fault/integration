@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--Transform documentation directory into presentable XHTML-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:l="http://fault.io/xml/literal"
@@ -22,6 +21,10 @@
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="py l f xsl exsl set str fault ctx df">
 
+	<!--
+		# Transform xml/factor source XML into a cross-referenced XHTML document.
+	!-->
+
 	<ctl:namespaces
 		exsl:keep="true"
 		func:keep="true"
@@ -38,6 +41,7 @@
 		Factor:keep="true"
 		py:keep="true"
 	/>
+
 	<xsl:param name="python.version" select="'3'"/>
 	<xsl:param name="python.docs" select="concat('https://docs.python.org/', $python.version, '/library/')"/>
 
@@ -144,10 +148,12 @@
 			</xsl:when>
 
 			<xsl:when test="$element/@identifier">
-				<!--find the nearest ancestor with an xml:id attr -->
-				<!--and append the element's identifiier or title to it -->
-				<!--prioritize the element's identifier and fallback to :header: for initial
-					sections-->
+				<!--
+					# Find the nearest ancestor with an xml:id attr
+					# and append the element's identifiier or title to it
+					# prioritize the element's identifier and fallback to
+					# :header: for initial sections.
+				!-->
 				<func:result select="concat(ctx:id($element/ancestor::*[@xml:id or @identifier][1]), '.', $element/@identifier)"/>
 			</xsl:when>
 
@@ -377,30 +383,43 @@
 
 		<func:result>
 			<xsl:choose>
-				<!-- choose the resolution method based on -->
+				<!--
+					# Choose the initial resolution method based on the type.
+				!-->
 				<xsl:when test="$type = 'hyperlink'">
 					<xsl:value-of select="substring($source, 2, string-length($source)-2)"/>
 				</xsl:when>
 
 				<xsl:when test="$type = 'section'">
-					<!-- nearest f:* element that can be referenced -->
+					<!--
+						# Nearest f:* element that can be referenced.
+					!-->
 					<xsl:variable name="nearest.re" select="$ref/ancestor::f:*[@xml:id]/@xml:id"/>
 					<xsl:value-of select="concat($nearest.re, '.', @source)"/>
 				</xsl:when>
 
 				<xsl:when test="$is.directory">
-					<!-- TODO: &/unix/man/2/accept -->
-					<!-- part of the problem is that it isn't clear how it should be linked -->
+					<!--
+						# TODO: &/unix/man/2/accept
+					!-->
 					<xsl:value-of select="$source"/>
 				</xsl:when>
 
 				<xsl:when test="$factor//*[@xml:id=$source]">
+					<!--
+						# Reference is an xml:id target local to the document.
+					!-->
 					<xsl:value-of select="concat('#', $source)"/>
 				</xsl:when>
 
 				<xsl:otherwise>
+					<!--
+						# Resolve dot-separated path entries in order to identify the target.
+					!-->
 					<xsl:variable name="path">
-						<!-- resolve the path based on it being absolute or relative -->
+						<!--
+							# Trim leading periods from reference.
+						!-->
 						<xsl:choose>
 							<xsl:when test="not($is.absolute) and $is.context.relative">
 								<xsl:value-of select="concat(ctx:factor($ref)/f:context/@context, substring($source, 2))"/>
@@ -416,8 +435,10 @@
 					</xsl:variable>
 					<xsl:variable name="strsrc" select="string($source)"/>
 
-					<!-- site reference -->
 					<xsl:choose>
+						<!--
+							# Context Dependent Reference
+						!-->
 						<xsl:when test="$is.absolute or $is.context.relative or $is.project.relative">
 							<xsl:value-of select="/f:factor/@depth"/>
 							<xsl:value-of select="ctx:absolute(string($path))"/>
