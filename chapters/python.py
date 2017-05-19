@@ -25,11 +25,9 @@ from ..text import library as libtext
 
 from ..development import xml as devxml
 
-serialization = xep.Serialization() # currently only utf-8 is used.
+from . import tools
 
-namespaces = {
-	'f': 'http://fault.io/xml/factor',
-}
+serialization = xep.Serialization() # currently only utf-8 is used.
 
 # If pkg_resources is available, use it to identify explicit namespace packages.
 try:
@@ -177,14 +175,12 @@ class Query(object):
 
 		if fl.startswith('\t'):
 			indentation = len(fl) - len(fl.lstrip('\t'))
-			return '\n'.join([
-				y[2:] if y[:2] == '# ' else y for y in [
-					x[indentation:] for x in lines
-				]
-			])
+			plines = tools.strip_notation_prefix([x[indentation:] for x in lines])
+			return '\n'.join(plines)
 		else:
 			# assume no indentation and likely single line
-			return rawdocs
+			plines = tools.strip_notation_prefix(lines)
+			return '\n'.join(plines)
 
 	if hasattr(inspect, 'signature'):
 		signature_kind_mapping = {
@@ -344,7 +340,7 @@ def _xml_doc(query, obj, prefix):
 			)
 		else:
 			yield from libxml.element('doc',
-				libtext.XML.transform('e:', doc, identify=prefix.__add__),
+				libtext.XML.transform('txt:', doc, identify=prefix.__add__),
 			)
 
 def _xml_import(query, context_module, imported, *path):
@@ -592,7 +588,7 @@ def _xml_module(query, factor_type, route, module, compressed=False):
 		if xml:
 			root = xml.getroot()
 			if root is not None:
-				mod_element = root.find('f:module', namespaces)
+				mod_element = root.find('{http://fault.io/xml/factor}module')
 				if mod_element is not None:
 					from ..xml import lxml
 					for x in mod_element.iterchildren():
@@ -823,11 +819,11 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 			else (module.__directory_depth__ * '../')
 		)),
 		('type', factor_type),
+		('xmlns', 'http://fault.io/xml/factor'),
 		('xmlns:xlink', 'http://www.w3.org/1999/xlink'),
 		('xmlns:py', 'http://fault.io/xml/python'),
 		('xmlns:l', 'http://fault.io/xml/literals'),
-		('xmlns:e', 'http://fault.io/xml/text'),
-		('xmlns', 'http://fault.io/xml/factor'),
+		('xmlns:txt', 'http://fault.io/xml/text'),
 	)
 
 if __name__ == '__main__':
