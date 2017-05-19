@@ -90,14 +90,17 @@ def structure_package(target, package, metrics=None):
 			# normal processing context for our text files. (reference namespaces)
 
 			dm = types.ModuleType(rname + '.' + basename)
-			dm.__factor_domain__ = 'chapter' # note as chapter module
+			dm.__factor_domain__ = 'documentation'
+			dm.__factor_type__ = 'chapter' # note as chapter module
 			dm.__package__ = rname
 			dm.__file__ = f.fullpath
 			doc_modules.append(dm.__name__)
 
 			doc_pkg_module.__dict__[basename] = dm
-			doc_pkg_module.__factor_domain__ = 'documentation'
 			sys.modules[dm.__name__] = dm
+
+		doc_pkg_module.__factor_domain__ = 'documentation'
+		doc_pkg_module.__factor_type__ = 'book'
 
 	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
 
