@@ -51,6 +51,7 @@ a[class="error.source"]
 div[class="if.item"] > div.label > span.post:after
 {
 	content: "\26D4";
+	margin-left: 0.2em;
 }
 
 div[class="if.vertical.sequence"]
@@ -58,6 +59,7 @@ a[class~="warning.source"]
 div[class="if.item"] > div.label > span.post:after
 {
 	content: "\26A0";
+	margin-left: 0.2em;
 }
 
 div[class="if.vertical.sequence"]
@@ -79,27 +81,30 @@ div[class="if.item"] > div.label {
 
 div[class="if.vertical.sequence"]
 div[class="if.item"] > div.abstract {
-	padding-left: 2em;
-	font-size: 79%;
-	color: rgba(150,150,150,0.7);
-	text-align: right;
+	color: rgba(175,175,175,1);
 	width: 100%;
+	font-size: 80%;
+
 	vertical-align: middle;
+	text-align: right;
 
 	overflow: hidden;
 	text-overflow: ellipsis;
+
+	padding-left: 2em;
 }
 
 div[class="if.vertical.sequence"]
 div[class="if.item"] > div.label > span.identifier {
-	color: #ffffff;
-	text-shadow:
+	color: rgba(200,200,200,1);
+	/*text-shadow:
 		0px 2px 0px #000000,
-		0px 2px 0px #000000
-	;
-	font-size: smaller;
+		0px 2px 0px #000000;*/
 
 	font-family: 'Montserrat', sans-serif;
+	font-size: smaller;
+
+	margin-left: 0.2em;
 }
 
 div[class="factor..structures"] div[class="if.vertical.sequence"],

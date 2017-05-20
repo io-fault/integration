@@ -742,7 +742,9 @@ div.section div.section div.title {
 }
 
 div.module div.doc div.section div.title {
-	/* reduce the font size in expression documentation */
+	/*
+		# Reduce the font size in expression documentation.
+	*/
 	font-size: 90%;
 	background-color: rgba(20,20,20,0.6);
 
@@ -758,7 +760,9 @@ div.module div.doc div.section div.title {
 	border-radius: 0;
 }
 
-/* subscript text referencing the containing section */
+/*
+	# Subscript text referencing the containing section.
+*/
 a[class="supersection"] {
 	vertical-align: bottom;
 	font-size: xx-small;
