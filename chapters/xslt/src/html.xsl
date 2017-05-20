@@ -299,27 +299,65 @@
 		<a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
 	</xsl:template>
 
+	<xsl:template name="txt:section.title">
+		<xsl:param name="id"/>
+
+		<div class="title">
+			<a class="text.reference" href="{concat('#', $id)}">
+				<xsl:value-of select="@identifier"/>
+			</a>
+			<!-- Provide context links for subsections -->
+			<xsl:if test="ancestor::txt:section">
+				<xsl:variable name="super" select="ancestor::txt:section"/>
+				<a href="{concat('#', ctx:id($super))}" class="supersection">
+					[<xsl:value-of select="$super/@identifier"/>]
+				</a>
+			</xsl:if>
+		</div>
+	</xsl:template>
+
 	<xsl:template match="txt:section[@identifier]">
 		<!--if there is no identified ancestor, it's probably the root object (module)-->
 		<xsl:variable name="id" select="ctx:id(.)"/>
 
 		<div id="{$id}" class="section">
-			<div class="title">
-				<a class="text.reference" href="{concat('#', $id)}">
-					<xsl:value-of select="@identifier"/>
-				</a>
-				<!-- Provide context links for subsections -->
-				<xsl:if test="ancestor::txt:section">
-					<xsl:variable name="super" select="ancestor::txt:section"/>
-					<a href="{concat('#', ctx:id($super))}" class="supersection">
-						[<xsl:value-of select="$super/@identifier"/>]
-					</a>
-				</xsl:if>
-			</div>
+			<xsl:call-template name="txt:section.title">
+				<xsl:with-param name="id" select="$id"/>
+			</xsl:call-template>
 			<div class="qualifiers"/>
 			<xsl:apply-templates select="txt:*"/>
 			<div class="footing"/>
 		</div>
+	</xsl:template>
+
+	<xsl:template mode="chapter" match="txt:section">
+		<!--
+			# Special handler for sections in chapter mode.
+			# Apply normal matches for txt elements except for
+			# sections which need to inherit the context.
+		!-->
+		<xsl:variable name="id" select="ctx:id(.)"/>
+
+		<section id="{$id}">
+			<xsl:call-template name="txt:section.title">
+				<xsl:with-param name="id" select="$id"/>
+			</xsl:call-template>
+
+			<div class="qualifiers"/>
+
+			<xsl:for-each select="txt:*">
+				<xsl:choose>
+					<xsl:when test="local-name(.)='section'">
+						<xsl:apply-templates mode="chapter" select="."/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:apply-templates select="."/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</xsl:for-each>
+
+			<div class="footing"/>
+		</section>
 	</xsl:template>
 
 	<xsl:template match="txt:section[not(@identifier)]">
@@ -377,8 +415,8 @@
 
 	<xsl:template mode="chapter" match="f:doc">
 		<div class="doc">
-			<xsl:apply-templates mode="chapter" select="txt:section[not(@identifier)]"/>
-			<xsl:apply-templates select="txt:section[@identifier]"/>
+			<xsl:apply-templates select="txt:section[not(@identifier)]"/>
+			<xsl:apply-templates mode="chapter" select="txt:section[@identifier]"/>
 		</div>
 		<div class="doc.termination"/>
 	</xsl:template>

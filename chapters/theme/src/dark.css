@@ -351,6 +351,7 @@ div[class="factor..sections"] > div.title
 	border-radius: 4px;
 }
 
+section > div.title,
 div[class="section"] > div.title,
 div[class="index"] > div.title
 {
@@ -659,6 +660,56 @@ div.toc ol.no-match {
 	font-size: smaller;
 }
 
+section {
+	margin-top: 3em;
+	padding-left: 1em;
+}
+
+section>div.title {
+	color: #5694cf;
+	background-color: #303030;
+
+	font-weight: bold;
+	font-family: monospace;
+
+	text-shadow: none;
+
+	padding: 5px;
+	padding-left: 1em;
+	margin-left: -1em;
+}
+
+section:first-child {
+	margin-top: 2em;
+}
+
+section section {
+	margin-top: 3em;
+}
+
+div.module div.doc section {
+	margin-top: 0.5em;
+}
+
+section section div.title {
+	color: #5694cf;
+    background-color: rgb(48, 48, 48);
+
+	font-family: monospace;
+	font-size: 105%;
+	font-weight: normal;
+
+	text-decoration: none;
+	text-shadow: none;
+	text-align: left;
+
+	margin-left: 0;
+}
+
+/*
+	# Sections inside of fragments.
+	# HTML section elements are used in documentation chapters.
+*/
 div.section {
 	margin-top: 3em;
 	padding-left: 1em;
