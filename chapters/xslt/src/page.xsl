@@ -145,6 +145,7 @@
 						</xsl:otherwise>
 					</xsl:choose>
 				</div>
+
 				<div class="label">
 					<span class="identifier"><xsl:value-of select="@identifier"/></span>
 					<span style="margin-left: 2px;" class="superscript">
@@ -264,9 +265,11 @@
 		<xsl:variable name="context.cache" select="Factor:cache()"/>
 		<xsl:variable name="depth" select="/f:factor/@depth"/>
 		<xsl:variable name="path.prefix">
+			<!--
+				# Empty if no path attribute.
+			!-->
 			<xsl:choose>
 				<xsl:when test="@path"><xsl:text>../</xsl:text></xsl:when>
-				<!-- empty if no path attribute -->
 				<xsl:otherwise><xsl:text></xsl:text></xsl:otherwise>
 			</xsl:choose>
 		</xsl:variable>
@@ -302,7 +305,11 @@
 			<body>
 				<div class="factor">
 					<div class="title">
-						<span class="icon"><xsl:value-of select="f:context/@icon"/></span>
+						<span class="icon">
+							<xsl:call-template name="ctx.icon-image">
+								<xsl:with-param name="icon" select="f:context/@icon"/>
+							</xsl:call-template>
+						</span>
 
 						<xsl:if test="$product">
 								<xsl:for-each select="fault:traverse('.', $product)">
@@ -335,14 +342,18 @@
 						</div>
 					</xsl:if>
 
-					<!-- if there are subfactors, it effects navigation -->
+					<!--
+						# If there are subfactors, it effects navigation.
+					!-->
 					<xsl:if test="f:subfactor">
 						<div class="navigation">
 						<div class="if.vertical.sequence">
 							<xsl:choose>
 								<xsl:when test="$test.package">
 									<div class="subfactors">
-										<!--Show test status of subfactors-->
+										<!--
+											# Show test status of subfactors
+										!-->
 										<xsl:apply-templates select="f:subfactor[not(ctx:has_test(concat($prefix, @identifier)))]">
 											<xsl:sort order="ascending" select="@identifier"/>
 										</xsl:apply-templates>

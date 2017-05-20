@@ -621,21 +621,44 @@
 		</xsl:choose>
 	</func:function>
 
+	<xsl:template name="ctx.icon-image">
+		<xsl:param name="icon"/>
+
+		<xsl:variable name="il" select="string-length($icon)"/>
+
+		<xsl:variable name="n1" select="substring($icon, 1, 1) = '&#60;'"/>
+		<xsl:variable name="n2" select="substring($icon, $il, 1) = '>'"/>
+		<xsl:variable name="inner" select="substring($icon, 2, $il - 2)"/>
+
+		<xsl:choose>
+			<xsl:when test="4 > $il">
+				<xsl:value-of select="$icon"/>
+			</xsl:when>
+			<xsl:when test="$n1 = '&#38;' and $n2 = '>'">
+				<img class="icon" src="{concat($inner, '/favicon.ico')}"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="$icon"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
+
 	<xi:include href="page.xsl#xpointer(/*/*:*)" parse="xml"/>
+
 	<xsl:template match="/">
 		<xsl:apply-templates select="/f:factor"/>
 		<!--
-		<xsl:for-each select="idx:map/idx:item">
-			<xsl:variable name="fd" select="document(concat('file://', ./text()))"/>
+			<xsl:for-each select="idx:map/idx:item">
+				<xsl:variable name="fd" select="document(concat('file://', ./text()))"/>
 
-			<exsl:document href="{@key}"
-					method="xml" version="1.0" encoding="utf-8"
-					omit-xml-declaration="no"
-					doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
-					doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
-					indent="no">
-			</exsl:document>
-		</xsl:for-each>
-		-->
+				<exsl:document href="{@key}"
+						method="xml" version="1.0" encoding="utf-8"
+						omit-xml-declaration="no"
+						doctype-system="http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"
+						doctype-public="-//W3C//DTD XHTML 1.0 Strict//EN"
+						indent="no">
+				</exsl:document>
+			</xsl:for-each>
+		!-->
 	</xsl:template>
 </xsl:transform>

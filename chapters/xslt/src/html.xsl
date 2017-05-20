@@ -2,7 +2,7 @@
 <!--
 	Transform extracted project documentation into XHTML
 	Signatures hide keyword arguments that are not annotated.
-	!-->
+!-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -848,7 +848,11 @@
 			<div class="if.item">
 				<xsl:choose>
 					<xsl:when test="$icon">
-						<div class="icon"><xsl:value-of select="$icon"/></div>
+						<div class="icon">
+							<xsl:call-template name="ctx.icon-image">
+								<xsl:with-param name="icon" select="$icon"/>
+							</xsl:call-template>
+						</div>
 					</xsl:when>
 					<xsl:otherwise>
 						<div class="icon"><img class="icon" src="http://python.org/static/favicon.ico"/></div>
@@ -1190,7 +1194,11 @@
 			<div class="if.item">
 				<xsl:choose>
 					<xsl:when test="$icon">
-						<div class="icon"><xsl:value-of select="$icon"/></div>
+						<div class="icon">
+							<xsl:call-template name="ctx.icon-image">
+								<xsl:with-param name="icon" select="$icon"/>
+							</xsl:call-template>
+						</div>
 					</xsl:when>
 					<xsl:otherwise>
 						<div class="icon"><img class="icon" src="http://python.org/static/favicon.ico"/></div>
