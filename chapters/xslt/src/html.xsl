@@ -268,7 +268,11 @@
 		<dl class="text">
 			<xsl:for-each select="txt:item">
 				<xsl:variable name="ref" select="ctx:prepare-id(ctx:id(.))"/>
-				<dt id="{$ref}"><a href="#{$ref}" class="dkn"/><xsl:apply-templates select="txt:key/txt:*|txt:key/text()"/></dt>
+				<dt id="{$ref}"><a href="#{$ref}" class="dkn"/>
+					<span class="text.key">
+						<xsl:apply-templates select="txt:key/txt:*|txt:key/text()"/>
+					</span>
+				</dt>
 				<dd><xsl:apply-templates select="txt:value/txt:*"/></dd>
 			</xsl:for-each>
 		</dl>
