@@ -12,7 +12,8 @@ if __name__ == '__main__':
 		js = r / 'application' / 'javascript'
 
 		d = libfs.Dictionary.use(js)
-		with libfactor.inducted(libroutes.Import.from_module(libif)).open('rb') as f:
+		fr = libfactor.inducted(libroutes.Import.from_module(libif)) / 'pf.lnk'
+		with fr.open('rb') as f:
 			d[b'factor.js'] = f.read()
 
 	install()

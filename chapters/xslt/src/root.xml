@@ -147,6 +147,10 @@
 				<func:result select="''"/>
 			</xsl:when>
 
+			<xsl:when test="local-name($element)='parameter'">
+				<func:result select="concat($parent/@xml:id, '.Parameters.', $element/@identifier)"/>
+			</xsl:when>
+
 			<xsl:when test="$element/@identifier">
 				<!--
 					# Find the nearest ancestor with an xml:id attr
@@ -159,7 +163,16 @@
 
 			<xsl:when test="$element[local-name()='section' and not(@identifier)]">
 				<xsl:variable name="expr" select="ancestor::f:*[@xml:id]"/>
-				<xsl:variable name="prefix" select="ctx:id($expr)"/>
+				<xsl:variable name="prefix">
+					<xsl:choose>
+						<xsl:when test="$expr">
+							<xsl:value-of select="ctx:id($expr)"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<xsl:value-of select="'factor.'"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:variable>
 				<func:result select="concat($prefix, '.', 'context..section')"/>
 			</xsl:when>
 
@@ -185,7 +198,10 @@
 	</func:function>
 
 	<func:function name="ctx:follow">
-		<!-- resolve path points to the final element -->
+		<!--
+			# Resolve path points to the final element.
+		!-->
+
 		<xsl:param name="context"/>
 		<xsl:param name="tokens"/>
 		<xsl:variable name="name" select="$tokens[position()=1]/text()"/>
@@ -201,20 +217,39 @@
 	</func:function>
 
 	<func:function name="ctx:scan">
-		<!-- scan for the factor path, empty string means there was no factor prefix -->
+		<!--
+			# Scan for the factor path, empty string means there was no factor prefix.
+		!-->
 		<xsl:param name="context"/>
 		<xsl:param name="name"/>
 
 		<xsl:variable name="tokens" select="str:tokenize($name, '.')"/>
 		<xsl:variable name="lead" select="$tokens[position()=1]"/>
 
-		<!-- nearest addressable ancestor that has the identifier-->
-		<xsl:variable name="ancestor" select="$context/ancestor-or-self::*[*[@identifier=$lead]]"/>
+		<!--
+			# Nearest addressable ancestor that has the identifier
+		!-->
+		<xsl:variable name="ancestor"
+			select="
+				(
+						$context/ancestor-or-self::*/txt:section/txt:dictionary[*[@identifier=$lead]]
+					|$context/ancestor-or-self::*[*[@identifier=$lead]]
+				)[position()=1]
+			"/>
+
 		<xsl:variable name="target" select="$ancestor/*[@identifier=$lead]"/>
 
+		<xsl:message>
+			<xsl:value-of select="local-name($target)"/>:
+			<xsl:value-of select="$target/@identifier"/>
+		</xsl:message>
+
 		<xsl:choose>
-			<!-- scan came to an import -->
 			<xsl:when test="local-name($target) = 'import'">
+				<!--
+					# Scan found an import
+				!-->
+
 				<xsl:variable name="resource" select="exsl:node-set(document($ctx.index[@key=$target/@name]))/f:factor/f:module"/>
 				<xsl:variable name="selection" select="ctx:follow($resource, $tokens[position()>1])"/>
 				<xsl:variable name="prefix" select="$resource/@name"/>
@@ -228,11 +263,15 @@
 					</xsl:otherwise>
 				</xsl:choose>
 			</xsl:when>
+
+			<xsl:when test="local-name($target) = 'parameter'">
+				<func:result select="concat('#', ctx:id($target))"/>
+			</xsl:when>
+
 			<xsl:otherwise>
 				<xsl:variable name="selection" select="ctx:follow($target, $tokens[position()>1])"/>
 				<xsl:variable name="prefix" select="''"/>
 				<xsl:choose>
-					<!-- scan came to an import -->
 					<xsl:when test="$selection">
 						<func:result select="concat($prefix, '#', ctx:id($selection))"/>
 					</xsl:when>
@@ -407,7 +446,7 @@
 
 				<xsl:when test="$factor//*[@xml:id=$source]">
 					<!--
-						# Reference is an xml:id target local to the document.
+						# Reference is a simple xml:id target local to the document.
 					!-->
 					<xsl:value-of select="concat('#', $source)"/>
 				</xsl:when>
@@ -444,10 +483,15 @@
 							<xsl:value-of select="ctx:absolute(string($path))"/>
 						</xsl:when>
 						<xsl:otherwise>
-							<!-- could be text structure reference -->
+							<!--
+								# Could be text structure reference
+							!-->
 							<xsl:variable name="local" select="ctx:scan($ref, $strsrc)"/>
 
 							<xsl:choose>
+								<xsl:when test="starts-with($local, '#')">
+									<xsl:value-of select="$local"/>
+								</xsl:when>
 								<xsl:when test="$local">
 									<xsl:value-of select="/f:factor/@depth"/>
 									<xsl:value-of select="$local"/>
@@ -461,6 +505,9 @@
 											<xsl:value-of select="concat($python.docs, $pair[1], $reference_suffix, '#', $pair[2])"/>
 									 </xsl:when>
 									 <xsl:when test="Factor:builtin($strsrc)">
+											<!--
+												# Language domain reference.
+											!-->
 											<xsl:value-of select="ctx:python.builtin($strsrc)"/>
 									 </xsl:when>
 									 <xsl:otherwise>

@@ -80,6 +80,7 @@ body {
 }
 
 p {
+	letter-spacing: 0.035mm;
 }
 
 dl {
@@ -222,8 +223,10 @@ body > div[class="pane."] {
 	height: calc(100% - (1cm + 10px));
 }
 
-/* Factor Content */
-div[id="content."]{
+/*
+	# Factor Content
+*/
+div[id="content."] {
 	left: 0;
 	max-width: 50%;
 	width: 45%;
@@ -245,32 +248,122 @@ div[id="content."] > h1 {
 	margin-left: 8px;
 }
 
-/* Selection (hash tag) Description */
-div[id="subject.description."] {
-	left: 45%;
+div[id="content."] > div.doc {
+	margin-left: 1em;
+}
+
+/*
+	# Selection (hash tag) Description
+*/
+div[id="log."] {
+	background: black;
+
+	left: calc(45% - 4px);
 	right: 0;
 	width: auto;
 	margin-left: 4px; /* compensate for scrollbar padding */
 	margin-bottom: 2em;
 
 	padding: 0.5em;
-	padding-left: 16px;
+	padding-left: 0;
 
 	z-index: 8;
 	overflow: scroll;
 }
 
-div[id="subject.description.element."] {
-	position: relative;
-	width: 95%;
+div[id="log."] > div.new {
+	background: white;
 }
 
-div[class="source.code"] {
+div[id="log."] > div {
+	position: relative;
+	width: auto;
+	border: 1px solid #5e5e5e;
+	padding: 0.5em;
+	border-radius: 0.25em;
+	padding-left: 2em;
+	padding-right: 2em;
+	margin-left: 4px;
+	margin-right: 1em;
+	margin-top: 1em;
+	background: rgba(120,120,120,0.3);
+
+	transition-duration: 500ms;
+	transition-property: background;
+	transition-timing-function: linear;
+}
+
+div[id="log."] > div.entry > div[class="icon"] {
+	cursor: context-menu;
+	position: absolute;
+	z-index: 1;
+	top: 8px;
+	left: 8px;
+
+	font-size: 2em;
+	width: 1cm;
+	height: 1cm;
+
+	user-select: none;
+}
+
+div[id="log."] > div.entry > iframe {
+	height: 16cm;
+	max-height: 32cm;
+	width: 100%;
+
+	box-shadow: inset 0 0 16px #000;
+
+	border-width: 1px;
+	border-color: rgba(100,100,100,.3);
+	border-style: solid;
+
+	margin: 1em;
+	margin-top: 1.5em;
+
+	overflow: scroll;
+}
+
+div[id="log."] > div.entry > div[class="fragment.address"] {
+	font-family: monospace;
+	margin-left: 1em;
+}
+
+div[id="log."] > div.entry > div[class="title"] {
+	margin-left: 1em;
+}
+
+div[class="log..actions"] {
+	user-select: none;
+	position: absolute;
+	right: 8px;
+	top: 0;
+}
+
+div[class="log..actions"]>span.close {
+	margin-left: 2px;
+}
+
+div[class="log..actions"]>span.close:hover {
+	cursor: pointer;
+	text-shadow:
+		0px 3px 6px rgba(0,0,0,1),
+		0px 3px 6px rgba(0,0,0,1);
+}
+
+div[class="log..actions"]>span.shrink:hover {
+	cursor: pointer;
+	text-shadow:
+		0px 3px 6px rgba(0,0,0,1),
+		0px 3px 6px rgba(0,0,0,1);
+}
+
+div[class="syntax."] {
 	width: 100%;
 	margin-bottom: 2em;
 }
 
-div[class="source.code"] > pre {
+div[class="syntax."] > pre {
 	box-shadow: inset 0 0 16px #000000;
 	padding-right: 8px;
 	background-color: rgba(0,0,0,0.2);
@@ -278,11 +371,10 @@ div[class="source.code"] > pre {
 	border-color: rgba(100,100,100,0.3);
 	font-size: small;
 	font-family: monospace;
-	overflow: visible;
+	overflow: hidden;
 }
 
-/* node that cloned in order to show the default right pane content */
-div[id="subject.default."] {
+div[id="offscreen."] {
 	display: none;
 }
 
@@ -338,8 +430,6 @@ span.identity-context {
 span.internal {
 	display: none;
 }
-
-/* defaults for arbitrary parameter areas (functions/methods/class bases) */
 
 div[class="factor..structures"] > div.title,
 div[class="factor..classes"] > div.title,
@@ -412,6 +502,7 @@ div[class~="class"]
 
 	margin-left: -1px;
 	margin-right: 12px;
+	margin-top: 0.5em;
 
 	overflow-x: hidden;
 }
@@ -429,6 +520,7 @@ div[class~="class"] > div.doc
 }
 
 div[class~="property"],
+div[class~="macro"],
 div[class~="function"],
 div[class~="data"],
 div[class~="method"]
@@ -471,9 +563,10 @@ div.index > div.title
 	margin-top: 2em;
 }
 
+div[class~="macro"] div[class="section"] > div.title,
 div[class~="data"] div[class="section"] > div.title,
-div[class~="method"] div[class="section"] > div.title,
 div[class~="property"] div[class="section"] > div.title,
+div[class~="method"] div[class="section"] > div.title,
 div[class~="function"] div[class="section"] > div.title
 {
 	font-size: medium;
@@ -484,10 +577,11 @@ div[class~="function"] div[class="section"] > div.title
 	border-radius: 4px;
 }
 
-div[class~="property"] > div.title,
-div[class~="function"] > div.title,
+div[class~="macro"] > div.title,
 div[class~="data"] > div.title,
-div[class~="method"] > div.title
+div[class~="property"] > div.title,
+div[class~="method"] > div.title,
+div[class~="function"] > div.title
 {
 	padding-top: 3px;
 	padding-bottom: 8px;
@@ -500,7 +594,6 @@ div[class~="method"] > div.title
 
 div[class="none.title"] {
 	font-size: 128%;
-	/*text-decoration: underline;*/
 
 	padding-top: 2px;
 	padding-bottom: 2px;
@@ -512,6 +605,7 @@ div[class="none.title"] {
 	text-shadow:
 		0px 3px 6px rgba(0,0,0,1),
 		0px 3px 6px rgba(0,0,0,1);
+
 	/*text-shadow: -1px -2px 0 rgba(0,0,0,1);
 	background-color: #222222;*/
 }
@@ -555,7 +649,9 @@ span.sequence-delimiter:last-child
 span.path-delimiter, span.sequence-delimiter,
 span.delimiter, span.assignment { font-size: medium; }
 
-/* add some space after comma's */
+/*
+	# Adds some space after comma's.
+*/
 span.sequence-delimiter {
 	margin-right: 0.5em;
 }
@@ -593,7 +689,9 @@ div.representation {
 	font-family: monospace;
 }
 
-/* Formatting for HTML representation of Python objects */
+/*
+	# Formatting for HTML representation of Python objects
+*/
 div[class="python.object.inline"] {
 	max-height: 4cm;
 	overflow: scroll;
@@ -605,8 +703,8 @@ span[class="python.dictionary.item"] {
 }
 
 /*
- * Text Portions Contained in doc-strings.
- */
+	# Text Portions Contained in doc-strings.
+*/
 div.doc {
 	font-size: 90%;
 }
@@ -631,8 +729,15 @@ div.toc {
 div.toc-no-match {
 	font-size: x-large;
 
-	/*background-color: rgba(0,0,0,0.4);
-	background: linear-gradient(135deg, rgba(100,173,229,0.4) 0%,rgba(41,137,216,0.4) 50%,rgba(30,87,153,0.3) 100%);*/
+	/*
+		background-color: rgba(0,0,0,0.4);
+		background:
+		linear-gradient(135deg,
+			rgba(100,173,229,0.4) 0%,
+			rgba(41,137,216,0.4) 50%,
+			rgba(30,87,153,0.3) 100%
+		);
+	*/
 	background: linear-gradient(135deg,
 		rgba(163,199,226,0.15) 0%,
 		rgba(100,173,229,0.15) 6%,
@@ -875,9 +980,18 @@ span[class="text.emphasis.heavy"] {
 	font-weight: bolder;
 }
 
-/* emphasis weight of 3 or higher */
+/*
+	# Emphasis weight of 3 or higher
+*/
 span[class="text.emphasis.excessive"] {
 	font-weight: bold;
+}
+
+/*
+	# Emphasis weight of -3 or lower
+*/
+span[class="text.emphasis.insignificant"] {
+	font-weight: light;
 }
 
 dl.text > dd {
@@ -977,7 +1091,9 @@ div.title > span.metrics
 	padding-right: 1em;
 }
 
-/* Subsections inside concept representations */
+/*
+	# Subsections inside concept representations
+*/
 div.module div.doc div[class="section"] div[class="section"] > div.title {
 	padding-left: 8px;
 	background-color: rgba(20,20,20,0.4);

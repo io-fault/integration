@@ -498,6 +498,7 @@ def _xml_class(query, module, obj, *path):
 		)
 
 def _xml_context(query, package, project, getattr=getattr):
+	# XXX: rename to project (project/@name, project/@context)
 	if package and project:
 		pkg = package.module()
 		prj = project.module()
@@ -517,10 +518,7 @@ def _xml_context(query, package, project, getattr=getattr):
 def _xml_module(query, factor_type, route, module, compressed=False):
 	lc = 0
 	ir = route
-	if module.__factor_composite__:
-		sources = libfactor.sources(ir).tree()[1]
-	else:
-		sources = [libroutes.File.from_absolute(module.__file__)]
+	sources = [libroutes.File.from_absolute(module.__file__)]
 
 	for route in sources:
 		if compressed:
@@ -560,7 +558,7 @@ def _xml_module(query, factor_type, route, module, compressed=False):
 				),
 				libxml.element('data',
 					libxml.escape_element_bytes(codecs.encode(cs, 'base64')),
-					('type', 'application/x-lzma'),
+					('type', 'application/x-lzma' if compressed else None),
 					('format', 'base64'),
 				),
 			),
@@ -578,9 +576,6 @@ def _xml_module(query, factor_type, route, module, compressed=False):
 		module.__doc__ = ''
 	else:
 		yield from _xml_doc(query, module, 'factor..')
-
-	# accumulate nested classes for subsequent processing
-	documented_classes = set()
 
 	if hasattr(module, '__factor_xml__') and module.__factor_xml__ is not None:
 		# Override used by composites.
@@ -642,12 +637,15 @@ def _submodules(query, route, module, element='subfactor'):
 			)
 
 	if element == 'subfactor':
-		# Composite parts are subfactors too.
+		# Composite fractions are subfactors too.
 		if module.__factor_composite__:
 			source_factors = libfactor.sources(route)
+			prefix = len(source_factors.absolute)
 
 			for x in source_factors.tree()[1]:
-				path = '/'.join(x.points)
+				rpoints = x.absolute[prefix:]
+				path = '/'.join(rpoints)
+
 				yield from libxml.element(element, (),
 					('type', 'source'),
 					('path', path),
@@ -729,6 +727,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 	else:
 		profile = ()
 
+	language = None
 	try:
 		if hasattr(module, '__file__'):
 			factor_type = getattr(module, '__factor_type__', 'module')
@@ -737,6 +736,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 				ename = 'chapter'
 			else:
 				ename = 'module'
+				language = getattr(module, '__factor_language__', 'python')
 		else:
 			factor_type = 'namespace'
 
@@ -744,6 +744,7 @@ def document(query:Query, route:libroutes.Import, module:types.ModuleType, metri
 			_xml_module(query, factor_type, route, module),
 			('identifier', basename),
 			('name', cname),
+			('language', language)
 		)
 	except Exception as error:
 		# When module is &None, an error occurred during import.

@@ -32,6 +32,7 @@
 
 	<!-- arguably configuration -->
 	<xsl:variable name="functions_title" select="'functions'"/>
+	<xsl:variable name="macros_title" select="'macros'"/>
 	<xsl:variable name="classes_title" select="'classes'"/>
 	<xsl:variable name="structures_title" select="'structures'"/>
 	<xsl:variable name="methods_title" select="'methods'"/>
@@ -300,7 +301,10 @@
 
 	<xsl:template match="txt:reference">
 		<xsl:variable name="address" select="ctx:reference(.)"/>
-		<a class="text.reference" href="{$address}"><xsl:value-of select="@source"/><span class="ern"/></a>
+		<a class="text.reference" href="{$address}">
+			<xsl:value-of select="@source"/>
+			<span class="ern"/>
+		</a>
 	</xsl:template>
 
 	<xsl:template name="txt:section.title">
@@ -321,7 +325,9 @@
 	</xsl:template>
 
 	<xsl:template match="txt:section[@identifier]">
-		<!--if there is no identified ancestor, it's probably the root object (module)-->
+		<!--
+			# If there is no identified ancestor, it's probably the root object (module).
+		!-->
 		<xsl:variable name="id" select="ctx:id(.)"/>
 
 		<div id="{$id}" class="section">
@@ -889,7 +895,7 @@
 		</div>
 	</xsl:template>
 
-	<xsl:template match="f:function">
+	<xsl:template match="f:function|f:macro">
 		<xsl:variable name="name" select="@identifier"/>
 		<xsl:variable name="path" select="@xml:id"/>
 		<xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
@@ -897,14 +903,18 @@
 		<xsl:variable name="untraversed" select="Factor:untraversed()"/>
 		<xsl:variable name="test" select="ctx:tests(/f:factor/@name)/t:test[@identifier=$path]"/>
 
-		<div class="function">
+		<div class="{local-name()}">
 			<xsl:attribute name="id"><xsl:value-of select="@xml:id"/></xsl:attribute>
 			<div class="title">
 				<a href="#{ctx:id($context)}">
 					<span class="identity-context"><xsl:value-of select="$leading.name"/></span>
 				</a>
 				<span class="path-delimiter">.</span>
-				<a class="terminal" href="{concat('#',@xml:id)}"><span class="identifier"><xsl:value-of select="$name"/></span></a>
+				<a class="terminal" href="{concat('#',@xml:id)}">
+					<span class="identifier">
+						<xsl:value-of select="$name"/>
+					</span>
+				</a>
 				<span class="python.parameter.area">
 					<span class="signature"><xsl:apply-templates select="f:parameter"/></span>
 				</span>
@@ -1108,6 +1118,19 @@
 				</div>
 			</xsl:if>
 
+			<xsl:if test="./f:macro">
+				<div class="macros">
+					<div class="head">
+						<span class="title"><xsl:value-of select="$macros_title"/></span>
+					</div>
+
+					<xsl:apply-templates select="./f:macro">
+						<xsl:sort order="ascending" select="not(f:doc)"/>
+						<xsl:sort order="ascending" select="number(./f:source/@start)"/>
+					</xsl:apply-templates>
+				</div>
+			</xsl:if>
+
 			<xsl:if test="./f:function">
 				<div class="functions">
 					<div class="head">
@@ -1209,7 +1232,18 @@
 					</xsl:otherwise>
 				</xsl:choose>
 				<div class="label">
-					<span class="identifier"><xsl:value-of select="@identifier"/></span>
+					<span class="identifier">
+						<xsl:choose>
+							<xsl:when test="@path">
+								<span class="fraction">
+									<xsl:value-of select="@path"/>
+								</span>
+							</xsl:when>
+							<xsl:otherwise>
+								<xsl:value-of select="@identifier"/>
+							</xsl:otherwise>
+						</xsl:choose>
+					</span>
 					<span class="post">
 						<xsl:if test="string($cvg) != 'NaN' and string($cvg) != 'Infinity'">
 							<xsl:value-of select="format-number($cvg, '###.##')"/>

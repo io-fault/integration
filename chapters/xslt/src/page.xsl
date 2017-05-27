@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--Transform documentation into presentable XHTML-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
@@ -71,6 +70,16 @@
 			<xsl:apply-templates mode="javascript.mro.index" select="f:order"/>
 			<xsl:text>],</xsl:text>
 		</xsl:for-each>
+	</xsl:template>
+
+	<xsl:template name="source.file">
+		<xsl:param name="source"/>
+		<xsl:variable name="context" select="$source/ancestor::f:factor/f:context"/>
+		<xsl:variable name="prefix" select="concat($context/@system.path, '/', $source/@identifier, '/src/')"/>
+		<xsl:variable name="relative" select="substring-after($source/@path, $prefix)"/>
+		<xsl:variable name="rabsolute" select="substring-after($source/@path, $context/@system.path)"/>
+
+		<xsl:value-of select="concat($context/@context,'/',$context/@project,$rabsolute)"/>
 	</xsl:template>
 
 	<xsl:template mode="source.index" match="f:factor">
@@ -269,10 +278,11 @@
 				# Empty if no path attribute.
 			!-->
 			<xsl:choose>
-				<xsl:when test="@path"><xsl:text>../</xsl:text></xsl:when>
+				<xsl:when test="$depth"><xsl:value-of select="$depth"/></xsl:when>
 				<xsl:otherwise><xsl:text></xsl:text></xsl:otherwise>
 			</xsl:choose>
 		</xsl:variable>
+		<xsl:variable name="default.language" select="./f:module/@language[position()=1]"/>
 
 		<html>
 			<head>
@@ -283,8 +293,24 @@
 				<!-- syntax highlighting -->
 				<script type="application/javascript">
 					var xml = null;
+					<xsl:choose>
+					<xsl:when test="$default.language">
+					var default_language = "<xsl:value-of select="$default.language[position()=1]"/>";
+					</xsl:when>
+					<xsl:otherwise>
+					var default_language = "python";
+					</xsl:otherwise>
+					</xsl:choose>
 					var documented_module = "<xsl:value-of select="@name"/>";
 					var factor_name = "<xsl:value-of select="@identifier"/>";
+
+					var factor_source =
+					<xsl:text>"</xsl:text>
+					<xsl:call-template name="source.file">
+						<xsl:with-param name="source" select="f:module/f:source"/>
+					</xsl:call-template>
+					<xsl:text>";</xsl:text>
+
 					var mroindex = {
 						<xsl:apply-templates mode="javascript.mro.index" select="/"/>
 					}
@@ -320,7 +346,34 @@
 								</xsl:for-each>
 						</xsl:if>
 
-						<a href="{substring($depth, 1, string-length($depth)-1)}"><span class="identifier"><xsl:value-of select="@identifier"/></span></a>
+						<a>
+							<xsl:attribute name="href">
+								<xsl:choose>
+									<xsl:when test="$depth">
+										<xsl:value-of select="$depth"/>
+										<xsl:value-of select="/f:factor/@name"/>
+									</xsl:when>
+									<xsl:otherwise>
+										<!--
+											# Nothing for self points to the same factor.
+										!-->
+										<xsl:value-of select="''"/>
+									</xsl:otherwise>
+								</xsl:choose>
+							</xsl:attribute>
+
+							<span class="identifier">
+								<xsl:value-of select="@identifier"/>
+							</span>
+						</a>
+						<xsl:if test="$depth">
+							<xsl:text>/</xsl:text>
+							<a href="">
+								<span class="fraction">
+									<xsl:value-of select="/f:factor/@path"/>
+								</span>
+							</a>
+						</xsl:if>
 					</div>
 					<div style="display:none" class="index.reference">
 						<a href="#index."><span class="tab">Index</span></a>
@@ -334,6 +387,13 @@
 				<div id="content." class="pane.">
 					<xsl:variable name="test.package" select="/f:factor/@type = 'tests'"/>
 					<xsl:variable name="prefix" select="concat(/f:factor/@name, '.')"/>
+
+					<xsl:if test="/f:factor/@type != 'chapter'">
+						<div class="doc">
+							<xsl:apply-templates
+								select="/f:factor/f:module/f:doc/txt:section[not(@identifier) or @identifier!='Properties']"/>
+						</div>
+					</xsl:if>
 
 					<!--Project Package displays test summary-->
 					<xsl:if test="$test.package and /f:factor/f:test[t:*]">
@@ -477,14 +537,7 @@
 					</xsl:if>
 					</div>
 				</div>
-				<div class="pane." id="subject.description."></div>
-					<!--subjection.description content when no hash is present-->
-					<!--subject.default div is displayed by default; changes on hashchanged()-->
-				<div id="subject.default.">
-					<xsl:if test="/f:factor/@type != 'chapter'">
-						<xsl:apply-templates select="/f:factor/f:module/f:doc/txt:section[not(@identifier) or @identifier!='Properties']"/>
-					</xsl:if>
-				</div>
+				<div class="pane." id="log."></div>
 			</body>
 		</html>
 	</xsl:template>

@@ -116,8 +116,8 @@ def structure_package(target, package, metrics=None):
 	from ...development import library as libdev
 	xslt_doc, xslt_transform = xmlfactor.xslt(xslt)
 
-	variants = {'name':'inspect','intention':'optimal','format':'xml'}
 	devctx = libdev.Context.from_environment()
+
 	for x, query, module_name in itertools.chain(factors):
 		cname = query.canonical(x.fullname)
 		key = cname.encode('utf-8')
@@ -142,7 +142,7 @@ def structure_package(target, package, metrics=None):
 
 		# Composites have a set of subfactors,
 		# build special module instances that can be processed by python.document().
-		if module.__factor_composite__ and module.__factor_type__ != 'interfaces':
+		if module.__factor_composite__:
 			is_ext = libfactor.python_extension(module)
 			f = libdev.Factor(None, module, None)
 
@@ -152,6 +152,7 @@ def structure_package(target, package, metrics=None):
 			f_sources = list(f.link(dict(vars), devctx, mech, refs, ()))
 			if not f_sources:
 				# XXX: Use an empty directory and continue.
+				# Note the absence of data instead of skipping.
 				continue
 			(sp, (vl, key, loc)), = f_sources
 
@@ -169,24 +170,29 @@ def structure_package(target, package, metrics=None):
 			srctree = sources.tree()
 			for y in srctree[1]:
 				if y.identifier.startswith('.'):
+					# Ignore dot files.
 					continue
+
 				sfm = types.ModuleType(module.__name__, "")
 				sfm.__file__ = str(y)
-				sfm.__factor_language__ = y.extension
+				sfm.__factor_language__ = libdev.languages.get(y.extension)
 				sfm.__factor_composite__ = False
 				sfm.__factor_domain__ = 'unit'
-				sfm.__factor_composite_type__ = module.__factor_domain__
-				sfm.__factor_path__ = str(y)[prefix_len+1:]
+				sfm.__factor_composite_type__ = module.__factor_type__
+				suffix = sfm.__factor_path__ = str(y)[prefix_len+1:]
 				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
 				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
 
-				xis = index.extend(y.points)
+				xis = os.path.join(str(index), suffix)
 				try:
-					sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, str(xis))[1]
+					sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, xis)[1]
 				except Exception as exc:
 					# XXX: Reveal exception in document.
+					exc.__traceback__ = None
 					sfm.error = exc
+					sfm.file = xis
 					sfm.__factor_xml__ = None
+					print('factor_xml exception', xis)
 
 				if metrics is not None:
 					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
