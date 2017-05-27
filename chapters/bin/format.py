@@ -15,22 +15,8 @@ from ...xml import library as libxml
 from ...filesystem import library as libfs
 
 from .. import xslt
+from .. import tools
 from .. import library as libfactors
-
-def index_xml(directory, index):
-	content = libxml.element('map',
-		itertools.chain.from_iterable(
-			libxml.element('item',
-				libxml.escape_element_string(str(r)),
-				('key', k)
-			)
-			for k, r in index.items()
-		),
-		('dictionary', directory),
-		('xmlns', 'http://fault.io/xml/filesystem#index'),
-	)
-
-	return b''.join(content)
 
 def main(source, target, metrics=None, suffix='.html'):
 	src = os.path.realpath(source)
@@ -41,7 +27,7 @@ def main(source, target, metrics=None, suffix='.html'):
 		k.decode('utf-8'): r
 		for k, r in structs.references()
 	}
-	xml = index_xml(src, index)
+	xml = tools.construct_corpus_map(src, index)
 
 	# temporary for the index.xml file
 	with libroutes.File.temporary() as tr:

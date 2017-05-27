@@ -53,3 +53,20 @@ def normalize_documentation(lines, prefix='# '):
 		# assume no indentation and likely single line
 		plines = strip_notation_prefix(lines, prefix=prefix)
 		return plines
+
+def construct_corpus_map(directory, index):
+	import itertools
+	from ..xml import library as libxml
+	content = libxml.element('map',
+		itertools.chain.from_iterable(
+			libxml.element('item',
+				libxml.escape_element_string(str(r)),
+				('key', k)
+			)
+			for k, r in index.items()
+		),
+		('dictionary', directory),
+		('xmlns', 'http://fault.io/xml/filesystem#index'),
+	)
+
+	return b''.join(content)
