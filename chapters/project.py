@@ -1,7 +1,7 @@
-identity = 'http://fault.io/python/factor'
+identity = 'http://fault.io/src/fault.factor'
 name = 'factor'
-abstract = 'Project documentation and release publishing tools.'
-icon = '🦂'
+abstract = 'Project documentation and release publishing tools'
+icon = '🐜';
 
 fork = 'root'
 versioning = 'continuous'
