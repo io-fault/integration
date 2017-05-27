@@ -5,6 +5,7 @@ from ...xml import libfactor
 from ...chronometry import library as libtime
 from ...chronometry import metric
 from ...text import library as libtext
+from ...factors import tools as ftools
 
 namespace = 'http://fault.io/xml/factor'
 def name(name_string):
@@ -24,22 +25,30 @@ class Factor(libfactor.XPathModule):
 		return [None]
 
 	@staticmethod
-	def clean_comment(string):
+	def clean_comment(lines):
 		"""
 		# Remove decorations and leading spaces from a comment.
 		"""
-		return '\n'.join([x.lstrip('/* \t').rstrip() for x in ''.join(map(str, string)).split('\n')])
+		return ftools.normalize_documentation(lines)
 
-	def structure_comment(self, context, string):
+	def structure_comment(self, context, prefix, string):
 		"""
 		"""
 		start = b'<f:doc xmlns:f="http://fault.io/xml/factor" xmlns:txt="http://fault.io/xml/text">'
 
-		ftxt = self.clean_comment(string)
+		if not string:
+			return ()
+
+		string = ''.join(string).strip('/* ')
+		ftxt = '\n'.join(self.clean_comment(string.split('\n')))
 		if not ftxt:
 			return ()
 
-		xml = b''.join(libtext.XML.transform('txt:', ftxt, encoding='utf-8'))
+		xml = b''.join(
+			libtext.XML.transform('txt:', ftxt,
+				identify=prefix.__add__,
+				encoding='utf-8')
+		)
 		if xml:
 			return self.libfactor.etree.XML(start + xml + b'</f:doc>')
 		else:

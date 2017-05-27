@@ -26,10 +26,13 @@ print_origin(FILE *fp, CXCursor c)
 	print_xml_string_attribute(fp, "origin", clang_getFileName(file));
 }
 
+/*
+	# Generic means to note the location of the cursor.
+*/
 static int
 print_source_location(FILE *fp, CXCursor c)
 {
-	CXSourceRange range = clang_getCursorExtent(c);	
+	CXSourceRange range = clang_getCursorExtent(c);
 	CXSourceLocation start = clang_getRangeStart(range);
 	CXSourceLocation stop = clang_getRangeEnd(range);
 	CXFile start_file, stop_file;
@@ -201,8 +204,9 @@ print_comment(FILE *fp, CXCursor c)
 
 static enum CXChildVisitResult
 callable(CXCursor parent, CXCursor cursor, CXClientData cd,
-	enum CXCursorKind kind, enum CXVisibilityKind vis, enum CXAvailabilityKind avail
-)
+	enum CXCursorKind kind,
+	enum CXVisibilityKind vis,
+	enum CXAvailabilityKind avail)
 {
 	FILE *fp = (FILE *) cd;
 	CXCursor arg;
@@ -212,8 +216,8 @@ callable(CXCursor parent, CXCursor cursor, CXClientData cd,
 	print_comment(fp, cursor);
 
 	/*
-	 * Don't run visit children as it's only interested in arguments.
-	 */
+		# Don't run visit children as it's only interested in arguments.
+	*/
 	while (i < nargs)
 	{
 		CXCursor arg = clang_Cursor_getArgument(cursor, i);
@@ -237,9 +241,41 @@ callable(CXCursor parent, CXCursor cursor, CXClientData cd,
 }
 
 static enum CXChildVisitResult
+macro(CXCursor parent, CXCursor cursor, CXClientData cd,
+	enum CXCursorKind kind,
+	enum CXVisibilityKind vis,
+	enum CXAvailabilityKind avail)
+{
+	FILE *fp = (FILE *) cd;
+	CXCursor arg;
+	int i = 0, nargs = clang_Cursor_getNumArguments(cursor);
+
+	print_source_location(fp, cursor);
+	print_comment(fp, cursor);
+
+	/*
+		# Currently emits nothing as there is no way to get macro arguments from libclang.
+	*/
+	while (i < nargs)
+	{
+		CXCursor arg = clang_Cursor_getArgument(cursor, i);
+
+		print_xml_open(fp, "parameter");
+		print_spelling_identifier(fp, arg);
+		fprintf(fp, ">");
+		print_xml_close(fp, "parameter");
+
+		++i;
+	}
+
+	return(CXChildVisit_Continue);
+}
+
+static enum CXChildVisitResult
 print_enumeration(CXCursor parent, CXCursor cursor, CXClientData cd,
-	enum CXCursorKind kind, enum CXVisibilityKind vis, enum CXAvailabilityKind avail
-)
+	enum CXCursorKind kind,
+	enum CXVisibilityKind vis,
+	enum CXAvailabilityKind avail)
 {
 	FILE *fp = (FILE *) cd;
 	CXType t;
@@ -355,8 +391,8 @@ print_collection(FILE *fp, CXCursor c, CXClientData cd, const char *element_name
 }
 
 /**
- * visit the declaration nodes emitting structure and documentation strings.
- */
+	# Visit the declaration nodes emitting structure and documentation strings.
+**/
 static enum CXChildVisitResult
 visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 {
@@ -378,14 +414,18 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		/* Note included files */
 		clang_getPresumedLocation(location, &filename, &line, &column);
 
-		if (clang_getCString(last_file) == NULL || strcmp(clang_getCString(last_file), clang_getCString(filename)) != 0)
+		if (clang_getCString(last_file) == NULL ||
+			strcmp(clang_getCString(last_file), clang_getCString(filename)) != 0)
 		{
-			print_xml_open(fp, "file");
-			print_xml_attribute(fp, "path", clang_getCString(filename));
-			print_xml_empty(fp);
-			if (clang_getCString(last_file) != NULL)
-				clang_disposeString(last_file);
-			last_file = filename;
+			if (clang_getCString(filename)[0] != '<')
+			{
+				print_xml_open(fp, "file");
+				print_xml_attribute(fp, "path", clang_getCString(filename));
+				print_xml_empty(fp);
+				if (clang_getCString(last_file) != NULL)
+					clang_disposeString(last_file);
+				last_file = filename;
+			}
 		}
 
 		return(ra);
@@ -394,6 +434,9 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	switch (kind)
 	{
 		case CXCursor_TranslationUnit:
+			/*
+				# Root node already being visited.
+			*/
 		break;
 
 		case CXCursor_TypedefDecl:
@@ -429,22 +472,29 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		break;
 
 		case CXCursor_MacroExpansion:
-			break;
+			/*
+				# Link expansion to definition.
+			*/
+			clang_visitChildren(cursor, visitor, cd);
+		break;
+
 		case CXCursor_PreprocessingDirective:
-			break;
+		{
+			clang_visitChildren(cursor, visitor, cd);
+		}
+		break;
 
 		case CXCursor_InclusionDirective:
 			break;
 
 		case CXCursor_MacroDefinition:
-			if (clang_isCursorDefinition(cursor) == 0)
-				return(ra);
-
+		{
 			print_xml_open(fp, "macro");
 			print_spelling_identifier(fp, cursor);
 			print_xml_enter(fp);
-			ra = callable(parent, cursor, cd, kind, vis, avail);
+			ra = macro(parent, cursor, cd, kind, vis, avail);
 			print_xml_close(fp, "macro");
+		}
 		break;
 
 		case CXCursor_ObjCInstanceMethodDecl:
@@ -789,7 +839,8 @@ int
 main(int argc, const char *argv[])
 {
 	CXIndex idx = clang_createIndex(0, 0);
-	CXTranslationUnit u = clang_parseTranslationUnit(idx, 0, argv, argc, 0, 0, CXTranslationUnit_None);
+	CXTranslationUnit u = clang_parseTranslationUnit(idx, 0, argv, argc, 0, 0,
+		CXTranslationUnit_DetailedPreprocessingRecord);
 	CXCursor rc;
 
 	rc = clang_getTranslationUnitCursor(u);
@@ -797,11 +848,29 @@ main(int argc, const char *argv[])
 	print_xml_attribute(stdout, "collection", "clang");
 	print_xml_string_attribute(stdout, "version", clang_getClangVersion());
 
+	switch (clang_getCursorLanguage(rc))
+	{
+		case CXLanguage_C:
+			print_xml_attribute(stdout, "language", "c");
+		break;
+
+		case CXLanguage_ObjC:
+			print_xml_attribute(stdout, "language", "objective-c");
+		break;
+
+		case CXLanguage_CPlusPlus:
+			print_xml_attribute(stdout, "language", "c++");
+		break;
+
+		default:
+			print_xml_attribute(stdout, "language", "unknown");
+		break;
+	}
+
 	print_xml_enter(stdout);
 	clang_visitChildren(rc, visitor, (CXClientData) stdout);
 	print_xml_close(stdout, "introspection");
 
-	/* Short lived process */
 	#if FV_TEST()
 		clang_disposeTranslationUnit(u);
 		clang_disposeIndex(idx);
