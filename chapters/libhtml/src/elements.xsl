@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-	Transform extracted project documentation into XHTML
-	Signatures hide keyword arguments that are not annotated.
+	# Transform extracted project documentation into XHTML
+	# Signatures hide keyword arguments that are not annotated.
 !-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"

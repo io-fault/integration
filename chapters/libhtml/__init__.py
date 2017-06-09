@@ -1,6 +1,9 @@
 """
-# Primary formatting pipeline for `Structured Factors`.
+# HTML formatting stylesheets for code fragments.
 """
+__factor_domain__ = 'xml'
+__factor_type__ = 'library'
+
 from ...xml import libfactor
 from ...computation import library as libc
 from ...chronometry import library as libtime
@@ -10,7 +13,6 @@ namespace = 'http://fault.io/xml/factor'
 def name(name_string):
 	global namespace
 	return '{%s}%s' %(namespace, name_string)
-
 
 class Factor(libfactor.XPathModule):
 	"""
@@ -137,3 +139,4 @@ class Factor(libfactor.XPathModule):
 
 __factor_domain__ = 'xml'
 __factor_type__ = 'executable'
+

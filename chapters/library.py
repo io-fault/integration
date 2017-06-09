@@ -11,6 +11,8 @@ from ..system import libfactor
 from ..xml import libfactor as xmlfactor
 from ..xml import library as libxml
 
+from . import libhtml
+
 namespaces = {
 	'xlink': 'http://www.w3.org/1999/xlink',
 	'inspect': 'http://fault.io/xml/inspect#set',
@@ -99,9 +101,9 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 		if libfactor.composite(x)
 	}
 
-from . import xslt
-xslt_document, transformation = xmlfactor.xslt(xslt)
+from . import libhtml
+html = xmlfactor.Library.open(libhtml)
 
 def transform(path, **params):
 	input = xmlfactor.readfile(path)
-	return input, transformation(input, **{k:transformation.strparam(v) for k, v in params.items()})
+	return html.xslt('factor', **params)(input)

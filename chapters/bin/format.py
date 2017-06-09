@@ -46,7 +46,7 @@ def main(source, target, metrics=None, suffix='.html'):
 				spd = ''
 
 			try:
-				src, rtf = libfactors.transform(str(r),
+				rtf = libfactors.transform(str(r),
 					document_index = str(idx_path),
 					reference_suffix = suffix,
 					metrics_profile = spd,
@@ -63,4 +63,4 @@ def main(source, target, metrics=None, suffix='.html'):
 				continue
 
 if __name__ == '__main__':
-	sys.exit(main(*sys.argv[1:]))
+	main(*sys.argv[1:])

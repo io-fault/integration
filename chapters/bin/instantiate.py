@@ -29,7 +29,7 @@ def main(target, state):
 	packages = state_fsd[b'metrics:packages'].decode('utf-8').split('\n')
 	for package in packages:
 		structure.structure_package(str(structs), package, state)
-		format.main(str(structs), str(formats), suffix='')
+		format.main(str(structs), str(formats), suffix="")
 
 	d = libfs.Dictionary.use(css)
 	d[b'factor.css'] = (libfactor.package_inducted(theme) / 'theme.css').load()
@@ -38,4 +38,4 @@ def main(target, state):
 	d[b'factor.js'] = (libfactor.package_inducted(libif) / 'libif.js').load()
 
 if __name__ == '__main__':
-	sys.exit(main(*sys.argv[1:]))
+	main(*sys.argv[1:])

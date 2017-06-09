@@ -16,6 +16,8 @@
 	extension-element-prefixes="func"
 	exclude-result-prefixes="e xsl f ctx df str exsl fault">
 
+	<xsl:import href="elements.xml"/>
+
 	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
 	<xsl:param name="long.args.limit" select="64"/>
 	<xsl:param name="quote" select="'&#34;'"/>
@@ -35,8 +37,6 @@
 			<xsl:value-of select="concat($n, ' lines ', format-number($p, '###.##'), '%')"/>
 		</func:result>
 	</func:function>
-
-	<xi:include href="html.xsl#xpointer(/*/*:*)" parse="xml"/>
 
 	<xsl:template mode="class.hierarchy" match="node()"/>
 	<xsl:template mode="concept.index" match="node()"/>

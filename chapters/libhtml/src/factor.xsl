@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
+<?xml-library symbol="factor"?>
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
 	xmlns:l="http://fault.io/xml/literal"
@@ -24,6 +25,8 @@
 	<!--
 		# Transform xml/factor source XML into a cross-referenced XHTML document.
 	!-->
+
+	<xsl:import href="page.xml"/>
 
 	<ctl:namespaces
 		exsl:keep="true"
@@ -689,8 +692,6 @@
 			</xsl:otherwise>
 		</xsl:choose>
 	</xsl:template>
-
-	<xi:include href="page.xsl#xpointer(/*/*:*)" parse="xml"/>
 
 	<xsl:template match="/">
 		<xsl:apply-templates select="/f:factor"/>
