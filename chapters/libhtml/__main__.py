@@ -22,16 +22,14 @@ if __name__ == '__main__':
 	cmd, target_xml_path, *params = sys.argv
 	params = dict(zip(params[0::2], params[1::2]))
 	lib = libfactor.Library.open(libroutes.Import.from_fullname(__package__).module())
-	xslt =
-	del xd
 
 	src = params.pop('document_index')
 	with libroutes.File.temporary() as tr:
 		idx_path = tr / 'index.xml'
 		idx_path.store(tools.construct_corpus_map(src, index(src)))
 
-		xsl = lib.xslt('factor', document_index=str(idx_path))
-		out = xsl(target_xml_path)
+		transform = lib.xslt('factor', document_index=str(idx_path))
+		out = transform(target_xml_path)
 		for x in xslt.error_log:
 			if x.message:
 				sys.stderr.write(x.message+'\n')
