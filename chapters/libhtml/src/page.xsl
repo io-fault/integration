@@ -275,7 +275,7 @@
 		<xsl:variable name="depth" select="/f:factor/@depth"/>
 		<xsl:variable name="path.prefix">
 			<!--
-				# Empty if no path attribute.
+				# Empty if no depth attribute.
 			!-->
 			<xsl:choose>
 				<xsl:when test="$depth"><xsl:value-of select="$depth"/></xsl:when>
@@ -290,7 +290,6 @@
 				<link rel="stylesheet" type="text/css" href="{$path.prefix}factor.css"/>
 				<link rel="icon" href="{./@site}"/>
 
-				<!-- syntax highlighting -->
 				<script type="application/javascript">
 					var xml = null;
 					<xsl:choose>
@@ -305,11 +304,11 @@
 					var factor_name = "<xsl:value-of select="@identifier"/>";
 
 					var factor_source =
-					<xsl:text>"</xsl:text>
+					<xsl:text>&#34;</xsl:text>
 					<xsl:call-template name="source.file">
 						<xsl:with-param name="source" select="f:module/f:source"/>
 					</xsl:call-template>
-					<xsl:text>";</xsl:text>
+					<xsl:text>&#34;;</xsl:text>
 
 					var mroindex = {
 						<xsl:apply-templates mode="javascript.mro.index" select="/"/>
@@ -320,9 +319,10 @@
 					}
 
 					var source = atob(
-						"<xsl:value-of
-					      select="normalize-space(f:*[f:source]/f:source/f:data/text())"
-						/>"
+						<xsl:text>&#34;</xsl:text>
+						<xsl:value-of
+							select="normalize-space(f:*[f:source]/f:source/f:data/text())"/>
+						<xsl:text>&#34;</xsl:text>
 					).split('\n');
 				</script>
 				<script type="application/javascript" src="{$path.prefix}factor.js"/>
@@ -355,7 +355,7 @@
 									</xsl:when>
 									<xsl:otherwise>
 										<!--
-											# Nothing for self points to the same factor.
+											# Nothing for self pointers to the same factor.
 										!-->
 										<xsl:value-of select="''"/>
 									</xsl:otherwise>
@@ -395,7 +395,9 @@
 						</div>
 					</xsl:if>
 
-					<!--Project Package displays test summary-->
+					<!--
+						# Project Package displays test summary
+					!-->
 					<xsl:if test="$test.package and /f:factor/f:test[t:*]">
 						<div style="margin: 1cm;" class="project..tests">
 							<xsl:apply-templates mode="test.summary" select="/f:factor/f:test"/>
@@ -407,44 +409,44 @@
 					!-->
 					<xsl:if test="f:subfactor">
 						<div class="navigation">
-						<div class="if.vertical.sequence">
-							<xsl:choose>
-								<xsl:when test="$test.package">
-									<div class="subfactors">
-										<!--
-											# Show test status of subfactors
-										!-->
-										<xsl:apply-templates select="f:subfactor[not(ctx:has_test(concat($prefix, @identifier)))]">
-											<xsl:sort order="ascending" select="@identifier"/>
-										</xsl:apply-templates>
-									</div>
-								</xsl:when>
-								<xsl:when test="/f:factor/@type = 'documentation'">
-									<div class="subfactors">
-										<xsl:apply-templates select="f:subfactor">
-											<xsl:sort order="descending" select="@identifier = 'introduction'"/>
-											<xsl:sort order="descending" select="@identifier = 'usage'"/>
-											<xsl:sort order="ascending" select="@identifier"/>
-											<xsl:sort order="ascending" select="@identifier = 'context.txt'"/>
-										</xsl:apply-templates>
-									</div>
-								</xsl:when>
-								<xsl:otherwise>
-									<div class="subfactors">
-										<xsl:apply-templates select="f:subfactor">
-											<xsl:sort order="descending" select="@identifier = 'documentation'"/>
-											<xsl:sort order="descending" select="@identifier = 'test'"/>
-											<xsl:sort order="descending" select="@identifier = 'bin'"/>
-											<xsl:sort order="descending" select="@identifier = 'library'"/>
-											<xsl:sort order="descending" select="starts-with(@identifier, 'lib')"/>
-											<xsl:sort order="ascending" select="@identifier = 'core'"/>
-											<xsl:sort order="ascending" select="@identifier = 'abstract'"/>
-											<xsl:sort order="ascending" select="@identifier"/>
-										</xsl:apply-templates>
-									</div>
-								</xsl:otherwise>
-							</xsl:choose>
-						</div>
+							<div class="if.vertical.sequence">
+								<xsl:choose>
+									<xsl:when test="$test.package">
+										<div class="subfactors">
+											<!--
+												# Show test status of subfactors.
+											!-->
+											<xsl:apply-templates select="f:subfactor[not(ctx:has_test(concat($prefix, @identifier)))]">
+												<xsl:sort order="ascending" select="@identifier"/>
+											</xsl:apply-templates>
+										</div>
+									</xsl:when>
+									<xsl:when test="/f:factor/@type = 'documentation'">
+										<div class="subfactors">
+											<xsl:apply-templates select="f:subfactor">
+												<xsl:sort order="descending" select="@identifier = 'introduction'"/>
+												<xsl:sort order="descending" select="@identifier = 'usage'"/>
+												<xsl:sort order="ascending" select="@identifier"/>
+												<xsl:sort order="ascending" select="@identifier = 'context.txt'"/>
+											</xsl:apply-templates>
+										</div>
+									</xsl:when>
+									<xsl:otherwise>
+										<div class="subfactors">
+											<xsl:apply-templates select="f:subfactor">
+												<xsl:sort order="descending" select="@identifier = 'documentation'"/>
+												<xsl:sort order="descending" select="@identifier = 'test'"/>
+												<xsl:sort order="descending" select="@identifier = 'bin'"/>
+												<xsl:sort order="descending" select="@identifier = 'library'"/>
+												<xsl:sort order="descending" select="starts-with(@identifier, 'lib')"/>
+												<xsl:sort order="ascending" select="@identifier = 'core'"/>
+												<xsl:sort order="ascending" select="@identifier = 'abstract'"/>
+												<xsl:sort order="ascending" select="@identifier"/>
+											</xsl:apply-templates>
+										</div>
+									</xsl:otherwise>
+								</xsl:choose>
+							</div>
 						</div>
 					</xsl:if>
 
@@ -463,80 +465,81 @@
 					<div id="index." class="index">
 						<div class="title">Index</div>
 
-					<div id="source..index" class="factor..sources">
-						<div class="title">Sources</div>
-						<xsl:apply-templates mode="source.index" select="."/>
-					</div>
+						<div id="source..index" class="factor..sources">
+							<div class="title">Sources</div>
+							<xsl:apply-templates mode="source.index" select="."/>
+						</div>
 
-					<xsl:if test="@type = 'module' and .//f:import">
-						<div id="import..index" class="factor..imports">
-							<div class="title">Imports</div>
-							<div class="if.vertical.sequence">
-								<xsl:apply-templates select=".//f:import">
-									<xsl:sort order="ascending" select="ctx:within.scope(@name)"/>
-									<xsl:sort order="ascending" select="@name"/>
+						<xsl:if test="@type = 'module' and .//f:import">
+							<div id="import..index" class="factor..imports">
+								<div class="title">Imports</div>
+								<div class="if.vertical.sequence">
+									<xsl:apply-templates select=".//f:import">
+										<xsl:sort order="ascending" select="ctx:within.scope(@name)"/>
+										<xsl:sort order="ascending" select="@name"/>
+									</xsl:apply-templates>
+								</div>
+								</div>
+						</xsl:if>
+
+						<xsl:if test=".//f:function[f:doc]">
+							<div id="function..index" class="factor..functions">
+								<div class="title">Functions</div>
+								<div class="if.vertical.sequence">
+								<xsl:apply-templates mode="concept.index" select=".//f:function[f:doc]">
+									<xsl:sort order="ascending" select="@identifier"/>
 								</xsl:apply-templates>
+								</div>
 							</div>
+						</xsl:if>
+
+						<xsl:if test=".//f:structure[f:doc]">
+							<div id="structure..index" class="factor..structures">
+								<div class="title">Structures</div>
+								<div class="if.vertical.sequence">
+								<xsl:apply-templates mode="concept.index" select=".//f:structure[f:doc]">
+									<xsl:sort order="ascending" select="@identifier"/>
+								</xsl:apply-templates>
+								</div>
 							</div>
-					</xsl:if>
+						</xsl:if>
 
-					<xsl:if test=".//f:function[f:doc]">
-						<div id="function..index" class="factor..functions">
-							<div class="title">Functions</div>
-							<div class="if.vertical.sequence">
-							<xsl:apply-templates mode="concept.index" select=".//f:function[f:doc]">
-								<xsl:sort order="ascending" select="@identifier"/>
-							</xsl:apply-templates>
+						<xsl:if test=".//f:class">
+							<div id="class..index" class="factor..classes">
+								<div class="title">Classes</div>
+								<div class="if.vertical.sequence">
+								<xsl:apply-templates mode="class.hierarchy" select=".//f:class[f:bases/f:reference[@factor!=../../../@name]]">
+									<xsl:sort order="ascending" select="@identifier"/>
+								</xsl:apply-templates>
+								</div>
 							</div>
-						</div>
-					</xsl:if>
+						</xsl:if>
 
-					<xsl:if test=".//f:structure[f:doc]">
-						<div id="structure..index" class="factor..structures">
-							<div class="title">Structures</div>
-							<div class="if.vertical.sequence">
-							<xsl:apply-templates mode="concept.index" select=".//f:structure[f:doc]">
-								<xsl:sort order="ascending" select="@identifier"/>
-							</xsl:apply-templates>
+						<xsl:if test="@identifier = 'documentation'">
+							<div id="section..index" class="factor..sections">
+							<div class="title">Table of Contents</div>
+							<ol>
+								<xsl:for-each select="f:subfactor">
+									<xsl:sort order="descending" select="@identifier = 'introduction'"/>
+									<xsl:sort order="descending" select="@identifier = 'usage'"/>
+									<xsl:sort order="ascending" select="@identifier"/>
+
+									<xsl:variable name="chapter.path" select="concat(../@name, '.', @identifier)"/>
+									<xsl:variable name="chapter" select="ctx:document($chapter.path)/f:factor/f:chapter"/>
+
+									<li>
+										<a href="{$chapter.path}{$reference_suffix}">
+											<span class="identifier"><xsl:value-of select="@identifier"/></span>
+										</a>
+										<xsl:apply-templates mode="total.toc" select="$chapter"/>
+									</li>
+								</xsl:for-each>
+							</ol>
 							</div>
-						</div>
-					</xsl:if>
-
-					<xsl:if test=".//f:class">
-						<div id="class..index" class="factor..classes">
-							<div class="title">Classes</div>
-							<div class="if.vertical.sequence">
-							<xsl:apply-templates mode="class.hierarchy" select=".//f:class[f:bases/f:reference[@factor!=../../../@name]]">
-								<xsl:sort order="ascending" select="@identifier"/>
-							</xsl:apply-templates>
-							</div>
-						</div>
-					</xsl:if>
-
-					<xsl:if test="@identifier = 'documentation'">
-						<div id="section..index" class="factor..sections">
-						<div class="title">Table of Contents</div>
-						<ol>
-							<xsl:for-each select="f:subfactor">
-								<xsl:sort order="descending" select="@identifier = 'introduction'"/>
-								<xsl:sort order="descending" select="@identifier = 'usage'"/>
-								<xsl:sort order="ascending" select="@identifier"/>
-
-								<xsl:variable name="chapter.path" select="concat(../@name, '.', @identifier)"/>
-								<xsl:variable name="chapter" select="ctx:document($chapter.path)/f:factor/f:chapter"/>
-
-								<li>
-									<a href="{$chapter.path}{$reference_suffix}">
-										<span class="identifier"><xsl:value-of select="@identifier"/></span>
-									</a>
-									<xsl:apply-templates mode="total.toc" select="$chapter"/>
-								</li>
-							</xsl:for-each>
-						</ol>
-						</div>
-					</xsl:if>
+						</xsl:if>
 					</div>
 				</div>
+
 				<div class="pane." id="log."></div>
 			</body>
 		</html>
