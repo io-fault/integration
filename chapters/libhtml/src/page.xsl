@@ -286,7 +286,7 @@
 
 		<html>
 			<head>
-				<title><xsl:value-of select="f:module/@name"/> Documentation</title>
+				<title><xsl:value-of select="f:module/@name"/> <xsl:value-of select="$title_suffix"/></title>
 				<link rel="stylesheet" type="text/css" href="{$path.prefix}factor.css"/>
 				<link rel="icon" href="{./@site}"/>
 
@@ -336,6 +336,15 @@
 								<xsl:with-param name="icon" select="f:context/@icon"/>
 							</xsl:call-template>
 						</span>
+
+						<xsl:if test="/f:factor/f:context/@type = 'corpus'">
+							<a href="">
+								<span class="identifier">
+									<xsl:value-of select="/f:factor/f:context/@name"/>
+									<xsl:text> Software Corpus</xsl:text>
+								</span>
+							</a>
+						</xsl:if>
 
 						<xsl:if test="$product">
 								<xsl:for-each select="fault:traverse('.', $product)">

@@ -51,6 +51,7 @@
 
 	<xsl:param name="document_index"/>
 	<xsl:param name="reference_suffix" select="''"/>
+	<xsl:param name="title_suffix" select="'Documentation'"/>
 
 	<!-- reference to profile measurements -->
 	<xsl:param name="metrics_profile" select="''"/>

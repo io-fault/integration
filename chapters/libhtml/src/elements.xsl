@@ -1184,8 +1184,20 @@
 	</xsl:template>
 
 	<xsl:template match="f:subfactor">
-		<!-- units that are contained by the factor, but distinct -->
-		<xsl:variable name="name" select="concat(../f:module/@name, '.', @identifier)"/>
+		<!--
+			# Units that are contained by the factor, but distinct.
+		!-->
+		<xsl:variable name="name">
+			<xsl:choose>
+				<xsl:when test="../f:module">
+					<xsl:value-of select="concat(../f:module/@name, '.', @identifier)"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="@identifier"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
 		<xsl:variable name="icon" select="ctx:icon($name)"/>
 		<xsl:variable name="has_error" select="ctx:has_error($name)"/>
 
