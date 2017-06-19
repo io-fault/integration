@@ -145,3 +145,17 @@ html = xmlfactor.Library.open(libhtml)
 def transform(path, **params):
 	input = xmlfactor.readfile(path)
 	return html.xslt('factor', **params)(input)
+
+def index(name, roots, **params):
+	"""
+	# Create the corpus index for the set of root factors.
+	"""
+
+	rstr = ','.join(roots)
+	params['roots'] = rstr
+	subs = ''.join("<subfactor identifier='%s'/>" %(x,) for x in roots)
+	ctx = "<context name='%s' type='corpus' path='' icon='🏛'/>" % (name,)
+	xmlstr = "<factor type='corpus' xmlns='http://fault.io/xml/fragments'>%s%s</factor>"
+	input = xmlfactor.readstring((xmlstr %(ctx, subs)).encode('utf-8'))
+
+	return html.xslt('corpus', **params)(input)
