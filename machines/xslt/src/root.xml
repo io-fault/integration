@@ -5,7 +5,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:ctl="http://fault.io/xml/control"
-	xmlns:f="http://fault.io/xml/factor"
+	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:data="http://fault.io/xml/data"
 	xmlns:Factor="http://fault.io/xpath#Factor"
@@ -37,9 +37,20 @@
 		</f:property>
 	</xsl:template>
 
-	<xsl:template match="structure">
+	<xsl:template name="resolve-id">
+		<xsl:choose>
+			<xsl:when test="@identifier!=''">
+				<xsl:value-of select="@identifier"/>
+			</xsl:when>
+			<xsl:otherwise>
+				<xsl:value-of select="concat('LI', start/@line, '.', start/@offset)"/>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
+
+	<xsl:template match="structure[field]">
 		<xsl:variable name="id">
-			<xsl:value-of select="@identifier"/>
+			<xsl:call-template name="resolve-id"/>
 			<xsl:value-of select="'-struct'"/>
 		</xsl:variable>
 		<xsl:variable name="prefix" select="concat($id, '.')"/>
@@ -67,9 +78,10 @@
 
 	<xsl:template match="enumeration[@identifier and @identifier!='']">
 		<xsl:variable name="id">
-			<xsl:value-of select="@identifier"/>
+			<xsl:call-template name="resolve-id"/>
 			<xsl:value-of select="'-enum'"/>
 		</xsl:variable>
+
 		<xsl:variable name="prefix" select="concat($id, '.')"/>
 
 		<f:enumeration identifier="{@identifier}">
