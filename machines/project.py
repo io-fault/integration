@@ -1,6 +1,6 @@
 identity = 'http://fault.io/python/llvm'
 name = 'llvm'
-abstract = 'Delineation and coverage tools using LLVM'
+abstract = 'Delineation and coverage instrumentation tools for LLVM builds'
 icon = '<http://llvm.org>'
 
 fork = 'green'
