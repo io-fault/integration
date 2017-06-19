@@ -7,7 +7,7 @@
 	xmlns:set="http://exslt.org/sets"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:ctl="http://fault.io/xml/control"
-	xmlns:f="http://fault.io/xml/factor"
+	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:idx="http://fault.io/xml/filesystem#index"
