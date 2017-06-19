@@ -13,7 +13,7 @@
 	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
-	xmlns:py="http://fault.io/xml/python"
+	xmlns:py="http://fault.io/xml/data"
 	xmlns:df="http://fault.io/xml/factor#functions"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"

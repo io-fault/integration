@@ -17,7 +17,6 @@
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="http://fault.io/xml/xpath"
 	xmlns:Factor="http://fault.io/xpath#Factor"
-	xmlns:py="http://fault.io/xml/python"
 	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func exsl"
 	exclude-result-prefixes="py l f xsl exsl set str fault ctx df">
@@ -43,7 +42,6 @@
 		df:keep="true"
 		fault:keep="true"
 		Factor:keep="true"
-		py:keep="true"
 	/>
 
 	<xsl:param name="python.version" select="'3'"/>
