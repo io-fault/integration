@@ -1,6 +1,9 @@
 """
-# Extract the structure of the entire package tree into a
+# Extract the delineated structures of the entire package tree into a
 # &..filesystem.library.Dictionary instance.
+
+# For composite factors and Python modules, the cached data from a constructed build
+# using the inspect intention provides the sources for the target.
 """
 
 import sys
@@ -10,200 +13,245 @@ import lzma
 import types
 import importlib.machinery
 import pickle
+from copy import deepcopy
 
-from .. import python
-from .. import library as libfactors
-
+from ...development import xml as devxml
+from ...development import library as libdev
 from ...system import libfactor
 from ...routes import library as libroutes
-from ...text import library as libtext
 from ...xml import libfactor as xmlfactor
 from ...filesystem import library as libfs
+from ...xml import library as libxml
+lxml = xmlfactor.lxml
 
-from ...chronometry import library as libtime
+def join_metrics(document, metrics, test, project, cname, key):
+	elements = devxml.materialize_metrics(libxml.Serialization(), metrics, test, str(project), cname, key)
 
-def load_metrics(metrics, key):
-	profile_data = b'profile:' + key
-	coverage_data = b'coverage:' + key
-	test_data = b'tests:' + key
+	dq = lxml.Query(document, {'f': 'http://fault.io/xml/fragments'})
+	r = dq.first('/f:factor')
+	if r is None:
+		return
+	r = r.first('f:module|f:chapter|f:document')
+	if r is None:
+		return
 
-	pdata = cdata = tdata = None
+	r = r.element
 
-	if metrics.has_key(profile_data):
-		with metrics.route(profile_data).open('rb') as f:
-			try:
-				pdata = pickle.load(f)
-			except EOFError:
-				pdata = None
+	for x in elements:
+		if x:
+			sub = xmlfactor.etree.fromstring(b''.join(x))
+			r.addprevious(sub)
 
-	if metrics.has_key(coverage_data):
-		with metrics.route(coverage_data).open('rb') as f:
-			try:
-				cdata = pickle.load(f)
-			except EOFError:
-				cdata = None
+def module_fragments(route):
+	pass
 
-	if metrics.has_key(test_data):
-		# only matches with project packages
-		with metrics.route(test_data).open('rb') as f:
-			try:
-				tdata = pickle.load(f)
-			except EOFError:
-				tdata = None
+def emit(fs, key, iterator):
+	r = fs.route(key)
+	r.init('file')
 
-	return pdata, cdata, tdata
+	with r.open('wb') as f:
+		# the xml declaration prefix is not written.
+		# this allows stylesheet processing instructions
+		# to be interpolated without knowning the declaration size.
+		f.writelines(iterator)
 
-def structure_package(target, package, metrics=None):
+def copy(ctx, target, package, metrics):
+	"""
+	# Copy the extracted fragments from the given package into the &target.
+
+	# For Composite Factors, things are slightly complicated. In order to trivialize
+	# the XML rendering, the &..development.schemas.fragments.context element need not
+	# be presented as &copy will provide it along with other factor metadata.
+	"""
+
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
-	root, (packages, modules) = libfactors.factors(package)
+	pkg = libroutes.Import.from_fullname(package)
+	pkgset = list(libdev.gather_simulations([pkg]))
 
 	if metrics is not None and isinstance(metrics, str):
 		metrics = libfs.Dictionary.open(metrics)
 
-	doc_modules = []
-	# &.documentation packages are handled specially.
-	# `.txt` files are processed in the context of their
-	# containing project.
-	for pkg in packages:
-		td = pkg / 'documentation'
-		if not td.exists():
-			continue
-		dr = td.directory()
-		doc_pkg_module = td.module()
-
-		dirs, files = dr.subnodes()
-		rname = td.fullname
-		subs = doc_pkg_module.__submodules__ = []
-
-		# build libtext.Context for documentation
-		for f in files:
-			if f.extension != 'txt':
-				continue
-
-			# process text file
-			basename = f.identifier[:len(f.identifier)-4]
-			subs.append(basename)
-			#path = '.'.join((qname, basename))
-			#tr = docs.route(path.encode('utf-8'))
-
-			# the module representation is used so we can use the
-			# normal processing context for our text files. (reference namespaces)
-
-			dm = types.ModuleType(rname + '.' + basename)
-			dm.__factor_domain__ = 'documentation'
-			dm.__factor_type__ = 'chapter' # note as chapter module
-			dm.__package__ = rname
-			dm.__file__ = f.fullpath
-			doc_modules.append(dm.__name__)
-
-			doc_pkg_module.__dict__[basename] = dm
-			sys.modules[dm.__name__] = dm
-
-		doc_pkg_module.__factor_domain__ = 'documentation'
-		doc_pkg_module.__factor_type__ = 'book'
-
-	iterdocs = map(libroutes.Import.from_fullname, doc_modules)
-
-	factors = [
-		(x, python.Query(x), x.fullname.encode('utf-8'))
-		for x in itertools.chain((root,), packages, modules, iterdocs)
+	# Extension modules being an effect of inductence, the documentation
+	# must be extracted at structure time.
+	pexset = [
+		x for x in pkg.tree()[0]
+		if x.absolute[-1] == 'extensions'
 	]
+	from ...python import xml as d_python
+	for pex in pexset:
+		# Get the list of extension modules
+		xr = [
+			libfactor.extension_access_name(str(x)) for x in pex.tree()[0]
+			if '__factor_domain__' in x.module().__dict__
+		]
+		xr = [libroutes.Import.from_fullname(x) for x in xr]
+		xr = [(x, d_python.Context(x), x.module()) for x in xr]
+		for r, sc, mod in xr:
+			mod.__factor_composite__ = False
+			k = libfactor.canonical_name(r).encode('utf-8')
+			emit(docs, k, sc.serialize(mod))
 
-	# The Python module level is processed independently;
-	fractions = libfactors.fractions(packages)
+	for f in pkgset:
+		package_modules = set([
+			x.identifier for x in f.module.__factor_sources__
+		])
 
-	from ...llvm import xslt
-	from ...development import library as libdev
-	xslt_doc, xslt_transform = xmlfactor.xslt(xslt)
+		vars, mech = ctx.select(f.domain)
+		refs = libdev.references(f.dependencies())
 
-	devctx = libdev.Context.from_environment()
+		f_sources = list(f.link(dict(vars), ctx, mech, refs, ()))
+		if not f_sources:
+			# XXX: Use an empty directory and continue.
+			# Note the absence of data instead of skipping.
+			continue
+		(sp, (vl, key, loc)), = f_sources
 
-	for x, query, module_name in itertools.chain(factors):
-		cname = query.canonical(x.fullname)
-		key = cname.encode('utf-8')
+		iformat = 'xml'
+		index = loc['integral']
+		xi = (index / 'out') / iformat
 
-		module = x.module()
-		if libfactor.composite(x):
-			module.__factor_composite__ = True
+		srctree = f.module.__factor_sources__
+		rproject = f.route.floor()
+		if rproject:
+			project = libfactor.canonical_name(rproject)
+			in_tests = str(f.route) == str(project) + '.test'
 		else:
-			module.__factor_composite__ = False
+			project = None
+			in_tests = False
 
-		# Load coverage and profile data regarding the factor.
-		if metrics is not None:
-			pdata, cdata, tdata = load_metrics(metrics, key)
-		else:
-			tdata = cdata = pdata = None
-
-		query.parameters['profile'] = pdata
-		query.parameters['coverage'] = cdata
-		dociter = python.document(query, x, module, metrics=metrics)
-
-		python.emit(docs, key, dociter)
-
-		# Composites have a set of subfactors,
-		# build special module instances that can be processed by python.document().
-		if module.__factor_composite__:
-			is_ext = libfactor.python_extension(module)
-			f = libdev.Factor(None, module, None)
-
-			vars, mech = devctx.select(f.domain)
-			refs = libdev.references(f.dependencies())
-
-			f_sources = list(f.link(dict(vars), devctx, mech, refs, ()))
-			if not f_sources:
-				# XXX: Use an empty directory and continue.
-				# Note the absence of data instead of skipping.
+		for y in package_modules:
+			y = index / y
+			if y.identifier not in package_modules:
+				# Filter entries that are not Python modules.
+				# This also keeps the loop from processing a composite.
 				continue
-			(sp, (vl, key, loc)), = f_sources
 
-			dirs, sources = loc['integral'].tree()
-			iformat = 'xml'
-			index = loc['integral']
-			xi = (index / 'out') / iformat
+			filename = y.identifier
+			module_name = filename[:-len(y.extension)-1]
 
-			sources = libfactor.sources(x)
-			prefix = str(sources)
-			prefix_len = len(prefix)
+			if module_name == '__init__':
+				fullname = f.module.__name__
+				module_name = fullname[fullname.rfind('.')+1:]
+				ispkg = True
+			else:
+				fullname = f.module.__name__ + '.' + module_name
+				ispkg = False
 
-			# A target module that has a collection of sources.
-			# Identify the source tree and find the interface description.
-			srctree = sources.tree()
-			for y in srctree[1]:
-				if y.identifier.startswith('.'):
-					# Ignore dot files.
+			try:
+				rroute = libroutes.Import.from_fullname(fullname)
+				croute = libfactor.canonical_name(rroute)
+			except ImportError as exc:
+				print('could not import ', str(rroute), str(exc))
+				continue
+
+			cname = str(croute)
+			if ispkg and libfactor.composite(rroute):
+				iscomposite = True
+			else:
+				iscomposite = False
+
+			rkey = str(croute).encode('utf-8')
+			print(str(y))
+			rdoc = xmlfactor.readfile(str(y))
+			rdq = lxml.Query(rdoc, {'f': 'http://fault.io/xml/fragments'})
+			rroot = rdq.first('/f:factor')
+
+			if iscomposite:
+				ctx_element = rroot.first('f:context').element
+
+				cf = libdev.Factor(None, rroute.module(), None)
+				print('composite:', cf.module.__name__, cf.domain)
+				vars, mech = ctx.select(cf.domain)
+				refs = libdev.references(cf.dependencies())
+
+				c_sources = list(cf.link(dict(vars), ctx, mech, refs, ()))
+				if not c_sources:
+					# XXX: Use an empty directory and continue.
+					# Note the absence of data instead of skipping.
 					continue
+				(sp, (vl, key, loc)), = c_sources
 
-				sfm = types.ModuleType(module.__name__, "")
-				sfm.__file__ = str(y)
-				sfm.__factor_language__ = libdev.languages.get(y.extension)
-				sfm.__factor_composite__ = False
-				sfm.__factor_domain__ = 'unit'
-				sfm.__factor_composite_type__ = module.__factor_type__
-				suffix = sfm.__factor_path__ = str(y)[prefix_len+1:]
-				sfm.__factor_key__ = (cname + '/' + sfm.__factor_path__)
-				sfm.__directory_depth__ = sfm.__factor_key__.count('/')
+				dirs, sources = loc['integral'].tree()
+				iformat = 'xml'
+				index = loc['integral']
+				xi = (index / 'out') / iformat
 
-				xis = os.path.join(str(index), suffix)
-				try:
-					sfm.__factor_xml__ = xmlfactor.transform(xslt_transform, xis)[1]
-				except Exception as exc:
-					# XXX: Reveal exception in document.
-					exc.__traceback__ = None
-					sfm.error = exc
-					sfm.file = xis
-					sfm.__factor_xml__ = None
-					print('factor_xml exception', xis)
+				sources = libfactor.sources(rroute)
+				prefix = str(sources)
+				prefix_len = len(prefix)
 
-				if metrics is not None:
-					pdata, cdata, tdata = load_metrics(metrics, sfm.__factor_key__.encode('utf-8'))
-				else:
-					tdata = cdata = pdata = None
-				query.parameters['profile'] = pdata
-				query.parameters['coverage'] = cdata
+				# A target module that has a collection of sources.
+				# Identify the source tree and find the interface description.
+				srctree = sources.tree()
+				for z in srctree[1]:
+					if z.identifier.startswith('.'):
+						# Ignore dot files.
+						continue
 
-				dociter = python.document(query, x, sfm, metrics=metrics)
-				python.emit(docs, sfm.__factor_key__.encode('utf-8'), dociter)
+					lang = libdev.languages.get(z.extension)
+					suffix = str(z)[prefix_len+1:]
+					fkey = (cname + '/' + suffix)
+					print(fkey)
+					depth = fkey.count('/')
+
+					xis = os.path.join(str(index), suffix)
+					try:
+						doc = xmlfactor.readfile(xis)
+
+						# Update positioning information; delineation is not required
+						# to provide this information.
+						dq = lxml.Query(doc, {'f': 'http://fault.io/xml/fragments'})
+						r = dq.first('/f:factor')
+						p = [
+							k for k,v in r.element.nsmap.items()
+							if k and v == 'http://fault.io/xml/fragments'
+						]
+						r.element.nsmap[None] = 'http://fault.io/xml/fragments'
+						for ns in p:
+							del r.element.nsmap[ns]
+
+						r.element.attrib['path'] = suffix
+						r.element.attrib['depth'] = ('../' * depth)
+						r.element.attrib['name'] = cf.module.__name__
+						r.element.attrib['identifier'] = module_name
+						if in_tests:
+							r.element.attrib['type'] = 'tests'
+
+						# Inherit the context element from __init__.
+						lctx = deepcopy(ctx_element)
+						emod = r.first('f:module|f:document|f:chapter')
+						emod = emod.element
+						emod.addprevious(lctx)
+						emod.attrib['language'] = lang
+
+						# Append measurement afterward.
+						lctx = r.first('f:context')
+
+						ckey = fkey.encode('utf-8')
+						join_metrics(doc, metrics, False, project, cname, ckey)
+						lxml.etree.cleanup_namespaces(r.element)
+						emit(docs, ckey, lxml.etree.tostringlist(doc, method='xml', encoding='utf-8'))
+					except Exception as exc:
+						# XXX: Reveal exception in document.
+						print('factor_xml exception', xis, exc)
+			# </if iscomposite>
+
+			if in_tests and rroot is not None:
+				rroot.element.attrib['type'] = 'tests'
+			join_metrics(rdoc, metrics, in_tests, project, cname, rkey)
+			emit(docs, rkey, lxml.etree.tostringlist(rdoc, method='xml', encoding='utf-8'))
+
+def main(inv):
+	target, package, *args = inv.args
+	if args:
+		metrics, = args
+	else:
+		metrics = None
+	del args
+
+	ctx = libdev.Context.from_environment()
+	copy(ctx, target, package, metrics)
+	sys.exit(0)
 
 if __name__ == '__main__':
-	structure_package(*sys.argv[1:])
-	sys.exit(0)
+	libsys.control(main, libsys.Invocation.system())
