@@ -161,6 +161,10 @@ div[class~="undocumented"] {
 	display: none;
 }
 
+div[id] div[id]:hover {
+	border-color: rgba(114, 159, 229, 0.50);
+}
+
 /*
 	# Visual tag
 */
