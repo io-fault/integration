@@ -14,7 +14,6 @@ from ...routes import library as libroutes
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
-from .. import xslt
 from .. import tools
 from .. import library as libfactors
 
@@ -34,6 +33,7 @@ def main(source, target, metrics=None, suffix='.html'):
 		idx_path = tr / 'index.xml'
 		with idx_path.open('wb') as f:
 			f.write(xml)
+		idx = str(idx_path)
 
 		for k, r in index.items():
 			ek = k.encode('utf-8')
@@ -47,7 +47,7 @@ def main(source, target, metrics=None, suffix='.html'):
 
 			try:
 				rtf = libfactors.transform(str(r),
-					document_index = str(idx_path),
+					document_index = idx,
 					reference_suffix = suffix,
 					metrics_profile = spd,
 				)
