@@ -15,7 +15,6 @@ from ...routes import library as libroutes
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
-from .. import xslt
 from .. import theme
 from .. import libif
 
