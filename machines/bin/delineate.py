@@ -37,13 +37,14 @@ def main(inv):
 	xml = libxml.Serialization()
 	i = fragments.source_element(xml, libroutes.File.from_absolute(isrc))
 	rs = b''.join(i)
-	source = libfactor.etree.fromstring(rs)
+	rsrc = b'<cell xmlns="http://fault.io/xml/fragments">' + rs + b'</cell>'
+	source = libfactor.etree.fromstring(rsrc)
 	source.nsmap['f'] = source.nsmap[None]
 
 	del source.nsmap[None]
 	del rs, i, xml
 
-	module.insert(0, source)
+	module.insert(0, list(source.iterchildren())[0])
 
 	sys.stdout.buffer.writelines(libfactor.etree.tostringlist(rtf, method="xml", encoding="utf-8"))
 	sys.exit(0)
