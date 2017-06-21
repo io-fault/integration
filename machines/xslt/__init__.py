@@ -5,7 +5,7 @@ from ...xml import libfactor
 from ...chronometry import library as libtime
 from ...chronometry import metric
 from ...text import library as libtext
-from ...factors import tools as ftools
+from ...development import fragments
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):
@@ -29,7 +29,7 @@ class Factor(libfactor.XPathModule):
 		"""
 		# Remove decorations and leading spaces from a comment.
 		"""
-		return ftools.normalize_documentation(lines)
+		return fragments.normalize_documentation(lines)
 
 	def structure_comment(self, context, prefix, string):
 		"""
