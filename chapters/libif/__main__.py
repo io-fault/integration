@@ -1,4 +1,7 @@
+"""
 # Update the JavaScript file in the target data set.
+"""
+
 if __name__ == '__main__':
 	def install():
 		import sys
@@ -17,4 +20,3 @@ if __name__ == '__main__':
 			d[b'factor.js'] = f.read()
 
 	install()
-	del install
