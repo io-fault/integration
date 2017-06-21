@@ -53,8 +53,6 @@ def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 	return s, sources
 
 def construct_corpus_map(directory, index):
-	import itertools
-	from ..xml import library as libxml
 	content = libxml.element('map',
 		itertools.chain.from_iterable(
 			libxml.element('item',
