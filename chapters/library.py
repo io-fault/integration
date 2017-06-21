@@ -102,43 +102,6 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 		if libfactor.composite(x)
 	}
 
-def source_element(xml, route):
-	"""
-	# Construct a source element for serialization.
-	"""
-	import hashlib
-	import codecs
-
-	if route.exists():
-		with route.open('rb') as src:
-			cs = src.read()
-			lc = cs.count(b'\n')
-			hash = hashlib.sha512(cs).hexdigest()
-	else:
-		hash = ""
-		cs = b""
-		lc = 0
-
-	yield from xml.element('source',
-		itertools.chain(
-			xml.element('hash',
-				[hash.encode('utf-8')],
-				('type', 'sha512'),
-				('format', 'hex'),
-			),
-			xml.element('data',
-				[codecs.encode(cs, 'base64')],
-				('type', None),
-				('format', 'base64'),
-			),
-		),
-		('path', str(route)),
-		# inclusive range
-		('start', "1"),
-		('stop', str(lc)),
-		('xmlns', 'http://fault.io/xml/fragments'),
-	)
-
 from . import libhtml
 html = xmlfactor.Library.open(libhtml)
 
