@@ -31,7 +31,7 @@ def join_metrics(document, metrics, test, project, cname, key):
 	r = dq.first('/f:factor')
 	if r is None:
 		return
-	r = r.first('f:module|f:chapter|f:document')
+	r = r.first('f:module|f:chapter|f:document|f:void')
 	if r is None:
 		return
 
@@ -219,7 +219,7 @@ def copy(ctx, target, package, metrics):
 
 						# Inherit the context element from __init__.
 						lctx = deepcopy(ctx_element)
-						emod = r.first('f:module|f:document|f:chapter')
+						emod = r.first('f:module|f:document|f:chapter|f:void')
 						emod = emod.element
 						emod.addprevious(lctx)
 						emod.attrib['language'] = lang
