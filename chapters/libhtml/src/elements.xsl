@@ -64,7 +64,9 @@
 						<span class="admonition.icon"/>
 					</td>
 					<td>
-						<span class="admonition.severity"><xsl:value-of select="$severity"/>: <xsl:value-of select="$title"/></span>
+						<span class="admonition.severity">
+							<xsl:value-of select="$severity"/>: <xsl:value-of select="$title"/>
+						</span>
 					</td>
 				</tr>
 				<tr>
