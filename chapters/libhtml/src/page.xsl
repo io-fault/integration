@@ -282,11 +282,12 @@
 				<xsl:otherwise><xsl:text></xsl:text></xsl:otherwise>
 			</xsl:choose>
 		</xsl:variable>
-		<xsl:variable name="default.language" select="./f:module/@language[position()=1]"/>
+		<xsl:variable name="root" select="f:module|f:document|f:void|f:chapter"/>
+		<xsl:variable name="default.language" select="$root/@language[position()=1]"/>
 
 		<html>
 			<head>
-				<title><xsl:value-of select="f:module/@name"/> <xsl:value-of select="$title_suffix"/></title>
+				<title><xsl:value-of select="$root/@name"/> <xsl:value-of select="$title_suffix"/></title>
 				<link rel="stylesheet" type="text/css" href="{$path.prefix}factor.css"/>
 				<link rel="icon" href="{./@site}"/>
 
@@ -306,7 +307,7 @@
 					var factor_source =
 					<xsl:text>&#34;</xsl:text>
 					<xsl:call-template name="source.file">
-						<xsl:with-param name="source" select="f:module/f:source"/>
+						<xsl:with-param name="source" select="$root/f:source"/>
 					</xsl:call-template>
 					<xsl:text>&#34;;</xsl:text>
 
