@@ -52,6 +52,23 @@ def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 
 	return s, sources
 
+def construct_corpus_map(directory, index):
+	import itertools
+	from ..xml import library as libxml
+	content = libxml.element('map',
+		itertools.chain.from_iterable(
+			libxml.element('item',
+				libxml.escape_element_string(str(r)),
+				('key', k)
+			)
+			for k, r in index.items()
+		),
+		('dictionary', directory),
+		('xmlns', 'http://fault.io/xml/filesystem#index'),
+	)
+
+	return b''.join(content)
+
 def factors(package:str) -> typing.Tuple[
 		libroutes.Import,
 		typing.Sequence[libroutes.Import],

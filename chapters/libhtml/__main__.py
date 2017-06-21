@@ -8,7 +8,7 @@ import sys
 from ...xml import libfactor
 from ...routes import library as libroutes
 from ...filesystem import library as libfs
-from .. import tools
+from .. import library
 
 def index(source):
 	structs = libfs.Dictionary.open(source)
@@ -26,7 +26,7 @@ if __name__ == '__main__':
 	src = params.pop('document_index')
 	with libroutes.File.temporary() as tr:
 		idx_path = tr / 'index.xml'
-		idx_path.store(tools.construct_corpus_map(src, index(src)))
+		idx_path.store(library.construct_corpus_map(src, index(src)))
 
 		transform = lib.xslt('factor', document_index=str(idx_path))
 		out = transform(target_xml_path)

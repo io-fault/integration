@@ -13,7 +13,6 @@ from ...system import libfactor
 from . import structure
 from . import format
 
-from .. import tools
 from .. import theme
 from .. import libif
 from .. import library
@@ -45,7 +44,7 @@ def main(inv):
 			k.decode('utf-8'): r
 			for k, r in xml.references()
 		}
-		mapxml = tools.construct_corpus_map(str(structs), index)
+		mapxml = library.construct_corpus_map(str(structs), index)
 
 		idx_path = tr / 'index.xml'
 		with idx_path.open('wb') as f:

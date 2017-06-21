@@ -14,7 +14,6 @@ from ...routes import library as libroutes
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
-from .. import tools
 from .. import library as libfactors
 
 def main(source, target, metrics=None, suffix='.html'):
@@ -26,7 +25,7 @@ def main(source, target, metrics=None, suffix='.html'):
 		k.decode('utf-8'): r
 		for k, r in structs.references()
 	}
-	xml = tools.construct_corpus_map(src, index)
+	xml = libfactors.construct_corpus_map(src, index)
 
 	# temporary for the index.xml file
 	with libroutes.File.temporary() as tr:
