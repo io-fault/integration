@@ -10,7 +10,7 @@ import subprocess
 from ...routes import library as libroutes
 from ...system import library as libsys
 from ...xml import libfactor, library as libxml
-from ...factors import library as lf
+from ...development import fragments
 from .. import xslt
 
 inner_call = __package__ + '.inspect'
@@ -35,7 +35,7 @@ def main(inv):
 	module = factor.xpath("/*/*[local-name()='module']")[0]
 
 	xml = libxml.Serialization()
-	i = lf.source_element(xml, libroutes.File.from_absolute(isrc))
+	i = fragments.source_element(xml, libroutes.File.from_absolute(isrc))
 	rs = b''.join(i)
 	source = libfactor.etree.fromstring(rs)
 	source.nsmap['f'] = source.nsmap[None]
