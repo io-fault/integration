@@ -269,6 +269,115 @@
 		</ol>
 	</xsl:template>
 
+	<xsl:template name="materialize_html_script">
+		<xsl:param name="language"/>
+		<xsl:param name="source"/>
+
+		<script type="application/javascript">
+			var xml = null;
+			var default_language = "<xsl:value-of select="$language"/>";
+			var documented_module = "<xsl:value-of select="@name"/>";
+			var factor_name = "<xsl:value-of select="@identifier"/>";
+			var facotr_path = "<xsl:value-of select="@path"/>";
+
+			var factor_source =
+			<xsl:text>&#34;</xsl:text>
+			<xsl:call-template name="source.file">
+				<xsl:with-param name="source" select="$source"/>
+			</xsl:call-template>
+			<xsl:text>&#34;;</xsl:text>
+
+			var mroindex = {
+				<xsl:apply-templates mode="javascript.mro.index" select="/"/>
+			}
+
+			var srcindex = {
+				<xsl:apply-templates mode="javascript.source.index" select="/"/>
+			}
+
+			var source = atob(
+				<xsl:text>&#34;</xsl:text>
+				<xsl:value-of
+					select="normalize-space($source/f:data/text())"/>
+				<xsl:text>&#34;</xsl:text>
+			).split('\n');
+		</script>
+	</xsl:template>
+
+	<xsl:template name="factor_title">
+		<xsl:param name="product"/>
+		<xsl:param name="depth"/>
+		<xsl:param name="name"/>
+		<xsl:param name="path"/>
+		<xsl:param name="type"/>
+		<xsl:param name="icon"/>
+		<xsl:param name="identifier"/>
+
+		<div class="title">
+			<span class="icon">
+				<xsl:call-template name="ctx.icon-image">
+					<xsl:with-param name="icon" select="$icon"/>
+				</xsl:call-template>
+			</span>
+
+			<xsl:if test="$type = 'corpus'">
+				<a href="">
+					<span class="identifier">
+						<xsl:value-of select="$name"/>
+						<xsl:text> Software Corpus</xsl:text>
+					</span>
+				</a>
+			</xsl:if>
+
+			<xsl:if test="$product">
+					<xsl:for-each select="fault:traverse('.', $product)">
+						<a href="{$depth}{ctx:absolute(string(./path))}">
+							<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
+						</a>
+						<span class="path-delimiter">.</span>
+					</xsl:for-each>
+			</xsl:if>
+
+			<a>
+				<xsl:attribute name="href">
+					<xsl:choose>
+						<xsl:when test="$depth">
+							<xsl:value-of select="$depth"/>
+							<xsl:value-of select="$name"/>
+						</xsl:when>
+						<xsl:otherwise>
+							<!--
+								# Nothing for self pointers to the same factor.
+							!-->
+							<xsl:value-of select="''"/>
+						</xsl:otherwise>
+					</xsl:choose>
+				</xsl:attribute>
+
+				<span class="identifier">
+					<xsl:value-of select="$identifier"/>
+				</span>
+			</a>
+
+			<xsl:if test="$depth">
+				<xsl:text>/</xsl:text>
+				<a href="">
+					<span class="fraction">
+						<xsl:value-of select="$path"/>
+					</span>
+				</a>
+			</xsl:if>
+			<span class="selected-fragment"></span>
+		</div>
+		<div style="display:none" class="index.reference">
+			<a href="#index."><span class="tab">Index</span></a>
+			<a href="#source..index"><span class="tab">Sources</span></a>
+			<a href="#functions..index"><span class="tab">Functions</span></a>
+			<a href="#class..index"><span class="tab">Classes</span></a>
+			<a href="#struct..index"><span class="tab">Structures</span></a>
+		</div>
+	</xsl:template>
+
 	<xsl:template match="f:factor">
 		<xsl:variable name="product" select="substring-before(@name, concat('.', @identifier))"/>
 		<xsl:variable name="context.cache" select="Factor:cache()"/>
@@ -285,113 +394,45 @@
 		<xsl:variable name="root" select="f:module|f:document|f:void|f:chapter"/>
 		<xsl:variable name="default.language" select="$root/@language[position()=1]"/>
 
+		<xsl:variable name="language">
+			<xsl:choose>
+				<xsl:when test="$default.language">
+					<xsl:value-of select="$default.language"/>
+				</xsl:when>
+				<xsl:otherwise>
+					<xsl:value-of select="'python'"/>
+				</xsl:otherwise>
+			</xsl:choose>
+		</xsl:variable>
+
 		<html>
 			<head>
 				<title><xsl:value-of select="$root/@name"/> <xsl:value-of select="$title_suffix"/></title>
 				<link rel="stylesheet" type="text/css" href="{$path.prefix}factor.css"/>
 				<link rel="icon" href="{./@site}"/>
 
-				<script type="application/javascript">
-					var xml = null;
-					<xsl:choose>
-					<xsl:when test="$default.language">
-					var default_language = "<xsl:value-of select="$default.language[position()=1]"/>";
-					</xsl:when>
-					<xsl:otherwise>
-					var default_language = "python";
-					</xsl:otherwise>
-					</xsl:choose>
-					var documented_module = "<xsl:value-of select="@name"/>";
-					var factor_name = "<xsl:value-of select="@identifier"/>";
+				<xsl:call-template name="materialize_html_script">
+					<xsl:with-param name="language" select="$language"/>
+					<xsl:with-param name="source" select="$root/f:source"/>
+				</xsl:call-template>
 
-					var factor_source =
-					<xsl:text>&#34;</xsl:text>
-					<xsl:call-template name="source.file">
-						<xsl:with-param name="source" select="$root/f:source"/>
-					</xsl:call-template>
-					<xsl:text>&#34;;</xsl:text>
-
-					var mroindex = {
-						<xsl:apply-templates mode="javascript.mro.index" select="/"/>
-					}
-
-					var srcindex = {
-						<xsl:apply-templates mode="javascript.source.index" select="/"/>
-					}
-
-					var source = atob(
-						<xsl:text>&#34;</xsl:text>
-						<xsl:value-of
-							select="normalize-space(f:*[f:source]/f:source/f:data/text())"/>
-						<xsl:text>&#34;</xsl:text>
-					).split('\n');
-				</script>
 				<script type="application/javascript" src="{$path.prefix}factor.js"/>
 			</head>
 
 			<body>
+				<!--
+					# Constant header at the top of the page.
+				!-->
 				<div class="factor">
-					<div class="title">
-						<span class="icon">
-							<xsl:call-template name="ctx.icon-image">
-								<xsl:with-param name="icon" select="f:context/@icon"/>
-							</xsl:call-template>
-						</span>
-
-						<xsl:if test="/f:factor/f:context/@type = 'corpus'">
-							<a href="">
-								<span class="identifier">
-									<xsl:value-of select="/f:factor/f:context/@name"/>
-									<xsl:text> Software Corpus</xsl:text>
-								</span>
-							</a>
-						</xsl:if>
-
-						<xsl:if test="$product">
-								<xsl:for-each select="fault:traverse('.', $product)">
-									<a href="{$depth}{ctx:absolute(string(./path))}">
-										<span class="module-path"><xsl:value-of select="./token/text()[1]"/></span>
-									</a>
-									<span class="path-delimiter">.</span>
-								</xsl:for-each>
-						</xsl:if>
-
-						<a>
-							<xsl:attribute name="href">
-								<xsl:choose>
-									<xsl:when test="$depth">
-										<xsl:value-of select="$depth"/>
-										<xsl:value-of select="/f:factor/@name"/>
-									</xsl:when>
-									<xsl:otherwise>
-										<!--
-											# Nothing for self pointers to the same factor.
-										!-->
-										<xsl:value-of select="''"/>
-									</xsl:otherwise>
-								</xsl:choose>
-							</xsl:attribute>
-
-							<span class="identifier">
-								<xsl:value-of select="@identifier"/>
-							</span>
-						</a>
-						<xsl:if test="$depth">
-							<xsl:text>/</xsl:text>
-							<a href="">
-								<span class="fraction">
-									<xsl:value-of select="/f:factor/@path"/>
-								</span>
-							</a>
-						</xsl:if>
-					</div>
-					<div style="display:none" class="index.reference">
-						<a href="#index."><span class="tab">Index</span></a>
-						<a href="#source..index"><span class="tab">Sources</span></a>
-						<a href="#functions..index"><span class="tab">Functions</span></a>
-						<a href="#class..index"><span class="tab">Classes</span></a>
-						<a href="#struct..index"><span class="tab">Structures</span></a>
-					</div>
+					<xsl:call-template name="factor_title">
+						<xsl:with-param name="product" select="$product"/>
+						<xsl:with-param name="identifier" select="/f:factor/@identifier"/>
+						<xsl:with-param name="depth" select="$depth"/>
+						<xsl:with-param name="name" select="/f:factor/@name"/>
+						<xsl:with-param name="path" select="/f:factor/@path"/>
+						<xsl:with-param name="type" select="/f:factor/@type"/>
+						<xsl:with-param name="icon" select="/f:factor/f:context/@icon"/>
+					</xsl:call-template>
 				</div>
 
 				<div id="content." class="pane.">
