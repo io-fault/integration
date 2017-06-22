@@ -145,6 +145,14 @@ div.factor > div.title {
 	font-size: 70%;
 }
 
+div.factor > div.title > span[class="selected-fragment"]::before {
+	content: '#';
+}
+
+div.factor > div.title > span[class="selected-fragment"]:empty::before {
+	content: '';
+}
+
 div.navigation {
 	width: 90%;
 	margin: auto;

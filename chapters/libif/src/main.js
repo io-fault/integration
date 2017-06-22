@@ -29,8 +29,8 @@ identify_clicked_anchor(element)
 }
 
 /*
-	# Spawn an application. Currently, only creates an iframe
-	# log entry.
+	# Spawn an application.
+	# Currently, only creates an iframe log entry.
 */
 function
 spawn(link, href)
@@ -251,11 +251,57 @@ shrink_entry(event)
 	*/
 }
 
+/**
+	# Make an array of elements that contain links to each point
+	# in the given xml:id, &xid.
+
+	# [ Parameters ]
+	# /xid
+		# The XML identifier of the target fragment or subfragment.
+**/
+function
+mkpath(document, xid)
+{
+	var parts = xid.split(".")
+	var curlink = "";
+	var elements = Array();
+
+	for (var i in parts)
+	{
+		var cur = parts[i];
+		var sep = document.createElement("span");
+		sep.setAttribute("class", "separator");
+		sep.appendChild(document.createTextNode("."));
+
+		if (curlink == "")
+			curlink = cur;
+		else
+			curlink = curlink + "." + cur;
+
+		idspan = document.createElement("span");
+		linke = document.createElement("a");
+		linke.setAttribute("href", "#" + curlink);
+		linke.appendChild(document.createTextNode(cur));
+		idspan.setAttribute("class", "identifier");
+		idspan.appendChild(linke);
+
+		elements.push(idspan);
+		elements.push(sep);
+	}
+
+	/* remove last separator */
+	elements.pop();
+
+	return elements;
+}
+
 function
 hashchanged()
 {
 	var nid = window.location.hash.slice(1);
 	var log = document.getElementById("log.");
+	var factor = document.getElementsByClassName("factor")[0];
+	var factor_title = factor.getElementsByClassName("title")[0];
 	var hie = null;
 	var range = null;
 	var lrange = /^L[.](\d+)-(\d+)$/;
@@ -331,6 +377,7 @@ hashchanged()
 			/*
 				# Titled fragments.
 			*/
+			var ftf = factor_title.getElementsByClassName("selected-fragment")[0];
 			var tid = title.getElementsByClassName("identifier")[0].cloneNode(true);
 			var t = document.createElement("div");
 			var leading = documented_module.split('.').concat(nid.split('.'));
@@ -343,6 +390,15 @@ hashchanged()
 			t.appendChild(tid);
 
 			container.appendChild(t);
+
+			/*
+				# Update factor title fragment.
+			*/
+			while (ftf.firstChild)
+			{
+				ftf.removeChild(ftf.firstChild);
+			}
+			mkpath(document, nid).map(function (x) { ftf.appendChild(x); });
 		}
 
 		physical.setAttribute("class", "fragment.address");
