@@ -327,7 +327,7 @@ hashchanged()
 		if (subject != null)
 			var title = subject.getElementsByClassName("title")[0];
 		else
-			var title = null;
+			var title = factor_title;
 
 		var start = Math.max(1, range[0]-source_context_quantity);
 		var stop = Math.min(source.length, range[1]+source_context_quantity);
@@ -377,10 +377,30 @@ hashchanged()
 			/*
 				# Titled fragments.
 			*/
-			var ftf = factor_title.getElementsByClassName("selected-fragment")[0];
 			var tid = title.getElementsByClassName("identifier")[0].cloneNode(true);
 			var t = document.createElement("div");
-			var leading = documented_module.split('.').concat(nid.split('.'));
+
+			var leading;
+			/*
+				# Update factor title fragment.
+			*/
+			if (title != factor_title)
+			{
+				var ftf = factor_title.getElementsByClassName("selected-fragment")[0];
+				while (ftf.firstChild)
+				{
+					ftf.removeChild(ftf.firstChild);
+				}
+				mkpath(document, nid).map(function (x) { ftf.appendChild(x); });
+				leading = documented_module.split('.').concat(nid.split('.'));
+			}
+			else
+			{
+				/*
+					# title is the factor's title and should not include the nid.
+				*/
+				leading = documented_module.split('.');
+			}
 
 			leading.pop();
 			leading.push('');
@@ -390,20 +410,11 @@ hashchanged()
 			t.appendChild(tid);
 
 			container.appendChild(t);
-
-			/*
-				# Update factor title fragment.
-			*/
-			while (ftf.firstChild)
-			{
-				ftf.removeChild(ftf.firstChild);
-			}
-			mkpath(document, nid).map(function (x) { ftf.appendChild(x); });
 		}
 
 		physical.setAttribute("class", "fragment.address");
 		path.setAttribute("class", "relative.file.path");
-		path.appendChild(document.createTextNode(factor_source));
+		path.appendChild(document.createTextNode("//"+factor_source));
 
 		linerange.setAttribute("class", "line.range");
 		linerange.appendChild(
