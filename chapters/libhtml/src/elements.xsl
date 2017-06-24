@@ -81,26 +81,6 @@
 		</div>
 	</xsl:template>
 
-	<func:function name="f:inherit.docs">
-		<xsl:param name="class"/>
-
-		<xsl:variable name="section" select="$class/f:doc/txt:section[position()=1 and last()=1]"/>
-		<xsl:variable name="para" select="$section/txt:paragraph[position()=1 and last()=1]"/>
-		<xsl:variable name="ref" select="$para/txt:reference[position()=1 and last()=1]"/>
-
-		<func:result>
-			<xsl:choose>
-				<!-- first and only reference/paragraph/section -->
-				<xsl:when test="$ref">
-					<xsl:value-of select="string($ref/@source)"/>
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="''"/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</func:result>
-	</func:function>
-
 	<func:function name="df:tag">
 		<xsl:param name="text"/>
 		<xsl:param name="type"/>
@@ -1032,7 +1012,6 @@
 		<xsl:variable name="context" select="ancestor::f:*[@identifier][1]"/>
 		<xsl:variable name="leading.name" select="$context/@identifier"/>
 
-		<xsl:variable name="abstract.src" select="ctx:qualify(f:inherit.docs(.))"/>
 		<xsl:apply-templates select="./f:class|./f:structure|./f:union"/><!--Nested-->
 
 		<div id="{@xml:id}" class="{local-name()}">
@@ -1056,40 +1035,6 @@
 			</div>
 
 			<div class="content">
-				<!--Initial attempt of join abstract documentation-->
-				<xsl:if test="false and $abstract.src != ''">
-					<xsl:variable name="docclass" select="ctx:site.element($abstract.src)"/>
-					<xsl:variable name="prefix" select="$docclass/@identifier"/>
-
-					<xsl:variable name="se">
-						<f:factor identifier="{/f:factor/@identifier}">
-							<xsl:copy-of select="ancestor::f:factor/f:context"/>
-
-							<f:module identifier="{/f:factor/@identifier}">
-								<f:class identifier="{$name}">
-									<xsl:attribute name="id" namespace="http://www.w3.org/XML/1998/namespace" select="$xmlid"/>
-									<xsl:for-each select="$docclass/f:*">
-										<xsl:element name="{local-name()}" namespace="namespace-uri()">
-											<xsl:if test="@xml:id">
-												<xsl:attribute name="id" namespace="http://www.w3.org/XML/1998/namespace"
-													select="concat($xmlid, substring-after(@xml:id, $prefix))"/>
-											</xsl:if>
-											<xsl:message><xsl:value-of select="concat($prefix, ' g ', local-name(), '	 ', concat($xmlid, substring-after(@xml:id, $prefix)))"/></xsl:message>
-
-											<xsl:copy-of select="@*[local-name()!='xml:id']"/>
-											<xsl:copy-of select="./*|./text()"/>
-										</xsl:element>
-									</xsl:for-each>
-								</f:class>
-							</f:module>
-						</f:factor>
-					</xsl:variable>
-					<xsl:message><xsl:value-of select="exsl:node-set($se)/f:factor/f:module/f:class/@xml:id"/></xsl:message>
-					<xsl:call-template name="class">
-						<xsl:with-param name="element" select="exsl:node-set($se)/f:factor/f:module/f:class"/>
-					</xsl:call-template>
-				</xsl:if>
-
 				<xsl:call-template name="class">
 					<xsl:with-param name="element" select="."/>
 				</xsl:call-template>
