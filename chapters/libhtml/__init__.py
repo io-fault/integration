@@ -11,7 +11,6 @@ from ...chronometry import metric
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):
-	global namespace
 	return '{%s}%s' %(namespace, name_string)
 
 class Factor(libfactor.XPathModule):
@@ -108,7 +107,7 @@ class Factor(libfactor.XPathModule):
 		stop = int(stop)
 
 		# source element with start and stop available.
-		rs = self.RangeSet.from_normal_sequence([libc.range.IRange((start, stop))])
+		rs = self.RangeSet.from_normal_sequence([self.IRange((start, stop))])
 
 		traversable = self.RangeSet.from_normal_sequence(list(self.traversable.intersection(rs)))
 		atraversed = self.RangeSet.from_normal_sequence(list(self.traversed.intersection(traversable)))
