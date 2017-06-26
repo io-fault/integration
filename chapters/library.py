@@ -76,10 +76,9 @@ def factors(package:str) -> typing.Tuple[
 	# Construct and return the factors (modules and packages) contained within
 	# the given &package string.
 
-	# [ Effects ]
-	# /Product
-		# `(root, (packages, modules))`; where root is the &package parameter
-		# as an &libroutes.Import.
+	# [ Returns ]
+	# `(root, (packages, modules))`; where root is the &package parameter
+	# as an &libroutes.Import.
 
 	# All objects are &..routes.library.Import instances pointing to the module.
 
@@ -101,12 +100,11 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 	# Factors that represent the construction of a set of fractions are used to manage
 	# build targets.
 
-	# [Effects]
-	# /Product
-		# The constructed mapping. The keys are the &libroutes.Import instances,
-		# and the values are sequences.
+	# [ Returns ]
+	# The constructed mapping. The keys are the &libroutes.Import instances,
+	# and the values are sequences.
 
-	# [Parameters]
+	# [ Parameters ]
 	# /packages
 		# The set of factor packages to inspect in order to find the associated fractions.
 	"""
