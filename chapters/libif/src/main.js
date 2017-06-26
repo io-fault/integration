@@ -10,6 +10,23 @@ var char_world = String.fromCodePoint(0x1F30F);
 var applications = {};
 
 /*
+	# Identify the body as being inside an iframe inhibiting
+	# source views. Given the browser support DOMContentLoader,
+	# this modification to body is potentially performed prior
+	# to CSS, which is desirable.
+*/
+document.addEventListener("DOMContentLoaded", (
+function (event)
+{
+	console.log("called!");
+	if (IS_INNER_FRAME)
+	{
+		var body = document.getElementsByTagName("body")[0];
+		body.setAttribute("class", "iframe");
+	}
+}));
+
+/*
 	# Navigate outward from the element looking for an element
 	# with an (xml/attribute)`href`. &null if no ancestor
 	# has the attribute.

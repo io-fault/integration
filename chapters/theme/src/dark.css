@@ -149,10 +149,6 @@ div.factor > div.title > span[class="selected-fragment"]::before {
 	content: '#';
 }
 
-div.factor > div.title > span[class="selected-fragment"]:empty::before {
-	content: '';
-}
-
 div.navigation {
 	width: 90%;
 	margin: auto;
@@ -233,6 +229,24 @@ body > div[class="pane."] {
 	position: fixed;
 	top: calc(1cm + 10px);
 	height: calc(100% - (1cm + 10px));
+}
+
+/*
+	# Override width when the JavaScript identifies
+	# the HTML as being presented inside of an iframe.
+*/
+body.iframe > div[id="content."] {
+	width: 100%;
+	max-width: 100%;
+}
+
+/*
+	# Don't show the log when iframed; force the user to
+	# adjust the primary focus in order to see details in order to
+	# avoid arbitrary nesting.
+*/
+body.iframe > div[id="log."] {
+	display: none;
 }
 
 /*
