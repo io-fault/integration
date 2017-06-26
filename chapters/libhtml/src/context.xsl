@@ -11,14 +11,13 @@
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:idx="http://fault.io/xml/filesystem#index"
 	xmlns:ctx="http://fault.io/xml/factor#context"
-	xmlns:df="http://fault.io/xml/factor#functions"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:fault="http://fault.io/xml/xpath"
 	xmlns:Factor="http://fault.io/xpath#Factor"
 	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func exsl"
-	exclude-result-prefixes="py l f xsl exsl set str fault ctx df">
+	exclude-result-prefixes="py l f xsl exsl set str fault ctx">
 
 	<!--
 		# HTML context support functions and templates.
@@ -35,7 +34,6 @@
 		txt:keep="true"
 		idx:keep="true"
 		ctx:keep="true"
-		df:keep="true"
 		fault:keep="true"
 		Factor:keep="true"
 	/>

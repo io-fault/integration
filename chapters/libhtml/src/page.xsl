@@ -8,35 +8,19 @@
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:ctx="http://fault.io/xml/factor#context"
-	xmlns:df="http://fault.io/xml/factor#functions"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:fault="http://fault.io/xml/xpath"
 	xmlns:Factor="http://fault.io/xpath#Factor"
 	xmlns:xi="http://www.w3.org/2001/XInclude"
 	extension-element-prefixes="func"
-	exclude-result-prefixes="e xsl f ctx df str exsl fault">
+	exclude-result-prefixes="e xsl f ctx str exsl fault">
 
 	<xsl:import href="elements.xml"/>
+	<xsl:import href="tools.xml"/>
 
 	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
 	<xsl:param name="long.args.limit" select="64"/>
 	<xsl:param name="quote" select="'&#34;'"/>
-
-	<func:function name="df:nlines">
-		<xsl:param name="src"/>
-		<func:result select="((number($src/@stop)+1) - number($src/@start))"/>
-	</func:function>
-
-	<func:function name="df:measure">
-		<xsl:param name="src"/>
-		<xsl:variable name="n" select="df:nlines($src)"/>
-		<xsl:variable name="total.line.count" select="sum(ctx:factor($src)/f:*/f:source/@stop)"/>
-		<xsl:variable name="p" select="($n div $total.line.count) * 100"/>
-
-		<func:result>
-			<xsl:value-of select="concat($n, ' lines ', format-number($p, '###.##'), '%')"/>
-		</func:result>
-	</func:function>
 
 	<xsl:template mode="class.hierarchy" match="node()"/>
 	<xsl:template mode="concept.index" match="node()"/>
@@ -105,7 +89,9 @@
 										</xsl:otherwise>
 									</xsl:choose>
 									<span class="superscript">
-										<xsl:value-of select="df:measure(.)"/>
+										<xsl:call-template name="fragment-measure">
+											<xsl:with-param name="src" select="."/>
+										</xsl:call-template>
 									</span>
 								</div>
 								<div class="abstract">
@@ -185,9 +171,9 @@
 				<div class="label">
 					<xsl:value-of select="@identifier"/>
 					<span class="superscript">
-						<xsl:if test="string(df:nlines($src)) != 'NaN'">
-							<xsl:value-of select="df:measure($src)"/>
-						</xsl:if>
+						<xsl:call-template name="fragment-measure-if">
+							<xsl:with-param name="src" select="$src"/>
+						</xsl:call-template>
 					</span>
 				</div>
 
@@ -209,9 +195,9 @@
 				<div class="label">
 					<xsl:value-of select="@identifier"/>
 					<span class="superscript">
-						<xsl:if test="string(df:nlines($src)) != 'NaN'">
-							<xsl:value-of select="df:measure($src)"/>
-						</xsl:if>
+						<xsl:call-template name="fragment-measure-if">
+							<xsl:with-param name="src" select="$src"/>
+						</xsl:call-template>
 					</span>
 				</div>
 

@@ -14,21 +14,18 @@
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:py="http://fault.io/xml/data"
-	xmlns:df="http://fault.io/xml/factor#functions"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:l="http://fault.io/xml/literal"
 	xmlns:Factor="http://fault.io/xpath#Factor"
 	extension-element-prefixes="func"
-	exclude-result-prefixes="set str exsl func xl xsl py txt f df ctx">
+	exclude-result-prefixes="set str exsl func xl xsl py txt f ctx">
+
+	<xsl:import href="tools.xml"/>
 
 	<xsl:param name="prefix"><xsl:text>/</xsl:text></xsl:param>
 	<xsl:param name="long.args.limit" select="64"/>
 	<xsl:param name="bytes.limit" select="256"/>
-
-	<xsl:param name="python.version" select="'3'"/>
-	<xsl:param name="python.docs"
-		select="concat('https://docs.python.org/', $python.version, '/library/')"/>
 
 	<!-- arguably configuration -->
 	<xsl:variable name="functions_title" select="'functions'"/>
@@ -81,21 +78,10 @@
 		</div>
 	</xsl:template>
 
-	<func:function name="df:tag">
-		<xsl:param name="text"/>
-		<xsl:param name="type"/>
-		<xsl:param name="reference" select="false"/>
-
-		<func:result>
-			<span class="tag"><span class="text"><xsl:value-of select="$text"/></span><span class="type"><xsl:value-of select="$type"/></span></span>
-		</func:result>
-	</func:function>
-
 	<xsl:template match="f:context">
 		<a href="{@identity}"><xsl:value-of select="@project"/></a>
 		<xsl:text> </xsl:text>
 		<a href="{@contact}"><xsl:value-of select="@controller"/></a>
-		<!-- <xsl:copy-of select="df:tag(@fork, 'fork')"/> -->
 	</xsl:template>
 
 	<xsl:template mode="metrics-data" match="f:*">
@@ -123,65 +109,6 @@
 			<xsl:text> lines</xsl:text>
 		</span>
 	</xsl:template>
-
-	<func:function name="df:reference">
-		<xsl:param name="element" select="."/>
-
-		<func:result>
-			<xsl:choose>
-				<xsl:when test="not($element)">
-					<xsl:value-of select="concat($python.docs, 'functions.html#object')"/>
-				</xsl:when>
-
-				<xsl:when test="$element/@source = 'builtin'">
-					<!-- builtin source, maybe not builtins module -->
-					<xsl:choose>
-						<!-- special cases for certain builtins -->
-						<xsl:when test="$element/@module = 'builtins'">
-							<xsl:choose>
-								<!-- types.ModuleType is identified as existing in builtins, which is a lie -->
-								<xsl:when test="$element/@name = 'module'">
-									<xsl:value-of select="concat($python.docs, 'types.html#types.ModuleType')"/>
-								</xsl:when>
-
-								<!-- for whatever reason, the id is "func-str" and not "str" -->
-								<xsl:when test="$element/@name = 'str'">
-									<xsl:value-of select="concat($python.docs, 'functions.html#func-str')"/>
-								</xsl:when>
-
-								<xsl:otherwise>
-									<!-- most builtins are documented in functions.html -->
-									<xsl:value-of select="concat($python.docs, 'functions.html#', $element/@name)"/>
-								</xsl:otherwise>
-							</xsl:choose>
-						</xsl:when>
-						<xsl:otherwise>
-							<!-- not a builtins -->
-							<xsl:value-of select="concat($python.docs, $element/@factor, '.html')"/>
-						</xsl:otherwise>
-					</xsl:choose>
-				</xsl:when>
-				<xsl:when test="$element/@source = 'site-packages'">
-					<xsl:value-of select="concat($python.docs, $element/@factor, '.html')"/>
-				</xsl:when>
-				<xsl:when test="$element/@factor = $element/ancestor::f:factor/f:module/@name">
-					<xsl:value-of select="concat('#', $element/@name)"/>
-				</xsl:when>
-				<xsl:otherwise>
-					<!-- Same site (document collection) -->
-					<xsl:value-of select="concat($element/@factor, '#', $element/@name)"/>
-				</xsl:otherwise>
-			</xsl:choose>
-		</func:result>
-	</func:function>
-
-	<func:function name="df:qname">
-		<xsl:param name="element" select="."/>
-
-		<func:result>
-			<xsl:value-of select="concat($element/@factor, '.', $element/@name)"/>
-		</func:result>
-	</func:function>
 
 	<xsl:template match="txt:emphasis[@weight=1]">
 		<span class="text.emphasis"><xsl:value-of select="text()"/></span>
@@ -533,8 +460,13 @@
 	</xsl:template>
 
 	<xsl:template match="py:exception">
+		<xsl:variable name="href">
+			<xsl:call-template name="fragment-reference">
+				<xsl:with-param name="element" select="."/>
+			</xsl:call-template>
+		</xsl:variable>
 		<div class="python.exception">
-			<a href="{df:reference(@type)}"><xsl:value-of select="@type"/></a>
+			<a href="{$href}"><xsl:value-of select="@type"/></a>
 			<xsl:call-template name="admonition">
 				<xsl:with-param name="severity" select="'ERROR'"/>
 				<xsl:with-param name="title" select="@type"/>
@@ -657,11 +589,17 @@
 	</xsl:template>
 
 	<xsl:template mode="python.inline.data" match="py:reference">
-		<a href="{df:reference(.)}"><span class="reference"><xsl:value-of select="@name"/></span></a>
+		<xsl:variable name="href">
+			<xsl:call-template name="fragment-reference"/>
+		</xsl:variable>
+		<a href="{$href}"><span class="reference"><xsl:value-of select="@name"/></span></a>
 	</xsl:template>
 
 	<xsl:template mode="python.inline.data" match="f:reference">
-		<a href="{df:reference(.)}"><span class="reference"><xsl:value-of select="@name"/></span></a>
+		<xsl:variable name="href">
+			<xsl:call-template name="fragment-reference"/>
+		</xsl:variable>
+		<a href="{$href}"><span class="reference"><xsl:value-of select="@name"/></span></a>
 	</xsl:template>
 
 	<xsl:template name="method">
@@ -750,9 +688,20 @@
 	</xsl:template>
 
 	<xsl:template match="f:parameter[f:annotation or not(f:default)]">
-		<a href="{df:reference(f:annotation/f:*)}">
+		<xsl:variable name="qname">
+			<xsl:call-template name="fragment-qname">
+				<xsl:with-param name="element" select="f:annotation/f:*"/>
+			</xsl:call-template>
+		</xsl:variable>
+		<xsl:variable name="href">
+			<xsl:call-template name="fragment-reference">
+				<xsl:with-param name="element" select="f:annotation/f:*"/>
+			</xsl:call-template>
+		</xsl:variable>
+
+		<a href="{$href}">
 			<xsl:attribute name="title">
-				<xsl:value-of select="df:qname(f:annotation/f:*)"/>
+				<xsl:value-of select="$qname"/>
 			</xsl:attribute>
 			<xsl:call-template name="parameter">
 				<xsl:with-param name="element" select="."/>
