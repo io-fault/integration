@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
-	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:fault="http://fault.io/xml/xpath"

@@ -5,12 +5,12 @@
 !-->
 <xsl:transform version="1.0"
 	xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:xl="http://www.w3.org/1999/xlink"
 	xmlns:set="http://exslt.org/sets"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:exsl="http://exslt.org/common"
-	xmlns:f="http://fault.io/xml/fragments"
 	xmlns:t="http://fault.io/xml/test"
 	xmlns:txt="http://fault.io/xml/text"
 	xmlns:py="http://fault.io/xml/data"
