@@ -1,4 +1,4 @@
-/*
+/**
 	# Stylesheet for Python module documentation.
 	# Much of the complexity here is to avoid
 	# displaying unwanted formatting whitespace.
@@ -23,14 +23,14 @@ table {
 	border-spacing: 0;
 }
 
-/*
+/**
 	# The last identifier in the title providing an href to itself
 */
 div.title > a.terminal {
 	font-weight: bold;
 }
 
-/*
+/**
 	# Special case for blue links
 */
 a:hover span.identifier {

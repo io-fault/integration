@@ -1,6 +1,7 @@
-/*
+/**
 	# Browser application for managing source display and external references.
 */
+
 var IS_INNER_FRAME = window.top != window;
 
 var char_page_icon = String.fromCodePoint(128196);
@@ -9,7 +10,7 @@ var char_shrink = String.fromCodePoint(0x1F536);
 var char_world = String.fromCodePoint(0x1F30F);
 var applications = {};
 
-/*
+/**
 	# Identify the body as being inside an iframe inhibiting
 	# source views. Given the browser support DOMContentLoader,
 	# this modification to body is potentially performed prior
@@ -26,7 +27,7 @@ function (event)
 	}
 }));
 
-/*
+/**
 	# Navigate outward from the element looking for an element
 	# with an (xml/attribute)`href`. &null if no ancestor
 	# has the attribute.
@@ -45,7 +46,7 @@ identify_clicked_anchor(element)
 	return element;
 }
 
-/*
+/**
 	# Spawn an application.
 	# Currently, only creates an iframe log entry.
 */
@@ -275,7 +276,7 @@ shrink_entry(event)
 	# [ Parameters ]
 	# /xid
 		# The XML identifier of the target fragment or subfragment.
-**/
+*/
 function
 mkpath(document, xid)
 {
@@ -312,6 +313,9 @@ mkpath(document, xid)
 	return elements;
 }
 
+/**
+	# Update the factor's title to reflect the focus.
+*/
 function
 hashchanged()
 {
