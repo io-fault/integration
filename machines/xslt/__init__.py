@@ -1,11 +1,11 @@
 """
 # Transformation to &..fault.factors XML for &.bin.inspect output.
 """
-from ...xml import libfactor
-from ...chronometry import library as libtime
-from ...chronometry import metric
-from ...text import library as libtext
-from ...development import fragments
+from fault.xml import libfactor
+from fault.chronometry import library as libtime
+from fault.chronometry import metric
+from fault.text import library as libtext
+from fault.development import fragments
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):
@@ -15,7 +15,6 @@ class Factor(libfactor.XPathModule):
 	"""
 	# Support for operations that would be difficult in some fashion if written in XSLT.
 	"""
-	from ...xml import libfactor
 
 	def resolve_origin(self, context, string):
 		"""
@@ -52,7 +51,7 @@ class Factor(libfactor.XPathModule):
 				encoding='utf-8')
 		)
 		if xml:
-			return self.libfactor.etree.XML(start + xml + b'</f:doc>')
+			return libfactor.etree.XML(start + xml + b'</f:doc>')
 		else:
 			return ()
 

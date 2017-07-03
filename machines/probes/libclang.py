@@ -7,8 +7,8 @@ import sys
 import sysconfig
 import shutil
 
-from ...routes import library as libroutes
-from ...development import library as libdev
+from fault.routes import library as libroutes
+from fault.development import library as libdev
 
 __factor_domain__ = 'system'
 __factor_type__ = 'probe'

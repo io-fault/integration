@@ -3,8 +3,8 @@
 """
 import lxml.etree
 import sys
-from ...xml import libfactor
-from ...routes import library as libroutes
+from fault.xml import libfactor
+from fault.routes import library as libroutes
 
 if __name__ == '__main__':
 	cmd, target_xml_path = sys.argv

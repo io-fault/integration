@@ -7,7 +7,7 @@ import os
 import sys
 import sysconfig
 import subprocess
-from ...development import library as libdev
+from fault.development import library as libdev
 
 __factor_domain__ = 'system'
 __factor_type__ = 'probe'

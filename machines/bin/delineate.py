@@ -7,10 +7,10 @@
 """
 import sys
 import subprocess
-from ...routes import library as libroutes
-from ...system import library as libsys
-from ...xml import libfactor, library as libxml
-from ...development import fragments
+from fault.routes import library as libroutes
+from fault.system import library as libsys
+from fault.xml import libfactor, library as libxml
+from fault.development import fragments
 from .. import xslt
 
 inner_call = __package__ + '.inspect'
