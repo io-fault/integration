@@ -1,7 +1,7 @@
 """
 # LLVM Probe for collecting compilation and linkage information.
 
-# Gathers information using (system:executable)`llvm-config`.
+# Gathers information using (system/executable)`llvm-config`.
 """
 import os
 import sys
@@ -9,7 +9,6 @@ import sysconfig
 import subprocess
 from fault.development import library as libdev
 
-__factor_domain__ = 'system'
 __factor_type__ = 'probe'
 
 parameters = {

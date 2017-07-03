@@ -10,7 +10,6 @@ import shutil
 from fault.routes import library as libroutes
 from fault.development import library as libdev
 
-__factor_domain__ = 'system'
 __factor_type__ = 'probe'
 
 parameters = {
