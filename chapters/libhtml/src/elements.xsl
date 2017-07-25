@@ -49,7 +49,9 @@
 	</xsl:template>
 
 	<xsl:template name="admonition">
-		<!-- if there is no identified ancestor, it's probably the root object (module) -->
+		<!--
+			# If there is no identified ancestor, it's probably the root concept. (module)
+		-->
 		<xsl:param name="severity"/>
 		<xsl:param name="title"/>
 		<xsl:param name="content"/>
@@ -1163,5 +1165,4 @@
 			</div>
 		</a>
 	</xsl:template>
-
 </xsl:transform>
