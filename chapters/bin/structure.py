@@ -77,7 +77,8 @@ def copy(ctx, target, package, metrics):
 		x for x in pkg.tree()[0]
 		if x.absolute[-1] == 'extensions'
 	]
-	from ...python import xml as d_python
+	from fragments.python import xml as d_python
+
 	for pex in pexset:
 		# Get the list of extension modules
 		xr = [
