@@ -20,4 +20,6 @@ parameters = {
 	# For llvm.instr extension module.
 	'llvm-config':
 		"The `llvm-config` executable to extract location information from.",
+	'llvm-profdata':
+		"The profile data command to use in order to process snapshots.",
 }
