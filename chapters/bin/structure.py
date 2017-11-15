@@ -23,11 +23,12 @@ from ...xml import libfactor as xmlfactor
 from ...filesystem import library as libfs
 from ...xml import library as libxml
 lxml = xmlfactor.lxml
+fragments_ns = devxml.namespaces['fragments']
 
-def join_metrics(document, metrics, test, project, cname, key):
-	elements = devxml.materialize_metrics(libxml.Serialization(), metrics, test, str(project), cname, key)
+def join_metrics(xml, document, metrics, test, project, cname, key):
+	elements = devxml.materialize_metrics(xml, metrics, test, str(project), cname, key)
 
-	dq = lxml.Query(document, {'f': 'http://fault.io/xml/fragments'})
+	dq = lxml.Query(document, {'f': fragments_ns})
 	r = dq.first('/f:factor')
 	if r is None:
 		return
@@ -41,6 +42,8 @@ def join_metrics(document, metrics, test, project, cname, key):
 		if x:
 			sub = xmlfactor.etree.fromstring(b''.join(x))
 			r.addprevious(sub)
+
+	return dq
 
 def module_fragments(route):
 	pass
@@ -64,8 +67,10 @@ def copy(ctx, target, package, metrics):
 	# be presented as &copy will provide it along with other factor metadata.
 	"""
 
+	import_r = libroutes.Import.from_fullname
+
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
-	pkg = libroutes.Import.from_fullname(package)
+	pkg = import_r(package)
 	pkgset = list(libdev.gather_simulations([pkg]))
 
 	if metrics is not None and isinstance(metrics, str):
@@ -85,7 +90,7 @@ def copy(ctx, target, package, metrics):
 			libfactor.extension_access_name(str(x)) for x in pex.tree()[0]
 			if '__factor_domain__' in x.module().__dict__
 		]
-		xr = [libroutes.Import.from_fullname(x) for x in xr]
+		xr = [import_r(x) for x in xr]
 		xr = [(x, d_python.Context(x), x.module()) for x in xr]
 		for r, sc, mod in xr:
 			mod.__factor_composite__ = False
@@ -139,7 +144,7 @@ def copy(ctx, target, package, metrics):
 				ispkg = False
 
 			try:
-				rroute = libroutes.Import.from_fullname(fullname)
+				rroute = import_r(fullname)
 				croute = libfactor.canonical_name(rroute)
 			except ImportError as exc:
 				print('could not import ', str(rroute), str(exc))
@@ -154,7 +159,7 @@ def copy(ctx, target, package, metrics):
 			rkey = str(croute).encode('utf-8')
 			print(str(y))
 			rdoc = xmlfactor.readfile(str(y))
-			rdq = lxml.Query(rdoc, {'f': 'http://fault.io/xml/fragments'})
+			rdq = lxml.Query(rdoc, {'f': fragments_ns})
 			rroot = rdq.first('/f:factor')
 
 			if iscomposite:
@@ -201,13 +206,13 @@ def copy(ctx, target, package, metrics):
 
 						# Update positioning information; delineation is not required
 						# to provide this information.
-						dq = lxml.Query(doc, {'f': 'http://fault.io/xml/fragments'})
+						dq = lxml.Query(doc, {'f': fragments_ns})
 						r = dq.first('/f:factor')
 						p = [
 							k for k,v in r.element.nsmap.items()
-							if k and v == 'http://fault.io/xml/fragments'
+							if k and v == fragments_ns
 						]
-						r.element.nsmap[None] = 'http://fault.io/xml/fragments'
+						r.element.nsmap[None] = fragments_ns
 						for ns in p:
 							del r.element.nsmap[ns]
 
@@ -229,7 +234,12 @@ def copy(ctx, target, package, metrics):
 						lctx = r.first('f:context')
 
 						ckey = fkey.encode('utf-8')
-						join_metrics(doc, metrics, False, project, cname, ckey)
+						xml = libxml.Serialization(xml_prefix='f:')
+						dq = join_metrics(xml, doc, metrics, False, project, cname, ckey)
+						if dq is not None:
+							cov = dq.first('/f:factor/coverage')
+							if cov is not None:
+								cov.element.attrib['xmlns'] = fragments_ns
 						lxml.etree.cleanup_namespaces(r.element)
 						emit(docs, ckey, lxml.etree.tostringlist(doc, method='xml', encoding='utf-8'))
 					except Exception as exc:
@@ -239,7 +249,8 @@ def copy(ctx, target, package, metrics):
 
 			if in_tests and rroot is not None:
 				rroot.element.attrib['type'] = 'tests'
-			join_metrics(rdoc, metrics, in_tests, project, cname, rkey)
+			xml = libxml.Serialization()
+			join_metrics(xml, rdoc, metrics, in_tests, project, cname, rkey)
 			emit(docs, rkey, lxml.etree.tostringlist(rdoc, method='xml', encoding='utf-8'))
 
 def main(inv):
