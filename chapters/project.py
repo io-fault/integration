@@ -1,5 +1,5 @@
-identity = 'http://fault.io/src/fault.factor'
-name = 'factor'
+identity = 'http://fault.io/src/python/factors'
+name = 'factors'
 abstract = 'Project documentation and release publishing tools'
 icon = '🐜';
 
@@ -7,5 +7,5 @@ fork = 'root'
 versioning = 'continuous'
 status = 'flux'
 
-controller = 'fault.io' # Responsible Party
-contact = 'mailto:critical@fault.io' # Contact point for the Responsible Party
+controller = 'fault.io'
+contact = 'mailto:critical@fault.io'
