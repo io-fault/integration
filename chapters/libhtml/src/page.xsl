@@ -306,11 +306,11 @@
 				</xsl:call-template>
 			</span>
 
-			<xsl:if test="$type = 'corpus'">
+			<xsl:if test="$type = 'product'">
 				<a href="">
 					<span class="identifier">
 						<xsl:value-of select="$name"/>
-						<xsl:text> Software Corpus</xsl:text>
+						<xsl:text> Product</xsl:text>
 					</span>
 				</a>
 			</xsl:if>

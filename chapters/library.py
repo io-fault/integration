@@ -1,6 +1,6 @@
 """
-# Factors library providing high level access to structuring and formatting the
-# factors that make up a product.
+# Factors library providing high level access to the structuring and formatting routines
+# used to construct a Product View.
 """
 import typing
 import itertools
@@ -124,14 +124,14 @@ def transform(path, **params):
 
 def index(name, roots, **params):
 	"""
-	# Create the corpus index for the set of root factors.
+	# Create the product index for the set of root factors.
 	"""
 
 	rstr = ','.join(roots)
 	params['roots'] = rstr
 	subs = ''.join("<subfactor identifier='%s'/>" %(x,) for x in roots)
-	ctx = "<context name='%s' type='corpus' path='' icon='🏛'/>" % (name,)
-	xmlstr = "<factor type='corpus' xmlns='http://fault.io/xml/fragments'>%s%s</factor>"
+	ctx = "<context name='%s' type='product' path='' icon='🏛'/>" % (name,)
+	xmlstr = "<factor type='product' xmlns='http://fault.io/xml/fragments'>%s%s</factor>"
 	input = xmlfactor.readstring((xmlstr %(ctx, subs)).encode('utf-8'))
 
 	return html.xslt('corpus', **params)(input)
