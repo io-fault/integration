@@ -5,7 +5,7 @@
 	# Currently does not provide information about expansion regions.
 """
 from ...probes import libllvm
-from fault.development.probes import libpython
+from fault.development import ipython
 
 standards = {
 	'c++': 'c++11',
