@@ -267,7 +267,7 @@
     <data type="normalizedString"/>
    </attribute>
    <optional>
-    <attribute name="adjacent"> 
+    <attribute name="adjacent">
      <data type="IDREF"/>
     </attribute>
    </optional>
