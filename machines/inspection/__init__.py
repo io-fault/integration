@@ -8,6 +8,7 @@
 # The tool does not descend into functions and expressions leaving this to be
 # used strictly for delineation.
 """
-from ...probes import libclang
-__factor_domain__ = 'system'
-__factor_type__ = 'executable'
+__factor_domain__ = 'source'
+__factor_type__ = 'library'
+
+type = 'system/executable[llvm/libclang]'

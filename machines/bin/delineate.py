@@ -13,7 +13,7 @@ from fault.xml import libfactor, library as libxml
 from fault.development import fragments
 from .. import xslt
 
-inner_call = __package__ + '.inspect'
+inner_call = 'f_syntax.bin.llvm'
 def main(inv):
 	args = inv.args
 

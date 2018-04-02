@@ -10,6 +10,11 @@ status = 'flux'
 controller = 'fault.io'
 contact = 'mailto:critical@fault.io'
 
+types = {
+	'instrumentation': 'extension',
+	'inspection': 'executable',
+}
+
 parameters = {
 	# For bin.delineate.
 	'clang-library-path':
