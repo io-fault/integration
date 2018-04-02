@@ -1,6 +1,6 @@
 """
 # Factors library providing high level access to the structuring and formatting routines
-# used to construct a Product View.
+# used to construct a Product Snapshot.
 """
 import typing
 import itertools
