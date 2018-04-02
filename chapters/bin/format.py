@@ -16,7 +16,7 @@ from ...filesystem import library as libfs
 
 from .. import library as libfactors
 
-def main(source, target, metrics=None, suffix='.html'):
+def main(source, target, suffix='.html'):
 	src = os.path.realpath(source)
 	structs = libfs.Dictionary.open(src)
 	formats = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
@@ -36,13 +36,8 @@ def main(source, target, metrics=None, suffix='.html'):
 
 		for k, r in index.items():
 			ek = k.encode('utf-8')
-			pek = b'profile:' + ek
 			output = formats.route(ek)
-
-			if metrics is not None and metrics.has_key(pek):
-				spd = str(metrics.route(pek))
-			else:
-				spd = ''
+			spd = ''
 
 			try:
 				rtf = libfactors.transform(str(r),
