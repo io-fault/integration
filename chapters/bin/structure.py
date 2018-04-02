@@ -15,38 +15,17 @@ import importlib.machinery
 import pickle
 from copy import deepcopy
 
-from ...development import xml as devxml
-from ...development import library as libdev
 from ...system import libfactor
+from ...system import library as libsys
+
+from ...development import xml as devxml
+from ...development import cc
 from ...routes import library as libroutes
 from ...xml import libfactor as xmlfactor
 from ...filesystem import library as libfs
 from ...xml import library as libxml
 lxml = xmlfactor.lxml
 fragments_ns = devxml.namespaces['fragments']
-
-def join_metrics(xml, document, metrics, test, project, cname, key):
-	elements = devxml.materialize_metrics(xml, metrics, test, str(project), cname, key)
-
-	dq = lxml.Query(document, {'f': fragments_ns})
-	r = dq.first('/f:factor')
-	if r is None:
-		return
-	r = r.first('f:module|f:chapter|f:document|f:void')
-	if r is None:
-		return
-
-	r = r.element
-
-	for x in elements:
-		if x:
-			sub = xmlfactor.etree.fromstring(b''.join(x))
-			r.addprevious(sub)
-
-	return dq
-
-def module_fragments(route):
-	pass
 
 def emit(fs, key, iterator):
 	r = fs.route(key)
@@ -58,7 +37,7 @@ def emit(fs, key, iterator):
 		# to be interpolated without knowning the declaration size.
 		f.writelines(iterator)
 
-def copy(ctx, target, package, metrics):
+def copy(ctx, target, package):
 	"""
 	# Copy the extracted fragments from the given package into the &target.
 
@@ -71,10 +50,7 @@ def copy(ctx, target, package, metrics):
 
 	docs = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 	pkg = import_r(package)
-	pkgset = list(libdev.gather_simulations([pkg]))
-
-	if metrics is not None and isinstance(metrics, str):
-		metrics = libfs.Dictionary.open(metrics)
+	pkgset = list(cc.gather_simulations([pkg]))
 
 	# Extension modules being an effect of inductence, the documentation
 	# must be extracted at structure time.
@@ -103,7 +79,7 @@ def copy(ctx, target, package, metrics):
 		])
 
 		vars, mech = ctx.select(f.domain)
-		refs = libdev.references(f.dependencies())
+		refs = cc.references(f.dependencies())
 
 		f_sources = list(f.link(dict(vars), ctx, mech, refs, ()))
 		if not f_sources:
@@ -165,10 +141,10 @@ def copy(ctx, target, package, metrics):
 			if iscomposite:
 				ctx_element = rroot.first('f:context').element
 
-				cf = libdev.Factor(None, rroute.module(), None)
+				cf = cc.Factor(None, rroute.module(), None)
 				print('composite:', cf.module.__name__, cf.domain)
 				vars, mech = ctx.select(cf.domain)
-				refs = libdev.references(cf.dependencies())
+				refs = cc.references(cf.dependencies())
 
 				c_sources = list(cf.link(dict(vars), ctx, mech, refs, ()))
 				if not c_sources:
@@ -194,7 +170,7 @@ def copy(ctx, target, package, metrics):
 						# Ignore dot files.
 						continue
 
-					lang = libdev.languages.get(z.extension)
+					lang = cc.languages.get(z.extension)
 					suffix = str(z)[prefix_len+1:]
 					fkey = (cname + '/' + suffix)
 					print(fkey)
@@ -235,35 +211,25 @@ def copy(ctx, target, package, metrics):
 
 						ckey = fkey.encode('utf-8')
 						xml = libxml.Serialization(xml_prefix='f:')
-						dq = join_metrics(xml, doc, metrics, False, project, cname, ckey)
-						if dq is not None:
-							cov = dq.first('/f:factor/coverage')
-							if cov is not None:
-								cov.element.attrib['xmlns'] = fragments_ns
 						lxml.etree.cleanup_namespaces(r.element)
 						emit(docs, ckey, lxml.etree.tostringlist(doc, method='xml', encoding='utf-8'))
 					except Exception as exc:
 						# XXX: Reveal exception in document.
 						print('factor_xml exception', xis, exc)
-			# </if iscomposite>
+			# </iscomposite>
 
 			if in_tests and rroot is not None:
 				rroot.element.attrib['type'] = 'tests'
 			xml = libxml.Serialization()
-			join_metrics(xml, rdoc, metrics, in_tests, project, cname, rkey)
 			emit(docs, rkey, lxml.etree.tostringlist(rdoc, method='xml', encoding='utf-8'))
 
 def main(inv):
-	target, package, *args = inv.args
-	if args:
-		metrics, = args
-	else:
-		metrics = None
-	del args
+	target, package = inv.args
 
-	ctx = libdev.Context.from_environment()
-	copy(ctx, target, package, metrics)
-	sys.exit(0)
+	ctx = cc.Context.from_environment() # inspect
+	copy(ctx, target, package)
+
+	return inv.exit(0)
 
 if __name__ == '__main__':
 	libsys.control(main, libsys.Invocation.system())
