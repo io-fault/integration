@@ -104,7 +104,7 @@ def instrumentation(llvm_config_path, merge_path=None, tool_name='llvm'):
 
 	yield (tool_name+'/coverage', None, refparams)
 
-def inspection(incdir, libdir, libname, tool_name='llvm'):
+def delineation(incdir, libdir, libname, tool_name='llvm'):
 	"""
 	# Construct the Reference Parameter factors
 	"""
@@ -121,4 +121,4 @@ def inspection(incdir, libdir, libname, tool_name='llvm'):
 		}
 	}
 
-	yield (tool_name+'/inspection', None, {'factors': r})
+	yield (tool_name+'/delineation', None, {'factors': r})

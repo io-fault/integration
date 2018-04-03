@@ -1,6 +1,6 @@
-[ inspection ]
+[ delineation ]
 
-libclang Inspection executable.
+libclang delineation executable.
 
 /__main__.py
 	#!/pl/python
@@ -16,8 +16,8 @@ libclang Inspection executable.
 	#!/pl/python
 		__factor_domain__ = 'system'
 		__factor_type__ = 'executable'
-		from fragments.llvm import inspection
-		requirements = ('llvm/inspection',)
+		from fragments.llvm import delineation
+		requirements = ('llvm/delineation',)
 
 /src
 	/executable.c

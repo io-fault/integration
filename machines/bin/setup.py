@@ -1,9 +1,10 @@
 """
-# Extend metrics or inspect construction contexts with adapters built against the selected LLVM implementation.
+# Extend metrics or delineation construction contexts with adapters built against the selected
+# LLVM implementation.
 
 # The setup process will modify the tool support context referenced by the target construction context.
 # The instrumentation tooling requires various LLVM libraries for extracting coverage counters,
-# and the inspection tooling requires (system/library)`libclang` and clang includes.
+# and the delineation tooling requires (system/library)`libclang` and clang includes.
 
 # [ Engineering ]
 # The implementation depends on the Construction Context instance being
@@ -11,6 +12,7 @@
 # Python, the context implementation should be variable such that context
 # extension interface are used rather than presuming the implementation.
 """
+
 import sys
 import importlib
 import itertools
@@ -97,7 +99,7 @@ def rewrite_mechanisms(route:libroutes.File, tool_name:str):
 	return cc.update_named_mechanism(route, tool_name, data)
 
 def instantiate_software(dst, package, subpackage, name, template, type, fault='fault'):
-	# Initiialize llvm instrumentation or inspection tooling inside the target context.
+	# Initiialize llvm instrumentation or delineation tooling inside the target context.
 	ctxpy = dst / 'lib' / 'python'
 
 	command = [
@@ -107,6 +109,7 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 		str(template), 'context', type,
 	]
 
+	print(command)
 	pid, status, data = libsys.effect(libsys.KInvocation(sys.executable, command))
 	if status != 0:
 		sys.stderr.write("! ERROR: tool instantiation failed\n")
@@ -117,9 +120,9 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 		sys.stderr.buffer.writelines(b"\t\t" + x + b"\n" for x in data.split(b"\n"))
 		raise SystemExit(1)
 
-def inspect(inv, fault, ctx, ctx_route, ctx_params):
+def delineation(inv, fault, ctx, ctx_route, ctx_params):
 	"""
-	# Initialize the syntax tooling for inspect construction contexts.
+	# Initialize the syntax tooling for delineation construction contexts.
 	"""
 	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
 
@@ -128,7 +131,7 @@ def inspect(inv, fault, ctx, ctx_route, ctx_params):
 	imp = libroutes.Import.from_fullname(__package__).container
 	tmpl = imp / 'templates'
 
-	instantiate_software(ctx_route, 'f_syntax', 'bin', tool_name, tmpl, 'inspection')
+	instantiate_software(ctx_route, 'f_syntax', 'bin', tool_name, tmpl, 'delineation')
 
 	# Identify target parameter set.
 	build_ctx = (ctx_route / 'context')
@@ -162,7 +165,7 @@ def inspect(inv, fault, ctx, ctx_route, ctx_params):
 		incdir = prefix / 'include'
 		args = (incdir, libdir, 'clang')
 
-	for k, a, v in query.inspection(*(map(str, args))):
+	for k, a, v in query.delineation(*(map(str, args))):
 		path = (build_ctx / 'parameters').extend(k.split('/')).suffix('.xml')
 		cc.Parameters.store(path, a, v)
 
@@ -226,8 +229,8 @@ def main(inv:libsys.Invocation):
 
 	if ctx_intention == 'metrics':
 		return metrics(inv, fault, ctx, ctx_route, ctx_params)
-	elif ctx_intention == 'inspect':
-		return inspect(inv, fault, ctx, ctx_route, ctx_params)
+	elif ctx_intention == 'delineation':
+		return delineation(inv, fault, ctx, ctx_route, ctx_params)
 	else:
 		sys.stderr.write("! ERROR: unsupported context with %r intention\n" %(ctx_intention,))
 		return inv.exit(1)
