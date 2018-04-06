@@ -1,4 +1,4 @@
-identity = 'http://fault.io/src/python/fragments/llvm'
+identity = 'http://fault.io/src/development/adapters/llvm'
 name = 'llvm'
 abstract = 'Delineation and coverage tools for system factors'
 icon = '<http://llvm.org>'

@@ -16,7 +16,7 @@ libclang delineation executable.
 	#!/pl/python
 		__factor_domain__ = 'system'
 		__factor_type__ = 'executable'
-		from fragments.llvm import delineation
+		from kit.adapters.llvm import delineation
 		requirements = ('llvm/delineation',)
 
 /src
@@ -33,7 +33,7 @@ Counter extraction extension using LLVM's coverage libraries.
 	#!/pl/python
 		__factor_domain__ = 'system'
 		__factor_type__ = 'extension'
-		from fragments.llvm import instrumentation
+		from kit.adapters.llvm import instrumentation
 		requirements = ('python', 'llvm/coverage')
 		pl = {
 			'c++': ('c++11', set())
