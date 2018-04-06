@@ -10,7 +10,7 @@ import subprocess
 from fault.routes import library as libroutes
 from fault.system import library as libsys
 from fault.xml import libfactor, library as libxml
-from fault.development import fragments
+from ....construct import fragments
 from .. import xslt
 
 inner_call = 'f_syntax.bin.llvm'

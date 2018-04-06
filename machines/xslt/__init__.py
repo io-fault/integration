@@ -5,7 +5,7 @@ from fault.xml import libfactor
 from fault.chronometry import library as libtime
 from fault.chronometry import metric
 from fault.text import library as libtext
-from fault.development import fragments
+from ....construct import fragments
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):

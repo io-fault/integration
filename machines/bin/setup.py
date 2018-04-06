@@ -8,7 +8,7 @@
 
 # [ Engineering ]
 # The implementation depends on the Construction Context instance being
-# that of &fault.development.cc. While the engine may need to be
+# that of &..construct.cc. While the engine may need to be
 # Python, the context implementation should be variable such that context
 # extension interface are used rather than presuming the implementation.
 """
@@ -20,7 +20,7 @@ from .. import query
 
 from fault.system import library as libsys
 from fault.routes import library as libroutes
-from fault.development import cc
+from ....construct import cc
 
 transform_tool_name = 'tool:llvm-clang'
 tool_name = 'llvm'

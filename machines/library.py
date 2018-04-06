@@ -11,9 +11,10 @@ import itertools
 import collections
 
 from fault.routes import library as libroutes
-from fault.development import coverage
-from fault.development import metrics
 from fault.system import library as libsys
+
+from ...construct import coverage
+from ...construct import metrics
 
 def postprocess(path, output, *inputs, name='llvm-profdata'):
 	"""
