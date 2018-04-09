@@ -1,6 +1,6 @@
 """
 # Publish the structures and formatted data.
-# Essentially, convert the directories created by &.bin.structure and &.bin.format
+# Essentially, convert the directories created by &..development.bin.stitch and &.bin.format
 # into a set of static uncompressed files that may be directly accessed.
 """
 

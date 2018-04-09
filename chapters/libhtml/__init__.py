@@ -4,10 +4,10 @@
 __factor_domain__ = 'xml'
 __factor_type__ = 'library'
 
-from ...xml import libfactor
-from ...computation import library as libc
-from ...chronometry import library as libtime
-from ...chronometry import metric
+from fault.xml import libfactor
+from fault.range import library as librange
+from fault.chronometry import library as libtime
+from fault.chronometry import metric
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):
@@ -17,11 +17,11 @@ class Factor(libfactor.XPathModule):
 	"""
 	# Support for operations that would be difficult in some fashion if written in XSLT.
 	"""
-	RangeSet = libc.range.Set
-	IRange = libc.range.IRange
+	RangeSet = librange.Set
+	IRange = librange.IRange
 
 	import builtins
-	from ...routes import library as libroutes
+	from fault.routes import library as libroutes
 
 	def reference(self, context, string, split=libroutes.Import.from_attributes):
 		"""

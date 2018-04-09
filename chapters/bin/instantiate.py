@@ -5,12 +5,12 @@ import os.path
 import sys
 
 from ...development import cc as libdev
+from ...development.bin import stitch
 from ...system import library as libsys
 from ...filesystem import library as libfs
 from ...routes import library as libroutes
 from ...system import libfactor
 
-from . import structure
 from . import format
 
 from .. import theme
@@ -35,7 +35,7 @@ def main(inv):
 
 	packages = state_fsd[b'metrics:packages'].decode('utf-8').split('\n')
 	for package in packages:
-		structure.copy(ctx, str(structs), package, state)
+		stitch.copy(ctx, str(structs), package, state)
 		format.main(str(structs), str(formats), suffix="")
 
 	# temporary for the index.xml file
