@@ -13,8 +13,7 @@ import collections
 from fault.routes import library as libroutes
 from fault.system import library as libsys
 
-from ...integrate import coverage
-from ...integrate import metrics
+from ...factors import metrics
 
 def postprocess(path, output, *inputs, name='llvm-profdata'):
 	"""

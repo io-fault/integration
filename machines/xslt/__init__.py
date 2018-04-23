@@ -2,11 +2,11 @@
 # Transformation to &fault.factors XML for &.bin.inspect output.
 """
 from fault.xml import libfactor
-from fault.chronometry import library as libtime
-from fault.chronometry import metric
+from fault.time import library as libtime
+from fault.time import metric
 from fault.text import library as libtext
 
-from ....integrate import fragments
+from ....factors import fragments
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):

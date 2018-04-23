@@ -12,7 +12,7 @@ from fault.system import library as libsys
 from fault.xml import libfactor, library as libxml
 from .. import xslt
 
-from ....integrate import fragments
+from ....factors import fragments
 
 inner_call = 'f_syntax.bin.llvm'
 def main(inv):
