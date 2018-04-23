@@ -6,8 +6,8 @@ __factor_type__ = 'library'
 
 from fault.xml import libfactor
 from fault.range import library as librange
-from fault.chronometry import library as libtime
-from fault.chronometry import metric
+from fault.time import library as libtime
+from fault.time import metric
 
 namespace = 'http://fault.io/xml/fragments'
 def name(name_string):
