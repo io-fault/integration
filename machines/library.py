@@ -56,6 +56,26 @@ class Probe(metrics.Probe):
 		finally:
 			pass
 
+	def transmit(self, imports, measures):
+		import sys
+
+		for module_name in imports:
+			if module_name not in sys.modules:
+				continue
+
+			module = sys.modules[module_name]
+
+			if '_fault_metrics_write' in module.__dict__:
+				module._llvm_metrics_path = str(measures / self.name / module.__name__)
+				module._fault_metrics_set_path(module._llvm_metrics_path)
+				module._fault_metrics_write()
+				module._fault_metrics_reset()
+				module._fault_metrics_set_path(str(measures/'.llvm.profraw'))
+
+	def reconnect(self, measures, process_data, finder):
+		import atexit
+		atexit.register(self.transmit, set(finder.extension_redirects), process_data)
+
 	@contextlib.contextmanager
 	def connect(self, harness, measures):
 		try:
@@ -63,14 +83,7 @@ class Probe(metrics.Probe):
 			os.environ['LLVM_PROFILE_FILE'] = str(measures / '.llvm.profraw')
 			yield None
 		finally:
-			data = collections.defaultdict(collections.Counter)
-			for module in harness.imports:
-				if '_fault_metrics_write' in module.__dict__:
-					module._llvm_metrics_path = str(measures / self.name / module.__name__)
-					module._fault_metrics_set_path(module._llvm_metrics_path)
-					module._fault_metrics_write()
-					module._fault_metrics_reset()
-					module._fault_metrics_set_path(str(measures/'.llvm.profraw'))
+			self.transmit(harness.imports, measures)
 
 	def project(self, telemetry, route, frames):
 		data = collections.defaultdict(dict)
