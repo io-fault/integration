@@ -112,7 +112,7 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 	print(command)
 	pid, status, data = libsys.effect(libsys.KInvocation(sys.executable, command))
 	if status != 0:
-		sys.stderr.write("! ERROR: tool instantiation failed\n")
+		sys.stderr.write("! ERROR: adapter tool instantiation failed\n")
 		sys.stderr.write("\t/command\n\t\t" + " ".join(command) + "\n")
 		sys.stderr.write("\t/status\n\t\t" + str(status) + "\n")
 
@@ -120,18 +120,14 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 		sys.stderr.buffer.writelines(b"\t\t" + x + b"\n" for x in data.split(b"\n"))
 		raise SystemExit(1)
 
-def delineation(inv, fault, ctx, ctx_route, ctx_params):
+def fragments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the syntax tooling for delineation construction contexts.
 	"""
-	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
-
-	args = inv.args
-
 	imp = libroutes.Import.from_fullname(__package__).container
 	tmpl = imp / 'templates'
 
-	instantiate_software(ctx_route, 'f_syntax', 'bin', tool_name, tmpl, 'delineation')
+	instantiate_software(ctx_route, 'f_intention', 'bin', tool_name, tmpl, 'delineation')
 
 	# Identify target parameter set.
 	build_ctx = (ctx_route / 'context')
@@ -171,21 +167,16 @@ def delineation(inv, fault, ctx, ctx_route, ctx_params):
 
 	cc.update_named_mechanism(ctx_route / 'mechanisms' / 'intent.xml', tool_name, data)
 
-	return inv.exit(0)
-
-def metrics(inv, fault, ctx, ctx_route, ctx_params):
+def instruments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the instrumentation tooling for metrics contexts.
 	"""
-	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
 	mech = (ctx_route / 'mechanisms' / 'intent.xml')
-
-	args = inv.args
 
 	imp = libroutes.Import.from_fullname(__package__).container
 	tmpl = imp / 'templates'
 
-	instantiate_software(ctx_route, 'f_telemetry', 'extensions', tool_name, tmpl, 'instrumentation')
+	instantiate_software(ctx_route, 'f_intention', 'extensions', tool_name, tmpl, 'instrumentation')
 
 	# Identify target parameter set.
 	build_ctx = ctx_route / 'context'
@@ -216,9 +207,8 @@ def metrics(inv, fault, ctx, ctx_route, ctx_params):
 			'constructor': '.'.join((library.__name__, library.Probe.__qualname__)),
 		}
 	)
-	rewrite_mechanisms(mech, tool_name)
 
-	return inv.exit(0)
+	rewrite_mechanisms(mech, tool_name)
 
 def main(inv:libsys.Invocation):
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
@@ -227,13 +217,15 @@ def main(inv:libsys.Invocation):
 	ctx_params = ctx.parameters.load('context')[-1]
 	ctx_intention = ctx_params['intention']
 
-	if ctx_intention == 'metrics':
-		return metrics(inv, fault, ctx, ctx_route, ctx_params)
-	elif ctx_intention == 'delineation':
-		return delineation(inv, fault, ctx, ctx_route, ctx_params)
+	if ctx_intention == 'instruments':
+		instruments(inv.args, fault, ctx, ctx_route, ctx_params)
+	elif ctx_intention == 'fragments':
+		fragments(inv.args, fault, ctx, ctx_route, ctx_params)
 	else:
-		sys.stderr.write("! ERROR: unsupported context with %r intention\n" %(ctx_intention,))
-		return inv.exit(1)
+		# default
+		pass
+
+	return inv.exit(0)
 
 if __name__ == '__main__':
 	libsys.control(main, libsys.Invocation.system(environ=('FAULT_CONTEXT_NAME', 'CONTEXT')))

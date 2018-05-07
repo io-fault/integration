@@ -50,7 +50,7 @@ class Probe(metrics.Probe):
 		r = None
 
 		try:
-			self.module = importlib.import_module('f_telemetry.'+self.name)
+			self.module = importlib.import_module('f_intention.'+self.name)
 			os.environ['LLVM_PROFILE_FILE'] = str(telemetry / '.llvm.profraw')
 			r = (yield None)
 		finally:
