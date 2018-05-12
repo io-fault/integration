@@ -1,14 +1,13 @@
-identity = 'http://fault.io/src/development/adapters/llvm'
+identity = 'http://fault.io/engineering/adapters/llvm'
 name = 'llvm'
-abstract = 'Delineation and coverage tools for system factors'
+abstract = 'LLVM based compilation, delineation, and coverage tools'
 icon = '<http://llvm.org>'
 
-fork = 'green'
 versioning = 'continuous'
 status = 'flux'
 
 controller = 'fault.io'
-contact = 'mailto:critical@fault.io'
+contact = 'http://fault.io/critical'
 
 types = {
 	'instrumentation': 'extension',
