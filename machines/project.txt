@@ -1,0 +1,22 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project>
+
+/identity/
+	`http://fault.io/engineering/adapters.host`
+/name/
+	`host`
+/abstract/
+	Compilation and linker command constructors for the host system
+/icon/
+	- (emoji)`🖥`
+
+/versioning/
+	continuous
+/status/
+	flux
+
+/controller/
+	fault.io
+/contact/
+	&<http://fault.io/critical>
