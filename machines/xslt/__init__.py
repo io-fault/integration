@@ -36,7 +36,7 @@ class Factor(libfactor.XPathModule):
 		"""
 		start = b'<f:doc xmlns:f="' \
 			+ namespace.encode('utf-8') \
-			+ b'" xmlns:txt="http://fault.io/xml/text">'
+			+ b'" xmlns:txt="http://if.fault.io/xml/text">'
 
 		if not string:
 			return ()
