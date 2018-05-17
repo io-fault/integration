@@ -2,8 +2,8 @@
 	/protocol/
 		&<http://if.fault.io/project>
 
-/identity/
-	`http://fault.io/engineering/adapters.host`
+/identifier/
+	&<http://fault.io/engineering/adapters.host>
 /name/
 	`host`
 /abstract/
