@@ -119,7 +119,7 @@ def dynamic(paths):
 
 	return system
 
-def intent(args, fault, ctx, ctx_route, ctx_params):
+def install(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the instrumentation tooling for instruments contexts.
 	"""
