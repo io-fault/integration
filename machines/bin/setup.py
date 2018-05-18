@@ -210,21 +210,23 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 
 	rewrite_mechanisms(mech, tool_name)
 
+def install(args, fault, ctx, ctx_route, ctx_params):
+	"""
+	# Initialize the context for using LLVM respecting the intention.
+	"""
+	ctx_intention = ctx_params['intention']
+
+	if ctx_intention == 'instruments':
+		instruments(args, fault, ctx, ctx_route, ctx_params)
+	elif ctx_intention == 'fragments':
+		fragments(args, fault, ctx, ctx_route, ctx_params)
+
 def main(inv:libsys.Invocation):
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
 	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
 	ctx = cc.Context.from_directory(ctx_route)
 	ctx_params = ctx.parameters.load('context')[-1]
-	ctx_intention = ctx_params['intention']
-
-	if ctx_intention == 'instruments':
-		instruments(inv.args, fault, ctx, ctx_route, ctx_params)
-	elif ctx_intention == 'fragments':
-		fragments(inv.args, fault, ctx, ctx_route, ctx_params)
-	else:
-		# default
-		pass
-
+	install(inv.args, fault, ctx, ctx_route, ctx_params)
 	return inv.exit(0)
 
 if __name__ == '__main__':
