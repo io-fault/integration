@@ -2,7 +2,7 @@
 # Host directory defaults and information supporting Construction Context initialization.
 
 # The data and functions here solely support initialization for the default host domain.
-# Command constructors used by the CC's normally exist platform specific modules adjacent to this.
+# Command constructors used by the mechanisms normally exist as platform specific modules adjacent to this.
 """
 import os
 import typing
