@@ -199,12 +199,12 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	b_params = cc.Parameters([root])
 	name, auth, cov = b_params.load('llvm/coverage')
 
-	from .. import library # For Probe constructor addressing.
+	from .. import coverage # For Probe constructor addressing.
 	tool_data = ctx_route / 'parameters' / 'tools' / (tool_name + '.xml')
 	cc.Parameters.store(tool_data, None, {
 			'source': cov['source'],
 			'merge': cov['merge'],
-			'constructor': '.'.join((library.__name__, library.Probe.__qualname__)),
+			'constructor': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
 		}
 	)
 
