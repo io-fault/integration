@@ -138,7 +138,7 @@ def main(inv:libsys.Invocation) -> libsys.Exit:
 	ctx_params = ctx.parameters.load('context')[-1]
 	ctx_intention = ctx_params['intention']
 
-	intent(inv.args, fault, ctx, ctx_route, ctx_params)
+	install(inv.args, fault, ctx, ctx_route, ctx_params)
 	return inv.exit(0)
 
 if __name__ == '__main__':
