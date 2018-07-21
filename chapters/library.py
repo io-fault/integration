@@ -5,7 +5,9 @@
 import typing
 import itertools
 
-from ..routes import library as libroutes
+from ..system import files
+from ..system import python
+
 from ..filesystem import library as libfs
 from ..text import library as libtext
 from ..system import libfactor
@@ -24,15 +26,15 @@ def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 	# Load the inspect processed factor.
 
 	# [Parameters]
-	# /xml
+	# /xml/
 		# The XML document containing the constructed inspect output.
 
 	# [Returns]
 
 	# /&tuple
-		# /(&object)`0`
+		# /(&object)`0`/
 			# Command Parameters.
-		# /(&set)`1`
+		# /(&set)`1`/
 			# The set of sources.
 	"""
 
@@ -48,7 +50,7 @@ def extract_inspect(xml, href='{%s}href' %(namespaces['xlink'],)):
 
 	# Source file.
 	sources = e.findall("./inspect:source", namespaces)
-	sources = [libroutes.File.from_absolute(x.attrib[href].replace('file://', '', 1)) for x in sources]
+	sources = [files.Path.from_absolute(x.attrib[href].replace('file://', '', 1)) for x in sources]
 
 	return s, sources
 
@@ -68,9 +70,9 @@ def construct_corpus_map(directory, index):
 	return b''.join(content)
 
 def factors(package:str) -> typing.Tuple[
-		libroutes.Import,
-		typing.Sequence[libroutes.Import],
-		typing.Sequence[libroutes.Import]
+		python.Import,
+		typing.Sequence[python.Import],
+		typing.Sequence[python.Import]
 	]:
 	"""
 	# Construct and return the factors (modules and packages) contained within
@@ -78,22 +80,22 @@ def factors(package:str) -> typing.Tuple[
 
 	# [ Returns ]
 	# `(root, (packages, modules))`; where root is the &package parameter
-	# as an &libroutes.Import.
+	# as an &python.Import.
 
 	# All objects are &..routes.library.Import instances pointing to the module.
 
 	# [ Parameters ]
 
-	# /package
+	# /package/
 		# The path to the package.
 	"""
 
-	root = libroutes.Import.from_fullname(package)
+	root = python.Import.from_fullname(package)
 	return (root, root.tree())
 
-def fractions(packages:libroutes.Import) -> typing.Mapping[
-		libroutes.Import,
-		typing.Sequence[libroutes.Import],
+def fractions(packages:python.Import) -> typing.Mapping[
+		python.Import,
+		typing.Sequence[python.Import],
 	]:
 	"""
 	# Construct a mapping detailing the factors that consist of a set of fractions.
@@ -101,11 +103,11 @@ def fractions(packages:libroutes.Import) -> typing.Mapping[
 	# build targets.
 
 	# [ Returns ]
-	# The constructed mapping. The keys are the &libroutes.Import instances,
+	# The constructed mapping. The keys are the &python.Import instances,
 	# and the values are sequences.
 
 	# [ Parameters ]
-	# /packages
+	# /packages/
 		# The set of factor packages to inspect in order to find the associated fractions.
 	"""
 

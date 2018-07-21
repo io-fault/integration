@@ -12,7 +12,7 @@
 	xmlns:str="http://exslt.org/strings"
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:t="http://fault.io/xml/test"
-	xmlns:txt="http://fault.io/xml/text"
+	xmlns:txt="http://if.fault.io/xml/text"
 	xmlns:py="http://fault.io/xml/data"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"

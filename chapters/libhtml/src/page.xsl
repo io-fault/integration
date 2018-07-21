@@ -6,7 +6,7 @@
 	xmlns:exsl="http://exslt.org/common"
 	xmlns:str="http://exslt.org/strings"
 	xmlns:t="http://fault.io/xml/test"
-	xmlns:txt="http://fault.io/xml/text"
+	xmlns:txt="http://if.fault.io/xml/text"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"
 	xmlns:fault="http://fault.io/xml/xpath"

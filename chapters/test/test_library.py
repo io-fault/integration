@@ -1,6 +1,6 @@
 from .. import library
 from ...xml import lxml
-libroutes = library.libroutes
+from ...system import files
 
 def test_XSLT_access(test):
 	pass
@@ -32,8 +32,8 @@ def test_extract_inspect(test):
 	t += b'</introspection>'
 	xml = lxml.etree.XML(t).getroottree()
 
-	f1 = libroutes.File.from_absolute('/test/f1')
-	f2 = libroutes.File.from_absolute('/test/f2')
+	f1 = files.Path.from_absolute('/test/f1')
+	f2 = files.Path.from_absolute('/test/f2')
 	test/library.extract_inspect(xml) == ({}, [f1, f2])
 
 if __name__ == '__main__':

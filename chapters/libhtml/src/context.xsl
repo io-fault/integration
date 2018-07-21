@@ -8,7 +8,7 @@
 	xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 	xmlns:ctl="http://fault.io/xml/control"
 	xmlns:t="http://fault.io/xml/test"
-	xmlns:txt="http://fault.io/xml/text"
+	xmlns:txt="http://if.fault.io/xml/text"
 	xmlns:idx="http://fault.io/xml/filesystem#index"
 	xmlns:ctx="http://fault.io/xml/factor#context"
 	xmlns:func="http://exslt.org/functions"

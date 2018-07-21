@@ -21,9 +21,9 @@ class Factor(libfactor.XPathModule):
 	IRange = librange.IRange
 
 	import builtins
-	from fault.routes import library as libroutes
+	from fault.system import python
 
-	def reference(self, context, string, split=libroutes.Import.from_attributes):
+	def reference(self, context, string, split=python.Import.from_attributes):
 		"""
 		# Return a node-set containing the real module path and the attributes following
 		# the module.

@@ -11,7 +11,8 @@ import lzma
 import types
 import importlib.machinery
 
-from ...routes import library as libroutes
+from ...system import files
+
 from ...xml import library as libxml
 from ...filesystem import library as libfs
 
@@ -37,7 +38,7 @@ def path(out, factor, extension):
 def main(structs, formatting, output):
 	structs = os.path.realpath(structs)
 	formatting = os.path.realpath(formatting)
-	out = libroutes.File.from_absolute(os.path.realpath(output))
+	out = files.Path.from_absolute(os.path.realpath(output))
 	out.init('directory')
 
 	sd = libfs.Dictionary.open(structs)

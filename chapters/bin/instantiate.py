@@ -4,12 +4,13 @@
 import os.path
 import sys
 
-from ...development import cc as libdev
-from ...development.bin import stitch
-from ...system import library as libsys
-from ...filesystem import library as libfs
-from ...routes import library as libroutes
+from ...system import process
+from ...system import files
 from ...system import libfactor
+
+from ...factors import cc as libdev
+from ...factors.bin import stitch
+from ...filesystem import library as libfs
 
 from . import format
 
@@ -17,11 +18,11 @@ from .. import theme
 from .. import libif
 from .. import library
 
-def main(inv):
+def main(inv:process.Invocation) -> process.Exit:
 	target, state = inv.args
 	ctx = libdev.Context.from_environment()
-	state_fsd = libfs.Dictionary.use(libroutes.File.from_path(state))
-	r = libroutes.File.from_path(target)
+	state_fsd = libfs.Dictionary.use(files.Path.from_path(state))
+	r = files.Path.from_path(target)
 
 	structs = r / 'text' / 'xml'
 	formats = r / 'text' / 'html'
@@ -39,7 +40,7 @@ def main(inv):
 		format.main(str(structs), str(formats), suffix="")
 
 	# temporary for the index.xml file
-	with libroutes.File.temporary() as tr:
+	with files.Path.temporary() as tr:
 		index = {
 			k.decode('utf-8'): r
 			for k, r in xml.references()
@@ -71,4 +72,4 @@ def main(inv):
 	sys.exit(0)
 
 if __name__ == '__main__':
-	libsys.control(main, libsys.Invocation.system())
+	process.control(main, process.Invocation.system())
