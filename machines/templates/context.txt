@@ -1,0 +1,40 @@
+[ delineation ]
+
+libclang based delineation executable.
+
+/factor.txt/#!/text
+	! CONTEXT:
+		/protocol/
+			&<http://if.fault.io/project/factor>
+	/type/
+		`executable`
+	/symbols/
+		- `fault:c-interfaces`
+		- `-llvm-delineation-libclang`
+		- `kit-llvm-delineation`
+/src/
+	/executable.c/#!/pl/c
+		#include <xml.c>
+		#include <main.c>
+
+[ instrumentation ]
+
+Counter extraction extension using LLVM's coverage libraries.
+
+/factor.txt/#!/text
+	! CONTEXT:
+		/protocol/
+			&<http://if.fault.io/project/factor>
+	/type/
+		`extension`
+	/symbols/
+		- `fault:c-interfaces`
+		- `context:c++11`
+		- `python-extension`
+		- `-llvm-coverage-instrumentation`
+		- `kit-llvm-instrumentation`
+/src/
+	/llvm-coverage.cpp/#!/pl/c++
+		#include <coverage.cpp>
+	/python-module.c/#!/pl/c
+		#include <python.c>
