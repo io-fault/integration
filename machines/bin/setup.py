@@ -5,12 +5,14 @@ import sys
 import importlib
 import itertools
 
-from fault.system import library as libsys
-from fault.routes import library as libroutes
+from fault.system import process
+from fault.system import python
+from fault.system import files
+
 from ....factors import cc
 from .. import library
 
-tool_name = 'host'
+project = library.__package__
 
 def strings(x):
 	return tuple(map(str, [y for y in x if y]))
@@ -34,14 +36,14 @@ def apple_pie(select):
 	]
 
 def dynamic(paths):
-	root = libroutes.File.from_absolute('/')
+	root = files.Path.from_absolute('/')
 	ldname, ld = library.select(library.environ_paths(), library.linkers, library.linker_preference)
 
 	libdirs = [
-		libroutes.File.from_relative(root, str(x).strip('/'))
+		files.Path.from_relative(root, str(x).strip('/'))
 		for x in paths
 	]
-	libdirs.extend(map(libroutes.File.from_absolute, paths))
+	libdirs.extend(map(files.Path.from_absolute, paths))
 
 	# scan for system objects (crt1.o, crt0.o, etc)
 	found, missing = library.search(libdirs, [x+'.o' for x in library.runtime_objects])
@@ -55,6 +57,18 @@ def dynamic(paths):
 		'architecture': arch,
 		'alternates': alts,
 		'name': host,
+
+		'variants': {
+			'system': osname,
+			'architecture': arch,
+		},
+
+		'target-file-extensions': {
+			'library': '.so',
+			'extension': '.so',
+			'executable': '.exe',
+			'partial': '.fo',
+		},
 
 		# Format selected for factor-types.
 		'formats': {
@@ -97,9 +111,21 @@ def dynamic(paths):
 		'integrations': {
 			'tool:link-editor': {
 				'type': 'linker',
-				'interface': None,
+				'interface': project + '.apple.macos_link_editor',
 				'name': ldname,
 				'command': str(ld),
+			},
+			'library': {
+				'inherit': 'tool:link-editor',
+			},
+			'executable': {
+				'inherit': 'tool:link-editor',
+			},
+			'extension': {
+				'inherit': 'tool:link-editor',
+			},
+			'partial': {
+				'inherit': 'tool:link-editor',
 			},
 			None: None,
 		},
@@ -119,27 +145,29 @@ def dynamic(paths):
 
 	return system
 
+name = 'fault.host' # Name of mechanism entry.
 def install(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the instrumentation tooling for instruments contexts.
 	"""
 
-	mech = (ctx_route / 'mechanisms' / 'intent.xml')
-	imp = libroutes.Import.from_fullname(__package__).container
+	mech = (ctx_route / 'mechanisms' / name)
+	imp = python.Import.from_fullname(__package__).container
 
 	data = dynamic(library.default_library_paths)
 	data = {'host': data}
-	cc.update_named_mechanism(ctx_route / 'mechanisms' / 'intent.xml', tool_name, data)
+	data['system'] = {'inherit': 'host'}
+	cc.update_named_mechanism(mech, 'default', data)
 
-def main(inv:libsys.Invocation) -> libsys.Exit:
+def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
-	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
-	ctx = cc.Context.from_environment()
-	ctx_params = ctx.parameters.load('context')[-1]
+	ctx_route = files.Path.from_absolute(inv.environ['CONTEXT'])
+	ctx = cc.Context.from_directory(ctx_route)
+	ctx_params = ctx.index['context']
 	ctx_intention = ctx_params['intention']
 
 	install(inv.args, fault, ctx, ctx_route, ctx_params)
 	return inv.exit(0)
 
 if __name__ == '__main__':
-	libsys.control(main, libsys.Invocation.system(environ=('FAULT_CONTEXT_NAME', 'CONTEXT')))
+	process.control(main, process.Invocation.system(environ=('FAULT_CONTEXT_NAME', 'CONTEXT')))

@@ -9,15 +9,15 @@ import typing
 import types
 
 from fault.system import library as libsys
-from fault.routes import library as libroutes
+from fault.system import files
 
 # map path strings to routes
-def fs_routes(i:typing.Iterator[str]) -> typing.Sequence[libroutes.File]:
-	return list(map(libroutes.File.from_absolute, i))
+def fs_routes(i:typing.Iterator[str]) -> typing.Sequence[files.Path]:
+	return list(map(files.Path.from_absolute, i))
 
 def environ_paths(env='PATH', sep=os.pathsep):
 	"""
-	# Construct a sequence of &libroutes.File instances to the paths stored
+	# Construct a sequence of &files.Path instances to the paths stored
 	# in an environment variable. &os.environ is referred to upon
 	# each invocation, no caching is performed so each call represents
 	# the latest version.
@@ -45,7 +45,7 @@ def environ_paths(env='PATH', sep=os.pathsep):
 def search(
 		search_paths:typing.Sequence[str],
 		xset:typing.Set[str]
-	) -> typing.Tuple[typing.Mapping[str, libroutes.File], typing.Set[str]]:
+	) -> typing.Tuple[typing.Mapping[str, files.Path], typing.Set[str]]:
 	"""
 	# Query the sequence of search paths for the given set of files.
 

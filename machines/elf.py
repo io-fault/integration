@@ -1,5 +1,8 @@
 """
 # Command constructors for ELF systems.
+
+# This only contains constructors for GNU ld as it was the ubiquitous implementation
+# for ELF systems.
 """
 
 objects = {
@@ -9,6 +12,18 @@ objects = {
 	'partial': '.fo',
 	None: '.so',
 }
+
+def debug_isolate(target, objcopy, strip):
+	"""
+	# Isolate debugging information from the target.
+	"""
+	debugfile = target + '.debug'
+
+	return [
+		(objcopy, '--only-keep-debug', target, debugfile),
+		(strip, '--strip-debug', '--strip-unneeded', target),
+		(objcopy, '--add-gnu-debuglink', target, debug),
+	]
 
 def gnu_link_editor(
 		transform_mechanisms,
@@ -33,27 +48,17 @@ def gnu_link_editor(
 		use_shared='-Bdynamic',
 	):
 	"""
-	# Command constructor for the unix link editor. For platforms other than Darwin and
-	# Windows, this is the default interface indirectly selected by &.development.bin.configure.
+	# Command constructor for the GNU link editor. For platforms other than Darwin and
+	# Windows, this is often the default link editor.
 
 	# Traditional link editors have an insane characteristic that forces the user to decide what
 	# the appropriate order of archives are. The
 	# (system/command)`lorder` command was apparently built long ago to alleviate this while
 	# leaving the interface to (system/command)`ld` to be continually unforgiving.
-
-	# [ Parameters ]
-
-	# /output/
-		# The file system location to write the linker output to.
-
-	# /inputs/
-		# The set of object files to link.
-
-	# /verbose/
-		# Enable or disable the verbosity of the command. Defaults to &True.
 	"""
+
 	factor = build.factor
-	ftype = factor.type
+	f_type = factor.type
 	intention = build.variants['intention']
 	format = build.variants['format']
 	mech = build.mechanism.descriptor
@@ -61,22 +66,17 @@ def gnu_link_editor(
 	command = [None]
 	add = command.append
 	iadd = command.extend
+	add(verbose_flag)
 
-	if mech['integrations'][None].get('name') == 'lld':
-		add('-flavor')
-		add('gnu')
-	else:
-		add(verbose_flag)
-
-	loutput_type = type_map[ftype] # failure indicates bad type parameter to libfactor.load()
+	loutput_type = type_map[f_type] # failure indicates bad type parameter to libfactor.load()
 	if loutput_type:
 		add(loutput_type)
 
-	if ftype == 'partial':
+	if f_type == 'partial':
 		# partial is an incremental link. Most options are irrelevant.
 		command.extend(map(filepath, inputs))
 	else:
-		libs = [f for f in build.references[(factor.domain, 'library')]]
+		libs = [f for f in build.requirements[(factor.domain, 'library')]]
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
 		dirs = (x.integral() for x in libs)
@@ -91,7 +91,7 @@ def gnu_link_editor(
 			# Enable by default, but allow override.
 			add(allow_runpath)
 
-		prefix, suffix = mech['objects'][ftype][format]
+		prefix, suffix = mech['objects'][f_type][format]
 
 		command.extend(prefix)
 		command.extend(map(filepath, inputs))

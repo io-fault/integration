@@ -1,6 +1,7 @@
 """
-# Command constructors for apple hosts.
+# Command constructors for Apple (macOS) hosts.
 """
+from fault.computation import library as libc
 
 mach_objects = {
 	'executable': '.exe',
@@ -10,12 +11,19 @@ mach_objects = {
 	None: '.so',
 }
 
+def debug_isolate(target):
+	dtarget = target + '.dSYM'
+	return dtarget, [
+		('dsymutil', target, '-o', dtarget)
+	]
+
 def macos_link_editor(
 		transform_mechanisms,
 		build, adapter, o_type, output, i_type, inputs,
 		partials, libraries,
 		filepath=str,
 
+		minimum_macos='10.13.0',
 		pie_flag='-pie',
 		libdir_flag='-L',
 		rpath_flag='-rpath',
@@ -38,34 +46,38 @@ def macos_link_editor(
 	"""
 	# Command constructor for Mach-O link editor provided on Apple MacOS X systems.
 	"""
-	assert build.factor.domain == 'system'
 	factor = build.factor
+	f_type = factor.type
+	f_domain = factor.domain
+
 	sysarch = build.mechanism.descriptor['architecture']
 
-	command = [None, '-t', lto_preserve_exports, platform_version_flag, '10.13.0', '-arch', sysarch]
+	command = [None, '-t', lto_preserve_exports, platform_version_flag, minimum_macos, '-arch', sysarch]
 
-	intention = build.context.intention(None)
+	intention = build.context.intention
 	format = build.variants['format']
-	ftype = build.factor.type
 	mech = build.mechanism.descriptor
 
-	loutput_type = type_map[ftype]
+	loutput_type = type_map[f_type]
 	command.append(loutput_type)
-	if ftype == 'executable':
+	if f_type == 'executable':
 		if format == 'pie':
 			command.append(pie_flag)
 
-	if factor.type == 'partial':
-		# Fragments use a partial link.
+	if f_type == 'partial':
+		# partial targets do not need context.
 		command.extend(inputs)
 	else:
-		libs = [f for f in build.references[(factor.domain, 'library')]]
+		if f_type == 'extension':
+			command.extend(['-undefined', 'dynamic_lookup'])
+
+		libs = [f for f in build.requirements[(f_domain, 'library')]]
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
 		dirs = (x.integral() for x in libs)
 		command.extend([libdir_flag+filepath(x) for x in libc.unique(dirs, None)])
 
-		support = mech['objects'][ftype][format]
+		support = mech['objects'][f_type][format]
 		if support is not None:
 			prefix, suffix = support
 		else:
