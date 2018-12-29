@@ -35,9 +35,11 @@ print_xml_identifier(FILE *fp, char *str)
 	return print_xml_attribute(fp, "identifier", str);
 }
 
-/// Print arbitrary raw text in an element's body escaping
-/// any field separators as character entities. Numeric
-/// form is used to simplify the function.
+/**
+	# Print arbitrary raw text in an element's body escaping
+	# any field separators as character entities. Numeric
+	# form is used to simplify the function.
+*/
 int
 print_xml_text(FILE *fp, char *str)
 {

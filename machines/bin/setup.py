@@ -13,15 +13,22 @@
 # extension interface are used rather than presuming the implementation.
 """
 
+import os
 import sys
 import importlib
 import itertools
-from .. import query
+import pickle
 
 from fault.system import library as libsys
-from fault.routes import library as libroutes
-from ....factors import cc
+from fault.system import process
+from fault.system import python
+from fault.system import files
 
+from ....factors import cc
+from .. import query
+from .. import library
+
+name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
 tool_name = 'llvm'
 
@@ -31,9 +38,8 @@ def detect_profile_library(mechanism, architectures):
 	# the appropriate profile library to link against when building targets
 	# that consist of LLVM instrumented sources.
 	"""
-	cclib = libroutes.File.from_absolute(mechanism['libraries'])
-	files = cclib.subnodes()[1]
-	profile_libs = [x for x in files if 'profile' in x.identifier]
+	cclib = files.Path.from_absolute(mechanism['libraries'])
+	profile_libs = [x for x in cclib.files() if 'profile' in x.identifier]
 
 	if len(profile_libs) == 1:
 		# Presume target of interest.
@@ -54,31 +60,26 @@ def detect_profile_library(mechanism, architectures):
 
 clang_instrumentation_options = ('-fprofile-instr-generate', '-fcoverage-mapping')
 
-def rewrite_mechanisms(route:libroutes.File, tool_name:str):
+def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
 	"""
-	# Given a route to a core mechanism file in a metrics construction context,
-	# update the file with the necessary information about the profile requirement
-	# and the associated tooling.
+	# Add clang instrumentation options and resources.
 	"""
-	doc, merged = cc.Context.load_xml(route)
-	data = cc.load_named_mechanism(route, tool_name)
-
-	if not data:
-		data = {
-			'system': {
-				'transformations': {
-					'tool:llvm-clang': {
-						'resources': {
-							'profile': None
-						},
-						'options': [],
+	compiler = cc.load_named_mechanism(route, 'clang')
+	host = cc.load_named_mechanism(route.container/'fault.host', 'default')
+	data = {
+		'host': {
+			'transformations': {
+				transform_tool_name: {
+					'resources': {
+						'profile': None
 					},
-				}
+					'options': [],
+				},
 			}
 		}
+	}
 
-	instr_mech = merged['system']['transformations']['tool:llvm-clang']
-	tool_data = data['system']['transformations']['tool:llvm-clang']
+	tool_data = data['host']['transformations'][transform_tool_name]
 
 	# Add compilation arguments to generate instrumented objects.
 	options = tool_data['options']
@@ -87,16 +88,15 @@ def rewrite_mechanisms(route:libroutes.File, tool_name:str):
 			options.append(opt)
 
 	# Set profile entry if none.
-	stored_reqs = instr_mech['resources']
-	if stored_reqs.get('profile', None) is None:
-		arch = merged['system']['architecture']
-		profile = str(detect_profile_library(instr_mech, arch))
-		tool_data['resources']['profile'] = profile
+	arch = host['host']['architecture']
+	libs = compiler['host']['transformations'][transform_tool_name]
+	profile = str(detect_profile_library(libs, arch))
+	tool_data['resources']['profile'] = profile
 
 	# Note the telemtry tool.
-	tool_data['telemetry'] = tool_name
+	tool_data['telemetry'] = telemetry
 
-	return cc.update_named_mechanism(route, tool_name, data)
+	return cc.update_named_mechanism(route, layer, data)
 
 def instantiate_software(dst, package, subpackage, name, template, type, fault='fault'):
 	# Initiialize llvm instrumentation or delineation tooling inside the target context.
@@ -106,10 +106,9 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 		"python3", "-m",
 		fault+'.text.bin.ifst',
 		str(ctxpy / package / subpackage / name),
-		str(template), 'context', type,
+		str(template), type,
 	]
 
-	print(command)
 	pid, status, data = libsys.effect(libsys.KInvocation(sys.executable, command))
 	if status != 0:
 		sys.stderr.write("! ERROR: adapter tool instantiation failed\n")
@@ -124,14 +123,12 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the syntax tooling for delineation construction contexts.
 	"""
-	imp = libroutes.Import.from_fullname(__package__).container
-	tmpl = imp / 'templates'
+	mech = ctx_route / 'mechanisms' / name
 
-	instantiate_software(ctx_route, 'f_intention', 'bin', tool_name, tmpl, 'delineation')
+	imp = python.Import.from_fullname(__package__).container
+	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	# Identify target parameter set.
-	build_ctx = (ctx_route / 'context')
-	root = build_ctx / 'parameters'
+	instantiate_software(ctx_route, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
 
 	llvm = {
 		'command': __package__ + '.delineate',
@@ -141,7 +138,7 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	}
 
 	data = {
-		'system': {
+		'host': {
 			'transformations': {
 				'objective-c': llvm,
 				'c++': llvm,
@@ -151,64 +148,101 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 			}
 		}
 	}
+	cc.update_named_mechanism(mech, tool_name, data)
 
 	if not args:
 		# Derive library and include locations from tool:llvm-clang command
-		xml, merged = cc.Context.load_xml(build_ctx / 'mechanisms' / 'intent.xml')
-		syscmd = merged['system']['transformations'][transform_tool_name]['command']
-		prefix = libroutes.File.from_absolute(syscmd) ** 2
+		merged = ctx.select('host')[1].descriptor
+		syscmd = merged['transformations'][transform_tool_name]['command']
+		prefix = files.Path.from_absolute(syscmd) ** 2
 		libdir = prefix / 'lib'
 		incdir = prefix / 'include'
 		args = (incdir, libdir, 'clang')
 
-	for k, a, v in query.delineation(*(map(str, args))):
-		path = (build_ctx / 'parameters').extend(k.split('/')).suffix('.xml')
-		cc.Parameters.store(path, a, v)
-
-	cc.update_named_mechanism(ctx_route / 'mechanisms' / 'intent.xml', tool_name, data)
+	factors = query.delineation(*(map(str, args)))
+	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-delineation-libclang')
+	fsyms.store(pickle.dumps(factors))
 
 def instruments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the instrumentation tooling for metrics contexts.
 	"""
-	mech = (ctx_route / 'mechanisms' / 'intent.xml')
+	mech = (ctx_route/'mechanisms'/name)
 
-	imp = libroutes.Import.from_fullname(__package__).container
-	tmpl = imp / 'templates'
+	imp = python.Import.from_fullname(__package__).container
+	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	instantiate_software(ctx_route, 'f_intention', 'extensions', tool_name, tmpl, 'instrumentation')
+	instantiate_software(ctx_route, 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
 
-	# Identify target parameter set.
-	build_ctx = ctx_route / 'context'
-	root = build_ctx / 'parameters'
-
-	if not args:
-		# Derive llvm-config location from tool:llvm-clang's 'command' entry.
-		xml, merged = cc.Context.load_xml(mech)
-		syscmd = merged['system']['transformations'][transform_tool_name]['command']
-		args = (libroutes.File.from_absolute(syscmd).container / 'llvm-config',)
-
-	for k, a, v in query.instrumentation(*args):
-		path = root.extend(k.split('/')).suffix('.xml')
-		cc.Parameters.store(path, a, v)
+	# Derive llvm-config location from tool:llvm-clang's 'command' entry.
+	merged = cc.load_named_mechanism(mech, 'clang')
+	tool = merged['host']['transformations'][transform_tool_name]
+	syscmd = tool['command']
+	args = (files.Path.from_absolute(syscmd).container / 'llvm-config',)
 
 	# Inherit detected llvm-profdata path.
-	# &..library.Probe needs this information in order to process
+	# &..coverage.Probe needs this information in order to process
 	# the raw profile data emitted to disk.
 
-	b_params = cc.Parameters([root])
-	name, auth, cov = b_params.load('llvm/coverage')
+	source, merge, projections = query.instrumentation(*args)
+	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-coverage-instrumentation')
+	fsyms.store(pickle.dumps(projections))
 
 	from .. import coverage # For Probe constructor addressing.
-	tool_data = ctx_route / 'parameters' / 'tools' / (tool_name + '.xml')
-	cc.Parameters.store(tool_data, None, {
-			'source': cov['source'],
-			'merge': cov['merge'],
-			'constructor': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
-		}
-	)
+	cov = {
+		'source': source,
+		'merge': merge,
+		'constructor': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
+	}
+	rewrite_mechanisms(mech, 'coverage', cov)
 
-	rewrite_mechanisms(mech, tool_name)
+def compiler(args, fault, ctx, ctx_route, ctx_params):
+	"""
+	# Initialize the host domain with tool:llvm-clang compiler.
+	"""
+	route = (ctx_route/'mechanisms'/name)
+	syms = (ctx_route/'symbols')
+
+	clang = dict(zip(args[0::2], args[1::2])).pop('CC', None)
+	if not clang:
+		clang = os.environ.get('CC')
+	tool_data = query.clang(clang)
+
+	tool_data.update({
+		'type': 'collection',
+		'interface': library.__name__ + '.clang',
+		'defaults': {},
+		'options': [],
+	})
+
+	data = {
+		'host': {
+			'transformations': {
+				transform_tool_name: tool_data,
+				'c': {
+					'inherit': transform_tool_name,
+				},
+				'c++': {
+					'inherit': transform_tool_name,
+				},
+				'c++-header': {
+					'inherit': transform_tool_name,
+				},
+				'c-header': {
+					'inherit': transform_tool_name,
+				},
+			}
+		}
+	}
+
+	std = (syms / 'context:c++11')
+	std.store(pickle.dumps({
+		'system': {'library': {None: set(['c++'])}},
+		'language': {'standard': {None: ['c++11']}}
+	}))
+
+	cc.update_named_mechanism(route, 'clang', data)
+	return route
 
 def install(args, fault, ctx, ctx_route, ctx_params):
 	"""
@@ -216,18 +250,37 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	ctx_intention = ctx_params['intention']
 
+	route = compiler(args, fault, ctx, ctx_route, ctx_params)
+
 	if ctx_intention == 'instruments':
 		instruments(args, fault, ctx, ctx_route, ctx_params)
 	elif ctx_intention == 'fragments':
 		fragments(args, fault, ctx, ctx_route, ctx_params)
 
-def main(inv:libsys.Invocation):
+	cc.update_named_mechanism(route, 'language-specifications', {
+		'syntax': {
+			'target-file-extensions': {
+				'c': 'c',
+				'c-header': 'h',
+
+				'c++': 'cpp cxx c++',
+				'c++-header': 'hpp hxx h++',
+
+				'objective-c': 'm',
+				'objective-c-header': 'hm',
+
+				'objective-c++': 'mm',
+			},
+		}
+	})
+
+def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
-	ctx_route = libroutes.File.from_absolute(inv.environ['CONTEXT'])
+	ctx_route = files.Path.from_absolute(inv.environ['CONTEXT'])
 	ctx = cc.Context.from_directory(ctx_route)
-	ctx_params = ctx.parameters.load('context')[-1]
+	ctx_params = ctx.index['context']
 	install(inv.args, fault, ctx, ctx_route, ctx_params)
 	return inv.exit(0)
 
 if __name__ == '__main__':
-	libsys.control(main, libsys.Invocation.system(environ=('FAULT_CONTEXT_NAME', 'CONTEXT')))
+	process.control(main, process.Invocation.system(environ=('FAULT_CONTEXT_NAME', 'CONTEXT')))

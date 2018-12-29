@@ -1,3 +1,6 @@
+/**
+	# Fragments extractor.
+*/
 #include "clang-c/Index.h"
 #include <stdio.h>
 #include <fault/libc.h>
@@ -26,7 +29,7 @@ print_origin(FILE *fp, CXCursor c)
 	print_xml_string_attribute(fp, "origin", clang_getFileName(file));
 }
 
-/*
+/**
 	# Generic means to note the location of the cursor.
 */
 static int
@@ -137,7 +140,9 @@ print_type(FILE *fp, CXCursor c, CXType ct)
 		++indirection_level;
 	}
 
-	/* Does not handle inline defintions */
+	/*
+		# Does not handle inline defintions
+	*/
 	print_xml_open(fp, "type");
 
 	if (!clang_Cursor_isNull(dec) && dec.kind != CXCursor_NoDeclFound)
@@ -392,7 +397,7 @@ print_collection(FILE *fp, CXCursor c, CXClientData cd, const char *element_name
 
 /**
 	# Visit the declaration nodes emitting structure and documentation strings.
-**/
+*/
 static enum CXChildVisitResult
 visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 {
@@ -838,10 +843,18 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 int
 main(int argc, const char *argv[])
 {
-	CXIndex idx = clang_createIndex(0, 0);
-	CXTranslationUnit u = clang_parseTranslationUnit(idx, 0, argv, argc, 0, 0,
-		CXTranslationUnit_DetailedPreprocessingRecord);
 	CXCursor rc;
+	CXIndex idx = clang_createIndex(0, 1);
+	CXTranslationUnit u;
+
+	/*
+		# clang_parseTranslationUnit does not appear to agree that the
+		# executable should end in (filename)`.i` so adjust the command name.
+	*/
+	argv[0] = "fragment";
+
+	u = clang_parseTranslationUnit(idx, NULL, argv, argc, NULL, 0,
+		CXTranslationUnit_DetailedPreprocessingRecord);
 
 	rc = clang_getTranslationUnitCursor(u);
 	print_xml_open(stdout, "introspection");
@@ -871,10 +884,8 @@ main(int argc, const char *argv[])
 	clang_visitChildren(rc, visitor, (CXClientData) stdout);
 	print_xml_close(stdout, "introspection");
 
-	#if FV_TEST()
-		clang_disposeTranslationUnit(u);
-		clang_disposeIndex(idx);
-	#endif
+	clang_disposeTranslationUnit(u);
+	clang_disposeIndex(idx);
 
 	fprintf(stdout, "\n");
 	return(0);

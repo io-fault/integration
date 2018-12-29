@@ -10,8 +10,7 @@ import contextlib
 import itertools
 import collections
 
-from fault.routes import library as libroutes
-from fault.system import library as libsys
+from fault.system import files
 
 from ...factors import metrics
 
@@ -31,7 +30,7 @@ def extract_counters(llvm, command_path, shared_object, raw_profile_data_path):
 	# Extract the merged profile data written by the LLVM instrumentation.
 	"""
 
-	with libroutes.File.temporary() as tmp:
+	with files.Path.temporary() as tmp:
 		target = tmp / 'llvm.mpd'
 		merged = str(target)
 		cmd = postprocess(command_path, merged, str(raw_profile_data_path))

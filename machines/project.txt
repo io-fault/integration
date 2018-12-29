@@ -1,15 +1,15 @@
 ! CONTEXT:
 	/protocol/
-		&<http://if.fault.io/project>
+		&<http://if.fault.io/project/information>
 
 /identifier/
-	`http://fault.io/engineering/adapters.llvm`
+	&<http://fault.io/engineering/adapters.llvm>
 /name/
 	`llvm`
 /abstract/
 	LLVM based compilation, delineation, and coverage tools
 /icon/
-	- (favicon)&<http://llvm.org>
+	- (favicon)`http://llvm.org`
 
 /versioning/
 	continuous
@@ -19,4 +19,4 @@
 /controller/
 	fault.io
 /contact/
-	http://fault.io/critical
+	&<http://fault.io/critical>

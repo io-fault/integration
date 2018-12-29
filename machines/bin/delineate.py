@@ -7,15 +7,17 @@
 """
 import sys
 import subprocess
-from fault.routes import library as libroutes
-from fault.system import library as libsys
+
+from fault.system import files
+from fault.system import process
+
 from fault.xml import libfactor, library as libxml
 from .. import xslt
 
 from ....factors import fragments
 
 inner_call = 'f_syntax.bin.llvm'
-def main(inv):
+def main(inv:process.Invocation) -> process.Exit:
 	args = inv.args
 
 	# args passed directly forward to inspect
@@ -36,7 +38,7 @@ def main(inv):
 	module = factor.xpath("/*/*[local-name()='module']")[0]
 
 	xml = libxml.Serialization()
-	i = fragments.source_element(xml, libroutes.File.from_absolute(isrc))
+	i = fragments.source_element(xml, files.Path.from_absolute(isrc))
 	rs = b''.join(i)
 	rsrc = b'<cell xmlns="http://fault.io/xml/fragments">' + rs + b'</cell>'
 	source = libfactor.etree.fromstring(rsrc)
@@ -51,5 +53,5 @@ def main(inv):
 	sys.exit(0)
 
 if __name__ == '__main__':
-	libsys.control(main, libsys.Invocation.system())
+	process.control(main, process.Invocation.system())
 
