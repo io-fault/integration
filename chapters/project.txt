@@ -1,0 +1,22 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	`http://fault.io/engineering/export`
+/name/
+	`export`
+/abstract/
+	Factor publication tools.
+/icon/
+	- (emoji)`🛠`
+
+/versioning/
+	continuous
+/status/
+	experimental
+
+/controller/
+	`fault.io`
+/contact/
+	`http://fault.io/critical`
