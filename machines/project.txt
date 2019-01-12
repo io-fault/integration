@@ -3,7 +3,7 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	&<http://fault.io/engineering/adapters.host>
+	&<http://fault.io/engineering/tools.host>
 /name/
 	`host`
 /abstract/
