@@ -11,7 +11,7 @@ libclang based delineation executable.
 	/symbols/
 		- `fault:c-interfaces`
 		- `-llvm-delineation-libclang`
-		- `kit-llvm-delineation`
+		- `sdk-llvm-delineation`
 /src/
 	/executable.c/#!/pl/c
 		#include <xml.c>
@@ -32,7 +32,7 @@ Counter extraction extension using LLVM's coverage libraries.
 		- `context:c++11`
 		- `python-extension`
 		- `-llvm-coverage-instrumentation`
-		- `kit-llvm-instrumentation`
+		- `sdk-llvm-instrumentation`
 /src/
 	/llvm-coverage.cpp/#!/pl/c++
 		#include <coverage.cpp>
