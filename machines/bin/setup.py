@@ -9,6 +9,7 @@ from fault.system import process
 from fault.system import python
 from fault.system import files
 
+from ....factors import data as ccd
 from ....factors import cc
 from .. import library
 
@@ -157,7 +158,7 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 	data = dynamic(library.default_library_paths)
 	data = {'host': data}
 	data['system'] = {'inherit': 'host'}
-	cc.update_named_mechanism(mech, 'default', data)
+	ccd.update_named_mechanism(mech, 'default', data)
 
 def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
