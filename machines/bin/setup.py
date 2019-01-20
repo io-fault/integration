@@ -25,6 +25,7 @@ from fault.system import python
 from fault.system import files
 
 from ....factors import cc
+from ....factors import data as ccd
 from .. import query
 from .. import library
 
@@ -64,8 +65,8 @@ def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
 	"""
 	# Add clang instrumentation options and resources.
 	"""
-	compiler = cc.load_named_mechanism(route, 'clang')
-	host = cc.load_named_mechanism(route.container/'fault.host', 'default')
+	compiler = ccd.load_named_mechanism(route, 'clang')
+	host = ccd.load_named_mechanism(route.container/'fault.host', 'default')
 	data = {
 		'host': {
 			'transformations': {
@@ -96,7 +97,7 @@ def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
 	# Note the telemtry tool.
 	tool_data['telemetry'] = telemetry
 
-	return cc.update_named_mechanism(route, layer, data)
+	return ccd.update_named_mechanism(route, layer, data)
 
 def instantiate_software(dst, package, subpackage, name, template, type, fault='fault'):
 	# Initiialize llvm instrumentation or delineation tooling inside the target context.
@@ -132,7 +133,7 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 
 	llvm = {
 		'command': __package__ + '.delineate',
-		'interface': cc.__name__ + '.compiler_collection',
+		'interface': library.__name__ + '.clang',
 		'method': 'python',
 		'redirect': 'stdout',
 	}
@@ -148,7 +149,7 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 			}
 		}
 	}
-	cc.update_named_mechanism(mech, tool_name, data)
+	ccd.update_named_mechanism(mech, tool_name, data)
 
 	if not args:
 		# Derive library and include locations from tool:llvm-clang command
@@ -175,7 +176,7 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	instantiate_software(ctx_route, 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
 
 	# Derive llvm-config location from tool:llvm-clang's 'command' entry.
-	merged = cc.load_named_mechanism(mech, 'clang')
+	merged = ccd.load_named_mechanism(mech, 'clang')
 	tool = merged['host']['transformations'][transform_tool_name]
 	syscmd = tool['command']
 	args = (files.Path.from_absolute(syscmd).container / 'llvm-config',)
@@ -241,7 +242,7 @@ def compiler(args, fault, ctx, ctx_route, ctx_params):
 		'language': {'standard': {None: ['c++11']}}
 	}))
 
-	cc.update_named_mechanism(route, 'clang', data)
+	ccd.update_named_mechanism(route, 'clang', data)
 	return route
 
 def install(args, fault, ctx, ctx_route, ctx_params):
@@ -257,7 +258,7 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 	elif ctx_intention == 'fragments':
 		fragments(args, fault, ctx, ctx_route, ctx_params)
 
-	cc.update_named_mechanism(route, 'language-specifications', {
+	ccd.update_named_mechanism(route, 'language-specifications', {
 		'syntax': {
 			'target-file-extensions': {
 				'c': 'c',
