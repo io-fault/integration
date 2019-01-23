@@ -2,7 +2,7 @@
 if __name__ == '__main__':
 	def install():
 		import sys
-		from ...filesystem import library as libfs
+		from ...hkp import library as libhkp
 		from ...system import libfactor
 		from ...system import python
 		from ...system import files
@@ -12,7 +12,7 @@ if __name__ == '__main__':
 		r = files.Path.from_path(target)
 		css = r / 'text' / 'css'
 
-		d = libfs.Dictionary.use(css)
+		d = libhkp.Dictionary.use(css)
 		fr = libfactor.inducted(python.Import.from_module(theme)) / 'pf.lnk'
 		with fr.open('rb') as f:
 			d[b'factor.css'] = f.read()

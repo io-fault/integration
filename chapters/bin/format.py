@@ -11,15 +11,14 @@ import importlib.machinery
 import io
 
 from ...routes import library as libroutes
-from ...xml import library as libxml
-from ...filesystem import library as libfs
+from ...hkp import library as libhkp
 
 from .. import library as libfactors
 
 def main(source, target, suffix='.html'):
 	src = os.path.realpath(source)
-	structs = libfs.Dictionary.open(src)
-	formats = libfs.Dictionary.create(libfs.Hash(), os.path.realpath(target))
+	structs = libhkp.Dictionary.open(src)
+	formats = libhkp.Dictionary.create(libfs.Hash(), os.path.realpath(target))
 
 	index = {
 		k.decode('utf-8'): r

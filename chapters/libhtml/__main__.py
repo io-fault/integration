@@ -7,11 +7,11 @@
 import sys
 from ...xml import libfactor
 from ...routes import library as libroutes
-from ...filesystem import library as libfs
+from ...hkp import library as libhkp
 from .. import library
 
 def index(source):
-	structs = libfs.Dictionary.open(source)
+	structs = libhkp.Dictionary.open(source)
 
 	return {
 		k.decode('utf-8'): r

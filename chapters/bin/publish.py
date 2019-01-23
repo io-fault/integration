@@ -13,8 +13,7 @@ import importlib.machinery
 
 from ...system import files
 
-from ...xml import library as libxml
-from ...filesystem import library as libfs
+from ...hkp import library as libhkp
 
 from .. import theme
 from .. import libif
@@ -41,8 +40,8 @@ def main(structs, formatting, output):
 	out = files.Path.from_absolute(os.path.realpath(output))
 	out.init('directory')
 
-	sd = libfs.Dictionary.open(structs)
-	fd = libfs.Dictionary.open(formatting)
+	sd = libhkp.Dictionary.open(structs)
+	fd = libhkp.Dictionary.open(formatting)
 
 	for factor, r in sd.references():
 		dr = path(out, factor, '.xml')

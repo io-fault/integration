@@ -10,7 +10,7 @@ from ...system import libfactor
 
 from ...factors import cc as libdev
 from ...factors.bin import stitch
-from ...filesystem import library as libfs
+from ...hkp import library as libhkp
 
 from . import format
 
@@ -21,15 +21,15 @@ from .. import library
 def main(inv:process.Invocation) -> process.Exit:
 	target, state = inv.args
 	ctx = libdev.Context.from_environment()
-	state_fsd = libfs.Dictionary.use(files.Path.from_path(state))
+	state_fsd = libhkp.Dictionary.use(files.Path.from_path(state))
 	r = files.Path.from_path(target)
 
 	structs = r / 'text' / 'xml'
 	formats = r / 'text' / 'html'
 	structs.init('directory')
 	formats.init('directory')
-	xml = libfs.Dictionary.use(structs)
-	html = libfs.Dictionary.use(formats)
+	xml = libhkp.Dictionary.use(structs)
+	html = libhkp.Dictionary.use(formats)
 
 	css = r / 'text' / 'css'
 	js = r / 'application' / 'javascript'
@@ -63,10 +63,10 @@ def main(inv:process.Invocation) -> process.Exit:
 			)
 			rtf.write(f)
 
-	d = libfs.Dictionary.use(css)
+	d = libhkp.Dictionary.use(css)
 	d[b'factor.css'] = (libfactor.package_inducted(theme) / 'theme.css').load()
 
-	d = libfs.Dictionary.use(js)
+	d = libhkp.Dictionary.use(js)
 	d[b'factor.js'] = (libfactor.package_inducted(libif) / 'libif.js').load()
 
 	sys.exit(0)
