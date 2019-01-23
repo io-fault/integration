@@ -3,8 +3,7 @@
 """
 import sys
 
-from fault.system import library as libsys
-from fault.system import execution
+from fault.system import execution as libexec
 from fault.system import files
 
 def split_config_output(flag, output):
@@ -29,7 +28,7 @@ def compiler_libraries(compiler, prefix, version, executable, target):
 	# Attempt to select the compiler libraries directory containing compiler support
 	# libraries for profiling, sanity, and runtime.
 	"""
-	lib = prefix / 'lib' / 'clang' / version / 'lib'
+	lib = prefix.extend(['lib', 'clang', version, 'lib'])
 	syslib = lib / 'darwin' # Naturally, not always consistent.
 	if syslib.exists():
 		return syslib
@@ -98,17 +97,17 @@ def clang(executable, type='executable'):
 	cc_route = files.Path.from_absolute(executable)
 
 	# gather compiler information.
-	x = execution.prepare(type, executable, ['--version'])
-	i = libsys.KInvocation(*x)
-	pid, exitcode, data = libsys.dereference(i)
+	x = libexec.prepare(type, executable, ['--version'])
+	i = libexec.KInvocation(*x)
+	pid, exitcode, data = libexec.dereference(i)
 	data = data.decode('utf-8')
 	cctype, release, version, version_info, target = parse_clang_version_1(data)
 
 	# Analyze the library search directories.
 	# Primarily interested in finding the crt*.o files for linkage.
-	x = execution.prepare(type, executable, ['-print-search-dirs'])
-	i = libsys.KInvocation(*x)
-	pid, exitcode, sdd = libsys.dereference(i)
+	x = libexec.prepare(type, executable, ['-print-search-dirs'])
+	i = libexec.KInvocation(*x)
+	pid, exitcode, sdd = libexec.dereference(i)
 	search_dirs_data = parse_clang_directories_1(sdd.decode('utf-8'))
 
 	ccprefix = files.Path.from_absolute(search_dirs_data['programs'][0])
@@ -150,10 +149,10 @@ def clang(executable, type='executable'):
 
 	standards = {}
 	for l in ('c', 'c++'):
-		x = execution.prepare(type, executable, [
+		x = libexec.prepare(type, executable, [
 			'-x', l, '-std=void.abczyx.1', '-c', '/dev/null', '-o', '/dev/null',
 		])
-		pid, exitcode, stderr = libsys.effect(libsys.KInvocation(*x))
+		pid, exitcode, stderr = libexec.effect(libexec.KInvocation(*x))
 		standards[l] = parse_clang_standards_1(stderr.decode('utf-8'))
 
 	clang = {
@@ -189,7 +188,7 @@ def instrumentation(llvm_config_path, merge_path=None, tool_name='llvm', type='e
 	libdir_pipe = ['--libdir']
 	rtti_pipe = ['--has-rtti']
 
-	po = lambda x: libsys.dereference(libsys.KInvocation(*execution.prepare(type, srcpath, x)))
+	po = lambda x: libexec.dereference(libexec.KInvocation(*libexec.prepare(type, srcpath, x)))
 	outs = [
 		po([srcpath, '--prefix']),
 		po(libs_pipe),
