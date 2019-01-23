@@ -8,7 +8,7 @@ import os
 import typing
 import types
 
-from fault.system import library as libsys
+from fault.system import execution as libexec
 from fault.system import files
 
 # map path strings to routes
@@ -157,8 +157,8 @@ def uname(flag, path="/usr/bin/uname"):
 	# Execute the (system/executable)`uname` returning its output for the given &flag.
 	"""
 
-	inv = libsys.KInvocation(path, [path, flag])
-	pid, exitcode, out = libsys.dereference(inv)
+	inv = libexec.KInvocation(path, [path, flag])
+	pid, exitcode, out = libexec.dereference(inv)
 
 	return out.strip().decode('utf-8')
 
@@ -167,7 +167,7 @@ def ldconfig_list(path="/usr/bin/ldconfig"):
 	# Extract library paths from (system/executable)`ldconfig`.
 	"""
 
-	(pid, exitcode, data) = libsys.dereference(libsys.KInvocation(path, [path, "-v"]))
+	(pid, exitcode, data) = libexec.dereference(libexec.KInvocation(path, [path, "-v"]))
 	l = [x for x in data.splitlines(b"\n") if x[0:1] != '\t']
 	l = [x.split(':', 1)[0] for x in l]
 	return l
