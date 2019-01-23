@@ -8,7 +8,7 @@ import itertools
 from ..system import files
 from ..system import python
 
-from ..filesystem import library as libfs
+from ..hkp import library as libhkp
 from ..text import library as libtext
 from ..system import libfactor
 from ..xml import libfactor as xmlfactor

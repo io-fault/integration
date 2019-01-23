@@ -18,7 +18,7 @@ from .. import library as libfactors
 def main(source, target, suffix='.html'):
 	src = os.path.realpath(source)
 	structs = libhkp.Dictionary.open(src)
-	formats = libhkp.Dictionary.create(libfs.Hash(), os.path.realpath(target))
+	formats = libhkp.Dictionary.create(libhkp.Hash(), os.path.realpath(target))
 
 	index = {
 		k.decode('utf-8'): r
