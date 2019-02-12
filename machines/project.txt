@@ -9,6 +9,7 @@
 /abstract/
 	LLVM based compilation, delineation, and coverage tools
 /icon/
+	- (emoji)`🔧`
 	- (favicon)`http://llvm.org`
 
 /versioning/
