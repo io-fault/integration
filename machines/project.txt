@@ -9,7 +9,7 @@
 /abstract/
 	Compilation and linker command constructors for the host system
 /icon/
-	- (emoji)`🖥`
+	- (emoji)`🔧`
 
 /versioning/
 	continuous
