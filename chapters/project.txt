@@ -9,7 +9,7 @@
 /abstract/
 	Factor publication tools.
 /icon/
-	- (emoji)`🛠`
+	- (emoji)`📻`
 
 /versioning/
 	continuous
