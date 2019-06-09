@@ -10,7 +10,7 @@ import types
 import importlib.machinery
 import io
 
-from ...routes import library as libroutes
+from ...system import files
 from ...hkp import library as libhkp
 
 from .. import library as libfactors
@@ -27,7 +27,7 @@ def main(source, target, suffix='.html'):
 	xml = libfactors.construct_corpus_map(src, index)
 
 	# temporary for the index.xml file
-	with libroutes.File.temporary() as tr:
+	with files.Path.temporary() as tr:
 		idx_path = tr / 'index.xml'
 		with idx_path.open('wb') as f:
 			f.write(xml)
