@@ -4,6 +4,7 @@
 # This only contains constructors for GNU ld as it was the ubiquitous implementation
 # for ELF systems.
 """
+from fault.context import tools
 
 objects = {
 	'executable': '.exe',
@@ -80,7 +81,7 @@ def gnu_link_editor(
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
 		dirs = (x.integral() for x in libs)
-		libdirs = [libdir_flag+filepath(x) for x in libc.unique(dirs, None)]
+		libdirs = [libdir_flag+filepath(x) for x in tools.unique(dirs, None)]
 
 		link_parameters = [link_flag + y for y in set([x.name for x in libs])]
 

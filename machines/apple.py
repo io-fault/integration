@@ -1,7 +1,7 @@
 """
 # Command constructors for Apple (macOS) hosts.
 """
-from fault.computation import library as libc
+from fault.context import tools
 
 mach_objects = {
 	'executable': '.exe',
@@ -75,7 +75,7 @@ def macos_link_editor(
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
 		dirs = (x.integral() for x in libs)
-		command.extend([libdir_flag+filepath(x) for x in libc.unique(dirs, None)])
+		command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
 
 		support = mech['objects'][f_type][format]
 		if support is not None:
