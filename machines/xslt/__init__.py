@@ -2,8 +2,6 @@
 # Transformation to &fault.factors XML for &.bin.inspect output.
 """
 from fault.xml import libfactor
-from fault.time import library as libtime
-from fault.time import metric
 from fault.text import library as libtext
 
 from ....factors import fragments
