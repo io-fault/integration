@@ -3,7 +3,7 @@
 """
 import typing
 
-overflow_map = {
+overflow_control = {
 	'wrap': '-fwrapv',
 	'none': '-fstrict-overflow',
 	'undefined': '-fno-strict-overflow',
@@ -22,6 +22,10 @@ optimizations = {
 }
 
 def standard_parameters(build):
+	arch = build.mechanism.descriptor.get('architecture', None)
+	if arch is not None:
+		yield ('F_TARGET_ARCHITECTURE', arch)
+
 	yield from [
 		('F_SYSTEM', build.system),
 		('F_INTENTION', build.context.intention),
@@ -122,11 +126,14 @@ def clang(
 	# Filter or separate later.
 	command.append(debug_flag)
 
-	# TODO: incorporate parameter
 	if 0:
+		# TODO: incorporate overflow parameter
+		# factor.txt files being limited means that there is no
+		# way to specify the overflow type. source level control is actually
+		# needed anyways, but it does not appear to be popular with compilers.
 		overflow_spec = getattr(build.factor.module, 'overflow', None)
 		if overflow_spec is not None:
-			command.append(overflow_map[overflow_spec])
+			command.append(overflow_control[overflow_spec])
 
 	command.extend(adapter.get('options', ()))
 	command.extend(options)
@@ -134,10 +141,6 @@ def clang(
 	# Include Directories; -I option.
 	included = build.required('source', 'library')
 	command.extend([id_flag + str(x) for x, xf in included])
-
-	arch = build.mechanism.descriptor.get('architecture', None)
-	if arch is not None:
-		command.append(define_flag + 'F_TARGET_ARCHITECTURE=' + arch)
 
 	# -D defines.
 	sp = [
