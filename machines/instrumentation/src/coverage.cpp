@@ -1,5 +1,11 @@
 /**
 	# Query profile output and binaries for counts and region area information.
+
+	# [ Engineering ]
+	# Most of this can be eliminated as llvm-cov added the export command in LLVM-4.0.
+	# Currently, this has *not* been merged into Xcode's LLVM as of Catalina, but
+	# considering the pain of supporting this extension, removing it would be
+	# beneficial.
 */
 #include <stddef.h>
 #include <limits.h>
@@ -62,7 +68,26 @@ extern "C" {
 		StringRef(arch) \
 	)
 #else
-	#define CM_LOAD(object, data, arch) coverage::CoverageMapping::load
+	#define CM_LOAD coverage::CoverageMapping::load
+#endif
+
+#if (LLVM_VERSION_MAJOR >= 9)
+	#define POSTv9(...) __VA_ARGS__
+	#define CREATE_READER(BUF, ARCH, OBJBUFS) \
+		coverage::BinaryCoverageReader::create(BUF->getMemBufferRef(), ARCH, OBJBUFS)
+	#define ITER_CR_RECORDS(V, I) \
+		for (const auto &_cov : I) \
+		{ \
+			for (auto V : (*_cov))
+
+	#define ITER_CR_CLOSE() }
+#else
+	#define POSTv9(...)
+	#define CREATE_READER(BUF, ARCH, OBJBUFS) \
+		coverage::BinaryCoverageReader::create(BUF, ARCH)
+	#define ITER_CR_RECORDS(V, I) \
+		for (auto V : (*I))
+	#define ITER_CR_CLOSE()
 #endif
 
 #include "llvm/ProfileData/InstrProfReader.h"
@@ -89,10 +114,21 @@ static int kind_map[] = {
 
 #if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
 	#define CRE_GET_ERROR(X) X.getError()
+	#define CMR_GET_ERROR(X) NULL
 	#define ERR_STRING(X) X.message().c_str()
+	#define RECORD(X) (X)
 #else
 	#define CRE_GET_ERROR(X) (X.takeError())
+	#define CMR_GET_ERROR(X) (X.takeError())
 	#define ERR_STRING(X) toString(std::move(X)).c_str()
+	#define RECORD(X) (*X)
+#endif
+
+#if (LLVM_VERSION_MAJOR == 4)
+	#undef CMR_GET_ERROR
+	#define CMR_GET_ERROR(X) NULL
+	#undef RECORD
+	#define RECORD(X) (X)
 #endif
 
 /**
@@ -103,13 +139,16 @@ int
 _list_regions(PyObj seq, char *object, char *arch)
 {
 	auto CounterMappingBuff = MemoryBuffer::getFile(object);
+
 	if (std::error_code EC = CounterMappingBuff.getError())
 	{
 		PyErr_SetString(PyExc_RuntimeError, EC.message().c_str());
 		return(1);
 	}
 
-	auto CoverageReaderOrErr = coverage::BinaryCoverageReader::create(CounterMappingBuff.get(), arch);
+	POSTv9(SmallVector<std::unique_ptr<MemoryBuffer>, 4> bufs);
+
+	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
 		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
@@ -122,10 +161,12 @@ _list_regions(PyObj seq, char *object, char *arch)
 		return(1);
 	}
 
-	auto cov = std::move(CoverageReaderOrErr.get());
-
-	for (const auto &record : (*cov))
+	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
+		if (auto E = CMR_GET_ERROR(R))
+			continue;
+
+		const auto &record = RECORD(R);
 		auto fname = record.FunctionName;
 		PyObj subseq, paths, fname_ob;
 
@@ -182,12 +223,13 @@ _list_regions(PyObj seq, char *object, char *arch)
 			Py_DECREF(range_tuple);
 		}
 	}
+	ITER_CR_CLOSE()
 
 	return(0);
 }
 
 /**
-	# Retrieve the source files that participate in producing counters.
+	# Retrieve the instrumented source files.
 */
 int
 _list_source_files(PyObj seq, const char *object, const char *arch)
@@ -199,7 +241,9 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 		return(1);
 	}
 
-	auto CoverageReaderOrErr = coverage::BinaryCoverageReader::create(CounterMappingBuff.get(), arch);
+	POSTv9(SmallVector<std::unique_ptr<MemoryBuffer>, 4> bufs);
+
+	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
 		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
@@ -211,16 +255,21 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 		return(1);
 	}
 
-	auto CoverageReader = std::move(CoverageReaderOrErr.get());
 	std::set<std::string> paths;
 
 	/*
 		# The nested for loop will start a new section every time the fileid
 		# changes so the reader can properly associate ranges.
 	*/
-	for (const auto &Record : (*CoverageReader))
+
+	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
-		for (const auto path : Record.Filenames)
+		if (auto E = CMR_GET_ERROR(R))
+			continue;
+
+		const auto &record = RECORD(R);
+
+		for (const auto path : record.Filenames)
 		{
 			/*
 				# Usually one per function.
@@ -228,6 +277,7 @@ _list_source_files(PyObj seq, const char *object, const char *arch)
 			paths.insert((std::string) path);
 		}
 	}
+	ITER_CR_CLOSE()
 
 	for (auto path : paths)
 	{

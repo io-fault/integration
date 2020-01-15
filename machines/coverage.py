@@ -12,7 +12,7 @@ import collections
 
 from fault.system import files
 
-from ...factors import metrics
+from ...coherence import metrics
 
 def postprocess(path, output, *inputs, name='llvm-profdata'):
 	"""
@@ -58,13 +58,14 @@ class Probe(metrics.Probe):
 	def transmit(self, imports, measures):
 		import sys
 
-		for module_name in imports:
+		for spec in imports:
+			module_name = spec.name
 			if module_name not in sys.modules:
 				continue
 
 			module = sys.modules[module_name]
 
-			if '_fault_metrics_write' in module.__dict__:
+			if '_fault_metrics_write' in dir(module):
 				module._llvm_metrics_path = str(measures / self.name / module.__name__)
 				module._fault_metrics_set_path(module._llvm_metrics_path)
 				module._fault_metrics_write()
@@ -82,7 +83,8 @@ class Probe(metrics.Probe):
 			os.environ['LLVM_PROFILE_FILE'] = str(measures / '.llvm.profraw')
 			yield None
 		finally:
-			self.transmit(harness.imports, measures)
+			specs = list(harness.ifinder.if_extension_modules())
+			self.transmit(specs, measures)
 
 	def project(self, telemetry, route, frames):
 		data = collections.defaultdict(dict)
@@ -117,6 +119,8 @@ class Probe(metrics.Probe):
 		"""
 
 		for factor, data_file in self.join(measures):
+			if factor not in targets:
+				continue
 			system_image = targets[factor][1]
 			counters = extract_counters(self.module, self.merge_command, system_image, data_file)
 

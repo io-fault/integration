@@ -118,24 +118,18 @@ extract_counters(PyObj self, PyObj args)
 		"Extract the all the counters from the merged profile data with respect to the system object.") \
 
 #include <fault/python/module.h>
-INIT("Access LLVM instrumentation structures and profile counters.")
+INIT(module, 0, "Access LLVM instrumentation structures and profile counters.")
 {
 	PyObj vi;
-	PyObj mod;
-
-	CREATE_MODULE(&mod);
-	if (mod == NULL)
-		return(NULL);
 
 	vi = Py_BuildValue("(iii)", LLVM_VERSION_MAJOR, LLVM_VERSION_MINOR, LLVM_VERSION_PATCH);
 	if (vi == NULL)
 		goto error;
 
-	PyModule_AddObject(mod, "version_info", vi);
+	PyModule_AddObject(module, "version_info", vi);
 
-	return(mod);
+	return(0);
 
 	error:
-		DROP_MODULE(mod);
-		return(NULL);
+		return(-1);
 }
