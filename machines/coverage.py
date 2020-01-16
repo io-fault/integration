@@ -88,7 +88,6 @@ class Probe(metrics.Probe):
 
 	def project(self, telemetry, route, frames):
 		data = collections.defaultdict(dict)
-		self.regions = {}
 		self.function_counters = set()
 
 		for factor, (route, target, sources) in frames.items():
