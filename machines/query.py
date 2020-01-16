@@ -175,7 +175,7 @@ def clang(executable, type='executable'):
 
 	return clang
 
-def instrumentation(llvm_config_path, merge_path=None, tool_name='llvm', type='executable'):
+def instrumentation(llvm_config_path, merge_path=None, export_path=None, tool_name='llvm', type='executable'):
 	"""
 	# Extract information necessary for compiling a Python extension using the LLVM
 	# coverage tools for extracting counters from profile data.
@@ -226,6 +226,8 @@ def instrumentation(llvm_config_path, merge_path=None, tool_name='llvm', type='e
 
 	if not merge_path:
 		merge_path = llvm_config_path.container/'llvm-profdata'
+	if not export_path:
+		export_path = llvm_config_path.container/'llvm-cov'
 
 	fp = {
 		'source': {
@@ -244,7 +246,7 @@ def instrumentation(llvm_config_path, merge_path=None, tool_name='llvm', type='e
 		},
 	}
 
-	return srcpath, str(merge_path), fp
+	return srcpath, str(merge_path), str(export_path), fp
 
 def delineation(incdir, libdir, libname, tool_name='llvm'):
 	"""

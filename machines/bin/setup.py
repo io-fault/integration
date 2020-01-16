@@ -61,7 +61,7 @@ def detect_profile_library(mechanism, architectures):
 
 clang_instrumentation_options = ('-fprofile-instr-generate', '-fcoverage-mapping')
 
-def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
+def rewrite_mechanisms(route:files.Path, layer:str, metrics_data):
 	"""
 	# Add clang instrumentation options and resources.
 	"""
@@ -77,7 +77,10 @@ def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
 					'options': [],
 				},
 			}
-		}
+		},
+		'metrics': {
+			tool_name: metrics_data,
+		},
 	}
 
 	tool_data = data['host']['transformations'][transform_tool_name]
@@ -94,8 +97,8 @@ def rewrite_mechanisms(route:files.Path, layer:str, telemetry):
 	profile = str(detect_profile_library(libs, arch))
 	tool_data['resources']['profile'] = profile
 
-	# Note the telemtry tool.
-	tool_data['telemetry'] = telemetry
+	# Note the metrics tool.
+	tool_data['metrics'] = tool_name
 
 	return ccd.update_named_mechanism(route, layer, data)
 
@@ -112,7 +115,7 @@ def instantiate_software(dst, package, subpackage, name, template, type, fault='
 
 	pid, status, data = libexec.effect(libexec.KInvocation(sys.executable, command))
 	if status != 0:
-		sys.stderr.write("! ERROR: adapter tool instantiation failed\n")
+		sys.stderr.write("! ERROR: tool software instantiation failed\n")
 		sys.stderr.write("\t/command\n\t\t" + " ".join(command) + "\n")
 		sys.stderr.write("\t/status\n\t\t" + str(status) + "\n")
 
@@ -185,7 +188,7 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	# &..coverage.Probe needs this information in order to process
 	# the raw profile data emitted to disk.
 
-	source, merge, projections = query.instrumentation(*args)
+	source, merge, export, projections = query.instrumentation(*args)
 	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-coverage-instrumentation')
 	fsyms.store(pickle.dumps(projections))
 
@@ -193,9 +196,10 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	cov = {
 		'source': source,
 		'merge': merge,
-		'constructor': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
+		'export': export,
+		'python-controller': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
 	}
-	rewrite_mechanisms(mech, 'coverage', cov)
+	rewrite_mechanisms(mech, 'instrumentation-control', cov)
 
 def compiler(args, fault, ctx, ctx_route, ctx_params):
 	"""
