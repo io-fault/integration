@@ -60,6 +60,7 @@ def gnu_link_editor(
 
 	factor = build.factor
 	f_type = factor.type
+	f_domain = factor.domain
 	intention = build.variants['intention']
 	format = build.variants['format']
 	mech = build.mechanism.descriptor
@@ -77,7 +78,7 @@ def gnu_link_editor(
 		# partial is an incremental link. Most options are irrelevant.
 		command.extend(map(filepath, inputs))
 	else:
-		libs = [f for f in build.requirements[(factor.domain, 'library')]]
+		libs = [f for f in build.requirements[(f_domain, 'library')]]
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
 		dirs = (x.integral() for x in libs)
@@ -99,7 +100,6 @@ def gnu_link_editor(
 		command.extend(libdirs)
 		command.append('-(')
 		command.extend(link_parameters)
-		command.append('-lc')
 		command.append('-)')
 
 		resources = set()

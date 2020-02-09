@@ -112,7 +112,11 @@ def dynamic(paths):
 		'integrations': {
 			'tool:link-editor': {
 				'type': 'linker',
-				'interface': project + '.apple.macos_link_editor',
+				'interface': project + (
+					'.apple.macos_link_editor'
+					if osname == 'darwin' else
+					'.elf.gnu_link_editor'
+				),
 				'name': ldname,
 				'command': str(ld),
 			},
