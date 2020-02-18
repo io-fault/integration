@@ -1,6 +1,6 @@
 """
 # Publish the structures and formatted data.
-# Essentially, convert the directories created by &..development.bin.stitch and &.bin.format
+# Essentially, convert the directories created by &..factors.bin.stitch and &.bin.format
 # into a set of static uncompressed files that may be directly accessed.
 """
 
@@ -11,9 +11,8 @@ import lzma
 import types
 import importlib.machinery
 
-from ...system import files
-
-from ...hkp import library as libhkp
+from fault.system import files
+from fault.hkp import library as libhkp
 
 from .. import theme
 from .. import libif
@@ -30,7 +29,7 @@ def path(out, factor, extension):
 		start, *remainder = fs.split('/')
 		start += '.d'
 		out = out / start
-		return out.extend(remainder)
+		return out + remainder
 	else:
 		return out / ((factor.decode('utf-8')) + extension)
 
