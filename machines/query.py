@@ -28,7 +28,7 @@ def compiler_libraries(compiler, prefix, version, executable, target):
 	# Attempt to select the compiler libraries directory containing compiler support
 	# libraries for profiling, sanity, and runtime.
 	"""
-	lib = prefix.extend(['lib', 'clang', version, 'lib'])
+	lib = prefix + ['lib', 'clang', version, 'lib']
 	syslib = lib / 'darwin' # Naturally, not always consistent.
 	if syslib.exists():
 		return syslib
