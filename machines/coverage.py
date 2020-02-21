@@ -91,7 +91,7 @@ class Probe(metrics.Probe):
 		self.function_counters = set()
 
 		for factor, (route, target, sources) in frames.items():
-			if not target.exists():
+			if target.fs_type() == 'void':
 				continue
 
 			region_map = self.module.list_regions(str(target))

@@ -30,10 +30,10 @@ def compiler_libraries(compiler, prefix, version, executable, target):
 	"""
 	lib = prefix + ['lib', 'clang', version, 'lib']
 	syslib = lib / 'darwin' # Naturally, not always consistent.
-	if syslib.exists():
+	if syslib.fs_type() != 'void':
 		return syslib
 	syslib = prefix / 'lib' / 'darwin'
-	if syslib.exists():
+	if syslib.fs_type() != 'void':
 		return syslib
 
 def parse_clang_version_1(string):

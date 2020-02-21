@@ -54,7 +54,7 @@ def detect_profile_library(mechanism, architectures):
 		else:
 			profile_lib = None
 
-	if not profile_lib.exists():
+	if profile_lib.fs_type() == 'void':
 		profile_lib = None
 
 	return profile_lib
@@ -165,7 +165,7 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 
 	factors = query.delineation(*(map(str, args)))
 	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-delineation-libclang')
-	fsyms.store(pickle.dumps(factors))
+	fsyms.fs_store(pickle.dumps(factors))
 
 def instruments(args, fault, ctx, ctx_route, ctx_params):
 	"""
@@ -190,7 +190,7 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 
 	source, merge, export, projections = query.instrumentation(*args)
 	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-coverage-instrumentation')
-	fsyms.store(pickle.dumps(projections))
+	fsyms.fs_store(pickle.dumps(projections))
 
 	from .. import coverage # For Probe constructor addressing.
 	cov = {
@@ -241,7 +241,7 @@ def compiler(args, fault, ctx, ctx_route, ctx_params):
 	}
 
 	std = (syms / 'context:c++11')
-	std.store(pickle.dumps({
+	std.fs_store(pickle.dumps({
 		'system': {'library': {None: set(['c++'])}},
 		'language': {'standard': {None: ['c++11']}}
 	}))
