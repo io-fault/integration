@@ -4,13 +4,13 @@
 import os.path
 import sys
 
-from ...system import process
-from ...system import files
-from ...system import libfactor
+from fault.system import process
+from fault.system import files
+from fault.system import libfactor
+from fault.hkp import library as libhkp
 
 from ...factors import cc as libdev
 from ...factors.bin import stitch
-from ...hkp import library as libhkp
 
 from . import format
 
@@ -26,8 +26,8 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	structs = r / 'text' / 'xml'
 	formats = r / 'text' / 'html'
-	structs.init('directory')
-	formats.init('directory')
+	structs.fs_mkdir()
+	formats.fs_mkdir()
 	xml = libhkp.Dictionary.use(structs)
 	html = libhkp.Dictionary.use(formats)
 
@@ -40,7 +40,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		format.main(str(structs), str(formats), suffix="")
 
 	# temporary for the index.xml file
-	with files.Path.temporary() as tr:
+	with files.Path.fs_tmpdir() as tr:
 		index = {
 			k.decode('utf-8'): r
 			for k, r in xml.references()
@@ -48,13 +48,13 @@ def main(inv:process.Invocation) -> process.Exit:
 		mapxml = library.construct_corpus_map(str(structs), index)
 
 		idx_path = tr / 'index.xml'
-		with idx_path.open('wb') as f:
+		with idx_path.fs_open('wb') as f:
 			f.write(mapxml)
 		idx = str(idx_path)
 
 		# Format Corpus Index
 		corpus_dot_html = html.route(b'')
-		with corpus_dot_html.open('wb') as f:
+		with corpus_dot_html.fs_open('wb') as f:
 			rtf = library.index(
 				os.environ.get('CORPUS_TITLE', ''),
 				packages,
@@ -64,10 +64,10 @@ def main(inv:process.Invocation) -> process.Exit:
 			rtf.write(f)
 
 	d = libhkp.Dictionary.use(css)
-	d[b'factor.css'] = (libfactor.package_inducted(theme) / 'theme.css').load()
+	d[b'factor.css'] = (libfactor.package_inducted(theme) / 'theme.css').fs_load()
 
 	d = libhkp.Dictionary.use(js)
-	d[b'factor.js'] = (libfactor.package_inducted(libif) / 'libif.js').load()
+	d[b'factor.js'] = (libfactor.package_inducted(libif) / 'libif.js').fs_load()
 
 	sys.exit(0)
 

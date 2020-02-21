@@ -37,23 +37,23 @@ def main(structs, formatting, output):
 	structs = os.path.realpath(structs)
 	formatting = os.path.realpath(formatting)
 	out = files.Path.from_absolute(os.path.realpath(output))
-	out.init('directory')
+	out.fs_mkdir()
 
 	sd = libhkp.Dictionary.open(structs)
 	fd = libhkp.Dictionary.open(formatting)
 
 	for factor, r in sd.references():
 		dr = path(out, factor, '.xml')
-		with r.open('rb') as fi:
-			dr.init('file')
-			with dr.open('wb') as fo:
+		with r.fs_open('rb') as fi:
+			dr.fs_init()
+			with dr.fs_open('wb') as fo:
 				transparent_transfer(fi, fo)
 
 	for factor, r in fd.references():
 		dr = path(out, factor, '.html')
-		with r.open('rb') as fi:
-			dr.init('file')
-			with dr.open('wb') as fo:
+		with r.fs_open('rb') as fi:
+			dr.fs_init()
+			with dr.fs_open('wb') as fo:
 				transparent_transfer(fi, fo)
 
 	specific = [
@@ -61,8 +61,8 @@ def main(structs, formatting, output):
 		(out / 'factor.js', libif.output()),
 	]
 	for dst, src in specific:
-		with dst.open('wb') as out:
-			with src.open('rb') as inp:
+		with dst.fs_open('wb') as out:
+			with src.fs_open('rb') as inp:
 				transparent_transfer(inp, out)
 
 if __name__ == '__main__':

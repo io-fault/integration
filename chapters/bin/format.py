@@ -1,5 +1,5 @@
 """
-# Format the referenced structure set into a &..filesystem.library.Dictionary instance.
+# Format the referenced structure set into a &libhkp.Dictionary instance.
 """
 
 import sys
@@ -10,8 +10,8 @@ import types
 import importlib.machinery
 import io
 
-from ...system import files
-from ...hkp import library as libhkp
+from fault.system import files
+from fault.hkp import library as libhkp
 
 from .. import library as libfactors
 
@@ -27,9 +27,9 @@ def main(source, target, suffix='.html'):
 	xml = libfactors.construct_corpus_map(src, index)
 
 	# temporary for the index.xml file
-	with files.Path.temporary() as tr:
+	with files.Path.fs_tmpdir() as tr:
 		idx_path = tr / 'index.xml'
-		with idx_path.open('wb') as f:
+		with idx_path.fs_open('wb') as f:
 			f.write(xml)
 		idx = str(idx_path)
 
@@ -49,7 +49,7 @@ def main(source, target, suffix='.html'):
 				continue
 
 			try:
-				with output.open('wb') as f:
+				with output.fs_open('wb') as f:
 					rtf.write(f)
 			except Exception as err:
 				print(str(output), err)

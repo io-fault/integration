@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 		d = libhkp.Dictionary.use(js)
 		fr = libfactor.inducted(python.Import.from_module(libif)) / 'pf.lnk'
-		with fr.open('rb') as f:
+		with fr.fs_open('rb') as f:
 			d[b'factor.js'] = f.read()
 
 	install()
