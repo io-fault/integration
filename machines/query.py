@@ -45,7 +45,13 @@ def parse_clang_version_1(string):
 	version_line = lines[0].strip()
 
 	cctype, version_spec = version_line.split(' version ')
-	version_info, release = version_spec.split('(', 1)
+	try:
+		version_info, release = version_spec.split('(', 1)
+	except ValueError:
+		# 9.0 from FreeBSD ports does not appear to have a "release" tag.
+		version_info = version_spec
+		release = ''
+
 	release = release.strip('()')
 	version = version_info.strip()
 	version_info = version.split('.', 3)
