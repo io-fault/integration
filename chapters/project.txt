@@ -3,18 +3,13 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	`http://fault.io/engineering/export`
+	`http://fault.io/engineering/products`
 /name/
-	`export`
+	`products`
 /abstract/
-	Factor publication tools.
+	Product processing and management tools.
 /icon/
 	- (emoji)`📻`
-
-/versioning/
-	continuous
-/status/
-	experimental
 
 /controller/
 	`fault.io`

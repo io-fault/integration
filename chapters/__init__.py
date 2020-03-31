@@ -1,4 +1,3 @@
 """
-# Factor inspection and reporting tools.
+# Product processing tools and libraries.
 """
-__factor_type__ = 'project'

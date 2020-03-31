@@ -1,20 +1,80 @@
 /**
-	# Stylesheet for Python module documentation.
-	# Much of the complexity here is to avoid
-	# displaying unwanted formatting whitespace.
+	# Dark theme for HTML documents leveraging semantic elements.
 */
 @charset "utf-8";
-@import url(https://fonts.googleapis.com/css?family=Montserrat:400,700);
+@import url(https://fonts.googleapis.com/css?family=Open+Sans:300|Raleway|Inconsolata&display=swap);
+
+a.absolute {
+	text-decoration: underline;
+	text-decoration-color: #0366bd;
+}
+
+span.superscript {
+	font-size: 32%;
+	vertical-align: top;
+	display: inline-block;
+}
 
 span[class="xml.literal"] {
 	text-decoration: underline;
 }
 
-pre {
-	white-space: pre;
-	width: auto;
-	display: block;
-	background-color: #111111;
+li>*:first-child {
+	margin-top: 0.25em;
+}
+li>*:last-child {
+	margin-bottom: 0.25em;
+}
+
+h1 {
+	color: cornflowerblue;
+	font-family: monospace;
+	vertical-align: middle;
+	font-size: 128%;
+	font-weight: normal;
+}
+
+section.text > h1 {
+	font-weight: normal;
+	color: cornflowerblue;
+	font-family: 'Raleway', sans-serif;
+	vertical-align: middle;
+}
+
+p:empty {
+	display: none;
+}
+
+a, a:visited {
+	color: inherit;
+	text-decoration: none;
+}
+
+a.section-reference:before {
+	content: '[';
+	color: cornflowerblue;
+	font-size: 120%;
+}
+
+a.section-reference:after {
+	content: ']';
+	color: cornflowerblue;
+	font-size: 120%;
+}
+
+a.section-reference {
+}
+
+dd {
+}
+dd {
+	max-width: 68%;
+}
+dd dd {
+	max-width: 86%;
+}
+dd dd dd {
+	max-width: 100%;
 }
 
 table {
@@ -23,6 +83,36 @@ table {
 	border-spacing: 0;
 }
 
+code {
+	font-family: monospace;
+	font-size: 110%;
+	display: inline-block;
+}
+
+section > p {
+	max-width: 52em;
+}
+
+p > code {
+	border-width: 0;
+	border-color: #202020;
+	border-style: solid;
+	padding-left: 1px;
+	padding-right: 1px;
+}
+
+pre {
+	white-space: pre;
+	width: 80%;
+	margin: 0 auto;
+	display: block;
+	background-color: #101010;
+	font-family: monospace;
+	font-size: medium;
+	padding: 2px;
+
+	border-width: 2px;
+}
 /**
 	# The last identifier in the title providing an href to itself
 */
@@ -42,7 +132,6 @@ a:hover span.identifier {
 }
 
 a[class="text.reference"]:hover,
-span[class="python.parameter.area"] a:hover span.identifier,
 a:visited:hover, a:hover {
 	color: #FFFFFF;
 	text-shadow:
@@ -52,17 +141,37 @@ a:visited:hover, a:hover {
 }
 
 *:target > a[class="dkn"] {
-	color: #8073e6;
+	color: white;
 }
 
-*:target > div.title span[class="identifier"] {
-	color: #8073e6;
+a[class="dkn"]:hover {
+	color: cornflowerblue;
+	text-shadow:
+		3px 3px 2px rgba(0,0,0,1),
+		-3px 3px 2px rgba(0,0,0,1),
+		3px -3px 2px rgba(0,0,0,1),
+		-3px -3px 2px rgba(0,0,0,1)
+}
+
+section:target > h1 > a.title {
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	text-decoration-width: 2px;
+	text-underline-position: under;
+
+	-webkit-text-underline-offset: 3px;
+	-webkit-text-decoration-width: 2px;
+}
+
+section.class > h1 > a.title {
+	font-size: 140%;
 }
 
 html {
+	background-color: rgb(32,32,32);
 	color: #C0C0C0;
-	font-family: sans-serif;
-	font-weight: lighter;
+	font-family: 'Open Sans', sans-serif;
+	font-size: 94%;
 
 	text-shadow:
 		1px -1px 1px rgb(0, 0, 0),
@@ -72,38 +181,41 @@ html {
 }
 
 body {
-	background-color: #202020;
 	/*
-		# The dual panes manage scroll on overflow.
-	*/
 	overflow: hidden;
+	*/
+	margin: 0px;
 }
 
-p {
-	letter-spacing: 0.035mm;
+body main {
+	background-color: #3a3a3a38;
+
+	margin: 0 auto;
+	margin-top: 12px;
+	margin-bottom: 12px;
+
+	min-width: 12em;
+	max-width: 64em;
+
+	padding-top: 0.25em;
+	padding-bottom: 1.5em;
+
+	/*
+	left: 0;
+	overflow: scroll;
+	overflow-x: hidden;
+	*/
+
+	border-width: 1px;
+	border-style: solid;
+	border-color: rgba(80, 80, 80, 0.8);
+
+	box-shadow: 4px 0px 12px 4px rgba(0, 0, 0, 0.8);
+	z-index: 16;
 }
 
-dl {
-	margin-left: 8px;
-}
-
-a, a:visited {
-	color: inherit;
-	text-decoration: none;
-}
-
-*.title {
-	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
-}
-
-h1, h2, h3, h4, h5 {
-	font-family: sans-serif;
-	font-weight: normal;
-	/*color: #64A7F7;*/
-	color: #898989;
-	margin-bottom: 0.2em;
-	margin-top: 0.3em;
-	text-shadow: 0px 2px 4px rgba(0,0,0,0.8);
+main > h1:first-child {
+	margin-block-start: 0;
 }
 
 span.icon {
@@ -118,31 +230,6 @@ img.icon {
 	width: 1.1em;
 	height: 1.1em;
 	vertical-align: middle;
-}
-
-div.factor {
-	z-index: 99999;
-	position: fixed;
-	top: 0;
-	left: 0;
-	right: 0;
-	height: 1cm;
-
-	background-color: #303030;
-	padding: 4px;
-
-	border-width: 1px;
-	border-color: gray;
-	border-style: solid;
-
-	font-size: 1cm;
-}
-
-div.factor > div.title {
-	/*
-		# Factor control title.
-	*/
-	font-size: 70%;
 }
 
 div.factor > div.title > span[class="selected-fragment"]::before {
@@ -161,7 +248,7 @@ div.navigation > div[class="subfactors"] {
 	overflow: hidden;
 }
 
-div[class~="undocumented"] {
+section[class~="undocumented"] {
 	display: none;
 }
 
@@ -215,174 +302,11 @@ span.tag span.type {
 	border-style-left: solid;
 }
 
-div[class="context."] dd {
-	font-family: monospace;
+dd>*:first-child {
+	margin-block-start: 0em;
 }
 
-div[class="context."] dt {
-	font-family: sans-serif;
-	font-variant: small-caps;
-	color: green;
-}
-
-body > div[class="pane."] {
-	position: fixed;
-	top: calc(1cm + 10px);
-	height: calc(100% - (1cm + 10px));
-}
-
-/*
-	# Override width when the JavaScript identifies
-	# the HTML as being presented inside of an iframe.
-*/
-body.iframe > div[id="content."] {
-	width: 100%;
-	max-width: 100%;
-}
-
-/*
-	# Don't show the log when iframed; force the user to
-	# adjust the primary focus in order to see details in order to
-	# avoid arbitrary nesting.
-*/
-body.iframe > div[id="log."] {
-	display: none;
-}
-
-/*
-	# Factor Content
-*/
-div[id="content."] {
-	left: 0;
-	max-width: 50%;
-	width: 45%;
-	padding-left: 0;
-	padding-right: 0; /* mac scrollbar */
-	overflow: scroll;
-	overflow-x: hidden;
-
-	border-width: 0;
-	border-right-width: 2px;
-	border-right-style: groove;
-	border-right-color: rgba(100, 100, 100, 0.5);
-
-	box-shadow: 4px 0px 12px 4px rgba(0, 0, 0, 0.8);
-	z-index: 16;
-}
-
-div[id="content."] > h1 {
-	margin-left: 8px;
-}
-
-div[id="content."] > div.doc {
-	margin-left: 1em;
-}
-
-/*
-	# Selection (hash tag) Description
-*/
-div[id="log."] {
-	background: black;
-
-	left: calc(45% - 4px);
-	right: 0;
-	width: auto;
-	margin-left: 4px; /* compensate for scrollbar padding */
-	margin-bottom: 2em;
-
-	padding: 0.5em;
-	padding-left: 0;
-
-	z-index: 8;
-	overflow: scroll;
-}
-
-div[id="log."] > div.new {
-	background: white;
-}
-
-div[id="log."] > div {
-	position: relative;
-	width: auto;
-	border: 1px solid #5e5e5e;
-	padding: 0.5em;
-	border-radius: 0.25em;
-	padding-left: 2em;
-	padding-right: 2em;
-	margin-left: 4px;
-	margin-right: 1em;
-	margin-top: 1em;
-	background: rgba(120,120,120,0.3);
-
-	transition-duration: 500ms;
-	transition-property: background;
-	transition-timing-function: linear;
-}
-
-div[id="log."] > div.entry > div[class="icon"] {
-	cursor: context-menu;
-	position: absolute;
-	z-index: 1;
-	top: 8px;
-	left: 8px;
-
-	font-size: 2em;
-	width: 1cm;
-	height: 1cm;
-
-	user-select: none;
-}
-
-div[id="log."] > div.entry > iframe {
-	height: 16cm;
-	max-height: 32cm;
-	width: 100%;
-
-	box-shadow: inset 0 0 16px #000;
-
-	border-width: 1px;
-	border-color: rgba(100,100,100,.3);
-	border-style: solid;
-
-	margin: 1em;
-	margin-top: 1.5em;
-
-	overflow: scroll;
-}
-
-div[id="log."] > div.entry > div[class="fragment.address"] {
-	font-family: monospace;
-	margin-left: 1em;
-}
-
-div[id="log."] > div.entry > div[class="title"] {
-	margin-left: 1em;
-}
-
-div[class="log..actions"] {
-	user-select: none;
-	position: absolute;
-	right: 8px;
-	top: 0;
-}
-
-div[class="log..actions"]>span.close {
-	margin-left: 2px;
-}
-
-div[class="log..actions"]>span.close:hover {
-	cursor: pointer;
-	text-shadow:
-		0px 3px 6px rgba(0,0,0,1),
-		0px 3px 6px rgba(0,0,0,1);
-}
-
-div[class="log..actions"]>span.shrink:hover {
-	cursor: pointer;
-	text-shadow:
-		0px 3px 6px rgba(0,0,0,1),
-		0px 3px 6px rgba(0,0,0,1);
-}
+main > article {}
 
 div[class="syntax."] {
 	width: 100%;
@@ -398,26 +322,6 @@ div[class="syntax."] > pre {
 	font-size: small;
 	font-family: monospace;
 	overflow: hidden;
-}
-
-div[id="offscreen."] {
-	display: none;
-}
-
-div[class="index.function"] {
-	margin-left: 1em;
-}
-
-div[class="index.structure"] {
-	margin-left: 1em;
-}
-
-div[class="index.class"] {
-	margin-left: 1em;
-}
-
-div[class="imports."] > div {
-	margin-left: 1em;
 }
 
 span[class="line.count"]:hover {
@@ -439,7 +343,6 @@ span[class="line.count"] {
 	user-select: text;
 }
 
-/* Data/Class/Method Name */
 span.identifier {
 	font-family: monospace;
 	font-size: 128%;
@@ -457,119 +360,59 @@ span.internal {
 	display: none;
 }
 
-div[class="factor..structures"] > div.title,
-div[class="factor..classes"] > div.title,
-div[class="factor..functions"] > div.title,
-div[class="factor..imports"] > div.title,
-div[class="factor..sources"] > div.title,
-div[class="factor..sections"] > div.title
-{
-	width: 95%;
-	background: rgba(0,0,0,0.15);
+section.subtext > h1 > a.section {display: none;}
+section.text > h1 > a.section {display: none;}
+h1 > a.section {position: relative; font-size: 64%;}
+h1 > a.section:after {content: '.';}
 
-	padding-top: 3px;
-	padding-bottom: 3px;
-	padding-left: 2px;
+section > h1 {
+	position: relative;
 
-	border-style: solid;
-	border-width: 1px;
-	border-color: rgba(80,80,80,0.4);
-
-	padding-left: 8px;
-
-	margin-left: -4px;
-	border-right-width: 1px;
-	border-radius: 4px;
-}
-
-section > div.title,
-div[class="section"] > div.title,
-div[class="index"] > div.title
-{
-	font-size: large;
-	width: 100%;
-	vertical-align: middle;
+	background-color: #303030;
 	background: rgba(0,0,0,0.3);
+	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
 
 	padding-top: 4px;
 	padding-bottom: 4px;
-	padding-left: 0.2em;
+	padding-left: 0.4em;
 	padding-right: 1em;
 
 	margin-bottom: 4px;
-	margin-left: 1px;
+	margin-left: -1px;
+	margin-right: -1px;
 
 	border-style: solid;
 	border-width: 1px;
 	border-color: rgba(100,100,100,0.4);
-	/*border-bottom-color: rgba(200,200,200, 0.2);*/
+
+	border-right-color: rgba(16,16,16,0.4);
+	border-left-color: rgba(16,16,16,0.4);
 }
 
-div[class~="container"],
-div[class~="structure"],
-div[class~="interface"],
-div[class~="protocol"],
-div[class~="template"],
-div[class~="structure"],
-div[class~="class"]
-{
-	background: rgba(70,70,70,.15);
+section > h1.integrate {
+	/*
+		# Sections identified as minor subsections
+		# that should not be given visual or physical breaks.
+	*/
+	background-color: inherit;
+	border-width: 0px;
+	margin-left: 8px;
+	margin-right: 4px;
 
-	padding-top: 3px;
-	padding-bottom: 3px;
-	padding-left: 2px;
-
-	border-style: solid;
-	border-width: 1px;
-	border-color: rgba(100,100,100,.4);
-	border-radius: 4px;
-	border-top-left-radius: 0;
-	border-bottom-left-radius: 0;
-
-	margin-left: -1px;
-	margin-right: 12px;
-	margin-top: 0.5em;
-
-	overflow-x: hidden;
+	font-size: 108%;
 }
 
-/* doc div's inside containers */
-div[class~="container"] > div.doc,
-div[class~="structure"] > div.doc,
-div[class~="interface"] > div.doc,
-div[class~="protocol"] > div.doc,
-div[class~="template"] > div.doc,
-div[class~="structure"] > div.doc,
-div[class~="class"] > div.doc
-{
-	margin-left: 1em;
+h1 > span.abstract-type {
+	float: right;
+	font-family: cursive;
+	font-size: 64%;
+	user-select: none;
+	color: gray;
 }
 
-div[class~="property"],
-div[class~="macro"],
-div[class~="function"],
-div[class~="data"],
-div[class~="method"]
-{
-	position: relative;
-	width: 95%;
-	background: rgba(10,10,10,.15);
-
-	margin-top: 0.5em;
-	margin-bottom: 0.5em;
-	margin-left: auto;
-	margin-right: auto;
-
-	padding-top: 3px;
-	padding-bottom: 3px;
-	padding-left: 8px;
-
-	border-style: solid;
-	border-width: 1px;
-	border-color: rgba(90,90,90,.4);
-	border-radius: 4px;
-
-	overflow-x: hidden;
+article section > h1 {
+	border-width: 0px;
+	background: inherit;
 }
 
 div[class="section"] > div.title:before
@@ -579,45 +422,6 @@ div[class="section"] > div.title:before
 	padding-left: 0.5em;
 }
 
-div[class="index"] > div.title:before
-{
-	content: '\1F4C7';
-}
-
-div.index > div.title
-{
-	margin-top: 2em;
-}
-
-div[class~="macro"] div[class="section"] > div.title,
-div[class~="data"] div[class="section"] > div.title,
-div[class~="property"] div[class="section"] > div.title,
-div[class~="method"] div[class="section"] > div.title,
-div[class~="function"] div[class="section"] > div.title
-{
-	font-size: medium;
-	width: 90%;
-
-	margin-left: -4px;
-	border-right-width: 1px;
-	border-radius: 4px;
-}
-
-div[class~="macro"] > div.title,
-div[class~="data"] > div.title,
-div[class~="property"] > div.title,
-div[class~="method"] > div.title,
-div[class~="function"] > div.title
-{
-	padding-top: 3px;
-	padding-bottom: 8px;
-
-	border-width: 0;
-	border-style: solid;
-	border-color: rgba(80,80,80,0.4);
-	border-radius: 4px;
-}
-
 div[class="none.title"] {
 	font-size: 128%;
 
@@ -625,8 +429,7 @@ div[class="none.title"] {
 	padding-bottom: 2px;
 	padding-left: 2px;
 
-	color: #64A7F7;
-	color: rgb(135, 182, 248);
+	color: cornflowerblue;
 
 	text-shadow:
 		0px 3px 6px rgba(0,0,0,1),
@@ -643,32 +446,15 @@ span.inline {
 	font-family: monospace;
 }
 
-span.signature:before
-{
+span.signature:before {
 	content: '(';
 }
 
-span.signature:after
-{
+span.signature:after {
 	content: ')';
 }
 
-/* parameter area */
-span[class="python.parameter.area"]
-{
-
-}
-
-span[class="python.parameter.area"],
-span[class="python.parameter.area"] span.identifier
-{
-	font-size: 100%;
-	color: gray;
-	text-shadow: none;
-}
-
-span.sequence-delimiter:last-child
-{
+span.sequence-delimiter:last-child {
 	display: none;
 }
 
@@ -682,24 +468,12 @@ span.sequence-delimiter {
 	margin-right: 0.5em;
 }
 
-div.python-protocol-method {
-	display: none;
-}
-
-div.undocumented {
-	display: none;
-}
-
 div.head {
 	display: none;
 }
 
-div.class {
+section.class {
 	margin-top: 3em;
-}
-
-div.title {
-	font-family: monospace;
 }
 
 #navigation {
@@ -716,40 +490,14 @@ div.representation {
 }
 
 /*
-	# Formatting for HTML representation of Python objects
-*/
-div[class="python.object.inline"] {
-	max-height: 4cm;
-	overflow: scroll;
-}
-
-div[class="python.tuple"],
-span[class="python.dictionary.item"] {
-	margin-left: 2em;
-}
-
-/*
 	# Text Portions Contained in doc-strings.
 */
-div.doc {
+main > article {
 	font-size: 90%;
 }
 
-div.doc p {
-	margin-right: 1em;
-}
-
-div.doc > div.section > p:first-child {
+main > article > section > p:first-child {
 	margin-top: 0.1em;
-}
-
-div.toc a:hover {
-	text-shadow: none;
-	color: #3798F0;
-}
-
-div.toc {
-	font-size: larger;
 }
 
 div.toc-no-match {
@@ -806,99 +554,54 @@ div.toc ol.no-match {
 	font-size: smaller;
 }
 
-section {
-	margin-top: 3em;
-	padding-left: 1em;
-}
-
-section>div.title {
-	color: #5694cf;
-	background-color: #303030;
-
-	font-weight: bold;
-	font-family: monospace;
-
-	text-shadow: none;
-
-	padding: 5px;
-	padding-left: 1em;
-	margin-left: -1em;
-}
-
-section:first-child {
+main section {
 	margin-top: 2em;
 }
 
-section section {
-	margin-top: 3em;
+main article section {
+	margin-top: 1em;
 }
 
-div.module div.doc section {
-	margin-top: 0.5em;
-}
-
-section section div.title {
-	color: #5694cf;
-    background-color: rgb(48, 48, 48);
-
-	font-family: monospace;
-	font-size: 105%;
-	font-weight: normal;
-
-	text-decoration: none;
-	text-shadow: none;
-	text-align: left;
-
-	margin-left: 0;
-}
-
-/*
-	# Sections inside of fragments.
-	# HTML section elements are used in documentation chapters.
+/**
+	# Normal section content offset.
 */
-div.section {
-	margin-top: 3em;
-}
-div.section>div.title {
-}
-
-div.section:first-child {
-	margin-top: 2em;
+main section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre)
+{
+	margin-left: 12px;
+	margin-right: 8px;
 }
 
-div.section div.section {
-	margin-top: 3em;
+/**
+	# Leading text/subtext article content.
+*/
+main article section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre),
+article>*:not(section):not(article),
+main>div[class="text.abstract"]>*:not(section):not(article)
+{
+	margin-left: 4px;
+	margin-right: 4px;
 }
 
-div.module div.doc div.section {
-	margin-top: 0.5em;
+main > h1 {
+	font-size: 240%;
+	font-family: sans-serif;
+	padding-left: 12px;
 }
 
-div.section div.section div.title {
-	font-size: 110%;
-	text-decoration: none;
-	color: #438dcd;
-    background-color: rgb(48, 48, 48);
-	text-shadow: none;
+main section.text > h1 {
+	font-size: 200%;
 }
 
-div.module div.doc div.section div.title {
-	/*
-		# Reduce the font size in expression documentation.
-	*/
-	font-size: 90%;
-	background-color: rgba(20,20,20,0.6);
+main section > section.text > h1 {
+	font-size: 170%;
+}
 
-	position: relative;
-	left: -8px;
-	margin: 0;
-	width: 100%;
+main section > section > section.text > h1 {
+	font-size: 140%;
+}
 
-	border-width: 0px;
-	border-bottom-width: 1px;
-	border-top-width: 1px;
-	border-style: solid;
-	border-radius: 0;
+main section > section > section > section.text > h1 {
+	font-size: 120%;
 }
 
 /*
@@ -907,12 +610,12 @@ div.module div.doc div.section div.title {
 a[class="supersection"] {
 	vertical-align: bottom;
 	font-size: xx-small;
-	color: #4497E7;
+	color: cornflowerblue;
 	margin-right: 1em;
 	float: right;
 }
 
-span[class="ern"]:before {
+a[class!='section-reference'] > span[class="ern"]:before {
 	vertical-align: top;
 	content: "&";
 }
@@ -939,13 +642,11 @@ span[class="path.line.number"]:before {
 span[class="ern"] {
 	vertical-align: top;
 	font-size: xx-small;
-	color: darkgray;
-	color: #4497E7;
+	color: cornflowerblue;
 	margin-left: 1px;
 }
 
-div[class="text.literals"] pre,
-div[class="text.literals"] code {
+pre[class="text.syntax"] > code {
 	border-width: 0px;
 	border-radius: 0;
 
@@ -956,17 +657,13 @@ div[class="text.literals"] code {
 	margin-right: auto;
 }
 
-div[class="text.literals"] pre {
+pre[class="text.syntax"] {
 	box-shadow: inset 0 0 16px #000000;
-	background-color: rgba(0,0,0,0.2);
-	border-width: 1px;
-	border-color: rgba(100,100,100,0.3);
-}
-
-code {
-	font-family: monospace;
-	font-size: 84%;
-	display: inline-block;
+	background-color: rgba(0, 0, 0, 0.14);
+	border-width: 2px;
+	border-color: rgba(121, 121, 121, 0.2);
+	border-style: solid;
+	padding: 8px;
 }
 
 div[class^="frame.instructions"] {
@@ -1032,18 +729,15 @@ dl.text > dd > *:first-child {
 }
 
 a[class="dkn"]:before {
-	content: "↬";
+	content: '\21AC';
 	margin-right: 4px;
 }
 
 a[class="dkn"] {
-	color: #7b7b7b;
+	color: cornflowerblue;
 
 	font-family: sans-serif;
 	font-size: 115%;
-	font-size: 110%;
-
-	vertical-align: middle;
 
 	margin-left: 2px;
 	margin-right: 2px;
@@ -1057,8 +751,7 @@ dl.text > dt {
 	font-family: monospace;
 }
 
-div[id="factor..section.index"]
-{
+div[id="factor..section.index"] {
 	float: right;
 	margin-left: 1em;
 	margin-right: 1em;
@@ -1074,8 +767,7 @@ div[id="factor..section.index"]
 	background-color: rgba(200, 200, 200, 0.1);
 }
 
-div.factor > div[class="index.reference"]
-{
+div.factor > div[class="index.reference"] {
 	display: none;
 	z-index: -1;
 	overflow: hidden;
@@ -1087,8 +779,7 @@ div.factor > div[class="index.reference"]
 	margin-bottom: 0.5em;
 }
 
-span.tab
-{
+span.tab {
 	background-color: rgba(0, 0, 0, 0.3);
 	color: gray;
 
@@ -1104,62 +795,11 @@ span.tab
 	font-family: monospace;
 }
 
-span.tab:hover
-{
+span.tab:hover {
 	color: white;
 }
 
-div.title > span.metrics
-{
-	font-size: 64%;
-	margin-top: 1em;
-	float: right;
-	padding-right: 1em;
-}
-
-/*
-	# Subsections inside concept representations
-*/
-div.module div.doc div[class="section"] div[class="section"] > div.title {
-	padding-left: 8px;
-	background-color: rgba(20,20,20,0.4);
-
-	border-width: 0px;
-	border-bottom-width: 1px;
-	border-radius: 0;
-}
-
-div.module div.doc div[class="section"] div[class="section"] {
-	position: relative;
-	overflow-x: hidden;
-
-	background-color: rgba(20,20,20,.6);
-
-	margin: 1em;
-
-	border-color: rgba(100,100,100,0.3);
-	border-width: 1px;
-	border-style: solid;
-	border-radius: 6px;
-}
-
-div.doc div.section[id$=".Parameters"] > dl.text > dt > span[class="text.key"] {
-	color: #e68073;
-	background-color: #000000;
-
-	font-family: monospace;
-	font-size: small;
-	font-weight: normal;
-
-	border: #333333 1px solid;
-
-	padding: 1px;
-	padding-left: 0.75em;
-	padding-right: 0.75em;
-}
-
-div.qualifiers
-{
+div.qualifiers {
 	position: relative;
 	left: -8px;
 
@@ -1175,7 +815,48 @@ div.qualifiers
 	margin-top: 1px;
 }
 
-div.qualifiers:empty
-{
+div.qualifiers:empty {
 	display: none;
 }
+
+dl.table-view {
+	display: grid;
+	grid-template-columns: max-content auto;
+}
+
+dl.table-view > dt {
+	grid-column-start: 1;
+}
+
+dl.table-view > dd {
+	grid-column-start: 2;
+}
+
+/*
+dl.table-view {
+	display: flex;
+
+	flex-flow: row;
+	flex-wrap: wrap;
+	max-width: 84%;
+
+	overflow: visible;
+}
+
+dl.table-view dt {
+	flex: 1 2 24%;
+	text-overflow: ellipsis;
+
+	overflow: hidden;
+}
+
+dl.table-view dd {
+	flex: 2 1 64%;
+
+	margin-left: auto;
+	text-align: left;
+	text-overflow: ellipsis;
+
+	overflow: hidden;
+}
+/*

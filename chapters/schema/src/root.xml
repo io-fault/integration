@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<grammar
- xmlns="http://relaxng.org/ns/structure/1.0"
- ns="http://fault.io/xml/fragments"
- datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes">
-
- <include href="python.rng"/>
-</grammar>
