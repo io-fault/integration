@@ -23,6 +23,9 @@ from fault.system import execution as libexec
 from fault.system import process
 from fault.system import python
 from fault.system import files
+from fault.project import root
+
+from ...context import templates
 
 from ....factors import cc
 from ....factors import data as ccd
@@ -32,6 +35,25 @@ from .. import library
 name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
 tool_name = 'llvm'
+
+project_info = {
+	'identifier': "http://fault.io/engineering/context-support",
+	'name': "f_intention",
+	'abstract': "Context support project.",
+	'controller': "fault.io",
+	'status': "volatile",
+	'icon': "- (emoji)`" + "\uD83D\uDEA7`".encode('utf-16', 'surrogatepass').decode('utf-16'),
+	'contact': "`http://fault.io/critical`"
+}
+
+project_infra = """! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/infrastructure>
+
+/fault-c-interfaces/
+	- &<http://fault.io/engineering/posix#include>
+	- &<http://fault.io/engineering/python#include>
+"""
 
 def detect_profile_library(mechanism, architectures):
 	"""
@@ -102,10 +124,8 @@ def rewrite_mechanisms(route:files.Path, layer:str, metrics_data):
 
 	return ccd.update_named_mechanism(route, layer, data)
 
-def instantiate_software(dst, package, subpackage, name, template, type, fault='fault'):
+def instantiate_software(ctxpy, package, subpackage, name, template, type, fault='fault'):
 	# Initiialize llvm instrumentation or delineation tooling inside the target context.
-	ctxpy = dst / 'lib' / 'python'
-
 	command = [
 		"python3", "-m",
 		fault+'.text.bin.ifst',
@@ -132,38 +152,62 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	imp = python.Import.from_fullname(__package__).container
 	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	instantiate_software(ctx_route, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
+	pjtxt = (
+		"! CONTEXT:\n"
+		"\t/protocol/\n"
+		"\t\t&<http://if.fault.io/project/information>\n\n" + "\n".join([
+			"/%s/\n\t%s" % i for i in project_info.items()
+		]) + "\n"
+	)
 
-	llvm = {
-		'command': __package__ + '.delineate',
-		'interface': library.__name__ + '.clang',
-		'method': 'python',
-		'redirect': 'stdout',
-	}
+	pdpath = ctx_route@'lib/python'
+	instantiate_software(pdpath, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
+	(pdpath@"f_intention/.protocol").fs_init(b"http://fault.io/engineering/fragments factors/polynomial-1")
+	(pdpath@"f_intention/project.txt").fs_init(pjtxt.encode('utf-8', 'surrogateescape'))
+
+	pd = root.Product(pdpath)
+	pd.update()
+	pd.store()
 
 	data = {
 		'host': {
+			'system': 'void',
+			'architecture': 'fragments',
 			'transformations': {
-				'objective-c': llvm,
-				'c++': llvm,
-				'c': llvm,
-				'c-header': llvm,
-				'c++-header': llvm,
+				'c': templates.Inherit(transform_tool_name),
+				'c++': templates.Inherit(transform_tool_name),
+				'objective-c': templates.Inherit(transform_tool_name),
+				'c-header': templates.Inherit(transform_tool_name),
+				'c++-header': templates.Inherit(transform_tool_name),
+
+				transform_tool_name: {
+					'command': __package__ + '.delineate',
+					'interface': library.__name__ + '.clang',
+					'method': 'python',
+				}
+			},
+
+			'integrations': {
+				'archive': templates.Clone,
+				'partial': templates.Clone,
+				'extension': templates.Clone,
+				'executable': templates.Clone,
+				'library': templates.Clone,
 			}
 		}
 	}
 	ccd.update_named_mechanism(mech, tool_name, data)
 
-	if not args:
+	if 1:
 		# Derive library and include locations from tool:llvm-clang command
 		merged = ctx.select('host')[1].descriptor
 		syscmd = merged['transformations'][transform_tool_name]['command']
 		prefix = files.Path.from_absolute(syscmd) ** 2
 		libdir = prefix / 'lib'
 		incdir = prefix / 'include'
-		args = (incdir, libdir, 'clang')
+		dep = (incdir, libdir, 'clang')
 
-	factors = query.delineation(*(map(str, args)))
+	factors = query.delineation(*(map(str, dep)))
 	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-delineation-libclang')
 	fsyms.fs_store(pickle.dumps(factors))
 
@@ -176,7 +220,7 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	imp = python.Import.from_fullname(__package__).container
 	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	instantiate_software(ctx_route, 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
+	instantiate_software(ctx_route@'lib/python', 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
 
 	# Derive llvm-config location from tool:llvm-clang's 'command' entry.
 	merged = ccd.load_named_mechanism(mech, 'clang')
@@ -259,7 +303,7 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 
 	if ctx_intention == 'instruments':
 		instruments(args, fault, ctx, ctx_route, ctx_params)
-	elif ctx_intention == 'fragments':
+	elif ctx_intention == 'delineation':
 		fragments(args, fault, ctx, ctx_route, ctx_params)
 
 	ccd.update_named_mechanism(route, 'language-specifications', {

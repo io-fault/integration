@@ -18,7 +18,7 @@ optimizations = {
 	'injections': '0',
 	'instruments': '0',
 	'debug': '0',
-	'fragments': '0',
+	'delineation': '0',
 }
 
 def standard_parameters(build):

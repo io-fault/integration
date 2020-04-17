@@ -1,41 +1,78 @@
 /**
-	# Fragments extractor.
+	// Fragments extractor.
 */
 #include "clang-c/Index.h"
 #include <stdio.h>
 #include <fault/libc.h>
+#include <fault/fs.h>
 
-int print_xml_attribute(FILE *, char *, char *); /* attribute identifier and data */
-int print_xml_number_attribute(FILE *, char *, unsigned long); /* attribute identifier and data */
-int print_xml_string_attribute(FILE *, char *, CXString); /* attribute identifier and data */
-int print_xml_identifier(FILE *, char *); /* attribute identifier and data */
-int print_xml_text(FILE *, char *);
-int print_xml_open(FILE *, char *);
-int print_xml_enter(FILE *);
-int print_xml_empty(FILE *);
-int print_xml_close(FILE *, char *);
+struct Image {
+	FILE *elements;
+	FILE *doce; /* documentation entries */
+	FILE *docs;
+	FILE *data;
+};
 
 static enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData cd);
 
+/*
+	print_attributes_open(ctx->elements);
+	{
+		print_attribute(ctx->elements, "element", (char *) node_element_name(parent.kind));
+		print_origin(ctx->elements, parent);
+	}
+	print_attributes_close(ctx->elements);
+
+	print_close(ctx->elements, "context");
+*/
+
 static void
-print_origin(FILE *fp, CXCursor c)
+print_path(FILE *fp, CXCursor cursor)
 {
-	CXSourceRange range = clang_getCursorExtent(c);	
+	CXCursor parent = clang_getCursorSemanticParent(cursor);
+
+	switch (parent.kind)
+	{
+		case CXCursor_TranslationUnit:
+		case CXCursor_FirstInvalid:
+			;
+		break;
+
+		default:
+			print_path(fp, parent);
+		break;
+	}
+
+	{
+		CXString s = clang_getCursorSpelling(cursor);
+		const char *cs = clang_getCString(s);
+
+		if (cs != NULL)
+		{
+			fprintf(fp, quote("%s") ",", s);
+			clang_disposeString(s);
+		}
+	}
+}
+
+static void
+print_origin(FILE *fp, CXCursor cursor)
+{
+	CXSourceRange range = clang_getCursorExtent(cursor);
 	CXSourceLocation srcloc = clang_getRangeStart(range);
 	CXFile file;
 	unsigned int line, offset, column;
 
 	clang_getSpellingLocation(srcloc, &file, &line, &column, &offset);
-	print_xml_string_attribute(fp, "origin", clang_getFileName(file));
+	print_string_attribute(fp, "origin", clang_getFileName(file));
 }
 
 /**
-	# Generic means to note the location of the cursor.
+	// Generic means to note the location of the cursor.
 */
 static int
-print_source_location(FILE *fp, CXCursor c)
+print_source_location(FILE *fp, CXSourceRange range)
 {
-	CXSourceRange range = clang_getCursorExtent(c);
 	CXSourceLocation start = clang_getRangeStart(range);
 	CXSourceLocation stop = clang_getRangeEnd(range);
 	CXFile start_file, stop_file;
@@ -44,17 +81,14 @@ print_source_location(FILE *fp, CXCursor c)
 	clang_getSpellingLocation(start, &start_file, &start_line, &start_column, &start_offset);
 	clang_getSpellingLocation(stop, &stop_file, &stop_line, &stop_column, &stop_offset);
 
-	print_xml_open(fp, "start");
-	print_xml_number_attribute(fp, "line", start_line);
-	print_xml_number_attribute(fp, "column", start_column);
-	print_xml_number_attribute(fp, "offset", start_offset);
-	print_xml_empty(fp);
+	fputs("[[", fp);
+	print_number(fp, "line", start_line);
+	print_number(fp, "column", start_column);
 
-	print_xml_open(fp, "stop");
-	print_xml_number_attribute(fp, "line", stop_line);
-	print_xml_number_attribute(fp, "column", stop_column);
-	print_xml_number_attribute(fp, "offset", stop_offset);
-	print_xml_empty(fp);
+	fputs("],[", fp);
+	print_number(fp, "line", stop_line);
+	print_number(fp, "column", stop_column > 0 ? stop_column-1 : 0);
+	fputs("]]", fp);
 
 	return(0);
 }
@@ -63,64 +97,80 @@ static int
 print_spelling_identifier(FILE *fp, CXCursor c)
 {
 	CXString s = clang_getCursorSpelling(c);
-	char *cs = clang_getCString(s);
+	const char *cs = clang_getCString(s);
 
-	print_xml_identifier(fp, cs);
+	print_identifier(fp, cs);
 	clang_disposeString(s);
+
+	return(0);
 }
 
 static int
-print_qualifiers(FILE *fp, CXType t, enum CXTypeKind k)
+print_type_class(FILE *fp, enum CXTypeKind k)
 {
-	int r = 0;
-	print_xml_open(fp, "qualifiers");
-
 	switch (k)
 	{
 		case CXType_Enum:
-			print_xml_attribute(fp, "type", "enum");
+			print_attribute(fp, "meta", "enum");
 		break;
 
 		case CXType_IncompleteArray:
-			print_xml_attribute(fp, "type", "array");
-			print_xml_number_attribute(fp, "elements", (unsigned long) clang_getArraySize(t));
+			print_attribute(fp, "meta", "array");
 		break;
 
 		case CXType_VariableArray:
-			print_xml_attribute(fp, "type", "array");
-			print_xml_number_attribute(fp, "elements", (unsigned long) clang_getArraySize(t));
+			print_attribute(fp, "meta", "array");
 		break;
 
 		case CXType_Vector:
-			print_xml_attribute(fp, "type", "vector");
+			print_attribute(fp, "meta", "vector");
 		break;
 
 		case CXType_Typedef:
-			print_xml_attribute(fp, "type", "typedef");
-			r = 1;
+			print_attribute(fp, "meta", "typedef");
 		break;
 
 		default:
 			if (k >= 100)
-				print_xml_attribute(fp, "type", "pointer");
+				print_attribute(fp, "meta", "pointer");
 			else
-				print_xml_attribute(fp, "type", "data");
+				print_attribute(fp, "meta", "data");
 		break;
 	}
 
-	if (clang_isConstQualifiedType(t))
-		print_xml_attribute(fp, "const", "true");
-
-	if (clang_isVolatileQualifiedType(t))
-		print_xml_attribute(fp, "volatile", "true");
-
-	if (clang_isRestrictQualifiedType(t))
-		print_xml_attribute(fp, "restrict", "true");
-
-	print_xml_empty(fp);
-	return(r);
+	return(0);
 }
 
+static int
+print_qualifiers(FILE *fp, CXType t)
+{
+	int c = 0;
+
+	print_enter(fp);
+	{
+		if (clang_isConstQualifiedType(t))
+		{
+			print_string(fp, "const", c);
+			c += 1;
+		}
+
+		if (clang_isVolatileQualifiedType(t))
+		{
+			print_string(fp, "volatile", c);
+			c += 1;
+		}
+
+		if (clang_isRestrictQualifiedType(t))
+		{
+			print_string(fp, "restrict", c);
+			c += 1;
+		}
+	}
+	print_exit(fp);
+	return(0);
+}
+
+// print_number_attribute(fp, "elements", (unsigned long) clang_getArraySize(t));
 static int
 print_type(FILE *fp, CXCursor c, CXType ct)
 {
@@ -140,11 +190,26 @@ print_type(FILE *fp, CXCursor c, CXType ct)
 		++indirection_level;
 	}
 
-	/*
-		# Does not handle inline defintions
-	*/
-	print_xml_open(fp, "type");
+	print_enter(fp);
+	if (0)
+	{
+		xt = ct;
+		k = ct.kind;
 
+		if (!print_qualifiers(fp, xt))
+		{
+			while (k >= 100)
+			{
+				xt = clang_getPointeeType(xt);
+				k = xt.kind;
+				if (print_qualifiers(fp, xt))
+					break;
+			}
+		}
+	}
+	print_exit(fp);
+
+	print_attributes_open(fp);
 	if (!clang_Cursor_isNull(dec) && dec.kind != CXCursor_NoDeclFound)
 	{
 		print_spelling_identifier(fp, dec);
@@ -152,146 +217,177 @@ print_type(FILE *fp, CXCursor c, CXType ct)
 	}
 	else
 	{
-		print_xml_string_attribute(fp, "identifier", clang_getTypeSpelling(xt));
+		print_string_attribute(fp, "identifier", clang_getTypeSpelling(xt));
 	}
 
-	print_xml_string_attribute(fp, "display", clang_getTypeSpelling(ct));
-	print_xml_string_attribute(fp, "kind", clang_getTypeKindSpelling(k));
+	print_string_attribute(fp, "syntax", clang_getTypeSpelling(ct));
+	print_string_attribute(fp, "kind", clang_getTypeKindSpelling(k));
 
 	i = clang_Type_getAlignOf(xt);
 	if (i >= 0)
-		print_xml_number_attribute(fp, "align", i);
+		print_number_attribute(fp, "align", i);
 
 	i = clang_Type_getSizeOf(xt);
 	if (i >= 0)
-		print_xml_number_attribute(fp, "size", i);
+		print_number_attribute(fp, "size", i);
 
-	print_xml_enter(fp);
-
-	{
-		xt = ct;
-		k = ct.kind;
-
-		if (!print_qualifiers(fp, xt, k))
-		{
-			while (k >= 100)
-			{
-				xt = clang_getPointeeType(xt);
-				k = xt.kind;
-				if (print_qualifiers(fp, xt, k))
-					break;
-			}
-		}
-	}
-
-	print_xml_close(fp, "type");
+	print_attributes_close(fp);
+	return(0);
 }
 
-static int
-print_comment(FILE *fp, CXCursor c)
+static bool
+print_comment(struct Image *ctx, CXCursor cursor)
 {
-	CXString comment = clang_Cursor_getRawCommentText(c);
+	CXString comment = clang_Cursor_getRawCommentText(cursor);
 	char *comment_str = clang_getCString(comment);
 
 	if (comment_str != NULL)
 	{
-		print_xml_open(fp, "comment");
-		print_xml_attribute(fp, "xml:space", "preserve");
-		fprintf(fp, ">");
-		print_xml_text(fp, comment_str);
-		print_xml_close(fp, "comment");
-	}
+		fputs("[", ctx->doce);
+		print_path(ctx->doce, cursor);
+		fputs("],", ctx->doce);
 
-	clang_disposeString(comment);
+		fputs("[\x22", ctx->docs);
+		print_text(ctx->docs, comment_str, true);
+		fputs("\x22],", ctx->docs);
+
+		clang_disposeString(comment);
+	}
+	else
+		return(false);
+
+	return(true);
+}
+
+static int
+print_documented(FILE *fp, CXCursor cursor)
+{
+	CXSourceRange docarea = clang_Cursor_getCommentRange(cursor);
+
+	if (!clang_Range_isNull(docarea))
+	{
+		fputs("," quote("documented") ":", fp);
+		print_source_location(fp, docarea);
+	}
 
 	return(0);
 }
 
+/**
+	// Describe the callable's type and parameters.
+*/
 static enum CXChildVisitResult
-callable(CXCursor parent, CXCursor cursor, CXClientData cd,
+callable(
+	CXCursor parent, CXCursor cursor, CXClientData cd,
 	enum CXCursorKind kind,
 	enum CXVisibilityKind vis,
 	enum CXAvailabilityKind avail)
 {
-	FILE *fp = (FILE *) cd;
+	struct Image *ctx = (struct Image *) cd;
 	CXCursor arg;
-	int i = 0, nargs = clang_Cursor_getNumArguments(cursor);
+	int i, nargs = clang_Cursor_getNumArguments(cursor);
 
-	print_source_location(fp, cursor);
-	print_comment(fp, cursor);
+	print_open(ctx->elements, "type");
+	print_type(ctx->elements, cursor, clang_getResultType(clang_getCursorType(cursor)));
+	print_close(ctx->elements, "type");
 
-	/*
-		# Don't run visit children as it's only interested in arguments.
-	*/
-	while (i < nargs)
+	for (i = 0; i < nargs; ++i)
 	{
 		CXCursor arg = clang_Cursor_getArgument(cursor, i);
 		CXType ct = clang_getCursorType(arg);
 
-		print_xml_open(fp, "parameter");
-		print_spelling_identifier(fp, arg);
-		fprintf(fp, ">");
-		print_type(fp, arg, ct);
-		print_xml_close(fp, "parameter");
+		print_open(ctx->elements, "parameter");
+		print_enter(ctx->elements);
+		{
+			print_open(ctx->elements, "type");
+			print_type(ctx->elements, arg, ct);
+			print_close(ctx->elements, "type");
+		}
+		print_exit(ctx->elements);
 
-		++i;
+		print_attributes_open(ctx->elements);
+		{
+			print_spelling_identifier(ctx->elements, arg);
+		}
+		print_attributes_close(ctx->elements);
+
+		print_close(ctx->elements, "parameter");
 	}
-
-	print_xml_open(fp, "return");
-	fprintf(fp, ">");
-	print_type(fp, cursor, clang_getResultType(clang_getCursorType(cursor)));
-	print_xml_close(fp, "return");
 
 	return(CXChildVisit_Continue);
 }
 
 static enum CXChildVisitResult
-macro(CXCursor parent, CXCursor cursor, CXClientData cd,
+macro(
+	CXCursor parent, CXCursor cursor, CXClientData cd,
 	enum CXCursorKind kind,
 	enum CXVisibilityKind vis,
 	enum CXAvailabilityKind avail)
 {
-	FILE *fp = (FILE *) cd;
+	struct Image *ctx = (struct Image *) cd;
 	CXCursor arg;
 	int i = 0, nargs = clang_Cursor_getNumArguments(cursor);
 
-	print_source_location(fp, cursor);
-	print_comment(fp, cursor);
+	print_comment(ctx, cursor);
 
-	/*
-		# Currently emits nothing as there is no way to get macro arguments from libclang.
-	*/
-	while (i < nargs)
+	print_enter(ctx->elements);
 	{
-		CXCursor arg = clang_Cursor_getArgument(cursor, i);
+		while (i < nargs)
+		{
+			CXCursor arg = clang_Cursor_getArgument(cursor, i);
 
-		print_xml_open(fp, "parameter");
-		print_spelling_identifier(fp, arg);
-		fprintf(fp, ">");
-		print_xml_close(fp, "parameter");
+			print_open_empty(ctx->elements, "parameter");
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, arg);
+			}
+			print_attributes_close(ctx->elements);
+			print_close(ctx->elements, "parameter");
 
-		++i;
+			++i;
+		}
 	}
+	print_exit(ctx->elements);
+
+	print_attributes_open(ctx->elements);
+	{
+		print_spelling_identifier(ctx->elements, cursor);
+		fputs(quote("area") ":", ctx->elements);
+		print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+		print_documented(ctx->elements, cursor);
+	}
+	print_attributes_close(ctx->elements);
 
 	return(CXChildVisit_Continue);
 }
 
 static enum CXChildVisitResult
-print_enumeration(CXCursor parent, CXCursor cursor, CXClientData cd,
+print_enumeration(
+	CXCursor parent, CXCursor cursor, CXClientData cd,
 	enum CXCursorKind kind,
 	enum CXVisibilityKind vis,
 	enum CXAvailabilityKind avail)
 {
-	FILE *fp = (FILE *) cd;
+	struct Image *ctx = (struct Image *) cd;
 	CXType t;
 
-	print_source_location(fp, cursor);
-	print_comment(fp, cursor);
+	print_comment(ctx, cursor);
 
 	t = clang_getEnumDeclIntegerType(cursor);
-	print_type(fp, cursor, t);
+	print_enter(ctx->elements);
+	{
+		clang_visitChildren(cursor, visitor, cd);
+	}
+	print_exit(ctx->elements);
 
-	clang_visitChildren(cursor, visitor, cd);
+	print_attributes_open(ctx->elements);
+	{
+		print_spelling_identifier(ctx->elements, cursor);
+		fputs(quote("area") ":", ctx->elements);
+		print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+		print_documented(ctx->elements, cursor);
+	}
+	print_attributes_close(ctx->elements);
 
 	return(CXChildVisit_Continue);
 }
@@ -305,7 +401,7 @@ node_element_name(enum CXCursorKind kind)
 			return("implementation");
 
 		case CXCursor_ObjCCategoryImplDecl:
-			return("category.implementation");
+			return("category-implementation");
 
 		case CXCursor_ObjCCategoryDecl:
 			return("category");
@@ -323,7 +419,7 @@ node_element_name(enum CXCursorKind kind)
 			return("enumeration");
 
 		case CXCursor_EnumConstantDecl:
-			return("value");
+			return("constant");
 
 		case CXCursor_MacroDefinition:
 			return("macro");
@@ -351,63 +447,56 @@ node_element_name(enum CXCursorKind kind)
 			return("field");
 
 		case CXCursor_NamespaceAlias:
-			return("namespace.alias");
+			return("namespace-alias");
 
 		case CXCursor_Namespace:
 			return("namespace");
 
 		default:
-			return("unknown-type");
+			return("unknown");
 	}
 
 	return("switch-passed-with-default");
 }
 
 static void
-print_contexts(FILE *fp, CXCursor c)
+print_collection(struct Image *ctx, CXCursor cursor, CXClientData cd, const char *element_name)
 {
-	CXCursor parent;
-	parent = clang_getCursorSemanticParent(c);
+	print_comment(ctx, cursor);
 
-	while (parent.kind != CXCursor_TranslationUnit)
+	print_open(ctx->elements, element_name);
+
+	print_enter(ctx->elements);
 	{
-		print_xml_open(fp, "context");
-		print_spelling_identifier(fp, parent);
-		print_xml_attribute(fp, "element", (char *) node_element_name(parent.kind));
-		print_origin(fp, parent);
-		print_xml_empty(fp);
-
-		parent = clang_getCursorSemanticParent(parent);
+		clang_visitChildren(cursor, visitor, cd);
 	}
-}
+	print_exit(ctx->elements);
 
-static void
-print_collection(FILE *fp, CXCursor c, CXClientData cd, const char *element_name)
-{
-	print_xml_open(fp, element_name);
-	print_spelling_identifier(fp, c);
-	print_xml_enter(fp);
-	print_source_location(fp, c);
-	print_comment(fp, c);
+	print_attributes_open(ctx->elements);
+	{
+		print_spelling_identifier(ctx->elements, cursor);
+		fputs(quote("area") ":", ctx->elements);
+		print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+		print_documented(ctx->elements, cursor);
+	}
+	print_attributes_close(ctx->elements);
 
-	print_contexts(fp, c);
-	clang_visitChildren(c, visitor, cd);
-	print_xml_close(fp, element_name);
+	print_close(ctx->elements, element_name);
 }
 
 /**
-	# Visit the declaration nodes emitting structure and documentation strings.
+	// Visit the declaration nodes emitting structure and documentation strings.
 */
 static enum CXChildVisitResult
 visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 {
+	struct Image *ctx = (struct Image *) cd;
 	static CXString last_file = {0,};
 	enum CXChildVisitResult ra = CXChildVisit_Continue;
 
 	enum CXCursorKind kind = clang_getCursorKind(cursor);
 	enum CXVisibilityKind vis = clang_getCursorVisibility(cursor);
 	enum CXAvailabilityKind avail = clang_getCursorAvailability(cursor);
-	FILE *fp = (FILE *) cd;
 
 	CXSourceLocation location = clang_getCursorLocation(cursor);
 
@@ -424,11 +513,19 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		{
 			if (clang_getCString(filename)[0] != '<')
 			{
-				print_xml_open(fp, "file");
-				print_xml_attribute(fp, "path", clang_getCString(filename));
-				print_xml_empty(fp);
+				print_open_empty(ctx->elements, "include");
+				{
+					print_attributes_open(ctx->elements);
+					{
+						print_attribute(ctx->elements, "path", clang_getCString(filename));
+					}
+					print_attributes_close(ctx->elements);
+				}
+				print_close(ctx->elements, "include");
+
 				if (clang_getCString(last_file) != NULL)
 					clang_disposeString(last_file);
+
 				last_file = filename;
 			}
 		}
@@ -440,45 +537,62 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	{
 		case CXCursor_TranslationUnit:
 			/*
-				# Root node already being visited.
+				// Root node already being visited.
 			*/
 		break;
 
 		case CXCursor_TypedefDecl:
 		{
 			CXType real_type = clang_getTypedefDeclUnderlyingType(cursor);
-			print_xml_open(fp, "typedef");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_source_location(fp, cursor);
-			print_type(fp, cursor, real_type);
-			print_xml_close(fp, "typedef");
+
+			print_comment(ctx, cursor);
+			print_open(ctx->elements, "typedef");
+
+			print_enter(ctx->elements);
+			{
+				print_type(ctx->elements, cursor, real_type);
+			}
+			print_exit(ctx->elements);
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+				fputs(quote("area") ":", ctx->elements);
+				print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+				print_documented(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "typedef");
 		}
 		break;
 
 		case CXCursor_EnumDecl:
 		{
-			print_xml_open(fp, "enumeration");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
+			print_open(ctx->elements, "enumeration");
 			ra = print_enumeration(parent, cursor, cd, kind, vis, avail);
-			print_xml_close(fp, "enumeration");
+			print_close(ctx->elements, "enumeration");
 		}
 		break;
 
 		case CXCursor_EnumConstantDecl:
 		{
-			print_xml_open(fp, "value");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			fprintf(fp, "%lld", clang_getEnumConstantDeclValue(cursor));
-			print_xml_close(fp, "value");
+			print_open_empty(ctx->elements, "constant");
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+				print_number_attribute(ctx->elements, "integer", clang_getEnumConstantDeclValue(cursor));
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "constant");
 		}
 		break;
 
 		case CXCursor_MacroExpansion:
 			/*
-				# Link expansion to definition.
+				// Link expansion to definition.
 			*/
 			clang_visitChildren(cursor, visitor, cd);
 		break;
@@ -494,11 +608,9 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 		case CXCursor_MacroDefinition:
 		{
-			print_xml_open(fp, "macro");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
+			print_open(ctx->elements, "macro");
 			ra = macro(parent, cursor, cd, kind, vis, avail);
-			print_xml_close(fp, "macro");
+			print_close(ctx->elements, "macro");
 		}
 		break;
 
@@ -511,27 +623,53 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			if (clang_isCursorDefinition(cursor) == 0)
 				return(ra);
 
-			print_xml_open(fp, "method");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_contexts(fp, cursor);
+			print_comment(ctx, cursor);
+			print_open(ctx->elements, "method");
 
-			ra = callable(parent, cursor, cd, kind, vis, avail);
-			print_xml_close(fp, "method");
+			print_enter(ctx->elements);
+			{
+				ra = callable(parent, cursor, cd, kind, vis, avail);
+			}
+			print_exit(ctx->elements);
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+				fputs(quote("area") ":", ctx->elements);
+				print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+				print_documented(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "method");
 		}
 		break;
 
 		case CXCursor_FunctionDecl:
+		{
 			if (clang_isCursorDefinition(cursor) == 0)
 				return(ra);
 
-			print_xml_open(fp, "function");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_contexts(fp, cursor);
+			print_comment(ctx, cursor);
+			print_open(ctx->elements, "function");
 
-			ra = callable(parent, cursor, cd, kind, vis, avail);
-			print_xml_close(fp, "function");
+			print_enter(ctx->elements);
+			{
+				ra = callable(parent, cursor, cd, kind, vis, avail);
+			}
+			print_exit(ctx->elements);
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+				fputs(quote("area") ":", ctx->elements);
+				print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+				print_documented(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "function");
+		}
 		break;
 
 		case CXCursor_UnionDecl:
@@ -539,43 +677,51 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			if (clang_isCursorDefinition(cursor))
 				return(ra);
 
-			print_xml_open(fp, "union");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_comment(fp, cursor);
+			print_comment(ctx, cursor);
 
-			clang_visitChildren(cursor, visitor, cd);
+			print_open(ctx->elements, "union");
+			print_enter(ctx->elements);
+			{
+				clang_visitChildren(cursor, visitor, cd);
+			}
+			print_exit(ctx->elements);
 
-			print_xml_close(fp, "union");
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "union");
 		}
 		break;
 
 		case CXCursor_StructDecl:
-			print_collection(fp, cursor, cd, "structure");
+			print_collection(ctx, cursor, cd, "structure");
 		break;
 
 		case CXCursor_ObjCImplementationDecl:
-			print_collection(fp, cursor, cd, "implementation");
+			print_collection(ctx, cursor, cd, "implementation");
 		break;
 
 		case CXCursor_ObjCCategoryImplDecl:
-			print_collection(fp, cursor, cd, "category.implementation");
+			print_collection(ctx, cursor, cd, "category.implementation");
 		break;
 
 		case CXCursor_ObjCInterfaceDecl:
-			print_collection(fp, cursor, cd, "interface");
+			print_collection(ctx, cursor, cd, "interface");
 		break;
 
 		case CXCursor_ObjCCategoryDecl:
-			print_collection(fp, cursor, cd, "category");
+			print_collection(ctx, cursor, cd, "category");
 		break;
 
 		case CXCursor_ObjCProtocolDecl:
-			print_collection(fp, cursor, cd, "protocol");
+			print_collection(ctx, cursor, cd, "protocol");
 		break;
 
 		case CXCursor_ClassDecl:
-			print_collection(fp, cursor, cd, "class");
+			print_collection(ctx, cursor, cd, "class");
 		break;
 
 		case CXCursor_ObjCSynthesizeDecl:
@@ -592,14 +738,25 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		case CXCursor_ObjCIvarDecl:
 		case CXCursor_FieldDecl:
 		{
-			print_xml_open(fp, "field");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_comment(fp, cursor);
+			print_comment(ctx, cursor);
 
-			print_type(fp, cursor, clang_getCursorType(cursor));
+			print_open(ctx->elements, "field");
 
-			print_xml_close(fp, "field");
+			print_enter(ctx->elements);
+			{
+				print_open(ctx->elements, "type");
+				print_type(ctx->elements, cursor, clang_getCursorType(cursor));
+				print_close(ctx->elements, "type");
+			}
+			print_exit(ctx->elements);
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "field");
 		}
 		break;
 
@@ -608,24 +765,37 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 		case CXCursor_NamespaceAlias:
 		{
-			print_xml_open(fp, "namespace");
-			print_spelling_identifier(fp, cursor);
-			print_xml_attribute(fp, "target", "...");
-			print_xml_empty(fp);
+			print_open(ctx->elements, "namespace");
+
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+				print_attribute(ctx->elements, "target", "...");
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "namespace");
 		}
 		break;
 
 		case CXCursor_Namespace:
 		{
-			print_xml_open(fp, "namespace");
-			print_spelling_identifier(fp, cursor);
-			print_xml_enter(fp);
-			print_comment(fp, cursor);
+			print_comment(ctx, cursor);
+			print_open(ctx->elements, "namespace");
 
-			print_contexts(fp, cursor);
-			print_xml_close(fp, "namespace");
+			print_enter(ctx->elements);
+			{
+				clang_visitChildren(cursor, visitor, cd);
+			}
+			print_exit(ctx->elements);
 
-			clang_visitChildren(cursor, visitor, cd);
+			print_attributes_open(ctx->elements);
+			{
+				print_spelling_identifier(ctx->elements, cursor);
+			}
+			print_attributes_close(ctx->elements);
+
+			print_close(ctx->elements, "namespace");
 		}
 		break;
 
@@ -843,50 +1013,94 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 int
 main(int argc, const char *argv[])
 {
-	CXCursor rc;
+	struct Image ctx;
 	CXIndex idx = clang_createIndex(0, 1);
+	CXCursor rc;
 	CXTranslationUnit u;
+	enum CXErrorCode err;
+	const char *output, *source;
 
 	/*
-		# clang_parseTranslationUnit does not appear to agree that the
-		# executable should end in (filename)`.i` so adjust the command name.
+		// clang_parseTranslationUnit does not appear to agree that the
+		// executable should end in (filename)`.i` so adjust the command name.
+		// It would appear that the option parser is (was) sensitive to dot-suffixes.
 	*/
-	argv[0] = "fragment";
+	argv[0] = "delineate";
+	source = argv[argc-1];
 
-	u = clang_parseTranslationUnit(idx, NULL, argv, argc, NULL, 0,
-		CXTranslationUnit_DetailedPreprocessingRecord);
+	err = clang_parseTranslationUnit2(idx, NULL, argv, argc, NULL, 0,
+		CXTranslationUnit_DetailedPreprocessingRecord, &u);
+	if (err != 0)
+		return(1);
 
 	rc = clang_getTranslationUnitCursor(u);
-	print_xml_open(stdout, "introspection");
-	print_xml_attribute(stdout, "collection", "clang");
-	print_xml_string_attribute(stdout, "version", clang_getClangVersion());
 
-	switch (clang_getCursorLanguage(rc))
+	/*
+		// Parsed options accessors are not available in libclang?
+	*/
+	output = argv[argc-2];
+	if (fs_mkdir(output) != 0)
 	{
-		case CXLanguage_C:
-			print_xml_attribute(stdout, "language", "c");
-		break;
-
-		case CXLanguage_ObjC:
-			print_xml_attribute(stdout, "language", "objective-c");
-		break;
-
-		case CXLanguage_CPlusPlus:
-			print_xml_attribute(stdout, "language", "c++");
-		break;
-
-		default:
-			print_xml_attribute(stdout, "language", "unknown");
-		break;
+		perror("could not create target directory");
+		return(1);
 	}
 
-	print_xml_enter(stdout);
-	clang_visitChildren(rc, visitor, (CXClientData) stdout);
-	print_xml_close(stdout, "introspection");
+	chdir(output);
+
+	ctx.elements = fopen("elements.json", "w");
+	ctx.doce = fopen("documented.json", "w");
+	ctx.docs = fopen("documentation.json", "w");
+	ctx.data = fopen("data.json", "w");
+
+	print_open(ctx.elements, "unit"); /* Translation Unit */
+	print_enter(ctx.data);
+	print_enter(ctx.docs);
+	print_enter(ctx.doce);
+
+	print_enter(ctx.elements);
+	{
+		clang_visitChildren(rc, visitor, (CXClientData) &ctx);
+	}
+	print_exit(ctx.elements);
+
+	print_attributes_open(ctx.elements);
+	{
+		print_string_attribute(ctx.elements, "version", clang_getClangVersion());
+		print_attribute(ctx.elements, "engine", "libclang");
+
+		switch (clang_getCursorLanguage(rc))
+		{
+			case CXLanguage_C:
+				print_attribute(ctx.elements, "language", "c");
+			break;
+
+			case CXLanguage_ObjC:
+				print_attribute(ctx.elements, "language", "objective-c");
+			break;
+
+			case CXLanguage_CPlusPlus:
+				print_attribute(ctx.elements, "language", "c++");
+			break;
+
+			case CXLanguage_Invalid:
+			default:
+			break;
+		}
+	}
+	print_attributes_close(ctx.elements);
+
+	print_exit_final(ctx.doce);
+	print_exit_final(ctx.docs);
+	print_exit_final(ctx.data);
+	print_close_final(ctx.elements, "unit");
+
+	fclose(ctx.elements);
+	fclose(ctx.docs);
+	fclose(ctx.doce);
+	fclose(ctx.data);
 
 	clang_disposeTranslationUnit(u);
 	clang_disposeIndex(idx);
 
-	fprintf(stdout, "\n");
 	return(0);
 }

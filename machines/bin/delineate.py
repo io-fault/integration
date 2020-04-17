@@ -1,57 +1,70 @@
 """
 # Delineate a source file using libclang.
-
-# Delineatation is a two-stage process where a libclang linked binary is executed emitting
-# an schema-less XML document that is processed by an XSLT emitting the fragments that
-# can then be published.
 """
 import sys
+import os
 import subprocess
 
 from fault.system import files
 from fault.system import process
+from fault.system import factors
+from fault.system import identity
+from fault.system import execution
 
-from fault.xml import libfactor, library as libxml
-from .. import xslt
+from fault.project import root
 
-from ....factors import fragments
-
-inner_call = 'f_syntax.bin.llvm'
 def main(inv:process.Invocation) -> process.Exit:
+	isys, iarch = identity.root_execution_context()
+
 	args = inv.args
 
-	# args passed directly forward to inspect
-	sp = subprocess.Popen(
-		[sys.executable, '-m', inner_call] + args,
-		stdin=None,
-		stdout=subprocess.PIPE)
-	stdout, stderr = sp.communicate()
+	# Much of this should be implemented elsewhere, and delineate is the first user.
+	try:
+		finder = factors.Activated
+	except AttributeError:
+		factors.activate()
+		finder = factors.Activated
 
-	isrc = args[-1]
+	pd = finder.find('f_intention')
+	pj_id = pd.identifier_by_factor(root.types.factor@'f_intention')[0]
+	pj = finder.context.project(pj_id)
 
-	# stdout being fully buffered is not really desired, but
-	# do so for brevity. The XML document needs to be loaded
-	# for transformation anyways.
-	xd, xt = libfactor.xslt(xslt)
-	rtf = xt(libfactor.readstring(stdout))
-	factor = rtf.getroot()
-	module = factor.xpath("/*/*[local-name()='module']")[0]
+	var = {
+		'system': isys,
+		'architecture': iarch,
+		'name': 'llvm',
+	}
+	for fi in ['debug', 'optimal']:
+		var['intention'] = fi
+		fp = pj.integral(var, root.types.factor@'bin.llvm')
+		if fp.fs_type() != 'void':
+			break
+	else:
+		return inv.exit(128)
 
-	xml = libxml.Serialization()
-	i = fragments.source_element(xml, files.Path.from_absolute(isrc))
-	rs = b''.join(i)
-	rsrc = b'<cell xmlns="http://fault.io/xml/fragments">' + rs + b'</cell>'
-	source = libfactor.etree.fromstring(rsrc)
-	source.nsmap['f'] = source.nsmap[None]
+	sys.stderr.write('EXECUTABLE: ' + str(fp) + '\n')
+	ki = execution.KInvocation(str(fp), [b'delineate',] + inv.args)
+	pid = ki.spawn(fdmap=[(0,0), (1,1), (2,2)])
+	pid, status = os.waitpid(pid, os.P_WAIT)
+	delta = execution.decode_process_status(status)
 
-	del source.nsmap[None]
-	del rs, i, xml
+	assert inv.args[-3] == '-o' # delineate ... -o output source.cx
+	datadir = inv.args[-2]
 
-	module.insert(0, list(source.iterchildren())[0])
+	if delta.status == 0:
+		# Cleanup JSON output by removing trailing commas.
+		# Note that commas are expected to be \u escaped within strings.
+		datadir = files.Path.from_path(inv.args[-2])
 
-	sys.stdout.buffer.writelines(libfactor.etree.tostringlist(rtf, method="xml", encoding="utf-8"))
-	sys.exit(0)
+		for x in ['elements.json', 'documentation.json', 'documented.json']:
+			data = datadir/x
+
+			b = (datadir/x).fs_load()
+			b = b.replace(b',}', b'}')
+			b = b.replace(b',]', b']')
+			(datadir/x).fs_store(b)
+
+	return inv.exit(delta.status)
 
 if __name__ == '__main__':
 	process.control(main, process.Invocation.system())
-
