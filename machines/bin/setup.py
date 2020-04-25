@@ -36,25 +36,6 @@ name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
 tool_name = 'llvm'
 
-project_info = {
-	'identifier': "http://fault.io/engineering/context-support",
-	'name': "f_intention",
-	'abstract': "Context support project.",
-	'controller': "fault.io",
-	'status': "volatile",
-	'icon': "- (emoji)`" + "\uD83D\uDEA7`".encode('utf-16', 'surrogatepass').decode('utf-16'),
-	'contact': "`http://fault.io/critical`"
-}
-
-project_infra = """! CONTEXT:
-	/protocol/
-		&<http://if.fault.io/project/infrastructure>
-
-/fault-c-interfaces/
-	- &<http://fault.io/engineering/posix#include>
-	- &<http://fault.io/engineering/python#include>
-"""
-
 def detect_profile_library(mechanism, architectures):
 	"""
 	# Given an `tool:llvm-clang` mechanism and a sequence of architecures, discover
@@ -143,6 +124,14 @@ def instantiate_software(ctxpy, package, subpackage, name, template, type, fault
 		sys.stderr.buffer.writelines(b"\t\t" + x + b"\n" for x in data.split(b"\n"))
 		raise SystemExit(1)
 
+project_infra = b"""! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/infrastructure>
+
+/fault-c-interfaces/
+	- &<http://fault.io/engineering/posix#include>
+	- &<http://fault.io/engineering/python#include>
+"""
 def fragments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the syntax tooling for delineation construction contexts.
@@ -152,22 +141,9 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	imp = python.Import.from_fullname(__package__).container
 	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	pjtxt = (
-		"! CONTEXT:\n"
-		"\t/protocol/\n"
-		"\t\t&<http://if.fault.io/project/information>\n\n" + "\n".join([
-			"/%s/\n\t%s" % i for i in project_info.items()
-		]) + "\n"
-	)
-
-	pdpath = ctx_route@'lib/python'
+	pdpath = ctx_route@'local'
 	instantiate_software(pdpath, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
-	(pdpath@"f_intention/.protocol").fs_init(b"http://fault.io/engineering/fragments factors/polynomial-1")
-	(pdpath@"f_intention/project.txt").fs_init(pjtxt.encode('utf-8', 'surrogateescape'))
-
-	pd = root.Product(pdpath)
-	pd.update()
-	pd.store()
+	(pdpath/'f_intention'/'infrastructure.txt').fs_init(project_infra)
 
 	data = {
 		'host': {
@@ -198,14 +174,13 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	}
 	ccd.update_named_mechanism(mech, tool_name, data)
 
-	if 1:
-		# Derive library and include locations from tool:llvm-clang command
-		merged = ctx.select('host')[1].descriptor
-		syscmd = merged['transformations'][transform_tool_name]['command']
-		prefix = files.Path.from_absolute(syscmd) ** 2
-		libdir = prefix / 'lib'
-		incdir = prefix / 'include'
-		dep = (incdir, libdir, 'clang')
+	# Derive library and include locations from tool:llvm-clang command
+	merged = ctx.select('host')[1].descriptor
+	syscmd = merged['transformations'][transform_tool_name]['command']
+	prefix = files.Path.from_absolute(syscmd) ** 2
+	libdir = prefix / 'lib'
+	incdir = prefix / 'include'
+	dep = (incdir, libdir, 'clang')
 
 	factors = query.delineation(*(map(str, dep)))
 	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-delineation-libclang')
@@ -220,7 +195,8 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	imp = python.Import.from_fullname(__package__).container
 	tmpl_path = imp.file().container / 'templates' / 'context.txt'
 
-	instantiate_software(ctx_route@'lib/python', 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
+	pdpath = ctx_route@'local'
+	instantiate_software(pdpath, 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
 
 	# Derive llvm-config location from tool:llvm-clang's 'command' entry.
 	merged = ccd.load_named_mechanism(mech, 'clang')

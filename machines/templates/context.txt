@@ -29,6 +29,7 @@ Counter extraction extension using LLVM's coverage libraries.
 		`extension`
 	/symbols/
 		- `fault-c-interfaces`
+		- `fault-python-interfaces`
 		- `context:c++11`
 		- `python-extension`
 		- `-llvm-coverage-instrumentation`
