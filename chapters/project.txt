@@ -3,13 +3,13 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	`http://fault.io/engineering/products`
+	`http://fault.io/engineering/laboratory`
 /name/
-	`products`
+	`laboratory`
 /abstract/
-	Product processing and management tools.
+	Laboratory control and operation dispatch tools.
 /icon/
-	- (emoji)`📻`
+	- (emoji)`⚗️`
 
 /controller/
 	`fault.io`
