@@ -3,13 +3,13 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	`http://fault.io/engineering/laboratory`
+	&<http://fault.io/engineering/chapters>
 /name/
-	`laboratory`
+	`chapters`
 /abstract/
-	Laboratory control and operation dispatch tools.
+	Documentation processing and publishing tools for software projects.
 /icon/
-	- (emoji)`⚗️`
+	- (emoji)`️📚`
 
 /controller/
 	`fault.io`
