@@ -81,7 +81,7 @@ def gnu_link_editor(
 		libs = [f for f in build.requirements[(f_domain, 'library')]]
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
-		dirs = (x.integral() for x in libs)
+		dirs = (x.image() for x in libs)
 		libdirs = [libdir_flag+filepath(x) for x in tools.unique(dirs, None)]
 
 		link_parameters = [link_flag + y for y in set([x.name for x in libs])]
