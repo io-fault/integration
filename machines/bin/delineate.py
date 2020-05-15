@@ -36,7 +36,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	}
 	for fi in ['debug', 'optimal']:
 		var['intention'] = fi
-		fp = pj.integral(var, root.types.factor@'bin.llvm')
+		fp = pj.image(var, root.types.factor@'bin.llvm')
 		if fp.fs_type() != 'void':
 			break
 	else:
