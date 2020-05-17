@@ -1,0 +1,17 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	&<http://fault.io/integration/context>
+/name/
+	`context`
+/abstract/
+	Software installation and management tools.
+/icon/
+	- (emoji)`🔋`
+
+/controller/
+	`fault.io`
+/contact/
+	&<http://fault.io/critical>
