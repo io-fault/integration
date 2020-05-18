@@ -1,0 +1,17 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	&<http://fault.io/integration/dispatch>
+/name/
+	`dispatch`
+/abstract/
+	System factor execution.
+/icon/
+	- (emoji)`⚙️`
+
+/controller/
+	`fault.io`
+/contact/
+	&<http://fault.io/critical>
