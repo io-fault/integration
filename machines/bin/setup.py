@@ -151,7 +151,7 @@ def dynamic(paths):
 	return system
 
 name = 'fault.host' # Name of mechanism entry.
-def install(args, fault, ctx, ctx_route, ctx_params):
+def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
 	"""
 	# Initialize the instrumentation tooling for instruments contexts.
 	"""
@@ -161,8 +161,8 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 
 	data = dynamic(library.default_library_paths)
 	data = {'host': data}
-	data['system'] = {'inherit': 'host'}
-	ccd.update_named_mechanism(mech, 'default', data)
+	ccd.update_named_mechanism(mech, 'root', data)
+	ccd.update_named_mechanism(mech, 'path-setup', {'context':{'path':['host']}})
 
 def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
@@ -171,7 +171,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	ctx_params = ctx.index['context']
 	ctx_intention = ctx_params['intention']
 
-	install(inv.args, fault, ctx, ctx_route, ctx_params)
+	install(inv.args, fault, ctx, ctx_route, ctx_params, ctx_intention)
 	return inv.exit(0)
 
 if __name__ == '__main__':
