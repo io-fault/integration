@@ -4,14 +4,14 @@
 
 /identifier/
 	&<http://fault.io/integration/root>
+/icon/
+	- (emoji)`💾`
 /name/
 	`root`
 /abstract/
 	Substrate initialization interface.
-/icon/
-	- (emoji)`💾`
 
-/controller/
+/authority/
 	`fault.io`
 /contact/
 	&<http://fault.io/critical>
