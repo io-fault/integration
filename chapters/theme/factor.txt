@@ -2,7 +2,5 @@
 	/protocol/
 		&<http://if.fault.io/project/factor>
 
-/domain/
-	`css`
 /type/
-	`library`
+	`css`
