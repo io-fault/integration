@@ -4,14 +4,14 @@
 
 /identifier/
 	&<http://fault.io/integration/dispatch>
+/icon/
+	- (emoji)`⚙️`
 /name/
 	`dispatch`
 /abstract/
 	System factor execution.
-/icon/
-	- (emoji)`⚙️`
 
-/controller/
+/authority/
 	`fault.io`
 /contact/
 	&<http://fault.io/critical>
