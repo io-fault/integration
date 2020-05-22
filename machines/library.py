@@ -139,7 +139,7 @@ def clang(
 	command.extend(options)
 
 	# Include Directories; -I option.
-	included = build.required('source', 'library')
+	included = build.required('source-tree')
 	command.extend([id_flag + str(x) for x, xf in included])
 
 	# -D defines.
