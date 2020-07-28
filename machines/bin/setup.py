@@ -132,6 +132,13 @@ project_infra = b"""! CONTEXT:
 	- &<http://fault.io/engineering/posix#include>
 	- &<http://fault.io/engineering/python#include>
 """
+
+# Implementation
+sdk_deline = b"""
+/sdk-llvm-delineation/
+	- &<http://fault.io/engineering/tools.llvm#delineation>
+"""
+
 def fragments(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	# Initialize the syntax tooling for delineation construction contexts.
@@ -143,7 +150,11 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 
 	pdpath = ctx_route@'local'
 	instantiate_software(pdpath, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
-	(pdpath/'f_intention'/'infrastructure.txt').fs_init(project_infra)
+	infra = project_infra + sdk_deline
+	(pdpath/'f_intention'/'infrastructure.txt').fs_init(infra)
+
+	sdk_product = str(files.Path.from_absolute(__file__) ** 5) + "\n"
+	(pdpath/'.product'/'CONNECTIONS').fs_init(sdk_product.encode('utf-8'))
 
 	data = {
 		'host': {
@@ -175,16 +186,14 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 	ccd.update_named_mechanism(mech, tool_name, data)
 
 	# Derive library and include locations from tool:llvm-clang command
-	merged = ctx.select('host')[1].descriptor
-	syscmd = merged['transformations'][transform_tool_name]['command']
+	merged = ccd.load_named_mechanism(mech, 'clang')
+	syscmd = merged['host']['transformations'][transform_tool_name]['command']
 	prefix = files.Path.from_absolute(syscmd) ** 2
 	libdir = prefix / 'lib'
 	incdir = prefix / 'include'
 	dep = (incdir, libdir, 'clang')
 
-	factors = query.delineation(*(map(str, dep)))
-	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-delineation-libclang')
-	fsyms.fs_store(pickle.dumps(factors))
+	return ('llvm-delineation-libclang', query.delineation(*(map(str, dep))))
 
 def instruments(args, fault, ctx, ctx_route, ctx_params):
 	"""
@@ -209,7 +218,7 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	# the raw profile data emitted to disk.
 
 	source, merge, export, projections = query.instrumentation(*args)
-	fsyms = (ctx_route / 'context' / 'symbols' / '-llvm-coverage-instrumentation')
+	fsyms = (ctx_route / 'context' / 'symbols' / 'llvm-coverage-instrumentation')
 	fsyms.fs_store(pickle.dumps(projections))
 
 	from .. import coverage # For Probe constructor addressing.
@@ -280,7 +289,7 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 	if ctx_intention == 'instruments':
 		instruments(args, fault, ctx, ctx_route, ctx_params)
 	elif ctx_intention == 'delineation':
-		fragments(args, fault, ctx, ctx_route, ctx_params)
+		sym, reqs = fragments(args, fault, ctx, ctx_route, ctx_params)
 
 	ccd.update_named_mechanism(route, 'language-specifications', {
 		'syntax': {
