@@ -129,14 +129,14 @@ project_infra = b"""! CONTEXT:
 		&<http://if.fault.io/project/infrastructure>
 
 /fault-c-interfaces/
-	- &<http://fault.io/engineering/posix#include>
-	- &<http://fault.io/engineering/python#include>
+	- &<http://fault.io/engineering/posix/include>
+	- &<http://fault.io/engineering/python/include>
 """
 
 # Implementation
 sdk_deline = b"""
 /sdk-llvm-delineation/
-	- &<http://fault.io/engineering/tools.llvm#delineation>
+	- &<http://fault.io/engineering/tools.llvm/delineation>
 """
 
 def fragments(args, fault, ctx, ctx_route, ctx_params):
