@@ -222,6 +222,10 @@ class Render(comethod.object):
 			node[-1]['super'] = attr
 			yield from resolver(node[0])(resolver, node[1], node[-1])
 
+	@comethod('exception')
+	def error(self, resolver, nodes, attr):
+		yield from self.element('pre', self.text("error"))
+
 	@comethod('syntax')
 	def code_block(self, resolver, nodes, attr):
 		lines = [x[1][0] + "\n" for x in nodes]
@@ -299,7 +303,9 @@ class Render(comethod.object):
 
 	@comethod('dictionary')
 	def dl_dict(self, resolver, items, attr):
-		p = attr['super'].get('absolute', None)
+		p = attr['super']
+		if p is not None:
+			p = p.get('absolute', None)
 
 		if p is not None:
 			prefix = ('.'.join(p) + '.').__add__
