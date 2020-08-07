@@ -7,9 +7,6 @@ from fault.context import comethod
 from fault.text import nodes
 from fault.web import xml
 
-from fault.system import process
-from fault.system import files
-
 def integrate(index, types, node, default_type='text'):
 	# Traverse the sections of the &tree converting CONTEXT and CONTROL
 	# admonition nodes into attributes.
@@ -482,38 +479,18 @@ class Render(comethod.object):
 		for snode in sub.select("/section?titled"):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
-def main(inv:process.Invocation) -> process.Exit:
-	import sys
-	import pprint
-	import pdb
-	import traceback
-
-	src, *styles = inv.argv
-	sf = files.Path.from_path(src)
-
-	with sf.fs_open('r') as f:
-		doctext = f.read()
-
-	try:
-		c = nodes.Cursor.from_chapter_text(doctext)
-		sx = xml.Serialization(xml_encoding='utf-8')
-		r, = c.root
-		idx, ctx = prepare(r)
-		rhtml = Render(sx, idx, c)
-		head = rhtml.element('head',
-			itertools.chain(
-				itertools.chain.from_iterable(
-					rhtml.element('link', (), rel='stylesheet', href=x)
-					for x in styles
-				)
-			),
-		)
-		html = rhtml.document(sf.identifier, head=head)
-		sys.stdout.buffer.writelines(html)
-	except:
-		p = pdb.Pdb()
-		traceback.print_exc()
-		sys.stderr.flush()
-		p.interaction(None, sys.exc_info()[2])
-
-	return inv.exit(0)
+def transform(chapter, styles=[], identifier=''):
+	c = nodes.Cursor.from_chapter_text(chapter)
+	sx = xml.Serialization(xml_encoding='utf-8')
+	r, = c.root
+	idx, ctx = prepare(r)
+	rhtml = Render(sx, idx, c)
+	head = rhtml.element('head',
+		itertools.chain(
+			itertools.chain.from_iterable(
+				rhtml.element('link', (), rel='stylesheet', href=x)
+				for x in styles
+			)
+		),
+	)
+	return rhtml.document(identifier, head=head)

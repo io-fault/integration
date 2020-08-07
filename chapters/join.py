@@ -122,7 +122,7 @@ class Text(comethod.object):
 				sect = r[1][0]
 				pd = ('dictionary', [], {})
 				sect[1].append(pd)
-				for i in self.r_parameters(param_ids, params):
+				for i in self.r_parameters(r, params):
 					pd[1].append(i)
 
 			for x in r[1]:
@@ -234,14 +234,13 @@ class Text(comethod.object):
 		self.docs = docs
 		self.data = data
 
-def main(inv:process.Invocation) -> process.Exit:
-	import sys
-	source, *metas = inv.args
-	r = files.Path.from_path(source)
-	re = (r/"elements.json")
-	dd = (r/"documented.json")
-	rd = (r/"documentation.json")
-	rt = (r/"data.json")
+def transform(datadir:files.Path):
+	re = (datadir/"elements.json")
+	dd = (datadir/"documented.json")
+	rd = (datadir/"documentation.json")
+	rt = (datadir/"data.json")
+	tf = (datadir/"fates.json")
+	test_factor = (tf.fs_type() == 'file')
 
 	with re.fs_open('r') as f:
 		elements = json.load(f)
@@ -257,9 +256,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		data = dict(zip(map(tuple,keys),datas))
 
 	t = Text(elements, docs, data)
-	sys.stdout.writelines(t.switch((), elements[1]))
-
-	return inv.exit(0)
+	return t.switch((), elements[1])
 
 if __name__ == '__main__':
 	process.control(main, process.Invocation.system())
