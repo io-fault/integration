@@ -234,6 +234,16 @@ class Text(comethod.object):
 		self.docs = docs
 		self.data = data
 
+def load(f):
+	try:
+		return json.load(f)
+	except json.decoder.JSONDecodeError:
+		f.seek(0)
+		data = f.read()
+		data = data.replace(',]', ']')
+		data = data.replace(',}', '}')
+		return json.loads(data)
+
 def transform(datadir:files.Path):
 	re = (datadir/"elements.json")
 	dd = (datadir/"documented.json")
@@ -243,17 +253,20 @@ def transform(datadir:files.Path):
 	test_factor = (tf.fs_type() == 'file')
 
 	with re.fs_open('r') as f:
-		elements = json.load(f)
+		elements = load(f)
 
 	with dd.fs_open('r') as f:
-		keys = json.load(f)
+		keys = load(f)
 	with rd.fs_open('r') as f:
-		strings = json.load(f)
+		strings = load(f)
 	docs = dict(zip(map(tuple,keys),strings))
 
-	with rt.fs_open('r') as f:
-		keys, datas = json.load(f)
-		data = dict(zip(map(tuple,keys),datas))
+	try:
+		with rt.fs_open('r') as f:
+			keys, datas = load(f)
+			data = dict(zip(map(tuple,keys),datas))
+	except:
+		data = dict()
 
 	t = Text(elements, docs, data)
 	return t.switch((), elements[1])
