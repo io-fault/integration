@@ -187,7 +187,7 @@ body {
 	margin: 0px;
 }
 
-body main {
+body > main {
 	background-color: #3a3a3a38;
 
 	margin: 0 auto;
@@ -195,7 +195,7 @@ body main {
 	margin-bottom: 12px;
 
 	min-width: 12em;
-	max-width: 64em;
+	max-width: 68em;
 
 	padding-top: 0.25em;
 	padding-bottom: 1.5em;
@@ -230,6 +230,10 @@ img.icon {
 	width: 1.1em;
 	height: 1.1em;
 	vertical-align: middle;
+}
+
+div.undocumented-parameter {
+	display: none;
 }
 
 div.factor > div.title > span[class="selected-fragment"]::before {
@@ -365,6 +369,38 @@ section.text > h1 > a.section {display: none;}
 h1 > a.section {position: relative; font-size: 64%;}
 h1 > a.section:after {content: '.';}
 
+main > h1 {
+	position: relative;
+
+	background-color: #303030;
+	background: rgba(0,0,0,0.3);
+	text-shadow: 1px 2px 1px rgba(0, 0, 0, 1);
+
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 0.4em;
+	padding-right: 8px;
+
+	margin-bottom: 4px;
+	margin-left: -1px;
+	margin-right: -1px;
+
+	border-style: solid;
+	border-width: 1px;
+	border-color: rgba(100,100,100,0.4);
+
+	border-right-color: rgba(16,16,16,0.4);
+	border-left-color: rgba(16,16,16,0.4);
+}
+
+h1 > span.factor-type {
+	float: right;
+	font-family: cursive;
+	font-size: 64%;
+	user-select: none;
+	color: gray;
+}
+
 section > h1 {
 	position: relative;
 
@@ -375,7 +411,7 @@ section > h1 {
 	padding-top: 4px;
 	padding-bottom: 4px;
 	padding-left: 0.4em;
-	padding-right: 1em;
+	padding-right: 8px;
 
 	margin-bottom: 4px;
 	margin-left: -1px;
@@ -476,7 +512,7 @@ section.class {
 	margin-top: 3em;
 }
 
-#navigation {
+none#navigation {
 	position: fixed;
 	right: 0;
 	top: 2px;
@@ -552,6 +588,13 @@ div.toc li.no-match {
 
 div.toc ol.no-match {
 	font-size: smaller;
+}
+
+main > div[class="text.abstract"]
+{
+	margin-left: 0.25em;
+	margin-right: 0.25em;
+	margin-bottom: 0;
 }
 
 main section {
@@ -859,4 +902,111 @@ dl.table-view dd {
 
 	overflow: hidden;
 }
-/*
+
+/* Project Index formatting */
+dl.project-index {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+dl.project-index > a > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+dl.project-index > a > div {
+	margin-top: 8px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	padding-left: 4px;
+
+	border-width: 1px;
+	border-style: solid;
+	border-color: #404040;
+
+	background-color: #1F1F1F;
+}
+
+dl.project-index > a > div:hover {
+	background-color: #2A2A2A;
+}
+
+dl.project-index > a:hover {
+	text-shadow: none;
+}
+
+dl.project-index > a > div > dt > span.factor-path {
+	margin-left: 6px;
+	font-weight: 800;
+}
+
+dl.project-index > a > div > dd > span.index-abstract {
+	color: #A0A0A0;
+}
+
+dl.project-index > a > div > dt {
+	width: 29%;
+}
+
+dl.project-index > a > div > dd {
+	margin-left: auto;
+	width: 70%;
+	text-align: right;
+
+	margin-right: 8px;
+}
+
+/* Project Index formatting */
+dl.factor-index {
+	padding-left: 1em;
+	padding-right: 1em;
+}
+
+dl.factor-index > a > div {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+dl.factor-index > a > div {
+	margin-top: 8px;
+	padding-top: 8px;
+	padding-bottom: 8px;
+	padding-left: 4px;
+
+	border-width: 1px;
+	border-style: solid;
+	border-color: #404040;
+
+	background-color: #1F1F1F;
+}
+
+dl.factor-index > a > div:hover {
+	background-color: #2A2A2A;
+}
+
+dl.factor-index > a:hover {
+	text-shadow: none;
+}
+
+dl.factor-index > a > div > dt > span.factor-path {
+	margin-left: 6px;
+	font-weight: 800;
+}
+
+dl.factor-index > a > div > dd > span.index-abstract {
+	color: #A0A0A0;
+}
+
+dl.factor-index > a > div > dt {
+	width: 29%;
+}
+
+dl.factor-index > a > div > dd {
+	margin-left: auto;
+	width: 70%;
+	text-align: right;
+
+	margin-right: 8px;
+}
