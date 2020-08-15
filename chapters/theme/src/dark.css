@@ -629,15 +629,15 @@ main > h1 {
 }
 
 main section.text > h1 {
-	font-size: 200%;
+	font-size: 150%;
 }
 
 main section > section.text > h1 {
-	font-size: 170%;
+	font-size: 135%;
 }
 
 main section > section > section.text > h1 {
-	font-size: 140%;
+	font-size: 125%;
 }
 
 main section > section > section > section.text > h1 {
