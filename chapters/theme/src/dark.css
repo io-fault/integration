@@ -153,14 +153,12 @@ a[class="dkn"]:hover {
 		-3px -3px 2px rgba(0,0,0,1)
 }
 
-section:target > h1 > a.title {
-	text-decoration: underline;
-	text-underline-offset: 3px;
-	text-decoration-width: 2px;
-	text-underline-position: under;
+section:target > h1 {
+	;
+}
 
-	-webkit-text-underline-offset: 3px;
-	-webkit-text-decoration-width: 2px;
+section:target > h1 > span.abstract-type {
+	color: cornflowerblue;
 }
 
 section.class > h1 > a.title {
