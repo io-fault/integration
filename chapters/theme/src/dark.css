@@ -195,12 +195,6 @@ body > main {
 	padding-top: 0.25em;
 	padding-bottom: 1.5em;
 
-	/*
-	left: 0;
-	overflow: scroll;
-	overflow-x: hidden;
-	*/
-
 	border-width: 1px;
 	border-style: solid;
 	border-color: rgba(80, 80, 80, 0.8);
@@ -533,60 +527,6 @@ main > article > section > p:first-child {
 	margin-top: 0.1em;
 }
 
-div.toc-no-match {
-	font-size: x-large;
-
-	/*
-		background-color: rgba(0,0,0,0.4);
-		background:
-		linear-gradient(135deg,
-			rgba(100,173,229,0.4) 0%,
-			rgba(41,137,216,0.4) 50%,
-			rgba(30,87,153,0.3) 100%
-		);
-	*/
-	background: linear-gradient(135deg,
-		rgba(163,199,226,0.15) 0%,
-		rgba(100,173,229,0.15) 6%,
-		rgba(41,137,216,0.08) 39%,
-		rgba(30,87,153,0.05) 100%)
-	;
-
-	box-shadow:
-		0 0 8px 0px rgba(0,0,0,0.9),
-		0 0 8px 0px rgba(0,0,0,0.9)
-	;
-
-	border-color: rgba(60,60,60,0.9);
-	border-style: solid;
-	border-width: 1px;
-
-	margin-right: 1em;
-	margin-left: 1em;
-
-	padding-left: 1em;
-	padding-right: 3em;
-}
-
-div.toc li.no-match *
-{
-	color: #B0B0D0;
-}
-
-div.toc li.no-match {
-	color: #FFFFFF;
-	text-shadow:
-		0px 1px 1px rgba(30, 30, 30, 0.8),
-		0px 1px 1px rgba(30, 30, 30, 0.8),
-		0px 1px 1px rgba(30, 30, 30, 0.8),
-		0px 1px 1px rgba(30, 30, 30, 0.8)
-	;
-}
-
-div.toc ol.no-match {
-	font-size: smaller;
-}
-
 main > div[class="text.abstract"]
 {
 	margin-left: 0.25em;
@@ -791,34 +731,6 @@ dl.text > dt {
 	font-family: monospace;
 }
 
-div[id="factor..section.index"] {
-	float: right;
-	margin-left: 1em;
-	margin-right: 1em;
-	padding-right: 1em;
-	padding-left: 1em;
-	min-width: 45%;
-	max-width: 60%;
-	border-width: 1px;
-	border-radius: 3px;
-	border-color: black;
-	border-style: solid;
-	border-right-width: 0;
-	background-color: rgba(200, 200, 200, 0.1);
-}
-
-div.factor > div[class="index.reference"] {
-	display: none;
-	z-index: -1;
-	overflow: hidden;
-
-	padding-left: 1em;
-	padding-bottom: 8px;
-
-	margin-top: 0;
-	margin-bottom: 0.5em;
-}
-
 span.tab {
 	background-color: rgba(0, 0, 0, 0.3);
 	color: gray;
@@ -839,26 +751,6 @@ span.tab:hover {
 	color: white;
 }
 
-div.qualifiers {
-	position: relative;
-	left: -8px;
-
-	width: calc(100% + 8px);
-	background-color: rgba(20,20,20,0.2);
-	font-size: 80%;
-
-	border-style: solid;
-	border-color: rgba(80,80,80,0.3);
-	border-width: 1px;
-
-	padding-left: 0.5em;
-	margin-top: 1px;
-}
-
-div.qualifiers:empty {
-	display: none;
-}
-
 dl.table-view {
 	display: grid;
 	grid-template-columns: max-content auto;
@@ -872,7 +764,6 @@ dl.table-view > dd {
 	grid-column-start: 2;
 }
 
-/*
 dl.table-view {
 	display: flex;
 
