@@ -574,6 +574,10 @@ main section.text > h1 {
 	font-size: 150%;
 }
 
+main > section section[class!="text"] > h1 > a.title {
+	font-weight: bold;
+}
+
 main section > section.text > h1 {
 	font-size: 135%;
 }
