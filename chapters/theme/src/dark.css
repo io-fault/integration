@@ -112,6 +112,8 @@ pre {
 	padding: 2px;
 
 	border-width: 2px;
+	tab-size: 4;
+	-moz-tab-size: 4;
 }
 /**
 	# The last identifier in the title providing an href to itself
@@ -556,7 +558,7 @@ main section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5)
 */
 main article section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre),
 article>*:not(section):not(article),
-main>div[class="text.abstract"]>*:not(section):not(article)
+main>div[class="text.abstract"]>*:not(section):not(article):not(pre)
 {
 	margin-left: 4px;
 	margin-right: 4px;
@@ -644,6 +646,7 @@ pre[class="text.syntax"] {
 	border-color: rgba(121, 121, 121, 0.2);
 	border-style: solid;
 	padding: 8px;
+	margin-left: 48px;
 }
 
 div[class^="frame.instructions"] {
