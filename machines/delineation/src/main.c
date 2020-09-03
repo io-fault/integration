@@ -608,9 +608,14 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 		case CXCursor_MacroDefinition:
 		{
-			print_open(ctx->elements, "macro");
+			const char *m_subtype = "macro";
+
+			if (!clang_Cursor_isMacroFunctionLike(cursor))
+				m_subtype = "define";
+
+			print_open(ctx->elements, m_subtype);
 			ra = macro(parent, cursor, cd, kind, vis, avail);
-			print_close(ctx->elements, "macro");
+			print_close(ctx->elements, m_subtype);
 		}
 		break;
 
