@@ -15,6 +15,82 @@ struct Image {
 
 static enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData cd);
 
+static char *
+access_string(enum CX_CXXAccessSpecifier aspec)
+{
+	switch (aspec)
+	{
+		case CX_CXXPublic:
+			return("public");
+		break;
+
+		case CX_CXXPrivate:
+			return("private");
+		break;
+
+		case CX_CXXProtected:
+			return("protected");
+		break;
+
+		default:
+			return(NULL);
+		break;
+	}
+
+	return(NULL);
+}
+
+static void
+print_access(FILE *fp, CXCursor cursor)
+{
+	enum CX_CXXAccessSpecifier access = clang_getCXXAccessSpecifier(cursor);
+	print_attribute(fp, "access", access_string(access));
+}
+
+static char *
+storage_string(enum CX_StorageClass storage)
+{
+	switch (storage)
+	{
+		default:
+		case CX_SC_Invalid:
+		case CX_SC_None:
+		case CX_SC_Auto:
+			return(NULL);
+		break;
+
+		/*
+			// Intent of this union is to handle visibility with another attribute;
+			// By default, extern will be presumed to be visible unless stated otherwise.
+		*/
+		case CX_SC_PrivateExtern:
+		case CX_SC_Extern:
+			return("extern");
+		break;
+
+		case CX_SC_Static:
+			return("static");
+		break;
+
+		case CX_SC_OpenCLWorkGroupLocal:
+			return("local");
+		break;
+
+		case CX_SC_Register:
+			return("register");
+		break;
+	}
+
+	return(NULL);
+}
+
+static void
+print_storage(FILE *fp, CXCursor cursor)
+{
+	enum CX_StorageClass storage = clang_Cursor_getStorageClass(cursor);
+	print_attribute(fp, "storage", storage_string(storage));
+}
+
 /*
 	print_attributes_open(ctx->elements);
 	{
@@ -49,7 +125,7 @@ print_path(FILE *fp, CXCursor cursor)
 
 		if (cs != NULL)
 		{
-			fprintf(fp, quote("%s") ",", s);
+			fprintf(fp, quote("%s") ",", cs);
 			clang_disposeString(s);
 		}
 	}
@@ -170,7 +246,6 @@ print_qualifiers(FILE *fp, CXType t)
 	return(0);
 }
 
-// print_number_attribute(fp, "elements", (unsigned long) clang_getArraySize(t));
 static int
 print_type(FILE *fp, CXCursor c, CXType ct)
 {
@@ -230,6 +305,22 @@ print_type(FILE *fp, CXCursor c, CXType ct)
 	i = clang_Type_getSizeOf(xt);
 	if (i >= 0)
 		print_number_attribute(fp, "size", i);
+
+	i = clang_getArraySize(xt);
+	if (i >= 0)
+	{
+		CXType at = xt;
+		print_string(fp, "elements", 0);
+		print_enter(fp);
+
+		do {
+			print_number(fp, NULL, i);
+			at = clang_getArrayElementType(at);
+			i = clang_getArraySize(at);
+		} while (at.kind != CXType_Invalid && i >= 0);
+
+		print_exit(fp);
+	}
 
 	print_attributes_close(fp);
 	return(0);
@@ -332,19 +423,22 @@ macro(
 
 	print_enter(ctx->elements);
 	{
-		while (i < nargs)
+		if (clang_Cursor_isMacroFunctionLike(cursor))
 		{
-			CXCursor arg = clang_Cursor_getArgument(cursor, i);
-
-			print_open_empty(ctx->elements, "parameter");
-			print_attributes_open(ctx->elements);
+			while (i < nargs)
 			{
-				print_spelling_identifier(ctx->elements, arg);
-			}
-			print_attributes_close(ctx->elements);
-			print_close(ctx->elements, "parameter");
+				CXCursor arg = clang_Cursor_getArgument(cursor, i);
 
-			++i;
+				print_open_empty(ctx->elements, "parameter");
+				print_attributes_open(ctx->elements);
+				{
+					print_spelling_identifier(ctx->elements, arg);
+				}
+				print_attributes_close(ctx->elements);
+				print_close(ctx->elements, "parameter");
+
+				++i;
+			}
 		}
 	}
 	print_exit(ctx->elements);
