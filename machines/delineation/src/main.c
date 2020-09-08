@@ -596,35 +596,40 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 	if (clang_Location_isFromMainFile(location) == 0)
 	{
-		CXString filename;
-		unsigned int line, column;
-
-		/* Note included files */
-		clang_getPresumedLocation(location, &filename, &line, &column);
-
-		if (clang_getCString(last_file) == NULL ||
-			strcmp(clang_getCString(last_file), clang_getCString(filename)) != 0)
-		{
-			if (clang_getCString(filename)[0] != '<')
-			{
-				print_open_empty(ctx->elements, "include");
-				{
-					print_attributes_open(ctx->elements);
-					{
-						print_attribute(ctx->elements, "path", clang_getCString(filename));
-					}
-					print_attributes_close(ctx->elements);
-				}
-				print_close(ctx->elements, "include");
-
-				if (clang_getCString(last_file) != NULL)
-					clang_disposeString(last_file);
-
-				last_file = filename;
-			}
-		}
-
+		/*
+			// Avoid processing nodes from other source files.
+		*/
 		return(ra);
+
+		#if 0
+			CXString filename;
+			unsigned int line, column;
+
+			/* Note included files */
+			clang_getPresumedLocation(location, &filename, &line, &column);
+
+			if (clang_getCString(last_file) == NULL ||
+				strcmp(clang_getCString(last_file), clang_getCString(filename)) != 0)
+			{
+				if (clang_getCString(filename)[0] != '<')
+				{
+					print_open_empty(ctx->elements, "include");
+					{
+						print_attributes_open(ctx->elements);
+						{
+							print_attribute(ctx->elements, "path", clang_getCString(filename));
+						}
+						print_attributes_close(ctx->elements);
+					}
+					print_close(ctx->elements, "include");
+
+					if (clang_getCString(last_file) != NULL)
+						clang_disposeString(last_file);
+
+					last_file = filename;
+				}
+			}
+		#endif
 	}
 
 	switch (kind)
@@ -698,7 +703,26 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		break;
 
 		case CXCursor_InclusionDirective:
-			break;
+		{
+			CXFile ifile;
+			CXString ifilename;
+
+			ifile = clang_getIncludedFile(cursor);
+			ifilename = clang_getFileName(ifile);
+
+			print_open_empty(ctx->elements, "include");
+			{
+				print_attributes_open(ctx->elements);
+				{
+					print_attribute(ctx->elements, "system", clang_getCString(ifilename));
+					fputs(quote("area") ":", ctx->elements);
+					print_source_location(ctx->elements, clang_getCursorExtent(cursor));
+				}
+				print_attributes_close(ctx->elements);
+			}
+			print_close(ctx->elements, "include");
+		}
+		break;
 
 		case CXCursor_MacroDefinition:
 		{
