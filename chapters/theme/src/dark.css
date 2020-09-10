@@ -1,9 +1,55 @@
 /**
-	# Dark theme for HTML documents leveraging semantic elements.
+	/* Dark theme for HTML documents leveraging semantic elements.
 */
 @charset "utf-8";
-@import url(https://fonts.googleapis.com/css?family=Open+Sans:300|Raleway|Inconsolata&display=swap);
 
+/* Undocumented Elements */
+section[documented="false"] {
+	display: none;
+}
+section[documented="false"]:target {
+	display: unset;
+}
+
+/* Undocumented Parameters */
+dl > div.parameter[documented="false"] {
+	display: none;
+}
+dl > div.parameter[documented="false"]:target {
+	display: unset;
+}
+
+a.product-local {
+	text-decoration-color: #ffb347;
+}
+
+a.context-local {
+}
+
+a.factor-local {
+	text-decoration-color: #77dd77;
+}
+
+a.project-local {
+	text-decoration-color: #b19cd9;
+}
+
+a:not([class='title']) > span {
+	font-family: monospace;
+	font-size: 120%;
+}
+
+a:not([class='title']) > span.classmethod:after,
+a:not([class='title']) > span.staticmethod:after,
+a:not([class='title']) > span.method:after,
+a:not([class='title']) > span.procedure:after,
+a:not([class='title']) > span.function:after
+{
+	content: '()';
+	color: var(--link-type-indicator);
+}
+
+/* Link that was not identified as being local. */
 a.absolute {
 	text-decoration: underline;
 	text-decoration-color: #0366bd;
@@ -27,17 +73,17 @@ li>*:last-child {
 }
 
 h1 {
-	color: cornflowerblue;
+	color: var(--element-titles);
 	font-family: monospace;
 	vertical-align: middle;
 	font-size: 128%;
 	font-weight: normal;
 }
 
-section.text > h1 {
+section.unspecified > h1 {
+	color: var(--element-titles);
 	font-weight: normal;
-	color: cornflowerblue;
-	font-family: 'Raleway', sans-serif;
+	font-family: sans-serif;
 	vertical-align: middle;
 }
 
@@ -45,20 +91,21 @@ p:empty {
 	display: none;
 }
 
-a, a:visited {
+a {
 	color: inherit;
 	text-decoration: none;
+	text-underline-offset: 2px;
 }
 
 a.section-reference:before {
 	content: '[';
-	color: cornflowerblue;
+	color: var(--link-type-indicator);
 	font-size: 120%;
 }
 
 a.section-reference:after {
 	content: ']';
-	color: cornflowerblue;
+	color: var(--link-type-indicator);
 	font-size: 120%;
 }
 
@@ -115,6 +162,11 @@ pre {
 	tab-size: 4;
 	-moz-tab-size: 4;
 }
+
+ul {
+	list-style-type: square;
+}
+
 /**
 	# The last identifier in the title providing an href to itself
 */
@@ -142,12 +194,8 @@ a:visited:hover, a:hover {
 		0px 0px 8px rgba(55, 130, 230, 1);
 }
 
-*:target > a[class="dkn"] {
-	color: white;
-}
-
-a[class="dkn"]:hover {
-	color: cornflowerblue;
+a.dkn:hover {
+	color: var(--link-hover);
 	text-shadow:
 		3px 3px 2px rgba(0,0,0,1),
 		-3px 3px 2px rgba(0,0,0,1),
@@ -160,11 +208,24 @@ section:target > h1 {
 }
 
 section:target > h1 > span.abstract-type {
-	color: cornflowerblue;
+	color: var(--target-highlighting);
 }
 
 section.class > h1 > a.title {
 	font-size: 140%;
+}
+
+section > h1 code.type {
+	font-size: 84%;
+	font-family: monospace;
+	font-weight: normal;
+}
+
+main section:not(.unspecified) > section.unspecified {
+	border-width: 0px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #1A1A1A;
 }
 
 html {
@@ -273,10 +334,6 @@ img.icon {
 	vertical-align: middle;
 }
 
-div.undocumented-parameter {
-	display: none;
-}
-
 div.factor > div.title > span[class="selected-fragment"]::before {
 	content: '#';
 }
@@ -347,6 +404,26 @@ span.tag span.type {
 	border-style-left: solid;
 }
 
+dl > div.parameter > dt > code.parameter {
+	display: inline-flex;
+	font-weight: bold;
+	font-size: 120%;
+}
+
+code.type::before {
+	content: '[';
+	font-size: 120%;
+}
+
+code.type::after {
+	content: ']';
+	font-size: 120%;
+}
+
+code.type {
+	color: #898989;
+}
+
 dd>*:first-child {
 	margin-block-start: 0em;
 }
@@ -405,8 +482,7 @@ span.internal {
 	display: none;
 }
 
-section.subtext > h1 > a.section {display: none;}
-section.text > h1 > a.section {display: none;}
+main section.unspecified > h1 > a.section {display: none;}
 h1 > a.section {position: relative; font-size: 64%;}
 h1 > a.section:after {content: '.';}
 
@@ -418,17 +494,24 @@ h1 > span.factor-type {
 	color: gray;
 }
 
-section > h1.integrate {
+/* Need the varying depths to override other selectors */
+section > h1.integrate,
+section > section.unspecified > h1.integrate,
+section > section > section.unspecified > h1.integrate
+{
 	/*
 		# Sections identified as minor subsections
-		# that should not be given visual or physical breaks.
+		# that should not be given visual breaks.
 	*/
 	background-color: inherit;
 	border-width: 0px;
-	margin-left: 8px;
+	margin-top: 4px;
+	margin-left: 4px;
 	margin-right: 4px;
 
-	font-size: 108%;
+	font-size: 102%;
+	font-variant: all-small-caps;
+	color: var(--integrated-titles);
 }
 
 h1 > span.abstract-type {
@@ -449,23 +532,6 @@ div[class="section"] > div.title:before
 	content: '\1F4C3';
 	margin-right: 0.5em;
 	padding-left: 0.5em;
-}
-
-div[class="none.title"] {
-	font-size: 128%;
-
-	padding-top: 2px;
-	padding-bottom: 2px;
-	padding-left: 2px;
-
-	color: cornflowerblue;
-
-	text-shadow:
-		0px 3px 6px rgba(0,0,0,1),
-		0px 3px 6px rgba(0,0,0,1);
-
-	/*text-shadow: -1px -2px 0 rgba(0,0,0,1);
-	background-color: #222222;*/
 }
 
 span.inline {
@@ -554,7 +620,7 @@ main section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5)
 }
 
 /**
-	# Leading text/subtext article content.
+	# Leading article content.
 */
 main article section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre),
 article>*:not(section):not(article),
@@ -570,38 +636,27 @@ main > h1 {
 	padding-left: 12px;
 }
 
-main section.text > h1 {
+main section.unspecified > h1 {
 	font-size: 150%;
 }
 
-main > section section[class!="text"] > h1 > a.title {
+main > section section:not([class="unspecified"]) > h1 > a.title {
 	font-weight: bold;
 }
 
-main section > section.text > h1 {
+main section > section.unspecified > h1 {
 	font-size: 135%;
 }
 
-main section > section > section.text > h1 {
+main section > section > section.unspecified > h1 {
 	font-size: 125%;
 }
 
-main section > section > section > section.text > h1 {
+main section > section > section > section.unspecified > h1 {
 	font-size: 120%;
 }
 
-/*
-	# Subscript text referencing the containing section.
-*/
-a[class="supersection"] {
-	vertical-align: bottom;
-	font-size: xx-small;
-	color: cornflowerblue;
-	margin-right: 1em;
-	float: right;
-}
-
-a[class!='section-reference'] > span[class="ern"]:before {
+a:not([class='section-reference']) > span[class="ern"]:before {
 	vertical-align: top;
 	content: "&";
 }
@@ -628,7 +683,7 @@ span[class="path.line.number"]:before {
 span[class="ern"] {
 	vertical-align: top;
 	font-size: xx-small;
-	color: cornflowerblue;
+	color: var(--link-type-indicator);
 	margin-left: 1px;
 }
 
@@ -715,13 +770,43 @@ dl.text > dd > *:first-child {
 	margin-top: 4px;
 }
 
-a[class="dkn"]:before {
-	content: '\21AC';
+a.dkn:before {
+	content: '\21A3';
 	margin-right: 4px;
 }
 
-a[class="dkn"] {
-	color: cornflowerblue;
+dl > div.parameter {
+	border-width: 1px;
+	border-style: solid;
+	border-color: #1C1C1C;
+	border-bottom-width: 0;
+	border-left-width: 0;
+	border-right-width: 0;
+	padding-top: 2px;
+}
+dl > div.parameter > dd {
+	font-size: 90%;
+}
+
+dl > div.parameter > dt > a.dkn {
+	text-shadow: none;
+}
+dl > div.parameter > dt > a.dkn:before {
+	content: '\2192'; /* right arrow into box */
+	margin-right: 2px;
+}
+
+section:not(.unspecified) > section[local-identifier='Returns'] > dl > div > dt > a.dkn:before {
+	content: '\2190'; /* left arrow away from box */
+	margin-right: 2px;
+}
+section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > dt > a.dkn:before {
+	content: '\2191'; /* up arrow */
+	margin-right: 8px;
+}
+
+a.dkn {
+	color: var(--mapping-item-symbol);
 
 	font-family: sans-serif;
 	font-size: 115%;
@@ -798,164 +883,29 @@ dl.table-view dd {
 	overflow: hidden;
 }
 
-/* Project Index formatting */
-dl.project-index {
-	padding-left: 1em;
-	padding-right: 1em;
+/* Title Parallel Area */
+h1 > div.parallel {
+	display: inline-block;
+	position: relative;
+	width: 101%;
 }
 
-dl.project-index > a > div {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
+h1 > div.parallel > div.left {
+	position: absolute;
+	right: 100%;
 }
 
-dl.project-index > a > div {
-	margin-top: 8px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	padding-left: 4px;
-
-	border-width: 1px;
-	border-style: solid;
-	border-color: #404040;
-
-	background-color: #1F1F1F;
+h1 > div.parallel > div.right {
+	position: absolute;
+	left: 100%;
 }
 
-dl.project-index > a > div:hover {
-	background-color: #2A2A2A;
+dl > div.parameter:target > dt > a.dkn {
+	font-size: 130%;
+	color: var(--target-highlighting);
 }
 
-dl.project-index > a:hover {
-	text-shadow: none;
+*:target > a.dkn {
+	color: var(--target-highlighting);
 }
 
-dl.project-index > a > div > dt > span.factor-path {
-	margin-left: 6px;
-	font-weight: 800;
-}
-
-dl.project-index > a > div > dd > span.index-abstract {
-	color: #A0A0A0;
-}
-
-dl.project-index > a > div > dt {
-	width: 29%;
-}
-
-dl.project-index > a > div > dd {
-	margin-left: auto;
-	width: 70%;
-	text-align: right;
-
-	margin-right: 8px;
-}
-
-/* Project Index formatting */
-dl.factor-index {
-	padding-left: 1em;
-	padding-right: 1em;
-}
-
-dl.factor-index > a > div {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-}
-
-dl.factor-index > a > div {
-	margin-top: 8px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	padding-left: 4px;
-
-	border-width: 1px;
-	border-style: solid;
-	border-color: #404040;
-
-	background-color: #1F1F1F;
-}
-
-dl.factor-index > a > div:hover {
-	background-color: #2A2A2A;
-}
-
-dl.factor-index > a:hover {
-	text-shadow: none;
-}
-
-dl.factor-index > a > div > dt > span.factor-path {
-	margin-left: 6px;
-	font-weight: 800;
-}
-
-dl.factor-index > a > div > dd > span.index-abstract {
-	color: #A0A0A0;
-}
-
-dl.factor-index > a > div > dt {
-	width: 29%;
-}
-
-dl.factor-index > a > div > dd {
-	margin-left: auto;
-	width: 70%;
-	text-align: right;
-
-	margin-right: 8px;
-}
-
-/* Source Index formatting */
-dl.source-index {
-	padding-left: 1em;
-	padding-right: 1em;
-}
-
-dl.source-index > a > div {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-}
-
-dl.source-index > a > div {
-	margin-top: 8px;
-	padding-top: 8px;
-	padding-bottom: 8px;
-	padding-left: 4px;
-
-	border-width: 1px;
-	border-style: solid;
-	border-color: #404040;
-
-	background-color: #1F1F1F;
-}
-
-dl.source-index > a > div:hover {
-	background-color: #2A2A2A;
-}
-
-dl.source-index > a:hover {
-	text-shadow: none;
-}
-
-dl.source-index > a > div > dt > span.source-path {
-	margin-left: 6px;
-	font-weight: 800;
-}
-
-dl.source-index > a > div > dd > span.index-abstract {
-	color: #A0A0A0;
-}
-
-dl.source-index > a > div > dt {
-	width: 29%;
-}
-
-dl.source-index > a > div > dd {
-	margin-left: auto;
-	width: 70%;
-	text-align: right;
-
-	margin-right: 8px;
-}

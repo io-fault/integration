@@ -1,6 +1,8 @@
-/*
+/**
 	# Reference log showing iframes to links alongside the main content.
 */
+@charset "utf-8";
+
 body > main {
 	/*
 	position: fixed;
