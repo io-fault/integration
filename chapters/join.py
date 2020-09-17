@@ -112,7 +112,7 @@ def type_property_fragments(resolve, node, titled=True):
 	"""
 	# Construct &Fragment instances for populating a property set to describe the type.
 	"""
-	typsyntax = node[2]['syntax']
+	typsyntax = node[2]['syntax'].replace('\n', '')
 	typref = node[2].get('reference')
 
 	tsf = Fragment(('literal/grave-accent/type/syntax', typsyntax))
