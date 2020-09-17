@@ -147,7 +147,7 @@ def property_item(pf):
 	"""
 	# Construct single paragraph item nodes for populating a set or sequence node.
 	"""
-	return ('item', [('paragraph', Paragraph([pf]), {})], {})
+	return ('item', [('paragraph', Paragraph.of(pf), {})], {})
 
 def documented_field_item(resolve, element, node, identifier, cast, documentation):
 	"""
@@ -193,10 +193,10 @@ def undocumented_field_item(resolve, element, node, identifier, cast, documentat
 	v_content.append(('set', propset, {},))
 	v_content.append((
 		'paragraph',
-		Paragraph([
+		Paragraph.of(
 			Fragment(('literal/grave-accent/ctl/absent', "Undocumented")),
 			Fragment(('text/normal', "."))
-		]),
+		),
 		{}
 	))
 

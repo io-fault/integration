@@ -52,7 +52,7 @@ def itemize_fragment(pf:Fragment):
 	"""
 	# Construct single paragraph item node for populating a set or sequence node.
 	"""
-	return ('item', [('paragraph', Paragraph([pf]), {})], {})
+	return ('item', [('paragraph', Paragraph.of(pf), {})], {})
 
 def fragment_property(item) -> Fragment:
 	"""
