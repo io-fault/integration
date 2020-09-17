@@ -7,32 +7,114 @@ from fault.context import comethod
 from fault.text import nodes
 from fault.web import xml
 
-def integrate(index, types, node, default_type='text'):
-	# Traverse the sections of the &tree converting CONTEXT and CONTROL
-	# admonition nodes into attributes.
-	subsect = []
-	index[tuple(node[2].get('absolute', ()) or ())] = (node, subsect)
+from .tools import get_properties, interpret_property_fragment
 
-	sub = []
-	for x in node[1][:4]:
-		if x[0] == 'admonition' and x[-1]['type'] in types:
-			meta = x[2]['type'].lower()
-			data = {
-				k: nodes.document.export(v[1])
-				for k, v in nodes.document.dictionary_pairs(x[1][0][1])
-			}
-			node[2][meta] = data
+def formlink(reference:str) -> (str, str):
+	"""
+	# Construct a pair from the hyperlink reference string for constructing an anchor tag.
+
+	# First element is the display text, second is the content for the `href` attribute.
+	"""
+	if reference.endswith(']'):
+		# Explicit title.
+		href, link_display = reference.rsplit('[', 1)
+		link_display = link_display[:-1]
+
+		# If it's only brackets, chances are it's an IPv6 IRI.
+		# Handle this case by checking if the href is empty,
+		# if it is, presume the brackets are the IRI.
+		if not href.strip():
+			href = reference
+		if not link_display:
+			link_display = reference
+	else:
+		# No explicit title.
+		href = reference
+		if href[:1] == '#':
+			link_display = href[1:]
 		else:
-			sub.append(x)
+			link_display = href.lstrip('./')
 
-	if 'control' in node[2]:
-		ctl = node[2]['control']
+	return (link_display, href)
 
-		if 'type' in ctl:
-			node[2]['type'] = ctl['type'].sole[1]
+def formtype(tree, element):
+	"""
+	# Construct HTML elements for representing a type given proper annotations.
+	"""
+	ts = None
+	typdisplay = ()
 
-	# Remove the now integrated data.
-	node[1][:4] = sub
+	if ('type', 'syntax') in element:
+		ts = element[('type', 'syntax')]
+		typsyntax = tree.text(ts)
+		typdisplay = typsyntax
+
+	if ('type', 'reference') in element:
+		# Override the output with the linked version.
+		fragment = element[('type', 'reference')]
+		rt, rs, *quals = fragment.type.split('/')
+		typdisplay = tree.hyperlink(None, None, fragment.data, *quals, title=ts)
+
+	return typdisplay
+
+def load_control_value(value):
+	if value[0] == 'paragraph':
+		return nodes.document.export(value[1])
+
+	if value[0] == 'set':
+		# Presumes flag set.
+		items = value[1]
+		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
+
+def interpret_inheritance(admonition):
+	# Presumes flag set.
+	items = map(nodes.document.export, (x[1][0][1] for x in admonition[0][1]))
+
+	return dict(
+		(tuple(f[0].split('/')[2:]), f[1])
+		for f in (x.sole for x in items)
+	)
+
+def integrate(index, types, node, default_type='text'):
+	"""
+	# Traverse the sections of the &node converting CONTEXT and CONTROL
+	# admonition nodes into &node attributes.
+	"""
+	attr = node[2]
+	attr['type'] = 'unspecified'
+	subsect = []
+	index[tuple(attr.get('absolute', ()) or ())] = (node, subsect)
+
+	try:
+		ftype, fnodes, fattr = node[1][0]
+	except (LookupError, ValueError):
+		# No elements at all
+		pass
+	else:
+		if ftype == 'admonition' and fattr['type'] in types:
+			meta = fattr['type'].lower()
+			data = {
+				k: load_control_value(v)
+				for k, v in nodes.document.dictionary_pairs(fnodes[0][1])
+			}
+			attr[meta] = data
+			del fnodes[:1]
+
+		if 'control' in attr:
+			ctl = attr['control']
+
+			if 'type' in ctl:
+				attr['type'] = ctl['type'].sole[1]
+			if 'flags' in ctl:
+				attr['flags'] = set(x[0][1] for x in ctl['flags'])
+			if 'element' in ctl:
+				# Language level type/syntax, type/reference, etc.
+				attr['element'] = dict(map(interpret_property_fragment, (
+					x.sole for x in ctl['element']
+				)))
+				if ('source', 'area') in attr['element']:
+					attr['area'] = map(int, attr['element'][('source', 'area')].split())
+				#XXX if ('source', 'path') in attr['element']:
 
 	for x in node[1]:
 		if x[0] == 'section':
@@ -82,7 +164,9 @@ class Render(comethod.object):
 
 		return prefixed
 
-	def __init__(self, output:xml.Serialization, index, input:nodes.Cursor):
+	def __init__(self, output:xml.Serialization, prefix, depth, index, input:nodes.Cursor):
+		self.prefix = prefix
+		self.depth = depth
 		self.input = input
 		self.index = index
 		self.output = output
@@ -98,19 +182,37 @@ class Render(comethod.object):
 		return self.element(
 			tag,
 			itertools.chain(
+				self.element('div', itertools.chain(
+					self.element('div', self.text(''), ('class', 'left')),
+					self.element('div', self.text(''), ('class', 'right')),
+				), ('class', 'parallel')),
 				self.element('span', self.text(''), ('class', 'prefix')),
 				content,
 			),
 			('class', None if integrate == False else 'integrate')
 		)
 
-	def document(self, identifier, head=(), header=(), footer=(), resolver=None):
+	def document(self, type, identifier, head=(), header=(), footer=(), resolver=None):
 		"""
 		# Render the HTML document from the given chapter.
 		"""
 
 		resolver = resolver or self.default_resolver()
 		rnode, = self.input.root
+
+		title = self.title(resolver,
+			itertools.chain(
+				self.element('span',
+					self.text(identifier),
+					('class', 'title'),
+				),
+				self.element('span',
+					self.text(type),
+					('class', 'factor-type'),
+				),
+			),
+			False
+		)
 
 		return self.element('html',
 			itertools.chain(
@@ -120,8 +222,9 @@ class Render(comethod.object):
 						header,
 						self.element('main',
 							itertools.chain(
-								self.title(resolver, self.text(identifier), False),
+								title,
 								self.root(resolver, rnode[1], rnode[-1]),
+								self.element('h1', self.text(''), ('class', 'footing')),
 							),
 						),
 						footer,
@@ -142,9 +245,12 @@ class Render(comethod.object):
 
 	@comethod('section')
 	def semantic_section(self, resolver, nodes, attr, adjustment=0, tag='section'):
+		path = attr.get('absolute', ())
+		if path is None:
+			return
+		documented = not ('undocumented' in attr.get('flags', ()))
 		ttypes = {'text', 'subtext', 'unspecified'}
 		ident = attr['identifier']
-		path = attr.get('absolute', ())
 		typ = attr.get('type', 'unspecified')
 		depth = len(path) + adjustment
 
@@ -178,6 +284,14 @@ class Render(comethod.object):
 				)
 				break
 		else:
+			# No title override found.
+			element_properties = attr.get('element') or ()
+			element_type = list(formtype(self, element_properties))
+			if element_type:
+				element_type = self.element('code', element_type,
+					('class', 'type')
+				)
+
 			title = self.title(
 				resolver,
 				itertools.chain(
@@ -197,6 +311,7 @@ class Render(comethod.object):
 						self.text(typ if typ not in ttypes else ''),
 						('class', 'abstract-type'),
 					),
+					element_type,
 				),
 				integrate,
 			)
@@ -208,6 +323,8 @@ class Render(comethod.object):
 				self.switch(resolver, nodes, attr)
 			),
 			('class', typ),
+			('documented', str(documented).lower()),
+			('local-identifier', ident),
 			id=qpathstr
 		)
 
@@ -221,7 +338,7 @@ class Render(comethod.object):
 
 	@comethod('exception')
 	def error(self, resolver, nodes, attr):
-		yield from self.element('pre', self.text("error"))
+		yield from self.element('pre', self.text(str(nodes)))
 
 	@comethod('syntax')
 	def code_block(self, resolver, nodes, attr):
@@ -282,20 +399,65 @@ class Render(comethod.object):
 		)
 
 	def dl_item(self, resolver, item, attr, sattr, prefix):
+		item_properties = {}
 		k, v = item
-		kp = ''.join(x[1] for x in nodes.document.export(k[1]))
+		kp = nodes.document.export(k[1])
+		kpi = ''.join(x[1] for x in kp)
+		iclass = None
 		attr['super'] = sattr
-		attr['absolute'] = sattr['absolute'] + (kp,)
+		attr['absolute'] = (sattr['absolute'] or ()) + (kpi,)
 
-		return itertools.chain(
-			self.element('dt',
-				itertools.chain(
-					self.dl_item_anchor(attr['absolute']),
-					self.paragraph_content(resolver, k[1], attr),
+		pset = get_properties(v[1])
+		if pset:
+			# First node was a property set.
+			del v[1][0:1]
+			item_properties.update(pset.items())
+
+		documented = True
+		typannotation = ()
+
+		if len(kp) == 1:
+			# Parameter case.
+			sole = kp[0]
+			soletype, subtype, *cast = sole.type.split('/')
+
+			if cast and cast[0] in {'parameter', 'field', 'constant'}:
+				iclass = cast[0]
+
+				typdata = list(formtype(self, item_properties))
+				if typdata:
+					typannotation = self.element(
+						'code', typdata, ('class', 'type')
+					)
+				else:
+					typannotation = ()
+
+				# Check for not-documented literal.
+				try:
+					vp = nodes.document.export(v[1][0][1])
+					if vp[0].type.endswith('/ctl/absent'):
+						documented = False
+				except:
+					pass
+		else:
+			sole = None
+			soletype = None
+			cast = ()
+
+		return self.element('div',
+			itertools.chain(
+				self.element('dt',
+					itertools.chain(
+						self.dl_item_anchor(attr['absolute']),
+						self.paragraph_content(resolver, k[1], attr),
+						typannotation,
+					),
 				),
-				id=self.slug(prefix(kp)),
+				self.element('dd', self.switch(resolver, v[1], attr)),
 			),
-			self.element('dd', self.switch(resolver, v[1], attr)),
+			('id', self.slug(prefix(kpi))),
+			('class', iclass),
+			('documented', str(documented).lower())
 		)
 
 	@comethod('dictionary')
@@ -343,8 +505,21 @@ class Render(comethod.object):
 			return
 
 		typ = attr['type']
+		if typ in {'CONTROL', 'CONTEXT'}:
+			return
+
+		if typ == 'INHERIT':
+			yield from self.element('div',
+				self.element('code',
+					formtype(self, dict(interpret_inheritance(content))),
+					('class', 'type'),
+				),
+				('class', 'inheritance'),
+			)
+			return
+
 		lead = content[0]
-		severity = 'admonition-' + attr['type']
+		severity = 'admonition-' + typ
 
 		yield from self.element(
 			'div',
@@ -373,6 +548,8 @@ class Render(comethod.object):
 
 	@comethod('reference', 'ambiguous')
 	def dereference_ambiguous(self, resolver, context, text, *quals):
+		# Most references are expected to be rewritten as hyperlinks.
+		# However, this case should be handled.
 		yield from self.link(
 			(quals and quals[0] or None),
 			self.text(text),
@@ -380,12 +557,43 @@ class Render(comethod.object):
 		)
 
 	@comethod('reference', 'hyperlink')
-	def hyperlink(self, resolver, context, text, *quals):
+	def hyperlink(self, resolver, context, text, *quals, title=None):
+		link_display, href = formlink(text)
+		link_content_text = self.text(title or link_display)
+		link_content = link_content_text
+
+		link_class = 'absolute'
+		if quals:
+			# First cast segment past reference/hyperlink
+			# identifies the anchor class.
+			link_class = quals[0]
+
+			# If there's a subtype, add a span.
+			if quals[1:2]:
+				link_content = self.element('span',
+					link_content_text,
+					('class', quals[1]),
+				)
+
+		if link_class == 'project-local':
+			depth = self.depth - 1
+		elif link_class == 'context-local':
+			# Consistent.
+			depth = self.depth
+
+			# Remove prefix from link only if one is configured.
+			if self.prefix and href.startswith(self.prefix):
+				href = href[len(self.prefix):]
+		else:
+			# Unrecognized relation.
+			# Either factor local or absolute.
+			depth = 0
+
 		yield from self.element(
 			'a',
-			self.text(quals and ' '.join(quals) or text),
-			('class', 'absolute'),
-			href = text
+			link_content,
+			('class', link_class),
+			href = ('../' * depth if href[:1] != '#' else '') + href
 		)
 
 	@comethod('text', 'normal')
@@ -479,18 +687,19 @@ class Render(comethod.object):
 		for snode in sub.select("/section?titled"):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
-def transform(chapter, styles=[], identifier=''):
+def transform(prefix, depth, chapter, styles=[], identifier='', type=''):
 	c = nodes.Cursor.from_chapter_text(chapter)
 	sx = xml.Serialization(xml_encoding='utf-8')
 	r, = c.root
 	idx, ctx = prepare(r)
-	rhtml = Render(sx, idx, c)
+	rhtml = Render(sx, prefix, depth, idx, c)
 	head = rhtml.element('head',
 		itertools.chain(
+			rhtml.element('meta', None, charset='utf-8'),
 			itertools.chain.from_iterable(
 				rhtml.element('link', (), rel='stylesheet', href=x)
 				for x in styles
 			)
 		),
 	)
-	return rhtml.document(identifier, head=head)
+	return rhtml.document(type, identifier, head=head)

@@ -8,6 +8,7 @@ import traceback
 
 from fault.system import process
 from fault.system import files
+from .. import html
 
 def main(inv:process.Invocation) -> process.Exit:
 	src, *styles = inv.argv
@@ -17,7 +18,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		doctext = f.read()
 
 	try:
-		sys.stdout.buffer.writelines(transform(doctext))
+		sys.stdout.buffer.writelines(html.transform('', 0, doctext))
 	except:
 		p = pdb.Pdb()
 		traceback.print_exc()
