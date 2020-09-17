@@ -274,7 +274,7 @@ shrink_entry(event)
 	# in the given xml:id, &xid.
 
 	# [ Parameters ]
-	# /xid
+	# /xid/
 		# The XML identifier of the target fragment or subfragment.
 */
 function
@@ -283,13 +283,14 @@ mkpath(document, xid)
 	var parts = xid.split(".")
 	var curlink = "";
 	var elements = Array();
+	var sep = document.createElement("span");
+	sep.setAttribute("class", "separator");
+	sep.appendChild(document.createTextNode("."));
 
 	for (var i in parts)
 	{
 		var cur = parts[i];
-		var sep = document.createElement("span");
-		sep.setAttribute("class", "separator");
-		sep.appendChild(document.createTextNode("."));
+		var sepcpy = sep.cloneNode(true);
 
 		if (curlink == "")
 			curlink = cur;
