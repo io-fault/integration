@@ -7,7 +7,7 @@ from fault.context import comethod
 from fault.text import nodes
 from fault.web import xml
 
-from .tools import get_properties, interpret_property_fragment
+from .tools import get_properties, interpret_property_fragment, interpret_properties
 
 def formlink(reference:str) -> (str, str):
 	"""
@@ -65,15 +65,6 @@ def load_control_value(value):
 		# Presumes flag set.
 		items = value[1]
 		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
-
-def interpret_inheritance(admonition):
-	# Presumes flag set.
-	items = map(nodes.document.export, (x[1][0][1] for x in admonition[0][1]))
-
-	return dict(
-		(tuple(f[0].split('/')[2:]), f[1])
-		for f in (x.sole for x in items)
-	)
 
 def integrate(index, types, node, default_type='text'):
 	"""
@@ -511,14 +502,13 @@ class Render(comethod.object):
 		if typ == 'INHERIT':
 			yield from self.element('div',
 				self.element('code',
-					formtype(self, dict(interpret_inheritance(content))),
+					formtype(self, dict(interpret_properties(content[0][1]))),
 					('class', 'type'),
 				),
 				('class', 'inheritance'),
 			)
 			return
 
-		lead = content[0]
 		severity = 'admonition-' + typ
 
 		yield from self.element(
