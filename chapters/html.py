@@ -563,6 +563,7 @@ class Render(comethod.object):
 		link_content = link_content_text
 
 		link_class = 'absolute'
+		link_target_type = None
 		if quals:
 			# First cast segment past reference/hyperlink
 			# identifies the anchor class.
@@ -570,13 +571,20 @@ class Render(comethod.object):
 
 			# If there's a subtype, add a span.
 			if quals[1:2]:
+				link_target_type = quals[1]
 				link_content = self.element('span',
 					link_content_text,
-					('class', quals[1]),
+					('class', link_target_type),
 				)
 
 		if link_class == 'project-local':
-			depth = self.depth - 1
+			depth = self.depth
+			if link_target_type == 'project-name':
+				# self-reference; essentially treat as context-local
+				if self.prefix and href.startswith(self.prefix):
+					href = href[len(self.prefix):]
+			else:
+				depth -= 1
 		elif link_class == 'context-local':
 			# Consistent.
 			depth = self.depth
