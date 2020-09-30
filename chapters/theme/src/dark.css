@@ -624,7 +624,7 @@ main section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5)
 */
 main article section > *:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre),
 article > *:not(section):not(article),
-main > div[class="text.abstract"] > *:not(section):not(article):not(pre)
+main > div[class="text.abstract"] > *:not(section):not(article):not(pre):not(div[class|='admonition'])
 {
 	margin-left: 4px;
 	margin-right: 4px;
