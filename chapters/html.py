@@ -224,15 +224,20 @@ class Render(comethod.object):
 			),
 		)
 
+	def abstract(self, resolver, nodes, attr):
+		"""
+		# Extract the non-section content from the chapter.
+		"""
+		yield from self.element(
+			'div',
+			self.switch(resolver, nodes, attr),
+			('class', "text.abstract")
+		)
+
 	def root(self, resolver, nodes, attr):
-		default_section = nodes[0]
-
-		if len(default_section[1]) > 0 and default_section[1][0][0] == 'syntax':
-			yield from self.subtext(resolver, default_section[1], default_section[-1])
-		else:
-			yield from self.abstract(resolver, nodes[0][1], nodes[0][-1])
-
-		yield from self.switch(resolver, nodes[1:], attr)
+		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), nodes))
+		yield from self.abstract(resolver, chapter_content, attr)
+		yield from self.switch(resolver, nodes[len(chapter_content):], attr)
 
 	@comethod('section')
 	def semantic_section(self, resolver, nodes, attr, adjustment=0, tag='section'):
@@ -648,19 +653,14 @@ class Render(comethod.object):
 
 			yield from self.comethod(typ, subtype)(resolver, attr, txt, *local)
 
-	def abstract(self, resolver, nodes, attr):
-		"""
-		# Extract the non-section content of the default section.
-		"""
-		nn = (node for node in nodes if node[0] != 'section')
-
-		yield from self.element(
-			'div',
-			self.switch(resolver, nn, attr),
-			('class', "text.abstract")
-		)
-
 	def subtext(self, resolver, snodes, attr):
+		"""
+		# Currently unused.
+
+		# Originally, this parsed the syntax node content as kleptic text.
+		# Eventually &.join was changed to integrate the documentation into
+		# the generated sections leaving this unused.
+		"""
 		text = '\n'.join(x[1][0] for x in snodes[0][1])
 
 		sub = nodes.Cursor.from_chapter_text(text)
@@ -671,18 +671,17 @@ class Render(comethod.object):
 
 		# Prefix with empty path.
 		r[-1]['absolute'] = ()
-		idx, ctx = prepare(sub.root[0], default_type='subtext')
+		idx, ctx = prepare(r, default_type='subtext')
 		for v, subs in idx.values():
 			a = v[2]['absolute']
 			a = ('',) + tuple(a or ())
 			v[2]['absolute'] = a
 
 		# Module abstract.
-		inodes = sub.select("/section[]/*")
-		attr = sub.select("/section[]#1")[0][-1]
-		yield from self.abstract(resolver, inodes, attr)
+		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), r[1]))
+		yield from self.abstract(resolver, chapter_content, attr)
 
-		for snode in sub.select("/section?titled"):
+		for snode in sub.select("/section"):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
 def transform(prefix, depth, chapter, styles=[], identifier='', type=''):
