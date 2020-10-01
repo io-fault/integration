@@ -48,13 +48,6 @@ def interpret_dictionary_items(items):
 		for i in items
 	}
 
-def get_parameters(rq, section_id='Parameters'):
-	"""
-	# Extract parameters from a documentation string.
-	"""
-	params = rq.select('/section[%s]/dictionary/item' %(section_id,))
-	return interpret_dictionary_items(params)
-
 def prefix(path, node):
 	"""
 	# Adjust the sections in &node to be relative to &path.
@@ -93,6 +86,14 @@ def extract(sub, section):
 			del r[1][i]
 
 	return interpret_dictionary_items(items)
+
+def insert_before(type, elements, node):
+	for i, n in enumerate(elements):
+		if n[0] == type:
+			elements.insert(i, node)
+			return
+
+	elements.append(node)
 
 def control(**kw):
 	"""
@@ -218,9 +219,12 @@ class Text(comethod.object):
 
 		return p
 
-	def setdocs(self, path, cursor, section='Elements', _prefix=[('section', [], {})]):
+	def setdocs(self, path, cursor, section='Elements'):
 		tmap = extract(cursor, 'Elements')
-		self.docs.update((path + (k,), nodes.Cursor.from_chapter_content(_prefix+v[1])) for k, v in tmap.items())
+		self.docs.update(
+			(path + (k,), nodes.Cursor.from_chapter_content(('chapter', v[1], {})))
+			for k, v in tmap.items()
+		)
 
 	def r_control(self, node, documented=True, element=(), **ctlkeys):
 		ctl = [
@@ -264,13 +268,11 @@ class Text(comethod.object):
 		doc = self.getdoc(())
 		if doc is not None:
 			r = doc.root[0]
-			self.setdocs((), doc)
 
 			params = extract(doc, 'Parameters')
 			if params:
-				sect = r[1][0]
 				pd = ('dictionary', [], {})
-				sect[1].append(pd)
+				insert_before('section', r[1], pd)
 				for nid, p_documented, i in self.r_parameters(elements, (), r, params):
 					pd[1].append(i)
 
@@ -325,7 +327,7 @@ class Text(comethod.object):
 		except LookupError:
 			pass
 
-		doc = self.docs.get(path, None)
+		doc = self.getdoc(path)
 		yield from self.r_control(node, documented=bool(doc), element=typdata)
 
 		# Collect inheritance if any is specified and increment offset for &switch.
@@ -339,22 +341,18 @@ class Text(comethod.object):
 				offset += 1
 
 		if doc:
-			sub = nodes.Cursor.from_chapter_text('\n'.join(doc))
-			self.setdocs(path, sub, section='Elements')
+			self.setdocs(path, doc, section='Elements')
 
-			params = extract(sub, 'Parameters')
+			params = extract(doc, 'Parameters')
 			if params:
-				sect = r[1][0]
 				pd = ('dictionary', [], {})
-				sect[1].append(pd)
-				for nid, p_documented, i in self.r_parameters(node, path, sub.root, params):
+				insert_before('section', doc.root[0][1], pd)
+				for nid, p_documented, i in self.r_parameters(node, path, doc.root, params):
 					pd[1].append(i)
 
 			# Rewrite ambiguous references found in the documentation.
-			r = self.resolution.rewrite(path, sub.root[0])
-
-			for x in r[1]:
-				yield from render.tree(x)
+			r = self.resolution.rewrite(path, doc.root[0])
+			yield from render.chapter(r)
 
 		yield from self.switch(path, subnodes[offset:])
 
@@ -402,9 +400,11 @@ class Text(comethod.object):
 		yield self.newline
 		yield self.section(0, None, path)
 		yield from self.r_control(node, documented=bool(doc), element=typdata)
+
 		if doc is not None:
 			if doc.root[0][1]:
-				yield from render.chapter(doc.root[0])
+				r = self.resolution.rewrite(path, doc.root[0])
+				yield from render.chapter(r)
 
 		yield "#!source\n"
 		for x in itruncate(self.selectlines(node)):
@@ -421,7 +421,7 @@ class Text(comethod.object):
 		yield self.newline
 		yield self.section(0, None, path)
 
-		doc = self.docs.get(path, None)
+		doc = self.getdoc(path)
 
 		# Retrieve the type of the element.
 		resolve = self.resolution.partial(path)
@@ -440,15 +440,13 @@ class Text(comethod.object):
 		# Parse documentation and identify documented parameters.
 		documented = set()
 		if doc:
-			sub = nodes.Cursor.from_chapter_text('\n'.join(doc))
-			params = extract(sub, 'Parameters')
-			r = sub.root[0]
+			params = extract(doc, 'Parameters')
+			r = doc.root[0]
 			prefix(path, r)
-			sect = r[1][0]
 
 			# Add new parameters.
 			pd = ('dictionary', [], {})
-			sect[1].append(pd)
+			insert_before('section', r[1], pd)
 
 			# Process the parameters section.
 			for nid, p_documented, i in self.r_parameters(node, path, param_nodes, params):
