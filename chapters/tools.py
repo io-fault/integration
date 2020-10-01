@@ -44,7 +44,11 @@ def get_properties(nodes):
 	if nodes:
 		typ, items, attr = nodes[0]
 		if typ == 'set':
-			return dict(interpret_properties(items))
+			try:
+				return dict(interpret_properties(items))
+			except (TypeError, ValueError):
+				# Probably not a property set.
+				pass
 
 	return dict()
 
