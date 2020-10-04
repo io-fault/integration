@@ -30,7 +30,7 @@ def extract_counters(llvm, command_path, shared_object, raw_profile_data_path):
 	# Extract the merged profile data written by the LLVM instrumentation.
 	"""
 
-	with files.Path.temporary() as tmp:
+	with files.Path.fs_tmpdir() as tmp:
 		target = tmp / 'llvm.mpd'
 		merged = str(target)
 		cmd = postprocess(command_path, merged, str(raw_profile_data_path))
