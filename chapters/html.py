@@ -394,11 +394,25 @@ class Render(comethod.object):
 			('href', "#" + self.slug(".".join(path))),
 		)
 
+	def dl_key_identifier(self, kpg):
+		for typ, data in kpg:
+			if typ == 'reference/hyperlink' or typ.startswith('reference/hyperlink/'):
+				if data[-1:] == ']':
+					# Use title.
+					yield data.rsplit('[', 1)[1][:-1]
+				else:
+					if data[:1] == '#':
+						yield data[1:]
+					else:
+						yield data
+			else:
+				yield data
+
 	def dl_item(self, resolver, item, attr, sattr, prefix):
 		item_properties = {}
 		k, v = item
 		kp = nodes.document.export(k[1])
-		kpi = ''.join(x[1] for x in kp)
+		kpi = ''.join(self.dl_key_identifier(kp))
 		iclass = None
 		attr['super'] = sattr
 		attr['absolute'] = (sattr['absolute'] or ()) + (kpi,)
