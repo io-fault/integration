@@ -352,6 +352,7 @@ class Text(comethod.object):
 
 			# Rewrite ambiguous references found in the documentation.
 			r = self.resolution.rewrite(path, doc.root[0])
+			prefix(path, r)
 			yield from render.chapter(r)
 
 		yield from self.switch(path, subnodes[offset:])
