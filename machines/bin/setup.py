@@ -3,12 +3,12 @@
 # LLVM implementation.
 
 # The setup process will modify the tool support context referenced by the target construction context.
-# The instrumentation tooling requires various LLVM libraries for extracting coverage counters,
+# The coverage tooling requires various LLVM libraries for extracting counters,
 # and the delineation tooling requires (system/library)`libclang` and clang includes.
 
 # [ Engineering ]
 # The implementation depends on the Construction Context instance being
-# that of &..factors.library. While the engine may need to be
+# that of &..factors. While the engine may need to be
 # Python, the context implementation should be variable such that context
 # extension interface are used rather than presuming the implementation.
 """
@@ -195,9 +195,9 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 
 	return ('llvm-delineation-libclang', query.delineation(*(map(str, dep))))
 
-def instruments(args, fault, ctx, ctx_route, ctx_params):
+def coverage(args, fault, ctx, ctx_route, ctx_params):
 	"""
-	# Initialize the instrumentation tooling for metrics contexts.
+	# Initialize the tooling for coverage contexts.
 	"""
 	mech = (ctx_route/'mechanisms'/name)
 
@@ -220,15 +220,6 @@ def instruments(args, fault, ctx, ctx_route, ctx_params):
 	source, merge, export, projections = query.instrumentation(*args)
 	fsyms = (ctx_route / 'context' / 'symbols' / 'llvm-coverage-instrumentation')
 	fsyms.fs_store(pickle.dumps(projections))
-
-	from .. import coverage # For Probe constructor addressing.
-	cov = {
-		'source': source,
-		'merge': merge,
-		'export': export,
-		'python-controller': '.'.join((coverage.__name__, coverage.Probe.__qualname__)),
-	}
-	rewrite_mechanisms(mech, 'instrumentation-control', cov)
 
 def compiler(args, fault, ctx, ctx_route, ctx_params):
 	"""
@@ -286,8 +277,8 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 
 	route = compiler(args, fault, ctx, ctx_route, ctx_params)
 
-	if ctx_intention == 'instruments':
-		instruments(args, fault, ctx, ctx_route, ctx_params)
+	if ctx_intention == 'coverage':
+		coverage(args, fault, ctx, ctx_route, ctx_params)
 	elif ctx_intention == 'delineation':
 		sym, reqs = fragments(args, fault, ctx, ctx_route, ctx_params)
 
