@@ -15,8 +15,9 @@ dependency_options = (
 
 optimizations = {
 	'optimal': '3',
-	'injections': '0',
-	'instruments': '0',
+	'test': '0',
+	'coverage': '0',
+	'profile': '3',
 	'debug': '0',
 	'delineation': '0',
 }
