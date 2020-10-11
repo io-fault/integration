@@ -213,10 +213,7 @@ def coverage(args, fault, ctx, ctx_route, ctx_params):
 	syscmd = tool['command']
 	args = (files.Path.from_absolute(syscmd).container / 'llvm-config',)
 
-	# Inherit detected llvm-profdata path.
-	# &..coverage.Probe needs this information in order to process
-	# the raw profile data emitted to disk.
-
+	# Get instrumentation support flags.
 	source, merge, export, projections = query.instrumentation(*args)
 	fsyms = (ctx_route / 'context' / 'symbols' / 'llvm-coverage-instrumentation')
 	fsyms.fs_store(pickle.dumps(projections))
@@ -277,9 +274,7 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 
 	route = compiler(args, fault, ctx, ctx_route, ctx_params)
 
-	if ctx_intention == 'coverage':
-		coverage(args, fault, ctx, ctx_route, ctx_params)
-	elif ctx_intention == 'delineation':
+	if ctx_intention == 'delineation':
 		sym, reqs = fragments(args, fault, ctx, ctx_route, ctx_params)
 
 	ccd.update_named_mechanism(route, 'language-specifications', {
