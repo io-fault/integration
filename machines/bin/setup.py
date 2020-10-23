@@ -30,7 +30,7 @@ from ...context import templates
 from ....factors import cc
 from ....factors import data as ccd
 from .. import query
-from .. import library
+from .. import constructors
 
 name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
@@ -169,7 +169,7 @@ def fragments(args, fault, ctx, ctx_route, ctx_params):
 
 				transform_tool_name: {
 					'command': __package__ + '.delineate',
-					'interface': library.__name__ + '.clang',
+					'interface': constructors.__name__ + '.clang',
 					'method': 'python',
 				}
 			},
@@ -232,7 +232,7 @@ def compiler(args, fault, ctx, ctx_route, ctx_params):
 
 	tool_data.update({
 		'type': 'collection',
-		'interface': library.__name__ + '.clang',
+		'interface': constructors.__name__ + '.clang',
 		'defaults': {},
 		'options': [],
 	})
