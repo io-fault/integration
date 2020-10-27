@@ -388,6 +388,10 @@ class Corpus(service.Partition):
 					itertools.chain(
 						sx.element('meta', None, ('charset', 'utf-8')),
 						itertools.chain.from_iterable(
+							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
+							for x in self.cp_styles
+						),
+						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
 							for x in self.cp_styles
 						),
@@ -423,6 +427,10 @@ class Corpus(service.Partition):
 				sx.element('head',
 					itertools.chain(
 						sx.element('meta', None, ('charset', 'utf-8')),
+						itertools.chain.from_iterable(
+							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
+							for x in self.cp_styles
+						),
 						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
 							for x in self.cp_styles
@@ -469,6 +477,10 @@ class Corpus(service.Partition):
 				sx.element('head',
 					itertools.chain(
 						sx.element('meta', None, ('charset', 'utf-8')),
+						itertools.chain.from_iterable(
+							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
+							for x in self.cp_styles
+						),
 						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
 							for x in self.cp_styles
