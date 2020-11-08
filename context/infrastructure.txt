@@ -1,0 +1,15 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/infrastructure>
+
+/Projects/
+	- &..products
+	- &..daemons
+	- &..probes
+
+/*.txt/
+	- (type)&<http://if.fault.io/factors/chapter#kleptic>
+
+/*.py/
+	- (type)&<http://if.fault.io/factors/python-module#v3>
+	- (path)&<http://fault.io/python/context>
