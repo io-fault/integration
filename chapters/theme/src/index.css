@@ -62,6 +62,7 @@ dl.project-index > a > div > dt,
 dl.factor-index > a > div > dt,
 dl.source-index > a > div > dt {
 	width: 29%;
+	white-space: nowrap;
 }
 
 dl.project-index > a > div > dd,
