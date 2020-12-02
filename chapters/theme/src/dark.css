@@ -578,6 +578,10 @@ none#navigation {
 	max-width: 2.5in;
 }
 
+div.inheritance {
+	float: right;
+}
+
 div.representation {
 	margin-top: 1em;
 	margin-left: 2em;
