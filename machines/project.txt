@@ -1,0 +1,20 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	&<http://fault.io/engineering/tools.host>
+/icon/
+	- (emoji)`🔧`
+/name/
+	`host`
+/abstract/
+	Compilation and linker command constructors for the host system.
+
+	This construction context tool provides the foundation for the
+	(id)`host` domain and deploys portable usage of (system/command)`/usr/bin/cc`.
+
+/authority/
+	`fault.io`
+/contact/
+	&<http://fault.io/critical>
