@@ -1,0 +1,17 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	&<http://fault.io/integration/machine>
+/icon/
+	- (emoji)`🛠`
+/name/
+	`machine`
+/abstract/
+	Integration tooling for the targeting the operation system's architecture.
+
+/authority/
+	`fault.io`
+/contact/
+	&<http://fault.io/critical>
