@@ -9,8 +9,8 @@ from fault.system import process
 from fault.system import python
 from fault.system import files
 
-from ....factors import data as ccd
-from ....factors import cc
+from system.factors import data as ccd
+from system.factors import cc
 from .. import library
 
 project = library.__package__
@@ -153,7 +153,7 @@ def dynamic(paths):
 name = 'fault.host' # Name of mechanism entry.
 def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
 	"""
-	# Initialize the instrumentation tooling for instruments contexts.
+	# Initialize the tooling for arbitrary intentions contexts.
 	"""
 
 	mech = (ctx_route / 'mechanisms' / name)
