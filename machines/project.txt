@@ -1,0 +1,18 @@
+! CONTEXT:
+	/protocol/
+		&<http://if.fault.io/project/information>
+
+/identifier/
+	&<http://fault.io/engineering/tools.llvm>
+/icon/
+	- (emoji)`🔧`
+	- (favicon)`http://llvm.org`
+/name/
+	`llvm`
+/abstract/
+	LLVM based compilation, delineation, and coverage tools
+
+/authority/
+	`fault.io`
+/contact/
+	&<http://fault.io/critical>
