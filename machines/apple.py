@@ -74,7 +74,7 @@ def macos_link_editor(
 		libs = [f for f in build.requirements[(f_domain, 'library')]]
 		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
 
-		dirs = (x.image() for x in libs)
+		dirs = (x.image({}) for x in libs)
 		command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
 
 		support = mech['objects'][f_type][format]
