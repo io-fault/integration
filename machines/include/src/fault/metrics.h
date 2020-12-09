@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 
 #ifndef FAULT_MAIN
-	#define FAULT_MAIN _fault_inner_main
+	#define FAULT_MAIN _fault_application_main
 #endif
 
 #ifndef EXECUTABLE_NAME
@@ -27,8 +27,7 @@
 static char _fault_execution_record[4096];
 
 /**
-	# Record the execution of the process signaling &fault.development.bin.measure
-	# that metrics may be available for collection.
+	# Record the execution of the process signaling.
 */
 static void
 _fault_note_execution_enter(const char *program_name, const char *type)
@@ -39,7 +38,7 @@ _fault_note_execution_enter(const char *program_name, const char *type)
 	if (fd == -1)
 	{
 		fprintf(stderr,
-			"[!* FATAL: (system/file)`%s` could not be opened for writing]\n", _fault_execution_record);
+			"[!* FATAL: `%s` could not be opened for writing]\n", _fault_execution_record);
 		fprintf(stderr,
 			"\tSystem call 'open' failed(%d): %s.\n", errno, strerror(errno));
 		kill(getpid(), SIGUSR2);
@@ -91,22 +90,25 @@ _fault_validate_context(const char *context_path)
 
 	if (context_path == NULL || context_path[0] == '\0')
 	{
-		fprintf(stderr, "[!* FATAL: (system/envvar)`FAULT_MEASUREMENT_CONTEXT` not specified]\n");
+		fprintf(stderr, "[!* FATAL: FAULT_CAPTURE_DIRECTORY not specified]\n");
 		goto fail;
 	}
 
 	r = stat(context_path, &ctxdir);
 	if (r != 0)
 	{
-		fprintf(stderr, "[!* FATAL: (system/envvar)`FAULT_MEASUREMENT_CONTEXT` is not accessible]\n");
+		fprintf(stderr, "[!* FATAL: FAULT_CAPTURE_DIRECTORY is not accessible]\n");
 		fprintf(stderr, "\tSystem call 'stat' failed(%d): %s.\n", errno, strerror(errno));
 		goto fail;
 	}
 
 	return;
+
 	fail:
+	{
 		kill(getpid(), SIGUSR2);
 		exit(1);
+	}
 }
 
 /**
@@ -119,7 +121,7 @@ main(int argc, const char *argv[])
 	char *s;
 	int pid = (int) getpid();
 
-	s = getenv("FAULT_MEASUREMENT_CONTEXT");
+	s = getenv("FAULT_CAPTURE_DIRECTORY");
 	_fault_validate_context(s);
 
 	snprintf(_fault_execution_record, sizeof(_fault_execution_record)-1, "%s/process-executed.%d", s, pid);
