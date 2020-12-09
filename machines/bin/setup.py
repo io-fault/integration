@@ -27,8 +27,8 @@ from fault.project import root
 
 from ...context import templates
 
-from ....factors import cc
-from ....factors import data as ccd
+from system.factors import cc
+from system.factors import data as ccd
 from .. import query
 from .. import constructors
 
@@ -260,7 +260,6 @@ def compiler(args, fault, ctx, ctx_route, ctx_params):
 	std = (syms / 'context:c++11')
 	std.fs_store(pickle.dumps({
 		'system': {'library': {None: set(['c++'])}},
-		'language': {'standard': {None: ['c++11']}}
 	}))
 
 	ccd.update_named_mechanism(route, 'clang', data)
@@ -276,23 +275,6 @@ def install(args, fault, ctx, ctx_route, ctx_params):
 
 	if ctx_intention == 'delineation':
 		sym, reqs = fragments(args, fault, ctx, ctx_route, ctx_params)
-
-	ccd.update_named_mechanism(route, 'language-specifications', {
-		'syntax': {
-			'target-file-extensions': {
-				'c': 'c',
-				'c-header': 'h',
-
-				'c++': 'cpp cxx c++',
-				'c++-header': 'hpp hxx h++',
-
-				'objective-c': 'm',
-				'objective-c-header': 'hm',
-
-				'objective-c++': 'mm',
-			},
-		}
-	})
 
 def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
