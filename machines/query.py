@@ -8,39 +8,13 @@ import os
 import typing
 import types
 
-from fault.system import execution as libexec
+from fault.system import execution
 from fault.system import files
+from fault.system import query
 
 # map path strings to routes
 def fs_routes(i:typing.Iterator[str]) -> typing.Sequence[files.Path]:
 	return list(map(files.Path.from_absolute, i))
-
-def environ_paths(env='PATH', sep=os.pathsep):
-	"""
-	# Construct a sequence of &files.Path instances to the paths stored
-	# in an environment variable. &os.environ is referred to upon
-	# each invocation, no caching is performed so each call represents
-	# the latest version.
-
-	# Defaults to `PATH`, &environ_paths can select an arbitrary environment variable
-	# to structure using the &env keyword parameter.
-
-	# This function exists to support &search as `search(environ_paths(), {...})` is
-	# the most common use case.
-
-	# [ Parameters ]
-	# /env/
-		# The environment variable containing absolute paths.
-		# Defaults to `'PATH'`
-	# /sep/
-		# The path separator to split the environment variable on.
-		# Defaults to &os.pathsep.
-	"""
-
-	s = os.environ[env].split(sep)
-	seq = fs_routes(s)
-
-	return seq
 
 def search(
 		search_paths:typing.Sequence[str],
@@ -99,13 +73,13 @@ def select(paths, possibilities, preferences):
 
 	return name, path
 
-def executables(xset:typing.Set[str]):
+def executables(paths, xset:typing.Set[str]):
 	"""
 	# Query the (system/envvar)`PATH` for executables with the exact name.
 	# Returns a pair whose first item is the matches that currently exist,
 	# and the second is the set of executables that were not found in the path.
 	"""
-	return search(environ_paths(), xset)
+	return search(paths, xset)
 
 linkers = {
 	'lld': (
@@ -128,37 +102,13 @@ extended_library_paths = [
 	"/opt/lib",
 ]
 
-# C-Family Runtime Objects in common use.
-runtime_stem = 'crt'
-runtime_objects = set([
-	'crt0', # No constructor support.
-
-	# Executable with constructor support.
-	'crt1',
-
-	'Scrt1', # Position Independent Executables.
-	'gcrt1',
-	'crt1S',
-
-	'crtbeginT', # Statically Linked Executables.
-	'crtend',
-
-	# Shared Libraries
-	'crtbeginS', # Position Independent Code.
-	'crtendS',
-
-	# Init and eNd.
-	'crti',
-	'crtn',
-])
-
 def uname(flag, path="/usr/bin/uname"):
 	"""
 	# Execute the (system/executable)`uname` returning its output for the given &flag.
 	"""
 
-	inv = libexec.KInvocation(path, [path, flag])
-	pid, exitcode, out = libexec.dereference(inv)
+	inv = execution.KInvocation(path, [path, flag])
+	pid, exitcode, out = execution.dereference(inv)
 
 	return out.strip().decode('utf-8')
 
@@ -167,7 +117,7 @@ def ldconfig_list(path="/usr/bin/ldconfig"):
 	# Extract library paths from (system/executable)`ldconfig`.
 	"""
 
-	(pid, exitcode, data) = libexec.dereference(libexec.KInvocation(path, [path, "-v"]))
+	(pid, exitcode, data) = execution.dereference(execution.KInvocation(path, [path, "-v"]))
 	l = [x for x in data.splitlines(b"\n") if x[0:1] != '\t']
 	l = [x.split(':', 1)[0] for x in l]
 	return l
@@ -195,3 +145,28 @@ def identity():
 		h_archs.extend(['osx', 'macos'])
 
 	return name, vendor, osname, arch, h_archs
+
+def detect_profile_library(libdir, architectures):
+	"""
+	# Given an `tool:llvm-clang` mechanism and a sequence of architecures, discover
+	# the appropriate profile library to link against when building targets
+	# that consist of LLVM instrumented sources.
+	"""
+	profile_libs = [x for x in libdir.files() if 'profile' in x.identifier]
+
+	if len(profile_libs) == 1:
+		# Presume target of interest.
+		profile_lib = profile_libs[0]
+	else:
+		# Scan for library with matching architecture.
+		for x, a in itertools.product(profile_libs, architectures):
+			if a in x.identifier:
+				profile_lib = x
+				break
+		else:
+			profile_lib = None
+
+	if profile_lib.fs_type() == 'void':
+		profile_lib = None
+
+	return profile_lib

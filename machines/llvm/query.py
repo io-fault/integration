@@ -3,7 +3,7 @@
 """
 import sys
 
-from fault.system import execution as libexec
+from fault.system import execution
 from fault.system import files
 
 def split_config_output(flag, output):
@@ -103,17 +103,17 @@ def clang(executable, type='executable'):
 	cc_route = files.Path.from_absolute(executable)
 
 	# gather compiler information.
-	x = libexec.prepare(type, executable, ['--version'])
-	i = libexec.KInvocation(*x)
-	pid, exitcode, data = libexec.dereference(i)
+	x = execution.prepare(type, executable, ['--version'])
+	i = execution.KInvocation(*x)
+	pid, exitcode, data = execution.dereference(i)
 	data = data.decode('utf-8')
 	cctype, release, version, version_info, target = parse_clang_version_1(data)
 
 	# Analyze the library search directories.
 	# Primarily interested in finding the crt*.o files for linkage.
-	x = libexec.prepare(type, executable, ['-print-search-dirs'])
-	i = libexec.KInvocation(*x)
-	pid, exitcode, sdd = libexec.dereference(i)
+	x = execution.prepare(type, executable, ['-print-search-dirs'])
+	i = execution.KInvocation(*x)
+	pid, exitcode, sdd = execution.dereference(i)
 	search_dirs_data = parse_clang_directories_1(sdd.decode('utf-8'))
 
 	ccprefix = files.Path.from_absolute(search_dirs_data['programs'][0])
@@ -155,10 +155,10 @@ def clang(executable, type='executable'):
 
 	standards = {}
 	for l in ('c', 'c++'):
-		x = libexec.prepare(type, executable, [
+		x = execution.prepare(type, executable, [
 			'-x', l, '-std=void.abczyx.1', '-c', '/dev/null', '-o', '/dev/null',
 		])
-		pid, exitcode, stderr = libexec.effect(libexec.KInvocation(*x))
+		pid, exitcode, stderr = execution.effect(execution.KInvocation(*x))
 		standards[l] = parse_clang_standards_1(stderr.decode('utf-8'))
 
 	clang = {
@@ -172,10 +172,8 @@ def clang(executable, type='executable'):
 		},
 		'standards': standards,
 		'feature-control': {
-			'c++' : {
-				'exceptions': ('-fexceptions', '-fno-exceptions'),
-				'rtti': ('-frtti', '-fno-rtti'),
-			},
+			'exceptions': ('-fexceptions', '-fno-exceptions'),
+			'rtti': ('-frtti', '-fno-rtti'),
 		}
 	}
 
@@ -194,7 +192,7 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, tool_na
 	libdir_pipe = ['--libdir']
 	rtti_pipe = ['--has-rtti']
 
-	po = lambda x: libexec.dereference(libexec.KInvocation(*libexec.prepare(type, srcpath, x)))
+	po = lambda x: execution.dereference(execution.KInvocation(*execution.prepare(type, srcpath, x)))
 	outs = [
 		po([srcpath, '--prefix']),
 		po(libs_pipe),

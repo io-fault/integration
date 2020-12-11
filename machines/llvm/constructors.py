@@ -1,7 +1,6 @@
 """
 # Command constructors.
 """
-import typing
 
 overflow_control = {
 	'wrap': '-fwrapv',
@@ -37,11 +36,11 @@ def standard_parameters(build):
 
 def clang(
 		build, adapter,
-		o_type, output, i_type, inputs,
+		o_type, output, i_type, inputs, *,
 		options=(), # Direct option injection.
 		verbose=True, # Enable verbose output.
 		root=False, # Designates the input as a root.
-		includes:typing.Sequence[str]=(),
+		includes=(),
 
 		verbose_flag='-v',
 		language_flag='-x',
@@ -79,8 +78,6 @@ def clang(
 		inputs = ['/dev/null']
 		lang = 'c'
 
-	f_ctl = adapter.get('feature-control', empty).get(lang, empty)
-
 	command = [None, compile_flag]
 	if verbose:
 		command.append(verbose_flag)
@@ -98,6 +95,7 @@ def clang(
 			command.append(standard_flag + '=' + stdname)
 
 	pl_features = ()
+	f_ctl = adapter.get('feature-control', empty)
 	for feature, (f_on, f_off) in f_ctl.items():
 		if feature in pl_features:
 			command.append(f_on)
