@@ -11,10 +11,9 @@ from fault.system import python
 from fault.system import files
 from fault.project import root
 
-from sdk.tools.context import templates
-from sdk.tools.context import constructors
-from sdk.factors import cc
-from sdk.factors import data as ccd
+from ...factors import constructors
+from ...factors import cc
+from ...factors import data as ccd
 
 def install(args, fault, ctx, ctx_route, ctx_params, fs_symbol='fault.text'):
 	"""
@@ -39,7 +38,7 @@ def install(args, fault, ctx, ctx_route, ctx_params, fs_symbol='fault.text'):
 			},
 
 			'integrations': {
-				'chapter': templates.Clone,
+				'chapter': constructors.Clone,
 			},
 		}
 	})
