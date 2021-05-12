@@ -808,6 +808,10 @@ section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > 
 	content: '\2191'; /* up arrow */
 	margin-right: 8px;
 }
+section:not(.unspecified) > section[local-identifier='Messages'] > dl > div > dt > a.dkn:before {
+	content: '\2193'; /* down arrow */
+	margin-right: 8px;
+}
 
 a.dkn {
 	color: var(--mapping-item-symbol);
