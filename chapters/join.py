@@ -1,5 +1,5 @@
 """
-# Join delineated source data into a text file for HTML rendering.
+# Join delineated source data into a text file for subsequent rendering.
 """
 import json
 import sys
