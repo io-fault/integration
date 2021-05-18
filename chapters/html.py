@@ -66,13 +66,12 @@ def load_control_value(value):
 		items = value[1]
 		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
 
-def integrate(index, types, node, default_type='text'):
+def integrate(index, types, node):
 	"""
 	# Traverse the sections of the &node converting CONTEXT and CONTROL
 	# admonition nodes into &node attributes.
 	"""
 	attr = node[2]
-	attr['type'] = 'unspecified'
 	subsect = []
 	index[tuple(attr.get('absolute', ()) or ())] = (node, subsect)
 
@@ -109,24 +108,28 @@ def integrate(index, types, node, default_type='text'):
 
 	for x in node[1]:
 		if x[0] == 'section':
-			x[2]['type'] = default_type
 			sid = x[2].get('identifier', '')
 			subsect.append(sid)
-			integrate(index, types, x, default_type=default_type)
+			integrate(index, types, x)
 
 	return node
 
-def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}, default_type='text'):
+def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
 	# Prepare the chapter by relocating metadata nodes into preferred locations.
 
 	idx = {}
-	integrate(idx, types, chapter, default_type=default_type)
+	integrate(idx, types, chapter)
 
-	# CONTEXT is actually chapter/document metadata.
-	# Relocate the context dictionary into the root node.
-	ctx = chapter[1][0][-1].pop('context', None)
+	if 'context' in chapter[-1]:
+		ctx = chapter[-1]['context']
+	else:
+		ctx = chapter[-1]['context'] = {}
 
-	chapter[-1]['context'] = ctx
+	if 'section-type' in ctx:
+		ctx['section-type'] = ctx['section-type'].sole[1]
+	else:
+		ctx['section-type'] = 'unspecified'
+
 	chapter[-1]['index'] = idx
 
 	return idx, ctx
@@ -155,7 +158,8 @@ class Render(comethod.object):
 
 		return prefixed
 
-	def __init__(self, output:xml.Serialization, prefix, depth, index, input:nodes.Cursor):
+	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:nodes.Cursor):
+		self.context = context
 		self.prefix = prefix
 		self.depth = depth
 		self.input = input
@@ -247,7 +251,7 @@ class Render(comethod.object):
 		documented = not ('undocumented' in attr.get('flags', ()))
 		ttypes = {'text', 'subtext', 'unspecified'}
 		ident = attr['identifier']
-		typ = attr.get('type', 'unspecified')
+		typ = attr.get('type', self.context['section-type'])
 		depth = len(path) + adjustment
 
 		# Determine section integration.
@@ -685,7 +689,7 @@ class Render(comethod.object):
 
 		# Prefix with empty path.
 		r[-1]['absolute'] = ()
-		idx, ctx = prepare(r, default_type='subtext')
+		idx, ctx = prepare(r)
 		for v, subs in idx.values():
 			a = v[2]['absolute']
 			a = ('',) + tuple(a or ())
@@ -703,7 +707,7 @@ def transform(prefix, depth, chapter, styles=[], identifier='', type=''):
 	sx = xml.Serialization(xml_encoding='utf-8')
 	r, = c.root
 	idx, ctx = prepare(r)
-	rhtml = Render(sx, prefix, depth, idx, c)
+	rhtml = Render(sx, ctx, prefix, depth, idx, c)
 	head = rhtml.element('head',
 		itertools.chain(
 			rhtml.element('meta', None, charset='utf-8'),
