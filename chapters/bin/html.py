@@ -18,7 +18,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		doctext = f.read()
 
 	try:
-		sys.stdout.buffer.writelines(html.transform('', 0, doctext))
+		sys.stdout.buffer.writelines(html.transform('', 0, doctext, styles=styles))
 	except:
 		p = pdb.Pdb()
 		traceback.print_exc()
