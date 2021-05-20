@@ -93,6 +93,10 @@ def integrate(index, types, node):
 		if 'control' in attr:
 			ctl = attr['control']
 
+			if 'reference' in ctl:
+				attr['reference'] = ctl['reference']
+			if 'title' in ctl:
+				attr['title'] = ctl['title']
 			if 'type' in ctl:
 				attr['type'] = ctl['type'].sole[1]
 			if 'flags' in ctl:
@@ -245,6 +249,7 @@ class Render(comethod.object):
 
 	@comethod('section')
 	def semantic_section(self, resolver, nodes, attr, adjustment=0, tag='section'):
+		ref = attr.get('reference', None)
 		path = attr.get('absolute', ())
 		if path is None:
 			return
@@ -270,62 +275,75 @@ class Render(comethod.object):
 		qpathstr = ('.'.join(x.replace(' ', '-') for x in path) if ident is not None else None)
 		href = "#"+qpathstr
 
-		# Scan for title override.
-		for node in nodes[:4]:
-			if node[0] == 'admonition' and node[-1]['type'] == 'TITLE':
-				title = self.title(
-					resolver,
-					self.element('a',
-						self.paragraph_content(resolver, node[1], None),
-						('class', 'title'),
-						href = href,
-					),
-					integrate,
-				)
-				break
+		# /title/ override present in CONTROL?
+		if 'title' in attr:
+			ptitle = self.paragraph(resolver, attr['title'], None)
 		else:
-			# No title override found.
-			element_properties = attr.get('element') or ()
-			element_type = list(formtype(self, element_properties))
-			if element_type:
-				element_type = self.element('code', element_type,
-					('class', 'type')
-				)
+			# Default to section identifier.
+			ptitle = self.paragraph_content(resolver, [ident], None)
 
-			title = self.title(
-				resolver,
-				itertools.chain(
-					itertools.chain.from_iterable([
-						self.element('a', self.text(p[1]),
-							('class', 'section'),
-							href="#"+p[0]
-						)
-						for p in leading
-					]) if attr['absolute'][0] != '' else (),
-					self.element('a',
-						self.paragraph_content(resolver, [ident], None),
-						('class', 'title'),
-						href = href
-					),
-					self.element('span',
-						self.text(typ if typ not in ttypes else ''),
-						('class', 'abstract-type'),
-					),
-					element_type,
-				),
-				integrate,
+		element_properties = attr.get('element') or ()
+		element_type = list(formtype(self, element_properties))
+		if element_type:
+			i_element_type = self.element('code',
+				element_type,
+				('class', 'type')
 			)
+		else:
+			i_element_type = ()
+
+		title = self.title(
+			resolver,
+			itertools.chain(
+				itertools.chain.from_iterable([
+					self.element('a',
+						self.text(p[1]),
+						('class', 'section'),
+						href="#"+p[0]
+					)
+					for p in leading
+				]) if attr['absolute'][0] != '' else (),
+				self.element('a',
+					ptitle,
+					('class', 'title'),
+					href = href
+				),
+				self.element('span',
+					self.text(typ if typ not in ttypes else ''),
+					('class', 'abstract-type'),
+				),
+				i_element_type,
+			),
+			integrate,
+		)
 
 		yield from self.element(
 			tag,
 			itertools.chain(
 				title,
+				self.reference_target(resolver, ref.sole[1]) if ref is not None else (),
 				self.switch(resolver, nodes, attr)
 			),
 			('class', typ),
 			('documented', str(documented).lower()),
 			('local-identifier', ident),
 			id=qpathstr
+		)
+
+	def reference_target(self, resolver, ref):
+		"""
+		# Display the target of the concept's reference.
+		"""
+		yield from self.element(
+			'div',
+			itertools.chain(
+				self.element(
+					'span',
+					self.text(ref),
+					('class', 'reference-display'),
+				),
+			),
+			('class', 'subject-reference-display'),
 		)
 
 	def switch(self, resolver, nodes, attr):
@@ -659,9 +677,10 @@ class Render(comethod.object):
 		)
 
 	def paragraph_content(self, resolver, content, attr):
-		p = nodes.document.export(content)
+		yield from self.paragraph(resolver, nodes.document.export(content), attr)
 
-		for pt in p:
+	def paragraph(self, resolver, para, attr):
+		for pt in para:
 			qual, txt = pt
 			typ, subtype, *local = qual.split('/')
 
