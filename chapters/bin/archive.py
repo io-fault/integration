@@ -28,7 +28,7 @@ def r_factor(archive, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 	meta = apath(outset, '.meta.json')
 	if isinstance(sources, Cell):
 		meta_prefix = False
-		primary = sources[0].identifier
+		primary = sources[0][1].identifier
 		ddepth = 0
 	else:
 		ddepth = 1
@@ -37,7 +37,6 @@ def r_factor(archive, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 	meta_json = json.dumps([meta_prefix, primary, type]).encode('utf-8')
 	archive.writestr(meta, meta_json)
 
-	sources = list(sources)
 	vars = {
 		'intention': 'delineation',
 		'architecture': 'data',
@@ -46,7 +45,7 @@ def r_factor(archive, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 
 	img = pj.image(vars, fpath)
 	srcindex = []
-	for x in sources:
+	for x in (x[1] for x in sources):
 		# Calculate path to delineation image.
 		rpath = x.points
 		depth = (len(rpath) - 1) + ddepth
