@@ -167,7 +167,7 @@ def removeprefix(prefix, string):
 		return string[len(prefix):]
 	return string
 
-def r_projects(prefix, sx, index):
+def r_projects(prefix, sx, partition, index):
 	yield from sx.element('dl',
 		itertools.chain.from_iterable(
 			sx.element('a',
@@ -200,9 +200,9 @@ def r_projects(prefix, sx, index):
 		('class', 'project-index'),
 	)
 
-def f_icon(sx, type):
+def f_icon(sx, partition, type):
 	if type == 'python-module':
-		return sx.element('img', None, src="/.lib/" + type + ".png")
+		return sx.element('img', None, src=partition+".lib/" + type + ".png")
 	elif type in {'extension', 'executable'}:
 		return sx.escape(b'\xE2\x9A\x99\xEF\xB8\x8F'.decode('utf-8'))
 	elif type == 'chapter':
@@ -210,7 +210,7 @@ def f_icon(sx, type):
 	else:
 		return sx.escape("📜")
 
-def r_factors(sx, index):
+def r_factors(sx, partition, index):
 	yield from sx.element('dl',
 		itertools.chain.from_iterable(
 			sx.element('a',
@@ -219,7 +219,7 @@ def r_factors(sx, index):
 						sx.element('dt',
 							itertools.chain(
 								sx.element('span',
-									f_icon(sx, x[1]),
+									f_icon(sx, partition, x[1]),
 									('class', 'icon')
 								),
 								sx.element('span',
@@ -324,8 +324,11 @@ class Corpus(service.Partition):
 				key = '.lib/{name}.{type}'.format(name=name, type=type)
 				self.cp_resources[key] = (cotype, files.Path.from_absolute(path))
 
-		self.cp_styles = ['/.lib/' + k +'.css' for k in self.cp_parameters['css']]
+		self.cp_styles = ['.lib/' + k +'.css' for k in self.cp_parameters['css']]
 		self.cp_resources['favicon.ico'] = (None, None)
+
+		# Used by html rendering.
+		self._cp_styles_prefixed = [self.part_path + x for x in self.cp_styles]
 
 		self.cp_update(self.routes[0])
 		self.cp_available = True
@@ -369,7 +372,7 @@ class Corpus(service.Partition):
 		ctl.http_iterate_output([(data,)])
 
 	def cp_send_html(self, ctl, depth, chapter, factorpath, factortype):
-		html = render_factor_html(self.cp_prefix, depth, self.cp_styles, factortype, factorpath, chapter)
+		html = render_factor_html(self.cp_prefix, depth, self._cp_styles_prefixed, factortype, factorpath, chapter)
 		ctl.http_set_response(b'200', b'OK', None, cotype=b'text/html')
 		ctl.http_iterate_output((x,) for x in buffer(html))
 
@@ -389,11 +392,11 @@ class Corpus(service.Partition):
 						sx.element('meta', None, ('charset', 'utf-8')),
 						itertools.chain.from_iterable(
 							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 					)
 				),
@@ -401,7 +404,7 @@ class Corpus(service.Partition):
 					sx.element('main',
 						itertools.chain(
 							sx.element('h1', sx.escape("Project Index")),
-							r_projects(self.cp_prefix, sx, idx),
+							r_projects(self.cp_prefix, sx, self.part_path, idx),
 							sx.element('h1', sx.escape(''), ('class', 'footer')),
 						)
 					),
@@ -429,11 +432,11 @@ class Corpus(service.Partition):
 						sx.element('meta', None, ('charset', 'utf-8')),
 						itertools.chain.from_iterable(
 							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 					)
 				),
@@ -449,7 +452,7 @@ class Corpus(service.Partition):
 									)
 								)
 							),
-							r_factors(sx, idx),
+							r_factors(sx, self.part_path, idx),
 							sx.element('h1', sx.escape(''), ('class', 'footer')),
 						)
 					),
@@ -479,11 +482,11 @@ class Corpus(service.Partition):
 						sx.element('meta', None, ('charset', 'utf-8')),
 						itertools.chain.from_iterable(
 							sx.element('link', (), ('as', 'style'), rel='preload', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 						itertools.chain.from_iterable(
 							sx.element('link', (), rel='stylesheet', href=x)
-							for x in self.cp_styles
+							for x in self._cp_styles_prefixed
 						),
 					)
 				),
@@ -515,7 +518,7 @@ class Corpus(service.Partition):
 		try:
 			ctl.accept(None) # Never accepts input.
 
-			rpath = ctl.request.pathstring[self.part_depth or 1:]
+			rpath = ctl.request.pathstring[len(self.part_path):]
 			if not rpath:
 				return self.cp_project_index(ctl)
 
