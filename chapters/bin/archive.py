@@ -75,18 +75,12 @@ def r_factor(archive, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 
 def r_project(archive, req:Context, ctx:Context, pj:Project):
 	# Currently hardcoded.
-	pj.protocol.parameters.update({
-		'source-extension-map': {
-			'py': ('python-module', set()),
-			'txt': ('chapter', set()),
-		}
-	})
 	pjdir = str(pj.factor)
 	factors = []
 
 	for ((path, type), (reqs, sources)) in pj.select(project_types.factor):
 		summary = r_factor(archive, req, ctx, pj, pjdir, path, type, reqs, sources)
-		factors.append((str(path), str(type), summary))
+		factors.append((str(path), type, summary))
 
 	archive.writestr(apath(pjdir, '.index.json'), json.dumps(factors))
 
@@ -120,6 +114,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	ctx = Context()
 	pd = ctx.connect(files.Path.from_absolute(ctxpath))
 	ctx.load()
+	ctx.configure()
 
 	# Construct dependency context.
 	req = ctx.from_product_connections(pd)
