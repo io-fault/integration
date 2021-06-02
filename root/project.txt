@@ -9,7 +9,11 @@
 /name/
 	`root`
 /abstract/
-	Substrate initialization interface.
+	Installation, initialization, and integration tools for fault system projects.
+
+	Composed of bourne-shell scripts that intend to make the integration tools available
+	for use on the host system. The bootstrap project for for &<http://fault.io/python>
+	and &<http://fault.io/integration>
 
 /authority/
 	`fault.io`

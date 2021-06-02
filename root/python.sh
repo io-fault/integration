@@ -1,46 +1,24 @@
 #!/bin/sh
-# Usage: sh fault/context/bootstrap.sh <fault-dir-path> <python3>
-# Bootstrapping for fault Python product.
-# Creates the C modules that are needed to build factors.
-
-fault="$1"; shift 1
-if ! test -d "$fault"
-then
-	echo >&2 "first parameter must be the 'fault' (python) context package root directory."
-	exit 1
-fi
-
-sysint="$1"; shift 1
-if ! test -d "$sysint"
-then
-	echo >&2 "second parameter must be the 'system' (integration) context package root directory."
-	exit 1
-fi
-
-python="$(which "$1")"; shift 1
-if ! test -x "$python"
-then
-	echo >&2 "third parameter must be the Python implementation to build for."
-	exit 1
-fi
-
+# Create the system process extensions necessary to initialize and execute construction contexts.
+# Presumes &system.root.parameters has been sourced.
 SCD=`pwd`
-if readlink "$python"
+if readlink "$PYTHON"
 then
-	cd "$(dirname "$python")"
-	pylink="$(readlink "$python")"
+	cd "$(dirname "$PYTHON")"
+	pylink="$(readlink "$PYTHON")"
 	cd "$(dirname "$pylink")"
 	cd ..
 	prefix="$(pwd)"
 else
-	prefix="$(dirname "$(dirname "$python")")"
+	prefix="$(dirname "$(dirname "$PYTHON")")"
 fi
 cd "$SCD"
 unset SCD
 
-pyversion="$("$python" -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')"
-pyabi="$("$python" -c 'import sys; print(sys.abiflags)')"
-pytype="$("$python" -c 'import sys; print(sys.implementation.name)')"
+evalpy () { "$PYTHON" -c "$1" }
+pyversion="$(evalpy 'import sys; print(".".join(map(str, sys.version_info[:2])))')"
+pyabi="$(evalpy 'import sys; print(sys.abiflags)')"
+pytype="$(evalpy 'import sys; print(sys.implementation.name)')"
 
 test $? -eq 0 || exit 1
 
@@ -79,7 +57,7 @@ esac
 
 original="$(pwd)"
 
-cd "$fault"
+cd "$FAULT_PYTHON_PATH"
 fault_dir="$(pwd)"
 container_dir="$(dirname "$fault_dir")"
 echo $container_dir
@@ -124,8 +102,8 @@ do
 		pkgname="$(echo "$fullname" | sed 's/[.][^.]*$//')"
 
 		compile ${CC:-cc} -v -o "../../${modname}.${platsuffix}" \
-			-I$sysint/python/include/src \
-			-I$sysint/machine/include/src \
+			-I$FAULT_SYSTEM_PATH/python/include/src \
+			-I$FAULT_SYSTEM_PATH/machine/include/src \
 			-I$fault_dir/system/include/src \
 			-I$prefix/include \
 			-I$prefix/include/python$pyversion$pyabi \
