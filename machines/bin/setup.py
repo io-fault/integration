@@ -34,7 +34,7 @@ def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
 
 	route = llvm.compiler(args, fault, ctx, ctx_route, ctx_params)
 	if ctx_intention == 'delineation':
-		sym, reqs = llvm.delineation(args, fault, ctx, ctx_route, ctx_params)
+		sym, reqs = llvm.delineate(args, fault, ctx, ctx_route, ctx_params)
 
 def main(inv:process.Invocation) -> process.Exit:
 	inv.imports({'FAULT_CONTEXT_NAME', 'CONTEXT'})

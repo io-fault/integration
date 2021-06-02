@@ -20,10 +20,9 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	# Much of this should be implemented elsewhere, and delineate is the first user.
 	try:
-		finder = factors.Activated
+		finder = factors.finder
 	except AttributeError:
-		factors.activate()
-		finder = factors.Activated
+		finder = factors.setup()
 
 	pd = finder.find('f_intention')
 	pj_id = pd.identifier_by_factor(root.types.factor@'f_intention')[0]

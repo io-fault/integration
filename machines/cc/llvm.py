@@ -19,11 +19,13 @@ import importlib
 import itertools
 import pickle
 
+from fault.system import files
 from ...factors import constructors
 from ...factors import data as ccd
 
 from ..llvm import query
 from ..llvm import constructors as cmd
+from ..materialize import instantiate_software
 
 name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
@@ -52,8 +54,8 @@ def delineate(args, fault, ctx, ctx_route, ctx_params):
 	mech = ctx_route / 'mechanisms' / name
 	from ..llvm import delineate
 
-	imp = python.Import.from_fullname(__package__).container
-	tmpl_path = imp.file().container / 'llvm' / 'formulas.txt'
+	tmpl_path = ctx_route.from_absolute(__file__) ** 2
+	tmpl_path = tmpl_path / 'llvm' / 'formulas.txt'
 
 	pdpath = ctx_route@'local'
 	instantiate_software(pdpath, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
@@ -75,7 +77,7 @@ def delineate(args, fault, ctx, ctx_route, ctx_params):
 				'c++-header': constructors.Inherit(transform_tool_name),
 
 				transform_tool_name: {
-					'command': delinate.__name__,
+					'command': delineate.__name__,
 					'interface': cmd.__name__ + '.clang',
 					'method': 'python',
 				}
