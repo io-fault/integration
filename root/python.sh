@@ -15,7 +15,7 @@ fi
 cd "$SCD"
 unset SCD
 
-evalpy () { "$PYTHON" -c "$1" }
+evalpy () { "$PYTHON" -c "$1"; }
 pyversion="$(evalpy 'import sys; print(".".join(map(str, sys.version_info[:2])))')"
 pyabi="$(evalpy 'import sys; print(sys.abiflags)')"
 pytype="$(evalpy 'import sys; print(sys.implementation.name)')"
@@ -29,13 +29,7 @@ echo "TYPE: $pytype"
 compile ()
 {
 	compiler="$1"; shift 1
-	echo
-	echo ">>>"
-	echo "$compiler" $osflags "$@"
-	echo "<<<"
-	echo
-
-	"$compiler" $osflags "$@"
+	"$compiler" $osflags $CFLAGS "$@"
 }
 
 defsys=`uname -s | tr "[:upper:]" "[:lower:]"`
@@ -64,6 +58,7 @@ echo $container_dir
 
 module_path ()
 {
+	local dirpath relpath
 	dirpath="$1"
 	shift 1
 
@@ -71,17 +66,51 @@ module_path ()
 	echo "$relpath" | sed 's:/:.:g' | sed 's:.::'
 }
 
-# Inside fault/; Only fault.system has extensions.
-for project in ./system
-do
-	cd "$fault_dir/$project"
+bootstrap_extension ()
+{
+	cd "$1" || return
+	local extension_path modname pkgname
+	local fullname package projectfactor targetname
+
+	extension_path="$(pwd)"
+	modname="${extension_path##*/}"
+
+	fullname="$(module_path "$extension_path")"
+	package="$(cd ..; module_path "$(pwd)")"
+	projectfactor="$(cd ../..; module_path "$(pwd)")"
+	targetname="$(echo "$fullname" | sed 's/.extensions//')"
+	pkgname="$(echo "$fullname" | sed 's/[.][^.]*$//')"
+
+	: "$(pwd)"
+	compile ${CC:-cc} -w -ferror-limit=2 \
+		-o "../../${modname}.${platsuffix}" \
+		"-I$FAULT_SYSTEM_PATH/python/include/src" \
+		"-I$FAULT_SYSTEM_PATH/machine/include/src" \
+		"-I$fault_dir/system/include/src" \
+		"-I$prefix/include" \
+		"-I$prefix/include/python$pyversion$pyabi" \
+		"-DF_SYSTEM=$defsys" \
+		"-DF_TARGET_ARCHITECTURE=$defarch" \
+		"-DF_INTENTION=debug" \
+		"-DF_FACTOR_DOMAIN=system" \
+		"-DF_FACTOR_TYPE=extension" \
+		"-DFACTOR_BASENAME=$modname" \
+		"-DFACTOR_SUBPATH=$modname" \
+		"-DFACTOR_PROJECT=$projectfactor" \
+		"-DFACTOR_PACKAGE=$package" \
+		"-DFACTOR_QNAME=$fullname" \
+		-fwrapv src/*.c
+}
+
+bootstrap_project ()
+{
+	cd "$1"
 	root="$(dirname "$(pwd)")"
 
-	if ! test -d ./extensions
-	then
-		cd "$original"
-		continue
-	fi
+	echo $root
+	echo $(pwd)
+	# Nothing to do?
+	test -d ./extensions || return 0
 
 	for module in ./extensions/*/
 	do
@@ -91,37 +120,8 @@ do
 			continue
 		fi
 
-		cd "$module"
-		pwd
-		modname="$(basename "$(pwd)")"
-
-		fullname="$(module_path "$(pwd)")"
-		package="$(cd ..; module_path "$(pwd)")"
-		projectfactor="$(cd ../..; module_path "$(pwd)")"
-		targetname="$(echo "$fullname" | sed 's/.extensions//')"
-		pkgname="$(echo "$fullname" | sed 's/[.][^.]*$//')"
-
-		compile ${CC:-cc} -v -o "../../${modname}.${platsuffix}" \
-			-I$FAULT_SYSTEM_PATH/python/include/src \
-			-I$FAULT_SYSTEM_PATH/machine/include/src \
-			-I$fault_dir/system/include/src \
-			-I$prefix/include \
-			-I$prefix/include/python$pyversion$pyabi \
-			"-DF_SYSTEM=$defsys" \
-			"-DF_TARGET_ARCHITECTURE=$defarch" \
-			"-DF_INTENTION=debug" \
-			"-DF_FACTOR_DOMAIN=system" \
-			"-DF_FACTOR_TYPE=extension" \
-			"-DFACTOR_BASENAME=$modname" \
-			"-DFACTOR_SUBPATH=$modname" \
-			"-DFACTOR_PROJECT=$projectfactor" \
-			"-DFACTOR_PACKAGE=$package" \
-			"-DFACTOR_QNAME=$fullname" \
-			-fwrapv \
-			src/*.c
-
-		cd "$fault_dir/$project"
+		(bootstrap_extension "$module")
 	done
+}
 
-	cd "$original"
-done
+(bootstrap_project "$fault_dir/system")
