@@ -3,13 +3,23 @@
 		&<http://if.fault.io/project/infrastructure>
 
 /Projects/
+	- &..chapters
+	- &..factors
 	- &..products
+	- &..networks
+	- &..platforms
 	- &..daemons
-	- &..probes
+	- &..python
+	- &..machine
+
+/*.h/
+	- (type)&<http://if.fault.io/factors/system#c-header>
 
 /*.txt/
 	- (type)&<http://if.fault.io/factors/chapter#kleptic>
 
 /*.py/
 	- (type)&<http://if.fault.io/factors/python-module#v3>
-	- (path)&<http://fault.io/python/context>
+
+/*.css/
+	- (type)&<http://if.fault.io/factors/web#cascading-style-sheets>
