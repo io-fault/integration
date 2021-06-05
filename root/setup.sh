@@ -3,16 +3,23 @@
 rpath () { (cd "$1" && pwd) }
 SCRIPT_DIR="$(dirname "$0")"
 SCRIPT_DIR="$(rpath "$SCRIPT_DIR")"
+FAULT_INSTALLATION="$(rpath "$SCRIPT_DIR"/../../..)"
 
 if test $# -eq 0
 then
 	python="$(which python3)"
-	echo "[!# STATUS: no python executable designated, using '$python' selected by &which.]"
+	echo "[!# NOTICE: no python executable designated, using '$python' selected by &which.]"
 else
 	python="$1"; shift 1
+
+	# Installation directory override.
+	# Usually unused as the target directory should be identifiable from &SCRIPT_DIR.
+	if test $# -gt 0
+	then
+		FAULT_INSTALLATION="$1"; shift 1
+	fi
 fi
 
-FAULT_INSTALLATION="$(rpath "$SCRIPT_DIR"/../../..)"
 export FAULT_INSTALLATION
 cd "$FAULT_INSTALLATION" || exit
 mkdir -p 'libexec' || exit
