@@ -19,7 +19,7 @@ if test x"$FAULT_ROOT_PATH" = x""
 then
 	FAULT_ROOT_PATH="$(cd "$(dirname "$0")" && pwd)"
 fi
-PYX="$FAULT_ROOT_PATH/pyx.py"
+PYX="$FAULT_ROOT_PATH/factor-execute.py"
 
 FAULT_PYTHON_PATH="$1"; shift 1
 if ! test -d "$FAULT_PYTHON_PATH"
