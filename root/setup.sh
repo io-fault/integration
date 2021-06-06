@@ -8,7 +8,7 @@ FAULT_INSTALLATION="$(rpath "$SCRIPT_DIR"/../../..)"
 if test $# -eq 0
 then
 	python="$(which python3)"
-	echo "[!# NOTICE: no python executable designated, using '$python' selected by &which.]"
+	echo "[!# NOTICE: no python executable designated, using '$python' from PATH.]"
 else
 	python="$1"; shift 1
 
@@ -20,21 +20,10 @@ else
 	fi
 fi
 
-export FAULT_INSTALLATION
-cd "$FAULT_INSTALLATION" || exit
-mkdir -p 'libexec' || exit
-
-test -d 'libexec' || ! echo "[!# ERROR: no 'libexec' tool directory present.]" || exit
-test -d 'integration' || ! echo "[!# ERROR: no 'integration' product directory present.]" || exit
-test -d 'python' || ! echo "[!# ERROR: no 'python' product directory present.]" || exit
-
 # Set arguments checked and exported by &system.root.parameters.
-set -- \
-	"$FAULT_INSTALLATION/python/fault" \
-	"$FAULT_INSTALLATION/integration/system" \
-	"$FAULT_INSTALLATION/libexec" \
-	"$python"
+set -- "$FAULT_INSTALLATION" "$python"
 . "$SCRIPT_DIR/parameters.sh"
+cd "$FAULT_INSTALLATION_PATH"
 
-(PATH="$FAULT_LIBEXEC_PATH:$FAULT_ROOT_PATH:$PATH"
+(PATH="$FAULT_TOOL_PATH:$FAULT_LIBEXEC_PATH:$FAULT_ROOT_PATH:$PATH"
 	. "$SCRIPT_DIR/integrate.sh")
