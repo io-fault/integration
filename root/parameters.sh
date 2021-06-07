@@ -6,7 +6,7 @@
 # /FAULT_INSTALLATION_PATH/
 	# Path to the `python` and `integration` directories that will be setup for use.
 # /PYTHON/
-	# Path to the python3 executable that initialization should use.
+	# Absolute path to the Python executable that setup should use.
 #
 # [ Exports ]
 # In additional to all the &[Parameters] being exported, the following
@@ -39,29 +39,29 @@ PYX="$FAULT_ROOT_PATH/factor-execute.py"
 FAULT_INSTALLATION_PATH="$1"; shift 1
 if ! test -d "$FAULT_INSTALLATION_PATH"
 then
-	echo >&2 "first argument must be the installation directory containing the sources."
+	echo >&2 "[!# ERROR: installation directory ($FAULT_INSTALLATION_PATH) does not exist]"
 	exit 2
 fi
 
 PYTHON="$1"; shift 1
 if ! test -x "$PYTHON"
 then
-	echo >&2 "fifth argument must be the selected Python implementation; the system executable."
+	echo >&2 "[!# ERROR: given python executable path ($PYTHON) is not executable]"
 	exit 100
 fi
 
 FAULT_PYTHON_PATH="$FAULT_INSTALLATION_PATH/python/fault"
 if ! test -d "$FAULT_PYTHON_PATH"
 then
-	echo >&2 "python corpus not found in [$FAULT_INSTALLATION_PATH]."
-	exit 2
+	echo >&2 "[!# ERROR: python product not found in '$FAULT_INSTALLATION_PATH']"
+	exit 3
 fi
 
 FAULT_SYSTEM_PATH="$FAULT_INSTALLATION_PATH/integration/system"
 if ! test -d "$FAULT_SYSTEM_PATH"
 then
-	echo >&2 "integration corpus not found in [$FAULT_INSTALLATION_PATH]."
-	exit 3
+	echo >&2 "[!# ERROR: integration product not found in '$FAULT_INSTALLATION_PATH']"
+	exit 4
 fi
 
 FAULT_LIBEXEC_PATH="$FAULT_INSTALLATION_PATH/libexec"
