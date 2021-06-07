@@ -10,4 +10,4 @@ libexec.sh
 host.sh "$FAULT_INSTALLATION/host"
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-products.sh "$FAULT_INSTALLATION/host/cc"
+products.sh "$FAULT_INSTALLATION/host/cc" python-extension "-I$PYTHON_INCLUDE"
