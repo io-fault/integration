@@ -1,16 +1,26 @@
 #!/bin/sh
 # Integrate the fault installation for use on the host system.
+#
+# [ Parameters ]
+#
+# /PYTHON/
+	# Absolute path to the python executable to build against.
+	# By default, (system/environ)`PATH` is scanned for (system/command)`python3`.
+# /FAULT_INSTALLATION/
+	# Optional. Path to the fault installation directory.
+	# Normally this identified relatively from &.setup.
+
 rpath () { (cd "$1" && pwd) }
-SCRIPT_DIR="$(dirname "$0")"
-SCRIPT_DIR="$(rpath "$SCRIPT_DIR")"
+SCRIPT_DIRNAME="$(dirname "$0")"
+SCRIPT_DIR="$(rpath "$SCRIPT_DIRNAME")"
 FAULT_INSTALLATION="$(rpath "$SCRIPT_DIR"/../../..)"
 
+python="$("${1:-python3}" -c 'import sys; print(sys.executable)')"
 if test $# -eq 0
 then
-	python="$(which python3)"
-	echo "[!# NOTICE: no python executable designated, using '$python' from PATH.]"
+	echo "[!# NOTICE: python executable not explicitly designated, using from 'python3' from PATH.]"
 else
-	python="$1"; shift 1
+	shift 1; # python executable
 
 	# Installation directory override.
 	# Usually unused as the target directory should be identifiable from &SCRIPT_DIR.
@@ -19,6 +29,8 @@ else
 		FAULT_INSTALLATION="$1"; shift 1
 	fi
 fi
+
+echo "[!= PYTHON: '$python' '$("$python" -c 'import sys; print(sys.prefix)')']"
 
 # Set arguments checked and exported by &system.root.parameters.
 set -- "$FAULT_INSTALLATION" "$python"
