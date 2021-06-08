@@ -58,8 +58,10 @@ bootstrap_extension ()
 	pkgname="$(echo "$fullname" | sed 's/[.][^.]*$//')"
 
 	: "$(pwd)"
+	sofile="${modname}.${platsuffix}"
+	intdir="../../extensions/__f-int__/$defsys-$defarch/"
 	compile ${CC:-cc} -w -ferror-limit=2 \
-		-o "../../${modname}.${platsuffix}" \
+		-o "../../$sofile" \
 		"-I$FAULT_SYSTEM_PATH/python/include/src" \
 		"-I$FAULT_SYSTEM_PATH/machine/include/src" \
 		"-I$fault_dir/system/include/src" \
@@ -76,6 +78,9 @@ bootstrap_extension ()
 		"-DFACTOR_PACKAGE=$package" \
 		"-DFACTOR_QNAME=$fullname" \
 		-fwrapv src/*.c
+
+	mkdir -p "$intdir"
+	cp "../../$sofile" "$intdir/$modname.optimal.i"
 }
 
 bootstrap_project ()
