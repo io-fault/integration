@@ -37,15 +37,15 @@ def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
 		sym, reqs = llvm.delineate(args, fault, ctx, ctx_route, ctx_params)
 
 def main(inv:process.Invocation) -> process.Exit:
-	inv.imports({'FAULT_CONTEXT_NAME', 'CONTEXT'})
+	inv.imports({'FAULT_CONTEXT_NAME'})
 
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
-	ctx_route = files.Path.from_absolute(inv.environ['CONTEXT'])
+	ctx_route = files.Path.from_absolute(inv.argv[0])
 	ctx = cc.Context.from_directory(ctx_route)
 	ctx_params = ctx.index['context']
 	ctx_intention = ctx_params['intention']
 
-	install(inv.args, fault, ctx, ctx_route, ctx_params, ctx_intention)
+	install(inv.argv[1:], fault, ctx, ctx_route, ctx_params, ctx_intention)
 	return inv.exit(0)
 
 if __name__ == '__main__':
