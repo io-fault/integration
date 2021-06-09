@@ -2,6 +2,7 @@
 # System queries for realizing extension and executable requirements.
 """
 import sys
+import itertools
 
 from fault.system import execution
 from fault.system import files
@@ -140,7 +141,7 @@ def clang(executable, type='executable'):
 			builtins = str(cclibs[0])
 		else:
 			# Scan for library with matching architecture.
-			for x, a in product(cclibs, h_archs):
+			for x, a in itertools.product(cclibs, [arch]):
 				if a in x.identifier:
 					builtins = str(x)
 					break

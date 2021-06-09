@@ -72,7 +72,7 @@ def dynamic(paths):
 				'interface': query.__package__ + (
 					'.apple.macos_link_editor'
 					if osname == 'darwin' else
-					'.gnu.link_editor'
+					'.gnu.gnu_link_editor'
 				),
 				'name': ldname,
 				'command': str(ld),
