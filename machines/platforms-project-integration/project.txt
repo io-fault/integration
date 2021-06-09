@@ -3,13 +3,13 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	&<http://fault.io/integration/dispatch>
+	&<http://fault.io/integration/platforms>
 /icon/
 	- (emoji)`⚙️`
 /name/
-	`dispatch`
+	`platforms`
 /abstract/
-	System factor execution.
+	Execution Platform configuration and usage tools.
 
 /authority/
 	`fault.io`
