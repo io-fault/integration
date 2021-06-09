@@ -80,7 +80,7 @@ bootstrap_extension ()
 		-fwrapv src/*.c
 
 	mkdir -p "$intdir"
-	cp "../../$sofile" "$intdir/$modname.optimal.i"
+	cp "../../$sofile" "$intdir/$modname.bootstrap.i"
 }
 
 bootstrap_project ()
