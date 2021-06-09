@@ -35,7 +35,7 @@ echo "[!= PYTHON: '$python' '$("$python" -c 'import sys; print(sys.prefix)')']"
 # Set arguments checked and exported by &system.root.parameters.
 set -- "$FAULT_INSTALLATION" "$python"
 . "$SCRIPT_DIR/parameters.sh"
-cd "$FAULT_INSTALLATION_PATH"
 
 (PATH="$FAULT_TOOL_PATH:$FAULT_LIBEXEC_PATH:$FAULT_ROOT_PATH:$PATH"
+	cd "$FAULT_INSTALLATION_PATH" || exit 13
 	. "$SCRIPT_DIR/integrate.sh")
