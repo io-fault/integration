@@ -152,7 +152,7 @@ def detect_profile_library(libdir, architectures):
 	# the appropriate profile library to link against when building targets
 	# that consist of LLVM instrumented sources.
 	"""
-	profile_libs = [x for x in libdir.files() if 'profile' in x.identifier]
+	profile_libs = [x for x in libdir.fs_iterfiles('data') if 'profile' in x.identifier]
 
 	if len(profile_libs) == 1:
 		# Presume target of interest.

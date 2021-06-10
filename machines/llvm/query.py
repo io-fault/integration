@@ -11,7 +11,7 @@ def split_config_output(flag, output):
 	return set(map(str.strip, output.split(flag)))
 
 def profile_library(prefix, architecture):
-	profile_libs = [x for x in prefix.files() if 'profile' in x.identifier]
+	profile_libs = [x for x in prefix.fs_iterfiles('data') if 'profile' in x.identifier]
 
 	if len(profile_libs) == 1:
 		# Presume target of interest.
@@ -135,7 +135,7 @@ def clang(executable, type='executable'):
 	if sys.platform in {'darwin'}:
 		builtins = cclib / 'libclang_rt.osx.a'
 	else:
-		cclibs = [x for x in cclib.files() if 'builtins' in x.identifier]
+		cclibs = [x for x in cclib.fs_iterfiles('data') if 'builtins' in x.identifier]
 
 		if len(cclibs) == 1:
 			builtins = str(cclibs[0])
