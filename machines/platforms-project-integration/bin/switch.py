@@ -9,7 +9,7 @@ from fault.system import files
 from fault.system import process
 from fault.system import execution
 from fault.system import query
-from fault.project import root
+from fault.project import system as lsf
 
 INTENTION='optimal'
 
@@ -39,7 +39,7 @@ def main(inv:(process.Invocation)) -> (process.Exit):
 
 	# Project Context
 	pdr = files.Path.from_path(product_path)
-	ctx = root.Context()
+	ctx = lsf.Context()
 	ctx.connect(pdr)
 	ctx.load()
 
