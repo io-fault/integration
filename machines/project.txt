@@ -9,7 +9,7 @@
 /name/
 	`machine`
 /abstract/
-	Integration tooling for the targeting the operation system's architecture.
+	Integration tooling for common machine architectures.
 
 /authority/
 	`fault.io`
