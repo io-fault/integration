@@ -9,7 +9,7 @@
 /name/
 	`context`
 /abstract/
-	Software installation and management tools.
+	Integration tools for factored projects.
 
 /authority/
 	`fault.io`
