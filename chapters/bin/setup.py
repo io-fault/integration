@@ -9,7 +9,6 @@ import itertools
 from fault.system import process
 from fault.system import python
 from fault.system import files
-from fault.project import root
 
 from ...factors import constructors
 from ...factors import cc

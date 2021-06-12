@@ -10,11 +10,10 @@ import contextlib
 import json
 
 from fault.context.types import Cell
-from fault.project.root import Product, Context, Project
-from fault.project import types as project_types
 from fault.system import files
 from fault.system import execution
 from fault.system import process
+from fault.project import system as lsf
 
 from .. import join
 
@@ -73,12 +72,12 @@ def r_factor(archive, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 	archive.writestr(apath(outset, '.index.json'), json.dumps(srcindex))
 	return ""
 
-def r_project(archive, req:Context, ctx:Context, pj:Project):
+def r_project(archive, req:lsf.Context, ctx:lsf.Context, pj:lsf.Project):
 	# Currently hardcoded.
 	pjdir = str(pj.factor)
 	factors = []
 
-	for ((path, type), (reqs, sources)) in pj.select(project_types.factor):
+	for ((path, type), (reqs, sources)) in pj.select(lsf.types.factor):
 		summary = r_factor(archive, req, ctx, pj, pjdir, path, type, reqs, sources)
 		factors.append((str(path), type, summary))
 
@@ -111,7 +110,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	outstr, ctxpath = inv.argv
 
 	# Build project context for the target product.
-	ctx = Context()
+	ctx = lsf.Context()
 	pd = ctx.connect(files.Path.from_absolute(ctxpath))
 	ctx.load()
 	ctx.configure()

@@ -12,8 +12,7 @@ from fault.context import string
 
 from fault.system import process
 from fault.system import files
-
-from fault.project import root
+from fault.project import system as lsf
 
 from fault.text import render
 from fault.text import nodes
@@ -545,7 +544,7 @@ def dr_absolute_path(requirements, context, project, reference):
 	"""
 	# Resolve an absolute reference.
 	"""
-	fpath = root.types.factor@reference
+	fpath = lsf.types.factor@reference
 	try:
 		target = context.split(fpath)
 	except LookupError:
@@ -580,7 +579,7 @@ def dr_context_path(context, project, reference):
 	"""
 	local = 'context-local'
 	target_type = None
-	cpath = root.types.factor
+	cpath = lsf.types.factor
 	for cpath in project.itercontexts():
 		pass
 	cpath = cpath.container
@@ -609,7 +608,7 @@ def dr_project_path(project, reference):
 	"""
 	# Resolve a Project relative reference.
 	"""
-	path = root.types.factor@reference
+	path = lsf.types.factor@reference
 	parts = project.split(path)
 	title = ''
 

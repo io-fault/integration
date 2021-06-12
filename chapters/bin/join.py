@@ -4,8 +4,7 @@
 import sys
 from fault.system import process
 from fault.system import files
-from fault.project.root import Context, Project
-from fault.project.types import factor
+from fault.project import system as lsf
 from .. import join
 
 def main(inv:process.Invocation) -> process.Exit:
@@ -14,13 +13,13 @@ def main(inv:process.Invocation) -> process.Exit:
 	fdd = files.Path.from_path(fragments)
 	src = files.Path.from_path(source)
 
-	ctx = Context()
+	ctx = lsf.Context()
 	pd = ctx.connect(ctxdir)
 
 	# Construct dependency context.
 	req = ctx.from_product_connections(pd)
 	req.load()
-	res = join.Resolution(ctx, ctx, ctx.project(project_name), factor@project_factor)
+	res = join.Resolution(ctx, ctx, ctx.project(project_name), lsf.types.factor@project_factor)
 
 	j = join.transform(res, fdd, src)
 	sys.stdout.writelines(j)
