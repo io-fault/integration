@@ -11,7 +11,7 @@ from fault.system import factors
 from fault.system import identity
 from fault.system import execution
 
-from fault.project import root
+from fault.project import system as lsf
 
 def main(inv:process.Invocation) -> process.Exit:
 	isys, iarch = identity.root_execution_context()
@@ -25,7 +25,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		finder = factors.setup()
 
 	pd = finder.find('f_intention')
-	pj_id = pd.identifier_by_factor(root.types.factor@'f_intention')[0]
+	pj_id = pd.identifier_by_factor(lsf.types.factor@'f_intention')[0]
 	pj = finder.context.project(pj_id)
 
 	var = {
@@ -35,7 +35,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	}
 	for fi in ['debug', 'optimal']:
 		var['intention'] = fi
-		fp = pj.image(var, root.types.factor@'bin.llvm')
+		fp = pj.image(var, lsf.types.factor@'bin.llvm')
 		if fp.fs_type() != 'void':
 			break
 	else:
