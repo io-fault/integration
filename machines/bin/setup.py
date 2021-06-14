@@ -19,12 +19,13 @@ from .. import query
 from ..cc import host
 from ..cc import llvm
 
-def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
+def install(route, ctx, fault, args):
 	"""
 	# Initialize the tooling for arbitrary intentions contexts.
 	"""
 
-	mech = (ctx_route / 'mechanisms' / 'fault.host')
+	intention = ctx.index['context']['intention']
+	mech = (route / 'mechanisms' / 'fault.host')
 	imp = python.Import.from_fullname(__package__).container
 
 	data = host.dynamic(query.default_library_paths)
@@ -32,9 +33,9 @@ def install(args, fault, ctx, ctx_route, ctx_params, ctx_intention):
 	ccd.update_named_mechanism(mech, 'root', data)
 	ccd.update_named_mechanism(mech, 'path-setup', {'context':{'path':['host']}})
 
-	route = llvm.compiler(args, fault, ctx, ctx_route, ctx_params)
-	if ctx_intention == 'delineation':
-		sym, reqs = llvm.delineate(args, fault, ctx, ctx_route, ctx_params)
+	route = llvm.compiler(args, fault, ctx, route, ctx.index['context'])
+	if intention == 'delineation':
+		sym, reqs = llvm.delineate(args, fault, ctx, route, ctx.index['context'])
 
 def main(inv:process.Invocation) -> process.Exit:
 	inv.imports({'FAULT_CONTEXT_NAME'})
@@ -42,10 +43,8 @@ def main(inv:process.Invocation) -> process.Exit:
 	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
 	ctx_route = files.Path.from_absolute(inv.argv[0])
 	ctx = cc.Context.from_directory(ctx_route)
-	ctx_params = ctx.index['context']
-	ctx_intention = ctx_params['intention']
 
-	install(inv.argv[1:], fault, ctx, ctx_route, ctx_params, ctx_intention)
+	install(ctx_route, ctx, fault, inv.argv[1:])
 	return inv.exit(0)
 
 if __name__ == '__main__':
