@@ -20,12 +20,12 @@ import itertools
 import pickle
 
 from fault.system import files
+from fault.text.bin import ifst
 from ...factors import constructors
 from ...factors import data as ccd
 
 from ..llvm import query
 from ..llvm import constructors as cmd
-from ..materialize import instantiate_software
 
 name = 'fault.llvm'
 transform_tool_name = 'tool:llvm-clang'
@@ -47,20 +47,20 @@ sdk_deline = b"""
 	- &<http://fault.io/integration/machine/llvm-delineation>
 """
 
-def delineate(args, fault, ctx, ctx_route, ctx_params):
+def delineate(route, ctx, args):
 	"""
 	# Initialize the tooling for delineation.
 	"""
-	mech = ctx_route / 'mechanisms' / name
+	mech = route / 'mechanisms' / name
 	from ..llvm import delineate
 
-	tmpl_path = ctx_route.from_absolute(__file__) ** 2
-	tmpl_path = tmpl_path / 'llvm' / 'formulas.txt'
+	llvm_path = (route.from_absolute(__file__) ** 2) / 'llvm'
+	pdpath = route@'local'
+	pjpath = pdpath/'f_intention'
 
-	pdpath = ctx_route@'local'
-	instantiate_software(pdpath, 'f_intention', 'bin', tool_name, tmpl_path, 'delineation')
+	ifst.instantiate((pjpath/'bin'/'llvm-delineate'), llvm_path/'formulas.txt', 'delineation')
 	infra = project_infra + sdk_deline
-	(pdpath/'f_intention'/'infrastructure.txt').fs_init(infra)
+	(pjpath/'infrastructure.txt').fs_store(infra)
 
 	sdk_product = str(files.Path.from_absolute(__file__) ** 5) + "\n"
 	(pdpath/'.product'/'CONNECTIONS').fs_init(sdk_product.encode('utf-8'))
@@ -110,11 +110,10 @@ def coverage(args, fault, ctx, ctx_route, ctx_params):
 	"""
 	mech = (ctx_route/'mechanisms'/name)
 
-	imp = python.Import.from_fullname(__package__).container
-	tmpl_path = imp.file().container / 'templates' / 'context.txt'
-
+	llvm_path = (route.from_absolute(__file__) ** 2) / 'llvm'
 	pdpath = ctx_route@'local'
-	instantiate_software(pdpath, 'f_intention', 'extensions', tool_name, tmpl_path, 'instrumentation')
+	pjpath = pdpath/'f_intention'
+	ifst.instantiate((pjpath/'extensions'/'llvm'), llvm_path/'formulas.txt', 'instrumentation')
 
 	# Derive llvm-config location from tool:llvm-clang's 'command' entry.
 	merged = ccd.load_named_mechanism(mech, 'clang')

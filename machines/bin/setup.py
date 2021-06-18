@@ -33,9 +33,9 @@ def install(route, ctx, fault, args):
 	ccd.update_named_mechanism(mech, 'root', data)
 	ccd.update_named_mechanism(mech, 'path-setup', {'context':{'path':['host']}})
 
-	route = llvm.compiler(args, fault, ctx, route, ctx.index['context'])
+	llvm.compiler(args, fault, ctx, route, ctx.index['context'])
 	if intention == 'delineation':
-		sym, reqs = llvm.delineate(args, fault, ctx, route, ctx.index['context'])
+		sym, reqs = llvm.delineate(route, ctx, args)
 
 def main(inv:process.Invocation) -> process.Exit:
 	inv.imports({'FAULT_CONTEXT_NAME'})
