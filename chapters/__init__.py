@@ -1,3 +1,1 @@
-"""
-# Product processing tools and libraries.
-"""
+# Project package module for supporting sys.path imports.
