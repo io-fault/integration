@@ -457,10 +457,7 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 		relation = 'PARAMETERS'
 		case_id = 'parameter-case'
 	else:
-		return None
-
-	syn, _ = index[(synsect,)] #* No SYNOPSIS?
-	synopts = recognize_synopsis_options(syn[1])
+		relation = ''
 
 	fields = {}
 	# Get ordered list of names.
@@ -470,6 +467,13 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 	optlists = collections.defaultdict(list)
 	# The option set for each option reference.
 	optindex = {}
+
+	if (synsect,) in index:
+		syn, _ = index[(synsect,)] #* No SYNOPSIS?
+		synopts = recognize_synopsis_options(syn[1])
+	else:
+		syn = None
+		synopts = ()
 
 	for subjname, typ, options in synopts:
 		names.append(subjname)
@@ -483,6 +487,9 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 
 	if ('NAME',) in index:
 		index[('NAME',)][0][-1]['names'] = names
+
+	if (relation,) not in index:
+		return relation
 
 	xrs, _ = index[(relation,)] #* Missing OPTIONS/PARAMETERS?
 	for node in xrs[1]:
@@ -521,12 +528,13 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 		break
 	else:
 		# No dictionary in found.
-		raise Exception("synopsis reference section contained no dictionary")
+		raise Exception("synopsis option section contained no dictionary")
 
-	syn[-1]['names'] = names
-	syn[-1]['types'] = types
-	syn[-1]['options'] = optlists
-	syn[-1]['fields'] = fields
+	if syn is not None:
+		syn[-1]['names'] = names
+		syn[-1]['types'] = types
+		syn[-1]['options'] = optlists
+		syn[-1]['fields'] = fields
 
 	return relation
 
