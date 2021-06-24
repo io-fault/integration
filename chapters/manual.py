@@ -242,8 +242,14 @@ class Render(comethod.object):
 		if nodes[-1][1][0].strip() == '':
 			del nodes[-1:]
 
-		for line in (x[1][0] for x in nodes):
-			yield self.element('.Dl', self.text(line))
+		lines = (x[1][0] for x in nodes)
+
+		if attr['type'] == 'comment':
+			for line in lines:
+				yield self.element('.\\"', line)
+		else:
+			for line in lines:
+				yield self.element('.Dl', self.text(line))
 
 	@comethod('paragraph')
 	def normal_paragraph(self, resolver, nodes, attr):
