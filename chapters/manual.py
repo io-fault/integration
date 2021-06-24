@@ -438,6 +438,8 @@ def recognize_synopsis_options(section):
 		if e[0] == 'dictionary':
 			del section[si:si+1]
 			break
+	else:
+		return []
 
 	return [
 		(i[-1]['identifier'],
@@ -457,11 +459,10 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 	else:
 		return None
 
-	xrs, _ = index.get((relation,)) #* Missing OPTIONS/PARAMETERS?
-	syn, _ = index.get((synsect,)) #* No SYNOPSIS?
-	rd = {}
-
+	syn, _ = index[(synsect,)] #* No SYNOPSIS?
 	synopts = recognize_synopsis_options(syn[1])
+
+	fields = {}
 	# Get ordered list of names.
 	names = []
 	types = []
@@ -477,12 +478,20 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 		for optref, optset in options:
 			optindex[optref] = optset
 
+	if not names:
+		names = [p.sole.data for p in context['names']]
+
+	if ('NAME',) in index:
+		index[('NAME',)][0][-1]['names'] = names
+
+	xrs, _ = index[(relation,)] #* Missing OPTIONS/PARAMETERS?
 	for node in xrs[1]:
 		if node[0] != 'dictionary':
 			continue
 
 		# First dictionary, structure synopsis.
 		for i in node[1]:
+			# Name and Parameter/Option list.
 			key, value = i[1]
 
 			refname = i[-1]['identifier']
@@ -498,26 +507,26 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 				# Likely option set.
 				arglist = []
 
-			rd[refname] = arglist
+			fields[refname] = arglist
 
 			struct = {
 				'identifier': refname,
 				'arguments': arglist,
 				'options': optindex.get(refname, refname.split()),
 			}
+
+			# Replace the key with an easily identified element
+			# for customized processing of the synopsis' name mapping.
 			i[1][0] = (case_id, [], struct)
 		break
 	else:
 		# No dictionary in found.
 		raise Exception("synopsis reference section contained no dictionary")
 
-	if ('NAME',) in index:
-		index[('NAME',)][0][-1]['names'] = names
-
 	syn[-1]['names'] = names
 	syn[-1]['types'] = types
 	syn[-1]['options'] = optlists
-	syn[-1]['fields'] = rd
+	syn[-1]['fields'] = fields
 
 	return relation
 

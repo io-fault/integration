@@ -61,7 +61,7 @@ def load_control_value(value):
 	if value[0] == 'paragraph':
 		return nodes.document.export(value[1])
 
-	if value[0] == 'set':
+	if value[0] in {'set', 'sequence'}:
 		# Presumes flag set.
 		items = value[1]
 		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
