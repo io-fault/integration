@@ -66,6 +66,12 @@ def load_control_value(value):
 		items = value[1]
 		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
 
+	if value[0] == 'syntax':
+		lines = [x[1][0] for x in value[1]]
+		if not lines[-1].strip():
+			del lines[-1:]
+		return (value[-1].get('type'), lines)
+
 def integrate(index, types, node):
 	"""
 	# Traverse the sections of the &node converting CONTEXT and CONTROL
