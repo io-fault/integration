@@ -13,31 +13,34 @@ from fault.system import files
 from ...factors import constructors
 from ...factors import cc
 from ...factors import data as ccd
+from ...root import query
 
-def install(args, fault, ctx, ctx_route, ctx_params, fs_symbol='fault.text'):
+def install(route, ctx, settings, fs_symbol='fault.text'):
 	"""
 	# Install chapter parser.
 	"""
-	mechfile = ctx_route / 'mechanisms' / fs_symbol
+	mechfile = route / 'mechanisms' / fs_symbol
+	tool = settings.get('tool', default_tool)
 
 	ccd.update_named_mechanism(mechfile, 'root', {
 		'chapter-text': {
 			'formats': {
-				'chapter': 'i',
+				'text.chapter': 'i',
 			},
 			'transformations': {
 				'tool:kleptic-parser': {
-					'method': 'python',
-					'command': __package__ + '.delineate',
 					'interface': constructors.__name__ + '.delineation',
+					'factor': __package__ + '.delineate',
+					'command': str(tool),
+					'tool': ['delineate-kleptic-text'],
 				},
-				'kleptic-text': {
+				'kleptic': {
 					'inherit': 'tool:kleptic-parser',
 				},
 			},
 
 			'integrations': {
-				'chapter': constructors.Clone,
+				'text.chapter': constructors.Clone,
 			},
 		}
 	})
@@ -46,14 +49,15 @@ def install(args, fault, ctx, ctx_route, ctx_params, fs_symbol='fault.text'):
 		'context': {'path': ['chapter-text']}
 	})
 
-def main(inv:process.Invocation) -> process.Exit:
-	fault = inv.environ.get('FAULT_CONTEXT_NAME', 'fault')
-	ctx_route = files.Path.from_absolute(inv.environ['CONTEXT'])
-	ctx = cc.Context.from_directory(ctx_route)
+default_tool = (query.libexec()/'fault-dispatch')
 
-	ctx_params = ctx.index['context']
-	if ctx_params['intention'] == 'delineation':
-		install(inv.args, fault, ctx, ctx_route, ctx_params)
+def main(inv:process.Invocation) -> process.Exit:
+	route = files.Path.from_absolute(inv.argv[0])
+	settings = dict(zip(inv.argv[1::2], inv.argv[2::2]))
+	ctx = cc.Context.from_directory(route)
+
+	if ctx.index['context']['intention'] == 'delineation':
+		install(route, ctx, settings)
 	else:
 		# Only delineation for text.
 		pass
