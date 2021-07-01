@@ -12,7 +12,7 @@ from fault.text import nodes
 from fault.system import files
 
 from .tools import get_properties, interpret_property_fragment, interpret_properties
-from .html import prepare
+from .html import prepare, formlink
 
 escape_characters = {
 	"'": "\\[aq]",
@@ -58,6 +58,7 @@ literal_casts = {
 	'const': '.Dv',
 	'option-flag': '.Fl',
 	'option-argument': '.Ar',
+	'optional': '.Op',
 	'author': '.An',
 	'tradename': '.Tn',
 	'standard': '.St',
@@ -176,25 +177,26 @@ class Render(comethod.object):
 		for name in names:
 			yield self.element('.Nm', self.text(name))
 
+			yield self.element('.Bk')
 			for (fname, optlist) in options[name]:
 				args = fields.get(fname, ())
-				args = [x.sole.data for x in args]
 				if not args:
 					# Flag set.
 					for opt in optlist:
 						yield self.element('.Op', 'Fl', self.text(opt[1:]))
 				else:
 					# Parameterized option. Use primary for synopsis.
-					argstr = ' Ar '.join(args)
 					if not optlist:
-						yield self.element('.Ar', argstr)
+						yield from self.format_option_arguments(args)
 					else:
+						argstr = ' '.join(x[1:] for x in self.format_option_arguments(args))
 						opt = optlist[0]
 						optstr, join = trim_option_flag(opt)
 						if join:
-							yield self.element('.Op', 'Fl', optstr, 'Ns', 'Ar', argstr)
+							yield self.element('.Op', 'Fl', optstr, 'Ns', argstr)
 						else:
-							yield self.element('.Op', 'Fl', optstr, 'Ar', argstr)
+							yield self.element('.Op', 'Fl', optstr, argstr)
+			yield self.element('.Ek')
 
 	@comethod('section', 'parameters-synopsis')
 	def function_synopsis_section(self, resolver, nseq, attr):
@@ -280,6 +282,15 @@ class Render(comethod.object):
 		macros = self.paragraph(resolver, nodes.document.export(items), attr)
 		yield self.element('.It', *(x[1:] for x in macros))
 
+	def format_option_arguments(self, arglist):
+		for x in arglist:
+			f = x.sole
+
+			if f.type.endswith('optional'):
+				yield self.element('.Op', 'Ar', self.text(f.data))
+			else:
+				yield self.element('.Ar', self.text(f.data))
+
 	@comethod('mapping', 'option-case')
 	def options_record(self, resolver, items, attr):
 		"""
@@ -294,19 +305,23 @@ class Render(comethod.object):
 			yield self.element('.It', 'Fl', flags)
 		elif not optlist:
 			# Arguments only.
-			args = ' Ar '.join(self.text(x) for x in optlist)
-			yield self.element('.It', 'Ar', args)
+			yield self.element('.It', 'Xo')
+			yield from self.format_option_arguments(arglist)
+			yield self.element('.Xc')
 		else:
 			# Options taking arguments.
-			args = ' Ar '.join(self.text(x.sole.data) for x in arglist)
+			args = ' '.join(self.format_option_arguments(arglist))
 			for opt in optlist:
 				opt, join = trim_option_flag(opt)
 				if join:
 					# Visually joined.
-					yield self.element('.It', 'Fl', opt, 'Ns', 'Ar', args)
+					yield self.element('.It', 'Fl', opt, 'Ns', 'Xo')
+					yield from self.format_option_arguments(arglist)
 				else:
 					# Visually separated.
-					yield self.element('.It', 'Fl', opt, 'Ar', args)
+					yield self.element('.It', 'Fl', opt, 'Xo')
+					yield from self.format_option_arguments(arglist)
+				yield self.element('.Xc')
 
 	@comethod('mapping', 'parameter-case')
 	def parameter_record(self, resolver, items, attr):
