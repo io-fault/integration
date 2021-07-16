@@ -73,8 +73,8 @@ def delineate(route, ctx, args):
 				'c': constructors.Inherit(transform_tool_name),
 				'c++': constructors.Inherit(transform_tool_name),
 				'objective-c': constructors.Inherit(transform_tool_name),
-				'c-header': constructors.Inherit(transform_tool_name),
-				'c++-header': constructors.Inherit(transform_tool_name),
+				'c.header': constructors.Inherit(transform_tool_name),
+				'c++.header': constructors.Inherit(transform_tool_name),
 
 				transform_tool_name: {
 					'command': delineate.__name__,
@@ -84,11 +84,10 @@ def delineate(route, ctx, args):
 			},
 
 			'integrations': {
-				'archive': constructors.Clone,
-				'partial': constructors.Clone,
-				'extension': constructors.Clone,
-				'executable': constructors.Clone,
-				'library': constructors.Clone,
+				'http://if.fault.io/factors/system.archive': constructors.Clone,
+				'http://if.fault.io/factors/system.extension': constructors.Clone,
+				'http://if.fault.io/factors/system.executable': constructors.Clone,
+				'http://if.fault.io/factors/system.library': constructors.Clone,
 			}
 		}
 	}
@@ -164,11 +163,6 @@ def compiler(args, fault, ctx, ctx_route, ctx_params):
 			}
 		}
 	}
-
-	std = (syms / 'context:c++11')
-	std.fs_store(pickle.dumps({
-		'system': {'library': {None: set(['c++'])}},
-	}))
 
 	ccd.update_named_mechanism(route, 'clang', data)
 	return route

@@ -2,14 +2,7 @@
 # Command constructors for Apple (macOS) hosts.
 """
 from fault.context import tools
-
-mach_objects = {
-	'executable': '.exe',
-	'library': '.dylib',
-	'extension': '.dylib',
-	'partial': '.fo',
-	None: '.so',
-}
+from fault.system import files
 
 def debug_isolate(target):
 	dtarget = target + '.dSYM'
@@ -17,10 +10,24 @@ def debug_isolate(target):
 		('dsymutil', target, '-o', dtarget)
 	]
 
+type_map = {
+	'executable': '-execute',
+	'library': '-dylib',
+	'extension': '-bundle',
+	'partial': '-r',
+}
+
+def libflag(x):
+	if isinstance(x, str):
+		return x
+	else:
+		if x.context is not files.root:
+			return ':'+x.identifier
+		else:
+			return x.identifier
+
 def macos_link_editor(
-		transform_mechanisms,
-		build, adapter, o_type, output, i_type, inputs,
-		partials, libraries,
+		build, adapter, output, inputs,
 		filepath=str,
 
 		minimum_macos='10.13.0',
@@ -34,12 +41,6 @@ def macos_link_editor(
 			'lazy': '-lazy-l',
 			'default': '-l',
 		},
-		type_map={
-			'executable': '-execute',
-			'library': '-dylib',
-			'extension': '-bundle',
-			'partial': '-r',
-		},
 		lto_preserve_exports='-export_dynamic',
 		platform_version_flag='-macosx_version_min',
 	):
@@ -47,59 +48,36 @@ def macos_link_editor(
 	# Command constructor for Mach-O link editor provided on Apple MacOS X systems.
 	"""
 	factor = build.factor
-	f_type = factor.type
-	f_domain = factor.domain
+	f_type = factor.type.factor.identifier
 
 	sysarch = build.mechanism.descriptor['architecture']
 
 	command = [None, '-t', lto_preserve_exports, platform_version_flag, minimum_macos, '-arch', sysarch]
 
-	intention = build.context.intention
-	format = build.variants['format']
+	intention = build.intention
 	mech = build.mechanism.descriptor
 
 	loutput_type = type_map[f_type]
 	command.append(loutput_type)
+
 	if f_type == 'executable':
-		if format == 'pie':
-			command.append(pie_flag)
+		command.append(pie_flag)
+	elif f_type == 'extension':
+		command.extend(['-undefined', 'dynamic_lookup'])
 
-	if f_type == 'partial':
-		# partial targets do not need context.
-		command.extend(inputs)
-	else:
-		if f_type == 'extension':
-			command.extend(['-undefined', 'dynamic_lookup'])
+	# SystemFactors
+	dirs = list(build.select('http://if.fault.io/factors/system.directory#image'))
+	command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
 
-		libs = [f for f in build.requirements[(f_domain, 'library')]]
-		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
+	# Using '-l:' to make sure image name is identified.
+	libs = list(build.select('http://if.fault.io/factors/system.library#image'))
 
-		dirs = (x.image({}) for x in libs)
-		command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
+	dirs = [x.container for x in libs if not isinstance(x, str) and x.context != files.root]
+	command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
+	command.extend([link_flag+libflag(x) for x in libs])
 
-		support = mech['objects'][f_type][format]
-		if support is not None:
-			prefix, suffix = support
-		else:
-			prefix = suffix = ()
-
-		command.extend(prefix)
-		command.extend(inputs)
-
-		command.extend([link_flag+x.name for x in libs])
-		command.append(link_flag+'System')
-
-		command.extend(suffix)
-
-		# For each source transformation mechanism, extract the link time requirements
-		# that are needed by the compiler. When building targets with mixed compilers,
-		# each may have their own runtime dependency that needs to be fulfilled.
-		resources = set()
-		for xfmech in transform_mechanisms.values():
-			for x in xfmech.get('resources').values():
-				resources.add(x)
-
-		command.extend(list(resources))
+	command.append(link_flag+'System')
+	command.extend(inputs)
 
 	command.extend((output_flag, filepath(output)))
 

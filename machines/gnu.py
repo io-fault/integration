@@ -6,14 +6,6 @@
 """
 from fault.context import tools
 
-objects = {
-	'executable': '.exe',
-	'library': '.so',
-	'extension': '.so',
-	'partial': '.fo',
-	None: '.so',
-}
-
 def debug_isolate(target, objcopy, strip):
 	"""
 	# Isolate debugging information from the target.
@@ -27,9 +19,8 @@ def debug_isolate(target, objcopy, strip):
 	]
 
 def gnu_link_editor(
-		transform_mechanisms,
-		build, adapter, o_type, output, i_type, inputs,
-		partials, libraries, filepath=str,
+		build, adapter, output, inputs,
+		filepath=str,
 
 		pie_flag='-pie',
 		verbose_flag='-v',
@@ -39,14 +30,12 @@ def gnu_link_editor(
 		soname_flag='-soname',
 		output_flag='-o',
 		type_map={
-			'executable': None,
-			'library': '-shared',
-			'extension': '-shared',
-			'partial': '-r',
+			'http://if.fault.io/factors/system.executable': '-pie',
+			'http://if.fault.io/factors/system.library': '-shared',
+			'http://if.fault.io/factors/system.extension': '-shared',
+			'http://if.fault.io/factors/system.partial': '-r',
 		},
 		allow_runpath='--enable-new-dtags',
-		use_static='-Bstatic',
-		use_shared='-Bdynamic',
 	):
 	"""
 	# Command constructor for the GNU link editor. For platforms other than Darwin and
@@ -62,52 +51,35 @@ def gnu_link_editor(
 	f_type = factor.type
 	f_domain = factor.domain
 	intention = build.variants['intention']
-	format = build.variants['format']
-	mech = build.mechanism.descriptor
 
 	command = [None]
-	add = command.append
-	iadd = command.extend
-	add(verbose_flag)
+	command.append(verbose_flag)
 
-	loutput_type = type_map[f_type] # failure indicates bad type parameter to libfactor.load()
+	loutput_type = type_map[f_type]
 	if loutput_type:
-		add(loutput_type)
+		command.append(loutput_type)
 
-	if f_type == 'partial':
-		# partial is an incremental link. Most options are irrelevant.
-		command.extend(map(filepath, inputs))
-	else:
-		libs = [f for f in build.requirements[(f_domain, 'library')]]
-		libs.sort(key=lambda x: (getattr(x, '_position', 0), x.name))
+	if f_type == 'executable':
+		command.append(pie_flag)
+	elif f_type == 'extension':
+		command.append('--unresolved-symbols=ignore-all')
 
-		dirs = (x.image() for x in libs)
-		libdirs = [libdir_flag+filepath(x) for x in tools.unique(dirs, None)]
+	# Using '-l:' to make sure image name is identified.
+	libs = list(build.select('http://if.fault.io/factors/system.library#image'))
 
-		link_parameters = [link_flag + y for y in set([x.name for x in libs])]
+	dirs = [x.container for x in libs if not isinstance(x, str) and x.context != files.root]
+	command.extend([libdir_flag+filepath(x) for x in tools.unique(dirs, None)])
+	command.extend([link_flag+libflag(x) for x in libs])
 
-		if False:
-			command.extend((soname_flag, sys['abi']))
+	link_parameters = [link_flag + y for y in set([x.name for x in libs])]
 
-		if allow_runpath:
-			# Enable by default, but allow override.
-			add(allow_runpath)
+	command.append(allow_runpath)
 
-		prefix, suffix = mech['objects'][f_type][format]
-
-		command.extend(prefix)
-		command.extend(map(filepath, inputs))
-		command.extend(libdirs)
-		command.append('-(')
-		command.extend(link_parameters)
-		command.append('-)')
-
-		resources = set()
-		for xfmech in transform_mechanisms.values():
-			for x in xfmech.get('resources').values():
-				resources.add(x)
-
-		command.extend(suffix)
+	command.extend(map(filepath, inputs))
+	command.extend(libdirs)
+	command.append('-(')
+	command.extend(link_parameters)
+	command.append('-)')
 
 	command.extend((output_flag, output))
 	return command

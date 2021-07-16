@@ -17,7 +17,6 @@ def dynamic(paths):
 
 	host, vendor, osname, arch, alts = query.identity()
 	system = {
-		# domain data
 		'identifier': '-'.join(([vendor] if vendor is not None else []) + [osname, arch]),
 		'vendor': vendor,
 		'system': osname,
@@ -28,21 +27,6 @@ def dynamic(paths):
 		'variants': {
 			'system': osname,
 			'architecture': arch,
-		},
-
-		'target-file-extensions': {
-			'library': '.so',
-			'extension': '.so',
-			'executable': '.exe',
-			'partial': '.fo',
-		},
-
-		# Format selected for factor-types.
-		'formats': {
-			'executable': 'pie',
-			'library': 'pic',
-			'extension': 'pic',
-			# Partials inherit format.
 		},
 
 		# objects used to support the construction of system targets
@@ -57,8 +41,6 @@ def dynamic(paths):
 				# Only position independent.
 				'pic': rt.prepare(found.get, rt.posix_pic),
 			},
-			# partials do not have any standard link time objects.
-			'partial': None,
 		},
 
 		'transformations': {
@@ -77,16 +59,16 @@ def dynamic(paths):
 				'name': ldname,
 				'command': str(ld),
 			},
-			'library': {
+			'http://if.fault.io/factors/system.library': {
 				'inherit': 'tool:link-editor',
 			},
-			'executable': {
+			'http://if.fault.io/factors/system.executable': {
 				'inherit': 'tool:link-editor',
 			},
-			'extension': {
+			'http://if.fault.io/factors/system.extension': {
 				'inherit': 'tool:link-editor',
 			},
-			'partial': {
+			'http://if.fault.io/factors/system.archive': {
 				'inherit': 'tool:link-editor',
 			},
 			None: None,

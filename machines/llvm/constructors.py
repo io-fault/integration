@@ -1,6 +1,7 @@
 """
 # Command constructors.
 """
+import itertools
 
 overflow_control = {
 	'wrap': '-fwrapv',
@@ -20,23 +21,47 @@ optimizations = {
 	'delineation': '0',
 }
 
-def standard_parameters(build):
+def source_parameters(build):
 	arch = build.mechanism.descriptor.get('architecture', None)
 	if arch is not None:
 		yield ('F_TARGET_ARCHITECTURE', arch)
 
+	factorpath = str(build.factor.route)
+	parts = factorpath.split('.')
+	project = str(build.factor.project.factor)
+	tail = factorpath[len(project)+1:].split('.')[1:]
+
 	yield from [
+		('FV_SYSTEM', build.system),
+		('FV_ARCHITECTURE', build.architecture),
+		('FV_INTENTION', build.intention),
+
 		('F_SYSTEM', build.system),
-		('F_INTENTION', build.context.intention),
-		('F_FACTOR_DOMAIN', build.factor.domain),
-		('F_FACTOR_TYPE', build.factor.type),
+		('F_INTENTION', build.intention),
+		('F_FACTOR_TYPE', str(build.factor.type)),
+
+		('FACTOR_SUBPATH', '.'.join(tail)),
+		('FACTOR_PROJECT', project),
+		('FACTOR_QNAME', factorpath),
+		('FACTOR_BASENAME', parts[-1]),
+		('FACTOR_PACKAGE', '.'.join(parts[:-1])),
 	]
 
-	yield from build.parameters
+format_type_map = {
+	'http://if.fault.io/factors/system.executable': '-fPIE',
+}
+
+def format_sp(define_flag, undef_flag, name, value):
+	if not value:
+		if value is None:
+			return undef_flag + name
+		else:
+			return define_flag + name
+	else:
+		return define_flag + '='.join((name, value))
 
 def clang(
-		build, adapter,
-		o_type, output, i_type, inputs, *,
+		build, adapter, output, i_type, inputs, *,
 		options=(), # Direct option injection.
 		verbose=True, # Enable verbose output.
 		root=False, # Designates the input as a root.
@@ -53,13 +78,9 @@ def clang(
 		sid_flag='-isystem',
 		id_flag='-I', si_flag='-include',
 		debug_flag='-g',
-		format_map = {
-			'pic': '-fPIC',
-			'pie': '-fPIE',
-			'pdc': '-mdynamic-no-pic',
-		},
 		co_flag='-O',
 		define_flag='-D',
+		undef_flag='-U',
 		empty = {}
 	):
 	"""
@@ -70,29 +91,22 @@ def clang(
 	"""
 
 	f = build.factor
-	ctx = build.context
-	intention = ctx.intention
+	ftyp = f.type
+	intention = build.intention
 
-	lang = adapter.get('language', i_type)
-	if lang.endswith('-header') and intention != 'fragment':
-		inputs = ['/dev/null']
-		lang = 'c'
+	if i_type.dialect == 'header':
+		if intention != 'delineation':
+			inputs = ['/dev/null']
+	else:
+		if i_type.dialect:
+			command.append(standard_flag + '=' + i_type.dialect)
 
 	command = [None, compile_flag]
 	if verbose:
 		command.append(verbose_flag)
 
 	# Add language flag if it's a compiler collection.
-	if i_type is not None:
-		command.extend((language_flag, lang))
-
-	lang_standards = adapter['standards'].get(lang, ())
-	pl_version = build.requirements.get(('language', 'standard'), None)
-	if pl_version:
-		pl_version, = pl_version
-		stdname = pl_version.name
-		if stdname in lang_standards:
-			command.append(standard_flag + '=' + stdname)
+	command.extend((language_flag, i_type.language))
 
 	pl_features = ()
 	f_ctl = adapter.get('feature-control', empty)
@@ -105,16 +119,9 @@ def clang(
 	command.append(visibility) # Encourage use of SYMBOL() define.
 	command.append(color)
 
-	# -fPIC, -fPIE or nothing. -mdynamic-no-pic for MacOS "static".
-	format_flags = format_map.get(o_type)
-	if format_flags is not None:
-		command.append(format_flags)
-	else:
-		if o_type is not None:
-			# The selected output type did not have
-			# a corresponding flag. Noting this
-			# may illuminate an error.
-			pass
+	# -fPIC, -fPIE
+	format_flag = format_type_map.get(ftyp, '-fPIC')
+	command.append(format_flag)
 
 	# Compiler optimization target: -O0, -O1, ..., -Ofast, -Os, -Oz
 	co = optimizations[intention]
@@ -124,33 +131,27 @@ def clang(
 	# Filter or separate later.
 	command.append(debug_flag)
 
-	if 0:
-		# TODO: incorporate overflow parameter
-		# factor.txt files being limited means that there is no
-		# way to specify the overflow type. source level control is actually
-		# needed anyways, but it does not appear to be popular with compilers.
-		overflow_spec = getattr(build.factor.module, 'overflow', None)
-		if overflow_spec is not None:
-			command.append(overflow_control[overflow_spec])
-
 	command.extend(adapter.get('options', ()))
 	command.extend(options)
 
 	# Include Directories; -I option.
-	included = build.required('source-tree')
-	command.extend([id_flag + str(x) for x, xf in included])
+	included = build.select('http://if.fault.io/factors/lambda.sources#source-paths')
+	command.extend([id_flag + str(x) for x in included])
+
+	# Source Parameters
+	params = build.select('http://if.fault.io/factors/lambda.control#parameters')
+	command.extend([
+		format_sp(define_flag, undef_flag, *x)
+		for x in itertools.chain.from_iterable(params)
+	])
 
 	# -D defines.
 	sp = [
 		define_flag + '='.join(x)
-		for x in standard_parameters(build)
+		for x in source_parameters(build)
 		if x[1] is not None
 	]
 	command.extend(sp)
-
-	# -U undefines.
-	spo = ['-U' + x[0] for x in standard_parameters(build) if x[1] is None]
-	command.extend(spo)
 
 	# -include files. Forced inclusion.
 	for x in includes:

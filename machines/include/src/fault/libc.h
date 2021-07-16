@@ -4,6 +4,10 @@
 #ifndef _FAULT_LIBC_H_
 #define _FAULT_LIBC_H_
 
+#ifdef __APPLE__
+	#include <TargetConditionals.h>
+#endif
+
 #define _CPP_QUOTE(x) #x
 #define STRING_FROM_IDENTIFIER(X) _CPP_QUOTE(X)
 #define CONCAT_IDENTIFIER(X, Y) X##Y
