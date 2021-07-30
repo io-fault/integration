@@ -12,14 +12,29 @@
 	- &..python
 	- &..machine
 
-/*.h/
-	- (type)&<http://if.fault.io/factors/system#c-header>
-
 /*.txt/
-	- (type)&<http://if.fault.io/factors/chapter#kleptic>
+	- (type)&<http://if.fault.io/factors/text.chapter#kleptic>
+
+/*.man/
+	- (type)&<http://if.fault.io/factors/text.manual#kleptic>
+
+/*.v/
+	- (type)&<http://if.fault.io/factors/vector.set#fault-vc>
+
+/*.sys/
+	- (type)&<http://if.fault.io/factors/vector.system#fault-vi>
 
 /*.py/
-	- (type)&<http://if.fault.io/factors/python-module#v3>
+	- (type)&<http://if.fault.io/factors/python.module#python.psf-v3>
+
+/*.pyi/
+	- (type)&<http://if.fault.io/factors/python.interface#python.psf-v3>
+
+/*.c/
+	- (type)&<http://if.fault.io/factors/system#c.2011>
+
+/*.h/
+	- (type)&<http://if.fault.io/factors/system#c.header>
 
 /*.css/
 	- (type)&<http://if.fault.io/factors/web#cascading-style-sheets>
