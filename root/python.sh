@@ -67,16 +67,12 @@ bootstrap_extension ()
 		"-I$fault_dir/system/include/src" \
 		"-I$prefix/include" \
 		"-I$PYTHON_INCLUDE" \
-		"-DF_SYSTEM=$defsys" \
-		"-DF_TARGET_ARCHITECTURE=$defarch" \
-		"-DF_INTENTION=debug" \
-		"-DF_FACTOR_DOMAIN=system" \
-		"-DF_FACTOR_TYPE=extension" \
-		"-DFACTOR_BASENAME=$modname" \
-		"-DFACTOR_SUBPATH=$modname" \
-		"-DFACTOR_PROJECT=$projectfactor" \
-		"-DFACTOR_PACKAGE=$package" \
-		"-DFACTOR_QNAME=$fullname" \
+		"-DFV_SYSTEM=$defsys" \
+		"-DFV_ARCHITECTURE=$defarch" \
+		"-DFV_INTENTION=debug" \
+		"-DF_FACTOR_NAME=$modname" \
+		"-DF_PROJECT_PATH=$projectfactor" \
+		"-DF_FACTOR=$projectfactor.$modname" \
 		-fwrapv src/*.c
 
 	mkdir -p "$intdir"
