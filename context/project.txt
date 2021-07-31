@@ -7,7 +7,7 @@
 /icon/
 	- (emoji)`🔋`
 /name/
-	`context`
+	`system`
 /abstract/
 	Integration tools for factored projects.
 
