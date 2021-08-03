@@ -187,7 +187,7 @@
 	: [-elf-itype-switch]
 	: [-elf-rpath]
 
-	: -o [output File]
+	: -o [factor-image File]
 	: -Wl,-(
 	: [-system-context]
 	: [-linker-requirements]
@@ -207,7 +207,7 @@
 	: [-system-context]
 	: [-linker-requirements]
 
-	: -o [output File]
+	: -o [factor-image File]
 	: [units File]
 
 -macho-itype-switch:
