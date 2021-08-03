@@ -253,25 +253,6 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, tool_na
 
 	return srcpath, str(merge_path), str(export_path), fp
 
-def delineation(incdir, libdir, libname, tool_name='llvm'):
-	"""
-	# Construct the Reference Parameter factors
-	"""
-	r = {
-		'system': {
-			'library': {
-				libdir: {libname},
-			}
-		},
-		'source': {
-			'library': {
-				incdir: {None},
-			}
-		}
-	}
-
-	return r
-
 if __name__ == '__main__':
 	import pprint
 	pprint.pprint(clang(sys.argv[1]))

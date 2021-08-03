@@ -1,6 +1,9 @@
 """
 # Runtime object patterns.
+# Currently unused as the compiler driver is used for linkage.
 """
+from fault.system import files
+from . import query
 
 def strings(x):
 	return tuple(map(str, [y for y in x if y]))
@@ -10,6 +13,11 @@ def prepare(select, pattern, *, adjust=(lambda x: x + '.o')):
 		strings(map(select, map(adjust, pattern[0]))),
 		strings(map(select, map(adjust, pattern[1]))),
 	]
+
+def search(libdirs):
+	# Scan for system objects (crt1.o, crt0.o, etc)
+	found, missing = query.search(libdirs, [x+objext for x in rt.objects])
+	return found
 
 stem = 'crt'
 objects = set([

@@ -81,36 +81,12 @@ def executables(paths, xset:typing.Set[str]):
 	"""
 	return search(paths, xset)
 
-linkers = {
-	'lld': (
-		'objects',
-	),
-	'ld': (
-		'objects',
-	),
-}
-
-linker_preference = ('lld', 'ld.lld', 'ld')
-
 default_library_paths = [
 	"/usr/lib", # Common location for runtime objects.
 	"/lib",
 	"/usr/local/lib",
-]
-
-extended_library_paths = [
 	"/opt/lib",
 ]
-
-def uname(flag, path="/usr/bin/uname"):
-	"""
-	# Execute the (system/executable)`uname` returning its output for the given &flag.
-	"""
-
-	inv = execution.KInvocation(path, [path, flag])
-	pid, exitcode, out = execution.dereference(inv)
-
-	return out.strip().decode('utf-8')
 
 def ldconfig_list(path="/usr/bin/ldconfig"):
 	"""
@@ -121,52 +97,3 @@ def ldconfig_list(path="/usr/bin/ldconfig"):
 	l = [x for x in data.splitlines(b"\n") if x[0:1] != '\t']
 	l = [x.split(':', 1)[0] for x in l]
 	return l
-
-def identity():
-	"""
-	# Constructs a tuple of identifiers for recongizing the host.
-	"""
-	vendor = None
-	osname = uname('-s').lower()
-
-	if osname == 'darwin':
-		# Presume apple.
-		vendor = 'apple'
-	elif osname == 'linux':
-		vendor = 'penguin'
-
-	# First field of the target string.
-	arch = uname('-m').lower()
-	name = uname('-n').lower()
-
-	arch_alt = arch.replace('_', '-')
-	h_archs = [arch, arch_alt]
-	if osname == 'darwin':
-		h_archs.extend(['osx', 'macos'])
-
-	return name, vendor, osname, arch, h_archs
-
-def detect_profile_library(libdir, architectures):
-	"""
-	# Given an `tool:llvm-clang` mechanism and a sequence of architecures, discover
-	# the appropriate profile library to link against when building targets
-	# that consist of LLVM instrumented sources.
-	"""
-	profile_libs = [x for x in libdir.fs_iterfiles('data') if 'profile' in x.identifier]
-
-	if len(profile_libs) == 1:
-		# Presume target of interest.
-		profile_lib = profile_libs[0]
-	else:
-		# Scan for library with matching architecture.
-		for x, a in itertools.product(profile_libs, architectures):
-			if a in x.identifier:
-				profile_lib = x
-				break
-		else:
-			profile_lib = None
-
-	if profile_lib.fs_type() == 'void':
-		profile_lib = None
-
-	return profile_lib
