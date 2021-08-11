@@ -7,6 +7,7 @@ from fault.system import process
 
 index = {
 	'delineate-kleptic-text': context_name + '.chapters.bin.delineate',
+	'text-cc': context_name + '.chapters.bin.compile',
 	'python-cc': context_name + '.python.bin.compile',
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.bin.control',
