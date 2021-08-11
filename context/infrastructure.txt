@@ -13,10 +13,10 @@
 	- &..machine
 
 /*.txt/
-	- (type)&<http://if.fault.io/factors/text.chapter#kleptic>
+	- (type)&<http://if.fault.io/factors/text.chapter#kleptic.fault-1>
 
 /*.man/
-	- (type)&<http://if.fault.io/factors/text.manual#kleptic>
+	- (type)&<http://if.fault.io/factors/text.manual#kleptic.fault-1>
 
 /*.v/
 	- (type)&<http://if.fault.io/factors/vector.set#fault-vc>
