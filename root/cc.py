@@ -16,6 +16,7 @@ from . import query
 from ..root import __name__ as root_project
 from ..machine import __name__ as machine_project
 from ..python import __name__ as python_project
+from ..chapters import __name__ as chapters_project
 
 def mkinfo(path, name):
 	return lsf.types.Information(
@@ -57,6 +58,10 @@ vtype = 'vector.set'
 dispatch_command = (query.libexec() / 'fault-dispatch')
 clang_delineate = (query.bindir() / 'clang-delineate')
 
+def dispatch_ref(*prefix, command=dispatch_command):
+	cmd = str(command)
+	return ''.join(execution.serialize_sx_plan(([], cmd, [cmd] + list(prefix))))
+
 def iproduct(route, connections):
 	"""
 	# Initialize the product index and return the created instance.
@@ -97,7 +102,6 @@ def define(name, *types):
 
 def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 	machine_cc = getsource(machine_project, name)
-	clang_delineate
 	deline = ''.join(execution.serialize_sx_plan(([], str(clang_delineate), [
 		str(clang_delineate),
 	])))
@@ -130,7 +134,7 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 
 	common = ""
 	common += define('-cc-tool',
-		('fv-idelineation', context + '.host.cc-delineate'),
+		('fv-form-delineated', context + '.host.cc-delineate'),
 		('!', context + '.host.usr-cc'),
 	) + '\n'
 
@@ -164,6 +168,42 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 		mksole('archive', vtype, ''),
 	]
 
+def text(context, factor='type', name='cc'):
+	text_cc_vectors = getsource(chapters_project, name)
+
+	variants = ""
+	variants += constant('[systems]', 'void')
+	variants += constant('[void]', 'json')
+	variants += constant('[forms]', 'delineated')
+
+	common = ""
+	common += constant('-text-tool',
+		context + '.text.ft-text-cc',
+	)
+	common += constant('Translate',
+		'[-text-tool]',
+		'-parse-text-1',
+		'text-delineate-1',
+	)
+	common += constant('Render',
+		'[-text-tool]',
+		'-store-chapter-1',
+		'text-delineate-1',
+	)
+
+	txtcc = dispatch_ref('text-cc')
+	return [
+		mksole('ft-text-cc', 'vector.system', txtcc),
+		mksole('text-delineate-1', vtype, text_cc_vectors.fs_load()),
+		mksole('variants', vtype, variants),
+		mksole('type', vtype, common),
+
+		# Intregation types.
+		mksole('chapter', vtype, ''),
+		mksole('manual', vtype, ''),
+		mksole('source', vtype, ''),
+	]
+
 def python(context, psystem, parch, factor='type', name='cc'):
 	python_cc = getsource(python_project, name)
 
@@ -182,14 +222,11 @@ def python(context, psystem, parch, factor='type', name='cc'):
 	)
 	common += constant('Render',
 		'[-pyc-tool]',
-		'-pyc-bytecode-1',
+		'-pyc-reduce-1',
 		'fault-pyc-1',
 	)
 
-	pycc = ''.join(execution.serialize_sx_plan(([], str(dispatch_command), [
-		str(dispatch_command),
-		'python-cc',
-	])))
+	pycc = dispatch_ref('python-cc')
 	return [
 		mksole('ft-python-cc', 'vector.system', pycc),
 		mksole('fault-pyc-1', vtype, python_cc.fs_load()),
@@ -220,8 +257,9 @@ def mkprojects(context, route):
 	pi = mkinfo(context + '.context', 'image')
 	soles = [
 		mksole('projections', 'vector.set',
-			'host:\n\t: http://if.fault.io/factors/system\n'
-			'python:\n\t: http://if.fault.io/factors/python\n'
+			constant('host', 'http://if.fault.io/factors/system') + \
+			constant('python', 'http://if.fault.io/factors/python') + \
+			constant('text', 'http://if.fault.io/factors/text')
 		),
 	]
 	pj = mkctx(pi, route, context, soles)
@@ -244,6 +282,10 @@ def mkprojects(context, route):
 	psys, parch = identity.python_execution_context()
 	pj = mkproject(pi, route, context, 'python', python(context, psys, parch))
 	factory.instantiate(*pj)
+
+	txt_pi = mkinfo(context + '.text', 'text')
+	txt = mkproject(txt_pi, route, context, 'text', text(context))
+	factory.instantiate(*txt)
 
 def main(inv:process.Invocation) -> process.Exit:
 	target, = inv.argv
