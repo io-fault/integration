@@ -134,21 +134,21 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 
 	common = ""
 	common += define('-cc-tool',
-		('fv-form-delineated', context + '.host.cc-delineate'),
-		('!', context + '.host.usr-cc'),
+		('fv-form-delineated', '.cc-delineate'),
+		('!', '.usr-cc'),
 	) + '\n'
 
 	common += constant('Translate',
 		'[-cc-tool]',
 		'-cc-compile-1',
-		'unix-cc-1',
-		'target',
+		'.unix-cc-1',
+		'.target',
 	)
 	common += constant('Render',
 		'[-cc-tool]',
 		'-cc-link-1',
-		'unix-cc-1',
-		'target',
+		'.unix-cc-1',
+		'.target',
 	)
 
 	return [
@@ -178,17 +178,17 @@ def text(context, factor='type', name='cc'):
 
 	common = ""
 	common += constant('-text-tool',
-		context + '.text.ft-text-cc',
+		'.ft-text-cc',
 	)
 	common += constant('Translate',
 		'[-text-tool]',
 		'-parse-text-1',
-		'text-delineate-1',
+		'.text-delineate-1',
 	)
 	common += constant('Render',
 		'[-text-tool]',
 		'-store-chapter-1',
-		'text-delineate-1',
+		'.text-delineate-1',
 	)
 
 	txtcc = dispatch_ref('text-cc')
@@ -213,17 +213,17 @@ def python(context, psystem, parch, factor='type', name='cc'):
 
 	common = ""
 	common += constant('-pyc-tool',
-		context + '.python.ft-python-cc',
+		'.ft-python-cc',
 	)
 	common += constant('Translate',
 		'[-pyc-tool]',
 		'-pyc-ast-1',
-		'fault-pyc-1',
+		'.fault-pyc-1',
 	)
 	common += constant('Render',
 		'[-pyc-tool]',
 		'-pyc-reduce-1',
-		'fault-pyc-1',
+		'.fault-pyc-1',
 	)
 
 	pycc = dispatch_ref('python-cc')
