@@ -6,8 +6,7 @@
 
 [unit-suffix]:
 	# No suffix for archived images.
-	fv-idelineation: ""
-	fv-ianalysis: ""
+	fv-form-delineated: ""
 	# Extension usually required by compiler drivers as
 	# -x only accepts PL names, not object file formats.
 	!: ".o"
@@ -24,9 +23,6 @@
 	: executable
 	: archive
 
-[diagnostic-control]:
-	: verbose
-
 -debug:
 	: -g
 -profile:
@@ -34,10 +30,10 @@
 -coverage:
 	: --coverage
 -optimization-level:
-	fv-idebug: -O0
-	fv-iprofile: -O2
-	fv-ioptimal: -O2
-	fv-icoverage: -O0
+	fv-intention-debug: -O0
+	fv-intention-profile: -O2
+	fv-intention-optimal: -O2
+	fv-intention-coverage: -O0
 
 -includes:
 	: -I[http://if.fault.io/factors/lambda.sources#source-paths]
@@ -82,7 +78,7 @@
 	: [http://if.fault.io/factors/system.library#factor-image-name]
 
 -archive-factors:
-	: [http://if.fault.io/factors/system.archive#image]
+	: [http://if.fault.io/factors/system.archive#factor-image]
 
 # Non-component requirements.
 -linker-requirements:
@@ -92,14 +88,9 @@
 	# Non-integrated archives.
 	: -l:[-archive-factors]
 
--analyze:
-	: -fmax-errors=[error-limit env.ERRLIMIT]
-	: -Wall
-
 -diagnostics-control:
-	fv-ianalysis: [-analyze]
-	.: -o /dev/null
-	!: -w -c
+	: -fmax-errors=[error-limit env.ERRLIMIT]
+	: -w -c
 
 -compile-header:
 	: [-languages]
@@ -118,13 +109,15 @@
 ##
 # Primary compilation constructor.
 -cc-compile-1:
-	fv-ianalysis: "analyze-source" - stderr
 	!: "compile-source" - -
 
-	fv-ianalysis: -fsyntax-only
-	fv-idebug: [-debug]
-	fv-icoverage: [-coverage]
-	fv-iprofile: [-profile]
+	fv-intention-debug:
+		: [-debug]
+	fv-intention-coverage:
+		: [-coverage]
+	fv-intention-profile:
+		: [-profile]
+
 	: [-optimization-level]
 
 	: [-language-injections]
@@ -165,7 +158,7 @@
 	: -Xlinker -rpath=[system-library-directory]
 
 	# Requirements of factor.
-	: -Xlinker -rpath=[system.library/library-directories]
+	: -Xlinker -rpath=[http://if.fault.io/factors/system.library#library-directories]
 
 -elf-itype-switch:
 	it-executable:
@@ -180,8 +173,8 @@
 -gnu-ld-elf:
 	: "link-elf-image" - -
 	verbose: -v
-	fv-icoverage: --coverage
-	fv-iprofile: -pg
+	fv-intention-coverage: --coverage
+	fv-intention-profile: -pg
 
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
@@ -197,8 +190,8 @@
 -llvm-ld-elf:
 	: "link-elf-image" - -
 	verbose: -v
-	fv-icoverage: --coverage
-	fv-iprofile: -pg
+	fv-intention-coverage: --coverage
+	fv-intention-profile: -pg
 
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
@@ -232,8 +225,7 @@
 	: [units File]
 
 -cc-link-1:
-	# analyze is not addressable by default
-	fv-ianalyze: [-archive-units]
-	fv-idelineation: [-archive-units]
-	# Defined in another file.
+	# Copy directory tree to image location.
+	fv-form-delineated: [-archive-units]
+	# Usually defined in .target
 	!: [-cc-select-ld-interface]
