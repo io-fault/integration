@@ -60,7 +60,14 @@ clang_delineate = (query.bindir() / 'clang-delineate')
 
 def dispatch_ref(*prefix, command=dispatch_command):
 	cmd = str(command)
-	return ''.join(execution.serialize_sx_plan(([], cmd, [cmd] + list(prefix))))
+	xargs = [cmd]
+	xargs.extend(prefix)
+	return ''.join(execution.serialize_sx_plan(([], cmd, xargs)))
+
+def system_command_ref(path, *args):
+	xargs = [path]
+	xargs.extend(args)
+	return ''.join(execution.serialize_sx_plan(([], path, xargs)))
 
 def iproduct(route, connections):
 	"""
@@ -102,13 +109,8 @@ def define(name, *types):
 
 def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 	machine_cc = getsource(machine_project, name)
-	deline = ''.join(execution.serialize_sx_plan(([], str(clang_delineate), [
-		str(clang_delineate),
-	])))
-
-	usr_cc = getsource(root_project, 'usr-cc', ext='.sys')
-	bin_cp = getsource(root_project, 'bin-cp', ext='.sys')
-	bin_ln = getsource(root_project, 'bin-ln', ext='.sys')
+	deline = system_command_ref(str(clang_delineate))
+	cc_default = system_command_ref('/usr/bin/cc')
 
 	target = ""
 	target += comment("Directory paths to include directories.")
@@ -132,10 +134,10 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 	variants += constant('[systems]', hsystem)
 	variants += constant('['+hsystem+']', harch)
 
-	common = ""
+	common = "# Alternatively, ..context.usr-cc.\n"
 	common += define('-cc-tool',
 		('fv-form-delineated', '.cc-delineate'),
-		('!', '.usr-cc'),
+		('!', '.cc'),
 	) + '\n'
 
 	common += constant('Translate',
@@ -157,9 +159,7 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 		mksole('unix-cc-1', vtype, machine_cc.fs_load()),
 
 		mksole('cc-delineate', 'vector.system', deline),
-		mksole('bin-ln', 'vector.system', bin_ln.fs_load()),
-		mksole('bin-cp', 'vector.system', bin_cp.fs_load()),
-		mksole('usr-cc', 'vector.system', usr_cc.fs_load()),
+		mksole('cc', 'vector.system', cc_default),
 
 		mksole('type', vtype, common),
 		mksole('executable', vtype, ''),
@@ -255,8 +255,14 @@ def mkproject(info, product, context, project, soles):
 
 def mkprojects(context, route):
 	pi = mkinfo(context + '.context', 'image')
+
 	soles = [
-		mksole('projections', 'vector.set',
+		mksole('usr-cc', 'vector.system', system_command_ref('/usr/bin/cc')),
+		mksole('usr-ar', 'vector.system', system_command_ref('/usr/bin/ar')),
+		mksole('bin-cp', 'vector.system', system_command_ref('/bin/cp')),
+		mksole('bin-ln', 'vector.system', system_command_ref('/bin/ln')),
+
+		mksole('projections', vtype,
 			constant('host', 'http://if.fault.io/factors/system') + \
 			constant('python', 'http://if.fault.io/factors/python') + \
 			constant('text', 'http://if.fault.io/factors/text')
