@@ -253,8 +253,13 @@ def mkproject(info, product, context, project, soles):
 	i = list(ivector.items())
 	return (factory.Parameters.define(info, i, sets=[], soles=soles), route)
 
-def mkprojects(context, route):
-	pi = mkinfo(context + '.context', 'image')
+def mktools(context, route, name='cc-tool-adapters'):
+	pi = mkinfo(context + '.context', name)
+	pj = mkctx(pi, route, context, [])
+	factory.instantiate(*pj)
+
+def mkvectors(context, route, name='vectors'):
+	pi = mkinfo(context + '.context', name)
 
 	soles = [
 		mksole('usr-cc', 'vector.system', system_command_ref('/usr/bin/cc')),
@@ -301,7 +306,8 @@ def main(inv:process.Invocation) -> process.Exit:
 	factors.context.configure()
 
 	route = files.Path.from_path(target)
-	mkprojects('vectors', route)
+	mkvectors('vectors', route)
+	mktools('tools', route)
 	iproduct(route, [x.route for x in factors.context.product_sequence])
 
 	return inv.exit(0)
