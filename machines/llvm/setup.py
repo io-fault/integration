@@ -1,73 +1,96 @@
 """
-# Extend metrics or delineation construction contexts with adapters built against the selected
-# LLVM implementation.
-
-# The setup process will modify the tool support context referenced by the target construction context.
-# The coverage tooling requires various LLVM libraries for extracting counters,
-# and the delineation tooling requires (system/library)`libclang` and clang includes.
+# Instantiate the `fault-llvm` tools project into a target directory.
 """
-
-import os
-import sys
-import importlib
-import itertools
-import pickle
 
 from fault.system import files
-from fault.text.bin import ifst
+from fault.system import process
 
-from ..llvm import query
+from fault.project import system as lsf
+from fault.project import factory
 
-project_infra = b"""! CONTEXT:
-	/protocol/
-		&<http://if.fault.io/project/infrastructure>
+infra = {
+	'fault-c-interfaces': [
+		lsf.types.Reference('http://fault.io/integration/machine',
+			lsf.types.factor@'include'),
+		lsf.types.Reference('http://fault.io/integration/python',
+			lsf.types.factor@'include'),
+	],
+	'integration-llvm': [
+		lsf.types.Reference('http://fault.io/integration/machine',
+			lsf.types.factor@'llvm.tools'),
+	],
+	'*.c': [
+		lsf.types.Reference('http://if.fault.io/factors',
+			lsf.types.factor@'system', 'type', 'c.2011'),
+	],
+	'*.cc': [
+		lsf.types.Reference('http://if.fault.io/factors',
+			lsf.types.factor@'system', 'type', 'c++.2011'),
+	],
+	'*.h': [
+		lsf.types.Reference('http://if.fault.io/factors',
+			lsf.types.factor@'system', 'type', 'c.header'),
+	],
+	'*.pyi': [
+		lsf.types.Reference('http://if.fault.io/factors',
+			lsf.types.factor@'python.interface', 'type', 'python.psf-v3'),
+	],
+}
 
-/fault-c-interfaces/
-	- &<http://fault.io/integration/machine/include>
-	- &<http://fault.io/integration/python/include>
-"""
+info = lsf.types.Information(
+	identifier = 'http://fault.io/integration/machine//llvm',
+	name = 'fault-llvm',
+	authority = 'fault.io',
+	abstract = "Tool adapter instance for LLVM.",
+	icon = dict([('emoji', "🛠️")]),
+	contact = "&<http://fault.io/critical>"
+)
 
-# Implementation
-sdk_deline = b"""
-/sdk-llvm/
-	- &<http://fault.io/integration/machine/llvm>
-"""
+def declare():
+	deline = "/* Delineation */\n"
+	deline += "#include <json.c>\n"
+	deline += "#include <main.c>\n"
+	dsrcs = [
+		('libclang-delineate.c', deline),
+	]
+	dsyms = [
+		'fault-c-interfaces',
+		'integration-llvm',
+		# Administration Provision
+		'libclang',
+	]
 
-def delineatation(project_name, route):
-	"""
-	# Initialize the factors for clang delineation.
-	"""
-	from ..llvm import delineate
+	llvmcov = "/* Coverage Extraction */\n"
+	llvmcov += "#include <coverage.cc>\n"
+	pyi = "/* Python Interfaces */\n"
+	pyi += "#include <python.c>\n"
+	csrcs = [
+		('python.c', pyi),
+		('llvm.cc', llvmcov),
+	]
+	csyms = [
+		'fault-c-interfaces',
+		'integration-llvm',
+		# Administration Provision
+		'llvm-coverage',
+	]
 
-	llvm_path = (route.from_absolute(__file__) * project_name)
-	pdpath = route@'local'
-	pjpath = pdpath/project_name
+	soles = [
+		('coverage', lsf.types.factor@'python.interface', "# Empty."),
+	]
+	sets = [
+		('delineate',
+			'http://if.fault.io/factors/system.executable', dsyms, dsrcs),
+		('extensions.coverage',
+			'http://if.fault.io/factors/system.extension', csyms, csrcs),
+	]
 
-	ifst.instantiate((pjpath/'bin'/'clang-delineate'), llvm_path/'formulas.txt', 'delineation')
-	infra = project_infra + sdk_deline
-	(pjpath/'infrastructure.txt').fs_store(infra)
+	return factory.Parameters.define(info, infra.items(), sets=sets, soles=soles)
 
-	sdk_product = str(files.Path.from_absolute(__file__) ** 5) + "\n"
-	(pdpath/'.product'/'CONNECTIONS').fs_init(sdk_product.encode('utf-8'))
+def main(inv:process.Invocation) -> process.Exit:
+	target, = inv.args
 
-	prefix = files.Path.from_absolute(syscmd) ** 2
-	libdir = prefix / 'lib'
-	incdir = prefix / 'include'
-	dep = (incdir, libdir, 'clang')
-
-	return ('llvm-delineation-libclang', query.delineation(*(map(str, dep))))
-
-def coverage(project_name, route, args):
-	"""
-	# Initialize the factors for clang coverage.
-	"""
-	llvm_path = (route.from_absolute(__file__) * project_name)
-	pdpath = route@'local'
-	pjpath = pdpath/project_name
-
-	ifst.instantiate((pjpath/'extensions'/project_name), llvm_path/'formulas.txt', 'instrumentation')
-
-	# Get instrumentation support flags.
-	source, merge, export, projections = query.instrumentation(*args)
-	fsyms = (ctx_route / 'context' / 'symbols' / 'llvm-coverage-instrumentation')
-	fsyms.fs_store(pickle.dumps(projections))
+	route = files.Path.from_path(target)
+	p = declare()
+	factory.instantiate(p, route)
+	return inv.exit(0)
