@@ -3,7 +3,6 @@
 # Currently unused as the compiler driver is used for linkage.
 """
 from fault.system import files
-from . import query
 
 def strings(x):
 	return tuple(map(str, [y for y in x if y]))
@@ -14,9 +13,41 @@ def prepare(select, pattern, *, adjust=(lambda x: x + '.o')):
 		strings(map(select, map(adjust, pattern[1]))),
 	]
 
+def _search(
+		search_paths:typing.Sequence[str],
+		xset:typing.Set[str]
+	) -> typing.Tuple[typing.Mapping[str, files.Path], typing.Set[str]]:
+	"""
+	# Query the sequence of search paths for the given set of files.
+
+	# All paths will be scanned for each requested identifier in &xset. When an identifier
+	# is found to exist, it is removed from the set that is being scanned for causing
+	# the first path match to be the one returned.
+	"""
+
+	ws = set(xset)
+	removed = set()
+	rob = {}
+
+	for r in search_paths:
+		if not ws:
+			break
+
+		for x in ws:
+			xr = r/x
+			if xr.fs_type() != 'void':
+				rob[x] = xr
+				removed.add(x)
+
+		if removed:
+			ws.difference_update(removed)
+			removed = set()
+
+	return rob, ws
+
 def search(libdirs):
 	# Scan for system objects (crt1.o, crt0.o, etc)
-	found, missing = query.search(libdirs, [x+objext for x in rt.objects])
+	found, missing = _search(libdirs, [x+objext for x in rt.objects])
 	return found
 
 stem = 'crt'
