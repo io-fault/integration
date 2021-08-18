@@ -163,19 +163,13 @@ def clang(executable, type='executable'):
 		standards[l] = parse_clang_standards_1(stderr.decode('utf-8'))
 
 	clang = {
-		'implementation': cctype,
+		'implementation': cctype.strip().replace(' ', '-').lower(),
 		'libraries': str(cclib),
 		'version': tuple(map(int, version_info)),
 		'release': release,
 		'command': str(cc_route),
-		'resources': {
-			'builtins': str(builtins) if builtins else None,
-		},
+		'runtime': str(builtins) if builtins else None,
 		'standards': standards,
-		'feature-control': {
-			'exceptions': ('-fexceptions', '-fno-exceptions'),
-			'rtti': ('-frtti', '-fno-rtti'),
-		}
 	}
 
 	return clang
@@ -235,20 +229,11 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, tool_na
 		export_path = llvm_config_path.container/'llvm-cov'
 
 	fp = {
-		'source': {
-			'library': {
-				x: {None} for x in incdirs
-			},
-			'parameters': {
-				'MERGE_COMMAND': str(merge_path),
-			},
-		},
-		'system': {
-			'library': {
-				dir: covlibs,
-				None: syslibs,
-			}
-		},
+		'merge-command': str(merge_path),
+		'include': incdirs,
+		'library-directories': libdirs,
+		'coverage-libraries': covlibs,
+		'system-libraries': syslibs,
 	}
 
 	return srcpath, str(merge_path), str(export_path), fp
@@ -256,4 +241,4 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, tool_na
 if __name__ == '__main__':
 	import pprint
 	pprint.pprint(clang(sys.argv[1]))
-	#pprint.pprint(list(instrumentation(files.Path.from_absolute(sys.argv[1]))))
+	pprint.pprint(list(instrumentation(files.Path.from_absolute(sys.argv[2]))))
