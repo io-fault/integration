@@ -1136,12 +1136,13 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 int
 main(int argc, const char *argv[])
 {
+	int i;
 	struct Image ctx;
 	CXIndex idx = clang_createIndex(0, 1);
 	CXCursor rc;
 	CXTranslationUnit u;
 	enum CXErrorCode err;
-	const char *output, *source;
+	const char *output = NULL;
 
 	/*
 		// clang_parseTranslationUnit does not appear to agree that the
@@ -1149,7 +1150,26 @@ main(int argc, const char *argv[])
 		// It would appear that the option parser is (was) sensitive to dot-suffixes.
 	*/
 	argv[0] = "delineate";
-	source = argv[argc-1];
+
+	/*
+		// libclang doesn't provide access to parsed options. Scan for -o.
+	*/
+	i = 1;
+	while (i < argc)
+	{
+		if (strcmp(argv[i], "-o") == 0)
+		{
+			output = argv[i+1];
+			break;
+		}
+
+		++i;
+	}
+	if (output == NULL)
+	{
+		perror("no output file designated with -o");
+		return(1);
+	}
 
 	err = clang_parseTranslationUnit2(idx, NULL, argv, argc, NULL, 0,
 		CXTranslationUnit_DetailedPreprocessingRecord, &u);
@@ -1161,7 +1181,6 @@ main(int argc, const char *argv[])
 	/*
 		// Parsed options accessors are not available in libclang?
 	*/
-	output = argv[argc-2];
 	if (fs_mkdir(output) != 0)
 	{
 		perror("could not create target directory");

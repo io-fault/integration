@@ -48,8 +48,8 @@ info = lsf.types.Information(
 
 def declare():
 	deline = "/* Delineation */\n"
-	deline += "#include <json.c>\n"
-	deline += "#include <main.c>\n"
+	deline += "#include <fault/llvm/json.c>\n"
+	deline += "#include <fault/llvm/delineate.c>\n"
 	dsrcs = [
 		('libclang-delineate.c', deline),
 	]

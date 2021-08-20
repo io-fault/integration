@@ -59,7 +59,9 @@
 	# Position formatting.
 	# -fPIE when building an executable, -fPIC for everything else.
 	it-executable: -fPIE
-	it-archive/fv-form-pie: -fPIE
+	# When pie-form is requested, use when compiling archives.
+	it-archive:
+		fv-form-pie: -fPIE
 	!: -fPIC
 
 -languages:
@@ -74,6 +76,12 @@
 		: -std=[dialect prefix.iso14882:]
 	!: -std=[dialect]
 
+-library-directories:
+	: [http://if.fault.io/factors/system.directory#factor-image]
+
+-library-names:
+	: [http://if.fault.io/factors/system.library-name#factor-image]
+
 -library-factors:
 	: [http://if.fault.io/factors/system.library#factor-image-name]
 
@@ -84,6 +92,8 @@
 -linker-requirements:
 	: -L[-system-library-directory]
 	: -l[-system-library]
+	: -L[-library-directories]
+	: -l[-library-names]
 	: -l:[-library-factors]
 	# Non-integrated archives.
 	: -l:[-archive-factors]
@@ -141,10 +151,6 @@
 	# Switch header/source compilation.
 	: [-header-switch]
 
--cc-archive-reports:
-	: "archive-tree" - -
-	: [-fs-archive]
-
 -elf-legacy-format-default:
 	: -Wl,--enable-new-dtags,--eh-frame-hdr
 
@@ -158,7 +164,7 @@
 	: -Xlinker -rpath=[system-library-directory]
 
 	# Requirements of factor.
-	: -Xlinker -rpath=[http://if.fault.io/factors/system.library#library-directories]
+	: -Xlinker -rpath=[http://if.fault.io/factors/system.directory#factor-image]
 
 -elf-itype-switch:
 	it-executable:
@@ -213,19 +219,29 @@
 	it-extension:
 		: -Wl,-bundle,-undefined,dynamic_lookup
 
+-macho-rpath:
+	# Requirements of factor.
+	: -Xlinker -rpath -Xlinker [http://if.fault.io/factors/system.directory#factor-image]
+
 -apple-ld-macho:
 	: "link-macho-image" - -
 	verbose: -v
 	: -shared
 	: [-macho-itype-switch]
 	: [-system-context]
+	: [-macho-rpath]
 	: [-linker-requirements]
 
 	: -o [factor-image File]
 	: [units File]
 
+-archive-delineated:
+	: "archive-tree" - -
+	: [factor-image File]
+	: [unit-directory File]
+
 -cc-link-1:
 	# Copy directory tree to image location.
-	fv-form-delineated: [-archive-units]
+	fv-form-delineated: [-archive-delineated]
 	# Usually defined in .target
 	!: [-cc-select-ld-interface]
