@@ -110,6 +110,8 @@ def define(name, *types):
 def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 	machine_cc = getsource(machine_project, name)
 	deline = system_command_ref(str(clang_delineate))
+	deline = dispatch_ref('python', '-d', '.system', 'tools.fault-llvm.delineate')
+	adeline = dispatch_ref('archive-delineated')
 	cc_default = system_command_ref('/usr/bin/cc')
 
 	target = ""
@@ -135,19 +137,24 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 	variants += constant('['+hsystem+']', harch)
 
 	common = "# Alternatively, ..context.usr-cc.\n"
-	common += define('-cc-tool',
+	common += define('-cc-compile-tool',
 		('fv-form-delineated', '.cc-delineate'),
 		('!', '.cc'),
 	) + '\n'
 
+	common += define('-cc-link-tool',
+		('fv-form-delineated', '.archive-delineated'),
+		('!', '.cc'),
+	) + '\n'
+
 	common += constant('Translate',
-		'[-cc-tool]',
+		'[-cc-compile-tool]',
 		'-cc-compile-1',
 		'.unix-cc-1',
 		'.target',
 	)
 	common += constant('Render',
-		'[-cc-tool]',
+		'[-cc-link-tool]',
 		'-cc-link-1',
 		'.unix-cc-1',
 		'.target',
@@ -159,6 +166,7 @@ def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
 		mksole('unix-cc-1', vtype, machine_cc.fs_load()),
 
 		mksole('cc-delineate', 'vector.system', deline),
+		mksole('archive-delineated', 'vector.system', adeline),
 		mksole('cc', 'vector.system', cc_default),
 
 		mksole('type', vtype, common),
