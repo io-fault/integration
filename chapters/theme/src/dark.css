@@ -19,6 +19,14 @@ dl > div.parameter[documented="false"]:target {
 	display: unset;
 }
 
+a.invalid > span:after {
+	content: 'x';
+	color: var(--invalid-link);
+	font-size: 70%;
+	margin-left: 2px;
+	vertical-align: sub;
+}
+
 a.product-local {
 	text-decoration-color: #ffb347;
 }

@@ -826,7 +826,7 @@ class Resolution(comethod.object):
 				else:
 					# No such element.
 					local = 'invalid'
-					link = "#XXX-{0}".format(reference.lstrip('.'))
+					link = "#{0}".format(reference.lstrip('.'))
 
 		if not titled:
 			title = ''

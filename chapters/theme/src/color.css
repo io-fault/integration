@@ -10,5 +10,6 @@
 
 	--link-hover: cornflowerblue;
 	--link-type-indicator: cornflowerblue; /* () suffix for methods/functions. */
+	--invalid-link: red;
 	--target-highlighting: #fdfd96; /* yellow */
 }
