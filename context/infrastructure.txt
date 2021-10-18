@@ -11,6 +11,7 @@
 	- &..daemons
 	- &..python
 	- &..machine
+	- &..root
 
 /*.txt/
 	- (type)&<http://if.fault.io/factors/text.chapter#kleptic.fault-1>
