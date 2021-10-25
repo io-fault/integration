@@ -12,6 +12,7 @@ index = {
 	'python-cc': context_name + '.python.bin.compile',
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.bin.control',
+	'man': context_name + '.context.bin.manual',
 }
 
 def activate(factor, element, interface=None):
