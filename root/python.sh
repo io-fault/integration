@@ -8,7 +8,7 @@ pylib="python$PYTHON_VERSION$PYTHON_ABI"
 compile ()
 {
 	compiler="$1"; shift 1
-	"$compiler" $osflags $CFLAGS "$@"
+	"$compiler" -fPIC -x c -std=iso9899:2011 $osflags $CFLAGS "$@"
 }
 
 defsys=`uname -s | tr "[:upper:]" "[:lower:]"`
@@ -18,13 +18,13 @@ platsuffix="so" # Following platform switch overrides when necessary.
 
 case "$defsys" in
 	*darwin*)
-		osflags="-Wl,-bundle,-undefined,dynamic_lookup,-lSystem,-L$prefix/lib,-l$pylib -fPIC";
+		osflags="-Wl,-bundle,-undefined,dynamic_lookup,-lSystem,-L$prefix/lib,-l$pylib"
 	;;
 	*freebsd*)
-		osflags="-Wl,-lc,-L$prefix/lib,-l$pylib -fPIC -shared -pthread"
+		osflags="-shared -Wl,-lc,-L$prefix/lib,-l$pylib -pthread"
 	;;
 	*)
-		osflags="-Wl,-shared,--export-all-symbols,--export-dynamic,-lc,-lpthread,-L$prefix/lib,-l$pylib -fPIC"
+		osflags="-shared -Wl,--unresolved-symbols=ignore-all,--export-dynamic"
 	;;
 esac
 
@@ -60,13 +60,14 @@ bootstrap_extension ()
 	: "$(pwd)"
 	sofile="${modname}.${platsuffix}"
 	intdir="../../extensions/__f-int__/$defsys-$defarch/"
-	compile ${CC:-cc} -w -ferror-limit=2 \
+	compile ${CC:-cc} -w \
 		-o "../../$sofile" \
 		"-I$FAULT_SYSTEM_PATH/python/include/src" \
 		"-I$FAULT_SYSTEM_PATH/machine/include/src" \
 		"-I$fault_dir/system/include/src" \
 		"-I$prefix/include" \
 		"-I$PYTHON_INCLUDE" \
+		"-D_DEFAULT_SOURCE" \
 		"-DFV_SYSTEM=$defsys" \
 		"-DFV_ARCHITECTURE=$defarch" \
 		"-DFV_INTENTION=debug" \
