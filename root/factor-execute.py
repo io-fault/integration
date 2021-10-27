@@ -13,11 +13,18 @@ import importlib
 # Environment variables normally set by &..root.setup.
 path_sources = ['FAULT_PYTHON_PATH', 'FAULT_SYSTEM_PATH']
 fault_name = os.environ['FAULT_CONTEXT_NAME']
+factors_module_path = '.'.join((fault_name, 'system', 'factors'))
 subexec_module_path = '.'.join((fault_name, 'system', 'bin', 'subexec'))
 
 def extend_python_path(pathrefs):
 	# Use sys.path entries and bootstrapped (python.sh) extension modules.
-	sys.path.extend(map(os.path.dirname, (os.environ[x] for x in pathrefs)))
+	ext = list(map(os.path.dirname, (os.environ[x] for x in pathrefs)))
+	sys.path.extend(ext)
+
+	# Some tools (root.cc) need to resolve non-python factors.
+	factors = importlib.import_module(factors_module_path)
+	factors.setup(paths=ext)
+	del sys.meta_path[0:1]
 
 def av_execution(module_path):
 	extend_python_path(path_sources)

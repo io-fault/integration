@@ -1,6 +1,4 @@
-# Initialize the host platform.
-PLATFORM="$1"; shift 1
-CCONTEXT="$PLATFORM/cc"
-
-fault-tool python system.platforms.bin.initialize "$PLATFORM" || exit
-fault-tool python system.root.cc "$CCONTEXT" || exit
+# Initialize the host execution platform ($1) and factor construction context ($2).
+. "$FAULT_ROOT_PATH/tools.sh"
+f_pyx system.platforms.bin.initialize "$1" || exit
+f_pyx system.root.cc "$2" || exit

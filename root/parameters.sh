@@ -2,16 +2,16 @@
 #
 # [ Parameters ]
 # Parameters are exported for use with all the stages of initialization.
-#
+
 # /FAULT_INSTALLATION_PATH/
 	# Path to the `python` and `integration` directories that will be setup for use.
 # /PYTHON/
 	# Absolute path to the Python executable that setup should use.
-#
+
 # [ Exports ]
 # In additional to all the &[Parameters] being exported, the following
 # derived values are as well.
-#
+
 # /FAULT_PYTHON_PATH/
 	# String path identifier for the &<http://fault.io/python> product.
 	# Must include the context directory.
@@ -20,6 +20,10 @@
 # /FAULT_LIBEXEC_PATH/
 	# String path identifier for the location that will contain tool bindings used
 	# to support initialization and default construction contexts.
+# /HXP/
+	# Host Execution Platform
+# /FCC/
+	# Factor Construction Context path to be used by `pdctl`.
 # /PYTHON_PREFIX/
 	# The `sys.path` reported by Python.
 # /PYTHON_VERSION/
@@ -28,6 +32,7 @@
 	# The ABI suffix reported by Python.
 # /PYTHON_INCLUDE/
 	# The path to the directory containing the Python C interfaces.
+##
 
 # Location of root setup scripts.
 if test x"$FAULT_ROOT_PATH" = x""
@@ -42,6 +47,10 @@ then
 	echo >&2 "[!# ERROR: installation directory ($FAULT_INSTALLATION_PATH) does not exist]"
 	exit 2
 fi
+
+# Paths for host execution platform and construction context.
+HXP="$FAULT_INSTALLATION_PATH/host"
+FCC="$HXP/cc"
 
 PYTHON="$1"; shift 1
 if ! test -x "$PYTHON"
@@ -92,7 +101,7 @@ PYTHON_ABI="$(epy 'import sys; print(sys.abiflags)')"
 PYTHON_INCLUDE="$PYTHON_PREFIX/include/python$PYTHON_VERSION$PYTHON_ABI"
 unset -f epy
 
-export FAULT_ROOT_PATH PYX
+export FAULT_ROOT_PATH PYX HXP FCC
 export FAULT_TOOL_PATH FAULT_LIBEXEC_PATH
 export FAULT_INSTALLATION_PATH FAULT_PYTHON_PATH FAULT_SYSTEM_PATH
 export PYTHON_PRODUCT SYSTEM_PRODUCT

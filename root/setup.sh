@@ -1,14 +1,15 @@
 #!/bin/sh
 # Integrate the fault installation for use on the host system.
-#
+
 # [ Parameters ]
-#
+
 # /PYTHON/
 	# Absolute path to the python executable to build against.
 	# By default, (system/environ)`PATH` is scanned for (system/command)`python3`.
 # /FAULT_INSTALLATION/
 	# Optional. Path to the fault installation directory.
 	# Normally this identified relatively from &.setup.
+##
 
 rpath () { (cd "$1" && pwd) }
 SCRIPT_DIRNAME="$(dirname "$0")"
