@@ -1,4 +1,4 @@
-#!/usr/bin/env fault-tool cc-adapter
+#!/usr/bin/env fault-tool cc -cc-link-1 -cc-compile-1
 ##
 
 [protocol]:
