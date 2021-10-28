@@ -1,4 +1,4 @@
-#!/usr/bin/env fault-tool cc-adapter
+#!/usr/bin/env fault-tool cc -store-chapter-1 -parse-text-1
 ##
 
 [protocol]:
