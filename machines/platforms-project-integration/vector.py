@@ -4,7 +4,7 @@
 from fault.system import files
 from fault.system import execution
 
-E_NAME='PLATFORM'
+E_NAME='F_EXECUTION'
 A_RECORD='architectures'
 S_RECORD='system'
 P_RECORD='plans'
