@@ -12,7 +12,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	suffix = os.environ.get('MANPATH') or ''
 	if suffix:
 		suffix = ':' + suffix
-	os.environ['MANPATH'] = str(ipath/'man') + suffix
+	os.environ['MANPATH'] = str(ipath/'share'/'man') + suffix
 
 	for x in query.executables('man'):
 		man_exe = str(x)
