@@ -1,6 +1,7 @@
 #!/bin/sh
 # Create the system process extensions necessary to initialize and execute construction contexts.
 # Presumes &system.root.parameters has been sourced.
+##
 
 prefix="$PYTHON_PREFIX"
 pylib="python$PYTHON_VERSION$PYTHON_ABI"
@@ -67,10 +68,13 @@ bootstrap_extension ()
 		"-I$fault_dir/system/include/src" \
 		"-I$prefix/include" \
 		"-I$PYTHON_INCLUDE" \
+		\
 		"-D_DEFAULT_SOURCE" \
+		\
 		"-DFV_SYSTEM=$defsys" \
 		"-DFV_ARCHITECTURE=$defarch" \
 		"-DFV_INTENTION=debug" \
+		\
 		"-DF_FACTOR_NAME=$modname" \
 		"-DF_PROJECT_PATH=$projectfactor" \
 		"-DF_FACTOR=$projectfactor.$modname" \
