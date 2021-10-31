@@ -1,5 +1,6 @@
 """
-# Initialize an execution platform on the local filesystem for dispatching Python factors.
+# Initialize an Execution Platform with a Construction Context on the local system
+# for the processing and execution of Factors.
 """
 import os
 import sys
@@ -7,51 +8,52 @@ import sys
 from fault.system import files
 from fault.system import identity
 from fault.system import process
-from fault.system import execution
+from fault.vector import recognition
 
-from .. import vector
-from ...root import query
+restricted = {
+	'-c': ('field-replace', False, 'enable-cc'),
+}
 
-def native(architecture:str, path:files.Path):
-	"""
-	# Create the default native execution handler.
-	"""
-	sxp_native = (path/vector.P_RECORD/architecture)
-	sxp_native.fs_init(b'')
-
-def python(architecture:str, path:files.Path):
-	"""
-	# Assign the host Python to the context.
-	"""
-	sxp_python = (path/vector.P_RECORD/architecture)
-	env, exepath, xargv = query.tool('python')
-	xargv.append('-d')
-	splan = ''.join(execution.serialize_sx_plan((env, str(exepath), xargv)))
-	sxp_python.fs_init(splan.encode('utf-8'))
-
-def priority(host, python, path:files.Path):
-	"""
-	# Designate the priority of the architectures and their symbols.
-	"""
-	hostsym = " ".join((host, 'system'))
-	pythonsym = " ".join((python, 'python'))
-
-	psyms = "\n".join([hostsym, pythonsym]) + "\n"
-	(path/vector.A_RECORD).fs_init(psyms.encode('utf-8'))
+required = {
+	'-C': ('field-replace', 'cc-dirpath'),
+}
 
 def main(inv:(process.Invocation)) -> (process.Exit):
-	sys, arch = identity.root_execution_context()
-	psys, python_arch = identity.python_execution_context()
+	config = {
+		'cc-dirpath': None,
+		'enable-cc': True,
+	}
+	optr = recognition.legacy(restricted, required, inv.argv)
+	argv = recognition.merge(config, optr)
 
-	target = files.Path.from_path(inv.argv[0])
+	if not argv:
+		sys.stderr.write("ERROR: host platform initialization requires target directory argument.\n")
+		return inv.exit(1)
+	if len(argv) > 1:
+		sys.stderr.write("ERROR: initialization takes only one parameter, %d given.\n" %(len(argv),))
+		return inv.exit(2)
 
-	if target.fs_type() != 'directory':
+	target = files.Path.from_path(argv[0])
+	if target.fs_type() == 'void':
 		target.fs_mkdir()
-	vector.fs_initialize(target, sys)
 
-	native(arch, target)
-	python(python_arch, target)
-	priority(arch, python_arch, target)
+	from ..host.execution import initialize
+	initialize(target)
+
+	if config['enable-cc']:
+		ccr = (target/'cc')
+		if config['cc-dirpath'] is not None:
+			# Link to cc; don't initialize.
+			fcc = files.Path.from_path(config['cc-dirpath'])
+			ccr.fs_link_relative(fcc)
+		else:
+			# Initialize host default cc.
+			# Load the project index.
+			from ..host import construction as cci
+			from fault.system import factors
+			factors.context.load()
+			factors.context.configure()
+			cci.mkcc(ccr)
 
 	return inv.exit(0)
 
