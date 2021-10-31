@@ -21,7 +21,7 @@
 	# String path identifier for the location that will contain tool bindings used
 	# to support initialization and default construction contexts.
 # /HXP/
-	# Host Execution Platform
+	# Host Execution Platform to be used by `pdctl`.
 # /FCC/
 	# Factor Construction Context path to be used by `pdctl`.
 # /PYTHON_PREFIX/

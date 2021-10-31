@@ -1,5 +1,6 @@
 # Prepare fault.io/system and fault.io/python for use on the host system.
 ##
+
 . "$FAULT_ROOT_PATH/tools.sh"
 
 # Bootstrap Python extension modules.
@@ -16,4 +17,4 @@ libexec.sh "bootstrap"
 host.sh "$HXP" "$FCC"
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-products.sh "$FCC" python-extension "-I$PYTHON_INCLUDE"
+products.sh "$HXP" "$FCC" python-extension "-I$PYTHON_INCLUDE"
