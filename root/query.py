@@ -52,9 +52,19 @@ def dispatch(name):
 	# This is intended for use by tools and daemons that spawn high-level
 	# operations as subprocesses.
 	"""
-	path = (libexec()/'fault-dispatch')
+	path = str(libexec()/'fault-dispatch')
 	# (environment, executable[files.Path], argument-vector)
-	return ([], path, [str(path), str(name)])
+	return ([], path, [path, str(name)])
+
+def dispatched(name, *argv, **environ):
+	"""
+	# Serialize an execution plan performing the given tool &name using `fault-dispatch`.
+	"""
+	from fault.system import execution
+	plan = dispatch(name)
+	plan[0].extend(environ.items())
+	plan[2].extend(argv)
+	return ''.join(execution.serialize_sx_plan(plan))
 
 def platform():
 	"""
