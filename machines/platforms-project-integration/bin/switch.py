@@ -48,7 +48,7 @@ def main(inv:(process.Invocation)) -> (process.Exit):
 	command, factor_path, *xargv = recognition.merge(config, optr)
 
 	if config['product-directory'] is None:
-		pdr = files.Path.from_cwd()
+		pdr = process.fs_pwd()
 	else:
 		pdr = files.Path.from_path(config['product-directory'])
 
