@@ -4,6 +4,19 @@
 #ifndef _FAULT_LIBC_H_
 #define _FAULT_LIBC_H_
 
+#ifdef __ALWAYS__
+	#undef __ALWAYS__
+	#warning __ALWAYS__ was defined.
+#endif
+
+#ifdef __NEVER__
+	#undef __NEVER__
+	#warning __NEVER__ was defined.
+#endif
+
+#define __ALWAYS__(...) 1
+#define __NEVER__(...) 0
+
 #ifdef __APPLE__
 	#include <TargetConditionals.h>
 #endif
