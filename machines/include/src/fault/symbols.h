@@ -1,8 +1,6 @@
 /**
 	// Define the necessary set of variables
 	// for specifying imported, exported, and hidden symbols.
-
-	// Included by fault/init.h.
 */
 #ifndef _FAULT_SYMBOLS_H_included_
 #define _FAULT_SYMBOLS_H_included_
