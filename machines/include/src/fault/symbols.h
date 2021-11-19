@@ -1,10 +1,18 @@
 /**
-	// Define the necessary set of variables
-	// for specifying imported, exported, and hidden symbols.
+	// Symbol visibility control macros.
 */
 #ifndef _FAULT_SYMBOLS_H_included_
 #define _FAULT_SYMBOLS_H_included_
-#define _fault_static static
+
+/**
+	// Avoid tying static to CONFIG_DISABLE_SYMBOL as it is
+	// a language level concept. However, only conditionally
+	// declare &_fault_static in order to allow overrides
+	// for STATIC() qualified functions.
+*/
+#ifndef _fault_static
+	#define _fault_static static
+#endif
 
 #if defined(_MSC_VER)
 	#ifdef CONFIG_DISABLE_SYMBOL
@@ -18,13 +26,15 @@
 		#define _fault_protect_symbol
 		#define _fault_request_symbol
 	#else
+		#define _fault_protect_symbol
 		#define _fault_hide_symbol
-		#define _fault_reveal_symbol __declspec(dllexport)
+
 		/**
 			// https://msdn.microsoft.com/en-us/library/a90k134d.aspx
 			// https://docs.microsoft.com/en-us/cpp/build/exporting-from-a-dll-using-declspec-dllexport
 		*/
-		#define _fault_protect_symbol
+		#define _fault_reveal_symbol __declspec(dllexport)
+
 		/**
 			// https://msdn.microsoft.com/en-us/library/8fskxacy.aspx
 			// https://docs.microsoft.com/en-us/cpp/build/importing-into-an-application-using-declspec-dllimport
@@ -50,7 +60,24 @@
 	#endif
 #endif
 
+/**
+	// Declare a symbol as revealed: present in the symbol table.
+*/
+#define REVEAL(...) _fault_reveal_symbol __VA_ARGS__
+
+/**
+	// Declare a symbol as concealed: *not* present in the symbol table.
+*/
 #define CONCEAL(...) _fault_hide_symbol __VA_ARGS__
+
+/**
+	// Declare a symbol as protected: present in the symbol table, but
+	// not capable of being overridden.
+*/
 #define PROTECT(...) _fault_protect_symbol __VA_ARGS__
+
+/**
+	// Declare a function as `static`.
+*/
 #define STATIC(...) _fault_static __VA_ARGS__
 #endif
