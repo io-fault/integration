@@ -1,7 +1,7 @@
-/*
- * Imported before fault-aware dependency headers that may need their
- * interfaces to be identified as imports on some platforms (windows).
- */
+/**
+	// Imported before fault-aware dependency headers that may need their
+	// interfaces to be identified as imports on some platforms (windows).
+*/
 #include "symbols.h"
 
 #ifdef SYMBOL

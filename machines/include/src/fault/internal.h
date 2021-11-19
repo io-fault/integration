@@ -1,8 +1,8 @@
-/*
- * Imported before *target* local includes and public function definitions.
- * For some platforms, this selects the SYMBOL() implementation
- * that exports symbols for referencing by other libraries or executables.
- */
+/**
+	// Imported before *target* local includes and public function definitions.
+	// For some platforms, this selects the SYMBOL() implementation
+	// that exports symbols for referencing by other libraries or executables.
+*/
 #include "symbols.h"
 
 #ifdef SYMBOL
