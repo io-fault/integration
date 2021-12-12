@@ -23,6 +23,29 @@
 	: executable
 	: archive
 
+-diagnostics-control:
+	: -Wno-everthing
+	: -fcolor-diagnostics -fansi-escape-codes
+	: -fmax-errors=[error-limit env.ERRLIMIT]
+	: [-warnings]
+	: [-errors]
+
+-warnings:
+	: -Wextra-tokens
+	: -Wformat
+	: -Wfour-char-constants
+	: -Wignored-attributes
+	: -Wincompatible-sysroot
+	: -Wint-conversion -Wlong-long
+	: -Wmacro-redefined
+
+-errors:
+	: -Werror=implicit-function-declaration
+	: -Werror=uninitialized
+	: -Werror=invalid-noreturn
+	: -Werror=invalid-offsetof
+	: -Werror=null-dereference
+
 -debug:
 	: -g
 -profile:
@@ -98,10 +121,6 @@
 	# Non-integrated archives.
 	: -l:[-archive-factors]
 
--diagnostics-control:
-	: -fmax-errors=[error-limit env.ERRLIMIT]
-	: -w -c
-
 -compile-header:
 	: [-languages]
 	: [null]
@@ -120,6 +139,7 @@
 # Primary compilation constructor.
 -cc-compile-1:
 	!: "compile-source" - -
+	: -c
 
 	fv-intention-debug:
 		: [-debug]
