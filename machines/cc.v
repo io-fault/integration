@@ -1,4 +1,4 @@
-#!/usr/bin/env fault-tool cc -cc-link-1 -cc-compile-1
+#!/usr/bin/env fault-tool form-vector
 ##
 
 [protocol]:
@@ -23,28 +23,52 @@
 	: executable
 	: archive
 
--diagnostics-control:
-	: -Wno-everthing
-	: -fcolor-diagnostics -fansi-escape-codes
+-gcc-diagnostics:
 	: -fmax-errors=[error-limit env.ERRLIMIT]
-	: [-warnings]
-	: [-errors]
+	: -fdiagnostics-color=always
+	: -w
+	: -W[-gcc-warnings]
+	: -Werror=[-gcc-errors]
 
--warnings:
-	: -Wextra-tokens
-	: -Wformat
-	: -Wfour-char-constants
-	: -Wignored-attributes
-	: -Wincompatible-sysroot
-	: -Wint-conversion -Wlong-long
-	: -Wmacro-redefined
+-gcc-warnings:
+	: duplicate-decl-specifier
+	: format
+	: missing-attributes
+	: main
 
--errors:
-	: -Werror=implicit-function-declaration
-	: -Werror=uninitialized
-	: -Werror=invalid-noreturn
-	: -Werror=invalid-offsetof
-	: -Werror=null-dereference
+-gcc-errors:
+	: implicit
+	: uninitialized
+	: null-dereference
+	: init-self
+	: return-type
+
+-clang-diagnostics:
+	: -fmax-errors=[error-limit env.ERRLIMIT]
+	: -fcolor-diagnostics -fansi-escape-codes
+	: -Wno-everthing
+	: -W[-clang-warnings]
+	: -Werror=[-clang-errors]
+
+-clang-warnings:
+	: extra-tokens
+	: format
+	: four-char-constants
+	: ignored-attributes
+	: incompatible-sysroot
+	: int-conversion
+	: long-long
+	: macro-redefined
+	: main
+	: main-return-type
+
+-clang-errors:
+	: implicit-function-declaration
+	: implicit-int
+	: uninitialized
+	: null-dereference
+	: invalid-noreturn
+	: invalid-offsetof
 
 -debug:
 	: -g
@@ -60,7 +84,7 @@
 
 -includes:
 	: -I[http://if.fault.io/factors/lambda.sources#source-paths]
-	: -I[-system-includes]
+	: -isystem [-system-includes]
 
 -variants:
 	# Variants
@@ -113,8 +137,8 @@
 
 # Non-component requirements.
 -linker-requirements:
-	: -L[-system-library-directory]
-	: -l[-system-library]
+	: -L[-system-library-directories]
+	: -l[-system-libraries]
 	: -L[-library-directories]
 	: -l[-library-names]
 	: -l:[-library-factors]
@@ -123,12 +147,14 @@
 
 -compile-header:
 	: [-languages]
+	: -D[-system-defines]
 	: [null]
 
 -compile-source:
 	# Sources
 	: [-languages]
 	: [-dialects]
+	: -D[-system-defines]
 	: [source File]
 
 -header-switch:
@@ -153,7 +179,8 @@
 	: [-language-injections]
 	: [-intention-injections]
 
-	: [-diagnostics-control]
+	# Target defined options.
+	: [-system-cc-options]
 
 	# Position capability: PIC or PIE.
 	: [-positioning-format]
