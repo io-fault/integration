@@ -86,9 +86,10 @@ def main(inv:(process.Invocation)) -> (process.Exit):
 	elif command == 'execute':
 		os.environ.update(plan[0])
 		os.execv(plan[1], plan[2])
-		raise process.Panic("execv did not replace image")
+		sys.stderr.write("ERROR: execv did not replace process image.\n")
+		return inv.exit(250)
 	else:
-		sys.stderr.write('ERROR: unknown command %r.\n' %(command,))
+		sys.stderr.write("ERROR: unknown command %r.\n" %(command,))
 		return inv.exit(1)
 
 	return inv.exit(250)
