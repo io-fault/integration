@@ -100,13 +100,26 @@ def define(name, *types):
 
 def form_host_target(hlinker):
 	target = ""
-	target += comment("Directory paths to include directories.")
+	target += comment("Options for the selected CC. Included regardless of language.")
+	target += constant('-system-cc-options')
+
+	target += "\n"
+	target += comment("Directory paths (-isystem) to system headers.")
 	target += constant('-system-includes', "/usr/local/include")
-	target += comment("Libraries to unconditionally link against. Unused libraries will be filtered.")
+
+	target += "\n"
+	target += comment("Defines (-D implied) to include as command options.")
+	target += constant('-system-defines')
+
+	target += "\n"
+	target += comment("Libraries to unconditionally link against.")
 	target += constant('-system-libraries')
+
+	target += "\n"
 	target += comment("Additional paths to look in to find [-system-libraries].")
 	target += constant('-system-library-directories', "/usr/local/lib")
 
+	target += "\n"
 	target += comment("Compiler flags used to select the target architecture.")
 	target += constant('-cc-select-architecture', "-march=native")
 
@@ -116,6 +129,7 @@ def form_host_target(hlinker):
 	target += comment("However, it and the option must be matched with the corresponding adapter.")
 	target += comment("-fuse-ld=llvm|bfd|gold")
 	target += constant('-cc-select-ld-interface', hlinker)
+
 	return target
 
 def form_variants(system, architecture, forms=()):
@@ -152,12 +166,12 @@ def form_host_type():
 	)
 	return common
 
-def host(context, hlinker, hsystem, harch, factor='type', name='cc'):
+def host(context, hlinker, hsystem, harch, factor='type', name='cc', cc='/usr/bin/cc'):
 	machine_cc = getsource(machine_project, name)
 	deline = system(str(clang_delineate))
 	deline = query.dispatched('python', '-d', '.system', 'tools.fault-llvm.delineate')
 	adeline = query.dispatched('archive-delineated')
-	cc_default = system('/usr/bin/cc')
+	cc_default = system(cc)
 
 	target = form_host_target(hlinker)
 	variants = form_variants(hsystem, harch)
