@@ -55,7 +55,7 @@ class Environment(object):
 
 	@property
 	def build_cache(self) -> files.Path:
-		return self.work_space_tooling.route / 'cache'
+		return self.work_product_route / '.cache'
 
 	@property
 	def project_count(self) -> int:
