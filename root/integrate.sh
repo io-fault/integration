@@ -14,7 +14,7 @@ f_pdctl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT"
 libexec.sh "bootstrap"
 
 # Initialize execution platform and construction context for the host.
-host.sh "$HXP" "$FCC"
+host.sh "$FXC" "$FCC"
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-products.sh "$HXP" "$FCC" python-extension "-I$PYTHON_INCLUDE"
+products.sh "$FXC" "$FCC" python-extension "-I$PYTHON_INCLUDE"

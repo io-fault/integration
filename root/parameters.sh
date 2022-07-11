@@ -20,8 +20,8 @@
 # /FAULT_LIBEXEC_PATH/
 	# String path identifier for the location that will contain tool bindings used
 	# to support initialization and default construction contexts.
-# /HXP/
-	# Host Execution Platform to be used by `pdctl`.
+# /FXC/
+	# Factor Execution Context to be used by `pdctl` in order to execute tests.
 # /FCC/
 	# Factor Construction Context path to be used by `pdctl`.
 # /PYTHON_PREFIX/
@@ -49,8 +49,8 @@ then
 fi
 
 # Paths for host execution platform and construction context.
-HXP="$FAULT_INSTALLATION_PATH/host"
-FCC="$HXP/cc"
+FXC="$FAULT_INSTALLATION_PATH/host"
+FCC="$FXC/cc"
 
 PYTHON="$1"; shift 1
 if ! test -x "$PYTHON"
@@ -101,7 +101,7 @@ PYTHON_ABI="$(epy 'import sys; print(sys.abiflags)')"
 PYTHON_INCLUDE="$PYTHON_PREFIX/include/python$PYTHON_VERSION$PYTHON_ABI"
 unset -f epy
 
-export FAULT_ROOT_PATH PYX HXP FCC
+export FAULT_ROOT_PATH PYX FXC FCC
 export FAULT_TOOL_PATH FAULT_LIBEXEC_PATH
 export FAULT_INSTALLATION_PATH FAULT_PYTHON_PATH FAULT_SYSTEM_PATH
 export PYTHON_PRODUCT SYSTEM_PRODUCT

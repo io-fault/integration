@@ -31,7 +31,7 @@ else
 	fi
 fi
 
-echo "[!= PYTHON: '$python' '$("$python" -c 'import sys; print(sys.prefix)')']"
+echo "[!~ PYTHON: '$python' '$("$python" -c 'import sys; print(sys.prefix)')']"
 
 # Set arguments checked and exported by &system.root.parameters.
 set -- "$FAULT_INSTALLATION" "$python"

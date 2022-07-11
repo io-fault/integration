@@ -4,6 +4,6 @@
 
 . "$FAULT_ROOT_PATH/tools.sh"
 
-HXP="$1"
+FXC="$1"
 shift 1
-f_pyx system.platforms.bin.initialize "$HXP" || exit
+f_pyx system.platforms.bin.initialize "$FXC" || exit
