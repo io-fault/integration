@@ -99,7 +99,7 @@ class Context(object):
 			ref = section @ name[1:]
 		else:
 			# Unqualified, absolute.
-			ref = lsf.factor @ name
+			ref = lsf.types.factor @ name
 
 		return ref
 
