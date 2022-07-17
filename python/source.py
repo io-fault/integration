@@ -369,7 +369,7 @@ def areas(token_map, tokens, context, node, address, following):
 		stop = None
 
 	if isinstance(node, (ast.Expr, ast.Str)) and address[1] == -1:
-		# Doc-string.
+		# Normally, doc-string.
 		t = tokens[start]
 		yield node, t.start, t.end
 	elif isinstance(node, chain_classes):

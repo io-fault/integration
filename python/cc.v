@@ -38,8 +38,9 @@
 		: delineated json
 	: factor [factor-path]
 	: format [language].[dialect]
-	: intention [fv-intention]
 	: cpython-optimize [-cpy-optimize]
+	: intention [fv-intention]
+	: [factor-telemetry]-trap [telemetry-directory File]
 
 -pyc-reduce-1:
 	: "compile-bytecode" - -
@@ -51,3 +52,4 @@
 		!: [unit File]
 	: format python.ast
 	: intention [fv-intention]
+	: [factor-telemetry]-trap [telemetry-directory File]

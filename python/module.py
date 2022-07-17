@@ -34,23 +34,20 @@ def mkconstant(name, value, path='/dev/null', lineno=-1):
 	k = p.body[0]
 	return k
 
-def inject(tree:ast.Module, factor:str, hash:str, constants:typing.Iterable[typing.Tuple[str,str]]):
+def inject(tree:ast.Module, constants:typing.Iterable[typing.Tuple[str,str]]):
 	"""
 	# Inject the &ast.Module, &tree, with module-level assignments provided by &constants.
 	"""
-
-	f_id = mkconstant('__factor__', factor)
-	syn_hash = mkconstant('__source_hash__', hash)
-	cnodes = [mkconstant(*pair) for pair in constants]
-	cnodes[0:0] = (f_id, syn_hash)
-
-	tree.body[0:0] = cnodes
-	return cnodes
+	tree.body[0:0] = [mkconstant(*pair) for pair in constants]
+	return tree
 
 def compile(factor, source, path, constants):
 	"""
 	# Compile a module's source injecting a factor identifier and source hash.
 	"""
 	tree = ast.parse(source, path)
-	inject(tree, factor, hash_syntax(source), constants)
-	return tree
+	constants.extend([
+		('__factor__', factor),
+		('__source_hash__', hash_syntax(source)),
+	])
+	return inject(tree, constants)
