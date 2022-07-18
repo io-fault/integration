@@ -1,4 +1,4 @@
-#!/usr/bin/env fault-tool form-vector
+#!/usr/bin/env factor-type http://if.fault.io/factors/meta.vectors
 ##
 
 [protocol]:
@@ -72,10 +72,7 @@
 
 -debug:
 	: -g
--profile:
-	: -pg
--coverage:
-	: --coverage
+
 -optimization-level:
 	fv-intention-debug: -O0
 	fv-intention-profile: -O2
@@ -161,20 +158,31 @@
 	dialect-header: [-compile-header]
 	!: [-compile-source]
 
+-llvm-instrumentation:
+	fv-intention-coverage:
+		: -fprofile-instr-generate -fcoverage-mapping
+	fv-intention-profile:
+		: -fprofile-instr-generate
+-llvm-instrumentation-defines:
+	: -DF_LLVM_INSTRUMENTATION=[fv-intention]
+-factor-telemetry:
+	: -DF_TELEMETRY_[factor-telemetry]=""""[telemetry-directory File]""""
+
 ##
 # Primary compilation constructor.
 -cc-compile-1:
 	!: "compile-source" - -
 	: -c
 
+	: [-optimization-level]
 	fv-intention-debug:
 		: [-debug]
-	fv-intention-coverage:
-		: [-coverage]
-	fv-intention-profile:
-		: [-profile]
 
-	: [-optimization-level]
+	: [-llvm-instrumentation]
+	:
+		fv-intention-coverage: [-llvm-instrumentation-defines]
+		fv-intention-profile: [-llvm-instrumentation-defines]
+	: [-factor-telemetry]
 
 	: [-language-injections]
 	: [-intention-injections]
@@ -223,11 +231,21 @@
 	it-extension:
 		: -shared -Xlinker --unresolved-symbols=ignore-all
 
+-gnu-instrumentation:
+	# meta.metrics does not support collecting data from the gnu toolchain.
+	fv-intention-coverage:
+		: --coverage
+	fv-intention-profile:
+		: -pg
+
 -gnu-ld-elf:
 	: "link-elf-image" - -
 	verbose: -v
-	fv-intention-coverage: --coverage
-	fv-intention-profile: -pg
+
+	# Rather than guarding, trigger failure with gnu tooling.
+	# If LLVM instrumentation is somehow available, continue normally.
+	: [-llvm-instrumentation]
+	# [-gnu-instrumentation]
 
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
@@ -243,9 +261,8 @@
 -llvm-ld-elf:
 	: "link-elf-image" - -
 	verbose: -v
-	fv-intention-coverage: --coverage
-	fv-intention-profile: -pg
 
+	: [-llvm-instrumentation]
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
 	: [-elf-rpath]
@@ -274,6 +291,8 @@
 	: "link-macho-image" - -
 	verbose: -v
 	: -shared
+
+	: [-llvm-instrumentation]
 	: [-macho-itype-switch]
 	: [-system-context]
 	: [-macho-rpath]
