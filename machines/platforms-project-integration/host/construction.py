@@ -75,6 +75,9 @@ def iproduct(route, connections):
 def mksole(fpath, type, source):
 	return (fpath, lsf.types.factor@type, source)
 
+def fx(fpath, name, *argv, **env):
+	return mksole(fpath, 'vector.system', query.dispatched(name, *argv, **env))
+
 def mkset(fpath:str, type:str, symbols, sources):
 	return (fpath, type, symbols, sources)
 
@@ -141,7 +144,8 @@ def form_variants(system, architecture, forms=()):
 	return variants
 
 def form_host_type():
-	common = "# Alternatively, ..context.usr-cc.\n"
+	common = comment("Alternatively, ..context.usr-cc.")
+
 	common += define('-cc-compile-tool',
 		('fv-form-delineated', '.cc-delineate'),
 		('!', '.cc'),
@@ -296,18 +300,70 @@ def system_select_linker(system):
 	else:
 		return '[-llvm-ld-elf]'
 
-def mkvectors(context, route, name='vectors'):
-	soles = [
-		mksole('usr-cc', 'vector.system', system('/usr/bin/cc')),
-		mksole('usr-ar', 'vector.system', system('/usr/bin/ar')),
-		mksole('bin-cp', 'vector.system', system('/bin/cp')),
-		mksole('bin-ln', 'vector.system', system('/bin/ln')),
+def form_meta_type():
+	common = comment("Process intercepted metrics and identity intentions.")
+
+	common += define('Translate',
+		('fv-intention-metrics', '.measure-source -stdio .adapters'),
+		('fv-intention-identity', '.identify-source -stdio .adapters'),
+		('!', '.intention-error -error-context .adapters'),
+	) + '\n'
+
+	common += define('Render',
+		('fv-intention-metrics', '.aggregate-metrics -metrics-join .adapters'),
+		('fv-intention-identity', '.form-identity -identity-join .adapters'),
+		('!', '.intention-error -error-context .adapters'),
+	) + '\n'
+
+	return common
+
+def meta(context):
+	mfactors = str(query.ipath/'development')
+	return [
+		fx('intention-error', 'python', '.string', 'exit(1)'),
+
+		fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.bin.measure', 'source'),
+		fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.bin.aggregate'),
+		fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
+		fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
 
 		mksole('projections', vtype,
 			constant('host', 'http://if.fault.io/factors/system') + \
 			constant('python', 'http://if.fault.io/factors/python') + \
 			constant('text', 'http://if.fault.io/factors/text')
 		),
+		mksole('intercepts', vtype,
+			constant('metrics', 'meta') + \
+			constant('identity', 'meta')
+		),
+		mksole('adapters', vtype,
+			constant('-stdio',
+				'"measure-source-file" input output',
+			) + \
+			constant('-error-context',
+				'"unconditional-failure" - -',
+				'[factor]',
+				'[fv-intention]',
+			) + \
+			constant('-metrics-join',
+				'"aggregate-metrics" - -',
+				'[factor-image] [work-directory]',
+			) + \
+			constant('-identity-join',
+				'"combine-identities" - -',
+				'[factor-image]',
+				'[units]',
+			)
+		),
+		mksole('type', vtype, form_meta_type()),
+	]
+
+def mkvectors(context, route, name='vectors'):
+	soles = [
+		mksole('usr-cc', 'vector.system', system('/usr/bin/cc')),
+		mksole('usr-ar', 'vector.system', system('/usr/bin/ar')),
+		mksole('bin-cp', 'vector.system', system('/bin/cp')),
+		mksole('bin-ln', 'vector.system', system('/bin/ln')),
 	]
 
 	# Vectors Context
@@ -317,6 +373,11 @@ def mkvectors(context, route, name='vectors'):
 
 	hsys, harch = identity.root_execution_context()
 	hlink = system_select_linker(hsys)
+
+	# Meta. projections, intercepts, and error cases.
+	pi = mkinfo(context + '.meta', 'meta')
+	pj = mkproject(pi, route, context, 'meta', meta(context))
+	factory.instantiate(*pj)
 
 	# Host Machine
 	pi = mkinfo(context + '.host', 'host')
