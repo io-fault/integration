@@ -219,6 +219,7 @@ class Integrand(tuple):
 	dependents = property(operator.itemgetter(3))
 	variants = property(operator.itemgetter(4))
 	locations = property(operator.itemgetter(5))
+	vectors = property(operator.itemgetter(6))
 
 	@property
 	def operable(self):
@@ -281,6 +282,10 @@ class Integrand(tuple):
 		"""
 		if field in self.locations:
 			yield self.locations[field]
+			return
+
+		if field in self.vectors:
+			yield from self.vectors[field]
 			return
 
 		if field in self.factor.fields:

@@ -30,10 +30,11 @@ class Application(kcore.Context):
 	def __init__(self,
 			executor,
 			context, cache,
-			intentions, form,
+			intentions, form, telemetry,
 			product, projects,
 			symbols,
 			rebuild=0,
+			connect=None,
 		):
 		self.cxn_executor = executor
 		self.cxn_intentions = intentions
@@ -46,6 +47,7 @@ class Application(kcore.Context):
 		self.cxn_rebuild = rebuild
 		self.cxn_extension_map = None
 		self.cxn_log = transcripts.Log.stdout()
+		self.cxn_telemetry = telemetry
 
 	@classmethod
 	def from_command(Class, environ, arguments):
@@ -53,6 +55,7 @@ class Application(kcore.Context):
 		ctxdir = files.Path.from_path(ctxdir)
 		work = files.Path.from_path(work)
 
+		# Optional system command intercept.
 		executor = environ.get('FPI_EXECUTOR', None)
 
 		i = intentstr.find('/')
@@ -61,6 +64,14 @@ class Application(kcore.Context):
 			intentstr = intentstr[i+1:]
 		else:
 			form = ''
+
+		i = intentstr.find('@')
+		if i > -1:
+			telemetry = intentstr[i+1:].split(':')
+			intentstr = intentstr[:i]
+		else:
+			telemetry = []
+
 		intentions = list(tools.unique(intentstr.split(':'), None))
 
 		if cache_type == 'transient':
@@ -78,12 +89,15 @@ class Application(kcore.Context):
 		if fpath == '*':
 			fpath = ''
 
+		# Get project set from product index.
 		projects = itertools.chain.from_iterable(map(pd.select, [lsf.types.factor@fpath]))
+		projects = list(projects)
+
 		return Class(
 			executor, ctx, cdi,
-			intentions, form,
-			pd, list(projects),
-			symbols, rebuild=rebuild
+			intentions, form, telemetry,
+			pd, projects,
+			symbols, rebuild=rebuild,
 		)
 
 	def xact_void(self, final):
@@ -104,7 +118,7 @@ class Application(kcore.Context):
 		# Prepare the entire package building factor targets and writing bytecode.
 		"""
 
-		self._etime = sysclock.elapsed()
+		etime = sysclock.elapsed()
 		self.cxn_log.declare()
 		self.cxn_log.flush()
 
@@ -152,10 +166,11 @@ class Application(kcore.Context):
 
 			seq.append(cc.Construction(
 				self.cxn_executor,
-				self._etime,
+				etime,
 				self.cxn_log,
 				self.cxn_intentions,
 				self.cxn_form,
+				self.cxn_telemetry,
 				self.cxn_cache,
 				self.cxn_context,
 				local_symbols,

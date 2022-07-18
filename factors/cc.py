@@ -7,6 +7,7 @@ import functools
 import collections
 import contextlib
 import typing
+import dataclasses
 
 from fault.context import tools
 from fault.time import sysclock
@@ -225,6 +226,7 @@ class Construction(kcore.Context):
 			log,
 			intentions,
 			form,
+			telemetry,
 			cache,
 			context,
 			symbols,
@@ -250,6 +252,7 @@ class Construction(kcore.Context):
 
 		self.c_intentions = intentions
 		self.c_form = form
+		self.c_telemetry = telemetry
 		self.c_executor = executor
 		self.c_cache = cache
 		self.c_pcontext = pcontext
@@ -319,7 +322,7 @@ class Construction(kcore.Context):
 					ftype = _ftype(target.type)
 					fr = reqs.get(target, ())
 					fd = deps.get(target, ())
-					self.collect(self.select(ftype), target, fr, fd)
+					self.collect(self.c_intentions, self.select(ftype), target, fr, fd)
 		except StopIteration:
 			self._end_of_factors = True
 			self.xact_exit_if_empty()
@@ -330,7 +333,7 @@ class Construction(kcore.Context):
 
 	def _prepare_work_directory(self, locations, sources):
 		"""
-		# Generate processing instructions initializing directories in the work directory.
+		# Initialize the work directory for the factor processing cache.
 		"""
 
 		ftr = locations['factor-image']
@@ -357,7 +360,7 @@ class Construction(kcore.Context):
 		def finish_termination(self):
 			return super().finish_termination()
 
-	def collect(self, mechanism, factor, requirements, dependents=()):
+	def collect(self, intentions, mechanism, factor, requirements, dependents=()):
 		"""
 		# Collect the parameters and work to be done for processing the &factor.
 
@@ -383,13 +386,14 @@ class Construction(kcore.Context):
 		exe = self.c_executor
 		skipped = 0
 		nsources = len(factor.sources())
+		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
-		for section, variants in mechanism.variants(self.c_intentions, form=self.c_form):
+		for section, variants in mechanism.variants(intentions, form=self.c_form):
 			u_prefix, u_suffix = mechanism.unit_name_delta(section, variants, factor.type)
-
 			image = factor.image(variants)
-			key = work(variants, factor.name)
-			cdr = self.c_cache.select(factor.project.factor, factor.route, key)
+			iv = {}
+
+			cdr = scache(work(variants, factor.name))
 			locations = {
 				'factor-image': image,
 				'work-directory': cdr,
@@ -397,11 +401,25 @@ class Construction(kcore.Context):
 				'unit-directory': (cdr / 'units').delimit(),
 			}
 
+			if self.c_telemetry:
+				# Usually, self.c_telemetry == ['metrics'] when constructing factors
+				# with meta.workspaces.bin.control to connect builds to their
+				iv['factor-telemetry'] = self.c_telemetry
+				iv['telemetry-directory'] = [
+					scache(work(x, factor.name)) / variants.intention
+					for x in [
+						dataclasses.replace(variants, intention=i, form='')
+						for i in self.c_telemetry
+					]
+				]
+
 			fint = core.Integrand((
 				mechanism, factor,
 				requirements, dependents,
-				variants, locations
+				variants, locations, iv
 			))
+			del iv
+
 			if not fint.operable:
 				continue
 

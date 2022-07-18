@@ -86,7 +86,7 @@ class Mechanism(object):
 
 class Context(object):
 	"""
-	# Vectors Composition based Mechanism set.
+	# Vectors Formulations based Mechanism set for building system argument vectors.
 	"""
 
 	@staticmethod
@@ -115,6 +115,7 @@ class Context(object):
 		# Requirement intention for metadata contexts.
 		self.intention = intention
 		self.projects = lsf.Context()
+		self.intercepts = {}
 
 		# Projection mappings. semantics -> project
 		self._idefault = None
@@ -125,6 +126,8 @@ class Context(object):
 		self._vinit = vf.Context(set(), {})
 
 	def _forms(self, factor):
+		# Read the forms vector with the initialization context.
+		# Used when loading a solution's variants.
 		return self._cat(self._vinit, self._load_vector(factor), '[forms]')
 
 	def _variants(self, factor):
@@ -174,7 +177,7 @@ class Context(object):
 				continue
 
 			spec = [
-				(section, lsf.types.Variants(x[0], x[1], i, form))
+				(self.intercepts.get(i, section), lsf.types.Variants(x[0], x[1], i, form))
 				for i, x in itertools.product(intentions, self._variants(vfactor))
 			]
 			fvp.extend(spec)
@@ -213,7 +216,10 @@ class Context(object):
 		for c in composition:
 			idx.update(self._load_vector(section @ c).items())
 
-		idx.update(self._load_vector(section @ itype.factor.identifier).items())
+		try:
+			idx.update(self._load_vector(section @ itype.factor.identifier).items())
+		except LookupError:
+			pass
 
 		# Catenate the vectors selected in index using _vinit.
 		if name in idx:
@@ -268,6 +274,25 @@ class Context(object):
 
 		return self._load_system(self._ref(section, exeref)), Adapt
 
+	def _load_intercepts(self,
+			context:lsf.types.FactorPath,
+			Intercepts='meta.intercepts'
+		):
+		# Identify the projects providing adapters for the listed semantics.
+
+		f = context @ Intercepts
+
+		# Load .context.intercepts vectors.
+		sections_vf = self._v(f)
+		if sections_vf is None:
+			return
+
+		# Map semantics identifier to the adapter projects in cc.
+		for intention in sections_vf.keys():
+			v = self._cat(self._vinit, sections_vf, intention)
+			for i in v:
+				yield intention, context @ i
+
 	def load(self):
 		"""
 		# Load the product indicies.
@@ -282,6 +307,8 @@ class Context(object):
 		# Load the default factor semantics.
 		"""
 		self._idefault = self._map_factor_semantics(context)
+		self.intercepts.clear()
+		self.intercepts.update(self._load_intercepts(lsf.types.factor@'vectors'))
 		return self
 
 	def _read_cell(self, factor):
@@ -295,12 +322,18 @@ class Context(object):
 
 	def _load_vector(self, factor):
 		# Load vector.
-		typ, src = self._read_cell(factor)
-		return vf.parse(src.fs_load().decode('utf-8'))
+		c = self._read_cell(factor)
+		if c is None:
+			raise LookupError(factor)
+		return vf.parse(c[1].fs_load().decode('utf-8'))
 
 	def _load_system(self, factor):
 		# Load system command.
-		typ, src = self._read_cell(factor)
+		try:
+			typ, src = self._read_cell(factor)
+		except Exception as error:
+			raise LookupError(factor) from error
+
 		return execution.parse_sx_plan(src.fs_load().decode('utf-8'))
 
 	def _iq(self, name):
@@ -323,7 +356,7 @@ class Context(object):
 
 	def _map_factor_semantics(self,
 			context:lsf.types.FactorPath,
-			Projections='context.projections'
+			Projections='meta.projections'
 		):
 		"""
 		# Identify the projects providing adapters for the listed semantics.
