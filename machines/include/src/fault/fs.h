@@ -9,25 +9,25 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#ifndef SEPARATOR
-	#define SEPARATOR '/'
-#endif
-
-#ifndef TERMINATOR
-	#define TERMINATOR '\0'
-#endif
-
 typedef enum {
 	fs_mkdir_start_forwards = 1 << 0,
 	fs_mkdir_dirty_failure = 1 << 1
 } fs_mkdir_ctl;
 
 /**
-	// `mkdir -p` equivalent.
+	// Allocate directories up to the final path entry.
 */
 static int
-_fs_mkdir(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
+fs_alloc(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
 {
+	#ifndef SEPARATOR
+		#define SEPARATOR '/'
+	#endif
+
+	#ifndef TERMINATOR
+		#define TERMINATOR '\0'
+	#endif
+
 	int ncreated = 0;
 	char buf[PATH_MAX];
 	size_t len;
@@ -46,6 +46,24 @@ _fs_mkdir(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
 	memcpy(buf, dirpath, len);
 	buf[len] = SEPARATOR;
 	buf[len+1] = TERMINATOR;
+
+	/* Skip final path entry. */
+	{
+		e = buf + len;
+		while (*e == SEPARATOR && e != buf)
+			--e;
+		while (*e != SEPARATOR && e != buf)
+			--e;
+
+		if (e == buf)
+		{
+			/* One path or only SEPARATOR. */
+			return(0);
+		}
+
+		*e = SEPARATOR;
+		*(e+1) = TERMINATOR;
+	}
 
 	if (ctlopt & fs_mkdir_start_forwards)
 	{
@@ -116,16 +134,11 @@ _fs_mkdir(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
 		}
 	}
 
-	if (mkdir(buf, dmode) != 0)
-	{
-		if (errno == EEXIST)
-			errno = 0;
-		else
-			goto failure;
-	}
-
 	return(0);
 
+	/**
+		//* WARNING: Relocate as separate function and remove control flag.
+	*/
 	failure:
 	{
 		/*
@@ -170,14 +183,29 @@ _fs_mkdir(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
 			errno = err;
 		}
 
-		return(-1);
+		return(-(ncreated + 1));
 	}
+
+	#undef TERMINATOR
+	#undef SEPARATOR
 }
 
 static int
 fs_mkdir(const char *dirpath)
 {
-	return(_fs_mkdir(0, dirpath, S_IRWXU|S_IRWXG|S_IRWXO));
+	int c = fs_alloc(0, dirpath, S_IRWXU|S_IRWXG|S_IRWXO);
+	if (c < 0)
+		return(c);
+
+	if (mkdir(dirpath, S_IRWXU|S_IRWXG|S_IRWXO) != 0)
+	{
+		if (errno == EEXIST)
+			errno = 0;
+		else
+			return(-c);
+	}
+
+	return(0);
 }
 
 static int
@@ -186,10 +214,9 @@ fs_init(fs_mkdir_ctl ctlopt, const char *path, const mode_t dmode, const mode_t 
 	int fd;
 	size_t len, i;
 
-	if (_fs_mkdir(ctlopt, path, dmode) != 0)
+	if (fs_alloc(ctlopt, path, dmode) != 0)
 		return(-1);
 
-	unlink(path);
 	fd = open(path, O_WRONLY);
 	if (fd < 0)
 		return(-2);
@@ -211,6 +238,3 @@ fs_init(fs_mkdir_ctl ctlopt, const char *path, const mode_t dmode, const mode_t 
 	close(fd);
 	return(0);
 }
-
-#undef TERMINATOR
-#undef SEPARATOR
