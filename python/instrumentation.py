@@ -1,5 +1,5 @@
 """
-# AST manipulations for injecting coverage counters into Python source.
+# AST manipulations for injecting coverage counters and profile timers into Python modules.
 """
 import ast
 import builtins
@@ -18,7 +18,7 @@ expression_mapping = {
 	ast.comprehension: 'value',
 }
 
-def visit_expression(node, parent, field, index):
+def visit_expression(node, parent, field, index, isinstance=isinstance):
 	"""
 	# Visit the node in a statement. Keyword defaults, expressions, statements.
 	"""
@@ -53,7 +53,7 @@ def visit_expression(node, parent, field, index):
 		else:
 			pass # Never
 
-def visit_container(nodes, parent, field):
+def visit_container(nodes, parent, field, isinstance=isinstance):
 	for index, stmt in nodes:
 		if isinstance(stmt, ast.For):
 			yield from visit_expression(stmt.iter, stmt, 'iter', None)
@@ -86,38 +86,122 @@ def visit(node, parent=None, field=None, index=None, sequencing=source.sequence_
 		else:
 			pass
 
-# Profiling is not yet supported.
-initialization = """
+coverage_module_context = """
 if True:
-	from f_intention.python import instrumentation as _fi_module
-	from functools import partial as _fi_partial
-	import collections as _fi_col
-	try:
-		_FI_INCREMENT__ = _fi_partial(_fi_col._count_elements, _fi_module.counters)
-	except:
-		_FI_INCREMENT__ = _fi_module.counters.update
-	del _fi_partial, _fi_col
-	def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
-		C(((F, area),))
-		return rob
-	#_FI_ENTER__ = _fi_module.note_enter
-	#_FI_EXIT__ = _fi_module.note_exit
-	#_FI_SUSPEND__ = _fi_module.note_suspend
-	#_FI_CONTINUE__ = _fi_module.note_continue
-	del _fi_module
+	import collections as _fi_cl
+	import atexit as _fi_ae
+	import functools as _fi_ft
+	import os as _fi_os
+
+	_fi_counters__ = _fi_cl.Counter()
+	_fi_identity = _fi_os.environ.get('METRICS_IDENTITY') or ''
+
+	def _fi_record(counters=_fi_counters__, origin=_fi_identity):
+		import sys, os, collections
+
+		if 'PROCESS_IDENTITY' in os.environ:
+			pid = os.environ['PROCESS_IDENTITY']
+		else:
+			pid = str(os.getpid())
+
+		if 'METRICS_CAPTURE' in os.environ:
+			# If capture is defined, qualify with the module name.
+			# /../metrics/{pid}/{module}/{project}/{factor}/{test}/.fault-syntax-counters
+			path = os.environ['METRICS_CAPTURE']
+			path += '/' + pid
+			path += '/' + __name__
+		else:
+			# /../metrics/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
+
+			# Resolve __metrics_trap__ global at exit in order to allow the runtime
+			# to designate it given compile time absence.
+			path = __metrics_trap__
+			path += '/' + pid
+
+		path += '/' + os.environ.get('METRICS_IDENTITY', '.fault-python')
+
+		# Retry in case of conflicting capture prefix.
+		for x in range(8):
+			try:
+				os.makedirs(path)
+			except:
+				pass
+			else:
+				break
+
+		path += '/.fault-syntax-counters'
+		os.makedirs(path)
+
+		# Vectorize the counters.
+		events = collections.defaultdict(list)
+		occurrences = collections.defaultdict(list)
+		for (fp, area), v in counters.items():
+			events[fp].append(area)
+			occurrences[fp].append(v)
+
+		# Sequence the sources for an index.
+		# The contents of the vectors will be emitted according to this list.
+		sources = list(events.keys())
+		sources.sort()
+
+		# Index designating sources and the number of counters.
+		# For Python, this will normally (always) be a single line.
+		# Append as PROCESS_IDENTITY may be intentionally redundant.
+		with open(path + '/sources', 'a') as f:
+			f.writelines(['%d %s\\n' %(len(events[x]), x) for x in sources])
+
+		with open(path + '/areas', 'a') as f:
+			for x in sources:
+				f.writelines(['%d %d %d %d\\n' % k for k in events[x]])
+
+		with open(path + '/counts', 'a') as f:
+			for x in sources:
+				f.writelines(['%d\\n' %(c,) for c in occurrences[x]])
+
+	# Filter when METRICS_IDENTITY is not the PROJECT.
+	if _fi_identity.startswith(_fi_os.environ.get('PROJECT', '') + '/'):
+		_fi_ae.register(_fi_record)
+
+		try:
+			_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
+		except:
+			_FI_INCREMENT__ = _fi_counters__.update
+
+		def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
+			C(((F, area),))
+			return rob
+	else:
+		# Factor's project is not the test's project.
+		def _FI_INCREMENT__(*args):
+			pass
+
+		def _FI_COUNT__(area, rob):
+			return rob
+
+	# Limit names left in the module globals.
+	del _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_record, _fi_identity
 """.strip() + '\n'
 
 count_boolop_expression = "(_FI_INCREMENT__(((__file__, %r),)) or INSTRUMENTATION_ERROR)"
 count_call_expression = "_FI_COUNT__(%r,None)"
 
 # Seeks the pass for the replacement point.
-profile = """
+profile_transaction = """
 if True:
 	try:
 		_FI_ENTER__(%r)
 		pass
 	finally:
 		_FI_EXIT__(%r)
+"""
+
+profile_pause = """
+if True:
+	try:
+		_FI_SUSPEND__(%r)
+		pass
+	finally:
+		_FI_CONTINUE__(%r)
 """
 
 def construct_call_increment(node, area, path='/dev/null', lineno=1):
@@ -155,7 +239,7 @@ def construct_initialization_nodes(path="/dev/null"):
 	"""
 	# Construct instrumentation initialization nodes for injection into an &ast.Module body.
 	"""
-	nodes = ast.parse(initialization, path)
+	nodes = ast.parse(coverage_module_context, path)
 	for x in ast.walk(nodes):
 		source.node_set_address(x, (-1, 0))
 
@@ -228,11 +312,15 @@ def compile(factor, source, path, constants,
 
 		apply(path, noded)
 
-	# Add timestamp and factor id.
-	module.inject(tree, factor, hash(source), constants)
+	# Insert profiling or coverage header before constants.
 	tree.body[0:0] = construct_initialization_nodes().body
 
-	return tree
+	# Add hash and canonical factor path.
+	constants.extend([
+		('__factor__', factor),
+		('__source_hash__', hash(source)),
+	])
+	return module.inject(tree, constants)
 
 if __name__ == '__main__':
 	from . import bytecode
