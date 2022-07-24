@@ -6,12 +6,53 @@
 #include <fault/libc.h>
 #include <fault/fs.h>
 
+struct Position {
+	unsigned long ln, cn;
+	/* Expansion endpoint */
+	CXSourceRange xrange;
+} curs;
+
 struct Image {
+	CXTranslationUnit *tu;
+
 	FILE *elements;
 	FILE *doce; /* documentation entries */
 	FILE *docs;
 	FILE *data;
+	FILE *expr;
+
+	/**
+		// The start line and column number of the previously
+		// delimited expression.
+		// Closes expression series when changed.
+	*/
+	struct Position curs;
+	CXString file;
+	unsigned int line, column;
+
+	/**
+		// Track whether an #include is being visited.
+		// Increment is reset whenever the main file is being processed.
+	*/
+	int include_depth;
 };
+
+void
+image_initialize(struct Image *ctx, CXCursor root, CXTranslationUnit *tu)
+{
+	CXSourceRange sr = clang_getCursorExtent(root);
+	CXSourceLocation start = clang_getRangeStart(sr);
+	CXSourceLocation stop = clang_getRangeEnd(sr);
+	unsigned int start_line, stop_line, start_column, stop_column;
+
+	ctx->tu = tu;
+	ctx->curs.ln = 0;
+	ctx->curs.cn = 0;
+	ctx->curs.xrange = clang_getNullRange();
+	ctx->include_depth = 0;
+
+	clang_getPresumedLocation(start, &ctx->file, &ctx->line, &ctx->column);
+}
 
 static enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData cd);
 
@@ -84,6 +125,174 @@ storage_string(enum CX_StorageClass storage)
 	return(NULL);
 }
 
+static const char *
+node_element_name(enum CXCursorKind kind)
+{
+	switch (kind)
+	{
+		case CXCursor_ObjCDynamicDecl:
+			return("dynamic");
+		case CXCursor_ObjCSynthesizeDecl:
+			return("synthesize");
+
+		case CXCursor_ObjCImplementationDecl:
+			return("implementation");
+
+		case CXCursor_ObjCCategoryImplDecl:
+			return("category-implementation");
+
+		case CXCursor_ObjCCategoryDecl:
+			return("category");
+
+		case CXCursor_ObjCInterfaceDecl:
+			return("interface");
+
+		case CXCursor_ObjCProtocolDecl:
+			return("protocol");
+
+		case CXCursor_TypedefDecl:
+			return("typedef");
+
+		case CXCursor_EnumDecl:
+			return("enumeration");
+
+		case CXCursor_EnumConstantDecl:
+			return("constant");
+
+		case CXCursor_MacroDefinition:
+			return("macro");
+		case CXCursor_MacroExpansion:
+			return("expansion");
+
+		case CXCursor_ObjCInstanceMethodDecl:
+		case CXCursor_ObjCClassMethodDecl:
+		case CXCursor_CXXMethod:
+			return("method");
+
+		case CXCursor_FunctionDecl:
+			return("function");
+
+		case CXCursor_UnionDecl:
+			return("union");
+
+		case CXCursor_StructDecl:
+			return("structure");
+
+		case CXCursor_ClassDecl:
+			return("class");
+
+		case CXCursor_CXXFinalAttr:
+		case CXCursor_CXXOverrideAttr:
+		case CXCursor_FieldDecl:
+			return("field");
+
+		case CXCursor_NamespaceAlias:
+			return("namespace-alias");
+
+		case CXCursor_Namespace:
+			return("namespace");
+
+		/*
+			// Expressions and Statements
+		*/
+		case CXCursor_ParenExpr:
+			return("enclosure");
+
+		case CXCursor_CallExpr:
+			return("invocation");
+		case CXCursor_ObjCMessageExpr:
+			return("message[objective-c]");
+
+		case CXCursor_InitListExpr:
+			return("initialization/list");
+
+		case CXCursor_CStyleCastExpr:
+			return("cast");
+		case CXCursor_LambdaExpr:
+			return("lambda");
+		case CXCursor_UnaryExpr:
+			return("unary");
+
+		case CXCursor_DeclRefExpr:
+			return("reference/name");
+		case CXCursor_MemberRefExpr:
+			return("reference/member");
+		case CXCursor_ObjCSelfExpr:
+			return("reference/self[objective-c]");
+		case CXCursor_CXXThisExpr:
+			return("reference/this[c++]");
+
+		case CXCursor_LabelStmt:
+			return("statement/label");
+		case CXCursor_CaseStmt:
+			return("statement/case");
+		case CXCursor_DeclStmt:
+			return("statement/declaration");
+		case CXCursor_NullStmt:
+			return("statement/null");
+		case CXCursor_IfStmt:
+			return("statement/if");
+		case CXCursor_SwitchStmt:
+			return("statement/switch");
+		case CXCursor_WhileStmt:
+			return("statement/while");
+		case CXCursor_DoStmt:
+			return("statement/do");
+		case CXCursor_ForStmt:
+			return("statement/for");
+		case CXCursor_GotoStmt:
+			return("statement/goto");
+		case CXCursor_ContinueStmt:
+			return("statement/continue");
+		case CXCursor_BreakStmt:
+			return("statement/break");
+		case CXCursor_ReturnStmt:
+			return("statement/return");
+		case CXCursor_CompoundStmt:
+			return("statement/group");
+
+		case CXCursor_ConditionalOperator:
+			return("operator/conditional");
+		case CXCursor_CompoundAssignOperator:
+			return("operator/compound-assignment");
+		case CXCursor_UnaryOperator:
+			return("operator/unary");
+		case CXCursor_BinaryOperator:
+			return("operator/binary");
+
+		case CXCursor_ArraySubscriptExpr:
+			return("routing/array-subscript");
+
+		case CXCursor_IntegerLiteral:
+			return("literal/integer");
+		case CXCursor_FloatingLiteral:
+			return("literal/float");
+		case CXCursor_ImaginaryLiteral:
+			return("literal/imaginary");
+		case CXCursor_StringLiteral:
+			return("literal/string");
+		case CXCursor_CharacterLiteral:
+			return("literal/character");
+
+		case CXCursor_ObjCStringLiteral:
+			return("literal/string[objective-c]");
+		case CXCursor_ObjCBoolLiteralExpr:
+			return("literal/bool[objective-c]");
+
+		case CXCursor_SizeOfPackExpr:
+			return("sizeof-packed[c++]");
+		case CXCursor_PackExpansionExpr:
+			return("pack-expansion[c++]");
+		case CXCursor_CXXThrowExpr:
+			return("throw[c++]");
+
+		default:
+			return("unknown");
+	}
+
+	return("switch-passed-with-default");
+}
+
 static void
 print_storage(FILE *fp, CXCursor cursor)
 {
@@ -143,6 +352,23 @@ print_origin(FILE *fp, CXCursor cursor)
 	print_string_attribute(fp, "origin", clang_getFileName(file));
 }
 
+static void
+trace_location(FILE *fp, enum CXCursorKind kind, CXSourceRange range)
+{
+	CXSourceLocation start = clang_getRangeStart(range);
+	CXSourceLocation stop = clang_getRangeEnd(range);
+	CXString start_file, stop_file;
+	unsigned int start_line, stop_line, start_column, stop_column;
+
+	clang_getPresumedLocation(start, &start_file, &start_line, &start_column);
+	clang_getPresumedLocation(stop, &stop_file, &stop_line, &stop_column);
+
+	fprintf(fp, "[%d] %s: %u.%u-%u.%u\n", (int) kind,
+		clang_getCString(start_file),
+		start_line, start_column,
+		stop_line, stop_column);
+}
+
 /**
 	// Generic means to note the location of the cursor.
 */
@@ -151,11 +377,11 @@ print_source_location(FILE *fp, CXSourceRange range)
 {
 	CXSourceLocation start = clang_getRangeStart(range);
 	CXSourceLocation stop = clang_getRangeEnd(range);
-	CXFile start_file, stop_file;
-	unsigned int start_line, stop_line, start_offset, stop_offset, start_column, stop_column;
+	CXString start_file, stop_file;
+	unsigned int start_line, stop_line, start_column, stop_column;
 
-	clang_getSpellingLocation(start, &start_file, &start_line, &start_column, &start_offset);
-	clang_getSpellingLocation(stop, &stop_file, &stop_line, &stop_column, &stop_offset);
+	clang_getPresumedLocation(start, &start_file, &start_line, &start_column);
+	clang_getPresumedLocation(stop, &stop_file, &stop_line, &stop_column);
 
 	fputs("[[", fp);
 	print_number(fp, "line", start_line);
@@ -169,13 +395,48 @@ print_source_location(FILE *fp, CXSourceRange range)
 	return(0);
 }
 
+/**
+	// Print the expression node and move the Position &cursor
+	// accordingly.
+*/
+static int
+expression(FILE *fp, const char *ntype, CXSourceRange range, struct Position *cursor)
+{
+	CXSourceLocation start = clang_getRangeStart(range);
+	CXSourceLocation stop = clang_getRangeEnd(range);
+	CXString start_file, stop_file;
+	unsigned int start_line, stop_line, start_offset, stop_offset, start_column, stop_column;
+
+	clang_getPresumedLocation(start, &start_file, &start_line, &start_column);
+	clang_getPresumedLocation(stop, &stop_file, &stop_line, &stop_column);
+
+	/*
+		// Change expression context.
+	*/
+	if (start_line != cursor->ln || start_column != cursor->cn)
+	{
+		if (cursor->ln != 0)
+		{
+			/* Not the initial expression */
+			print_expression_close(fp);
+		}
+
+		print_expression_open(fp, start_line, start_column);
+		cursor->ln = start_line;
+		cursor->cn = start_column;
+	}
+
+	print_expression_node(fp, ntype, stop_line, stop_column > 0 ? stop_column - 1 : 0);
+	return(0);
+}
+
 static int
 print_spelling_identifier(FILE *fp, CXCursor c)
 {
 	CXString s = clang_getCursorSpelling(c);
 	const char *cs = clang_getCString(s);
 
-	print_identifier(fp, cs);
+	print_identifier(fp, (char *) cs);
 	clang_disposeString(s);
 
 	return(0);
@@ -330,7 +591,7 @@ static bool
 print_comment(struct Image *ctx, CXCursor cursor)
 {
 	CXString comment = clang_Cursor_getRawCommentText(cursor);
-	char *comment_str = clang_getCString(comment);
+	const char *comment_str = clang_getCString(comment);
 
 	if (comment_str != NULL)
 	{
@@ -339,7 +600,7 @@ print_comment(struct Image *ctx, CXCursor cursor)
 		fputs("],", ctx->doce);
 
 		fputs("[\x22", ctx->docs);
-		print_text(ctx->docs, comment_str, true);
+		print_text(ctx->docs, (char *) comment_str, true);
 		fputs("\x22],", ctx->docs);
 
 		clang_disposeString(comment);
@@ -486,79 +747,12 @@ print_enumeration(
 	return(CXChildVisit_Continue);
 }
 
-static const char *
-node_element_name(enum CXCursorKind kind)
-{
-	switch (kind)
-	{
-		case CXCursor_ObjCImplementationDecl:
-			return("implementation");
-
-		case CXCursor_ObjCCategoryImplDecl:
-			return("category-implementation");
-
-		case CXCursor_ObjCCategoryDecl:
-			return("category");
-
-		case CXCursor_ObjCInterfaceDecl:
-			return("interface");
-
-		case CXCursor_ObjCProtocolDecl:
-			return("protocol");
-
-		case CXCursor_TypedefDecl:
-			return("typedef");
-
-		case CXCursor_EnumDecl:
-			return("enumeration");
-
-		case CXCursor_EnumConstantDecl:
-			return("constant");
-
-		case CXCursor_MacroDefinition:
-			return("macro");
-
-		case CXCursor_ObjCInstanceMethodDecl:
-		case CXCursor_ObjCClassMethodDecl:
-		case CXCursor_CXXMethod:
-			return("method");
-
-		case CXCursor_FunctionDecl:
-			return("function");
-
-		case CXCursor_UnionDecl:
-			return("union");
-
-		case CXCursor_StructDecl:
-			return("structure");
-
-		case CXCursor_ClassDecl:
-			return("class");
-
-		case CXCursor_CXXFinalAttr:
-		case CXCursor_CXXOverrideAttr:
-		case CXCursor_FieldDecl:
-			return("field");
-
-		case CXCursor_NamespaceAlias:
-			return("namespace-alias");
-
-		case CXCursor_Namespace:
-			return("namespace");
-
-		default:
-			return("unknown");
-	}
-
-	return("switch-passed-with-default");
-}
-
 static void
 print_collection(struct Image *ctx, CXCursor cursor, CXClientData cd, const char *element_name)
 {
 	print_comment(ctx, cursor);
 
-	print_open(ctx->elements, element_name);
+	print_open(ctx->elements, (char *) element_name);
 
 	print_enter(ctx->elements);
 	{
@@ -575,7 +769,7 @@ print_collection(struct Image *ctx, CXCursor cursor, CXClientData cd, const char
 	}
 	print_attributes_close(ctx->elements);
 
-	print_close(ctx->elements, element_name);
+	print_close(ctx->elements, (char *) element_name);
 }
 
 /**
@@ -586,7 +780,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 {
 	struct Image *ctx = (struct Image *) cd;
 	static CXString last_file = {0,};
-	enum CXChildVisitResult ra = CXChildVisit_Continue;
+	enum CXChildVisitResult ra = CXChildVisit_Recurse;
 
 	enum CXCursorKind kind = clang_getCursorKind(cursor);
 	enum CXVisibilityKind vis = clang_getCursorVisibility(cursor);
@@ -597,49 +791,45 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	if (clang_Location_isFromMainFile(location) == 0)
 	{
 		/*
-			// Avoid processing nodes from other source files.
+			// Ignore if inside an include/import.
+			// Expansion regions are located at the origin of their definition.
+			// However, the presumed location is bound to the reference point,
+			// so when the cursor is not inside an include and is not in the
+			// main file, it is known to be inside of an expansion.
 		*/
-		return(ra);
+		if (ctx->include_depth == 0)
+		{
+			CXSourceRange range = clang_getCursorExtent(cursor);
+			CXSourceLocation start = clang_getRangeStart(range);
+			CXSourceLocation stop = clang_getRangeEnd(range);
+			CXString start_file, stop_file;
+			unsigned int start_line, stop_line, start_column, stop_column;
 
-		#if 0
-			CXString filename;
-			unsigned int line, column;
+			clang_getPresumedLocation(start, &start_file, &start_line, &start_column);
+			clang_getPresumedLocation(stop, &stop_file, &stop_line, &stop_column);
 
-			/* Note included files */
-			clang_getPresumedLocation(location, &filename, &line, &column);
-
-			if (clang_getCString(last_file) == NULL ||
-				strcmp(clang_getCString(last_file), clang_getCString(filename)) != 0)
+			if (clang_getCString(start_file) == clang_getCString(ctx->file))
 			{
-				if (clang_getCString(filename)[0] != '<')
-				{
-					print_open_empty(ctx->elements, "include");
-					{
-						print_attributes_open(ctx->elements);
-						{
-							print_attribute(ctx->elements, "path", clang_getCString(filename));
-						}
-						print_attributes_close(ctx->elements);
-					}
-					print_close(ctx->elements, "include");
-
-					if (clang_getCString(last_file) != NULL)
-						clang_disposeString(last_file);
-
-					last_file = filename;
-				}
+				/* Hold final range to use as expansion node. */
+				ctx->curs.xrange = range;
 			}
-		#endif
+		}
+
+		return(CXChildVisit_Recurse);
+	}
+	else if (ctx->include_depth > 0)
+	{
+		/* Back in the main file. */
+		ctx->include_depth = 0;
+	}
+	else if (!clang_Range_isNull(ctx->curs.xrange))
+	{
+		expression(ctx->expr, "expansion", ctx->curs.xrange, &(ctx->curs));
+		ctx->curs.xrange = clang_getNullRange();
 	}
 
 	switch (kind)
 	{
-		case CXCursor_TranslationUnit:
-			/*
-				// Root node already being visited.
-			*/
-		break;
-
 		case CXCursor_TypedefDecl:
 		{
 			CXType real_type = clang_getTypedefDeclUnderlyingType(cursor);
@@ -669,7 +859,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		case CXCursor_EnumDecl:
 		{
 			print_open(ctx->elements, "enumeration");
-			ra = print_enumeration(parent, cursor, cd, kind, vis, avail);
+			print_enumeration(parent, cursor, cd, kind, vis, avail);
 			print_close(ctx->elements, "enumeration");
 		}
 		break;
@@ -681,24 +871,12 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			print_attributes_open(ctx->elements);
 			{
 				print_spelling_identifier(ctx->elements, cursor);
-				print_number_attribute(ctx->elements, "integer", clang_getEnumConstantDeclValue(cursor));
+				print_number_attribute(ctx->elements, "integer",
+					clang_getEnumConstantDeclValue(cursor));
 			}
 			print_attributes_close(ctx->elements);
 
 			print_close(ctx->elements, "constant");
-		}
-		break;
-
-		case CXCursor_MacroExpansion:
-			/*
-				// Link expansion to definition.
-			*/
-			clang_visitChildren(cursor, visitor, cd);
-		break;
-
-		case CXCursor_PreprocessingDirective:
-		{
-			clang_visitChildren(cursor, visitor, cd);
 		}
 		break;
 
@@ -714,13 +892,18 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			{
 				print_attributes_open(ctx->elements);
 				{
-					print_attribute(ctx->elements, "system", clang_getCString(ifilename));
+					print_attribute(ctx->elements, "system", (char *) clang_getCString(ifilename));
 					fputs(quote("area") ":", ctx->elements);
 					print_source_location(ctx->elements, clang_getCursorExtent(cursor));
 				}
 				print_attributes_close(ctx->elements);
 			}
 			print_close(ctx->elements, "include");
+
+			ctx->include_depth += 1;
+
+			/* Avoid as much include content as possible. */
+			ra = CXChildVisit_Continue;
 		}
 		break;
 
@@ -731,9 +914,9 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			if (!clang_Cursor_isMacroFunctionLike(cursor))
 				m_subtype = "define";
 
-			print_open(ctx->elements, m_subtype);
-			ra = macro(parent, cursor, cd, kind, vis, avail);
-			print_close(ctx->elements, m_subtype);
+			print_open(ctx->elements, (char *) m_subtype);
+			macro(parent, cursor, cd, kind, vis, avail);
+			print_close(ctx->elements, (char *) m_subtype);
 		}
 		break;
 
@@ -751,7 +934,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 			print_enter(ctx->elements);
 			{
-				ra = callable(parent, cursor, cd, kind, vis, avail);
+				callable(parent, cursor, cd, kind, vis, avail);
 			}
 			print_exit(ctx->elements);
 
@@ -764,7 +947,9 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			}
 			print_attributes_close(ctx->elements);
 
+			clang_visitChildren(cursor, visitor, cd);
 			print_close(ctx->elements, "method");
+			ra = CXChildVisit_Continue;
 		}
 		break;
 
@@ -778,7 +963,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 			print_enter(ctx->elements);
 			{
-				ra = callable(parent, cursor, cd, kind, vis, avail);
+				callable(parent, cursor, cd, kind, vis, avail);
 			}
 			print_exit(ctx->elements);
 
@@ -816,41 +1001,36 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			print_attributes_close(ctx->elements);
 
 			print_close(ctx->elements, "union");
+			ra = CXChildVisit_Continue;
 		}
 		break;
 
 		case CXCursor_StructDecl:
 			print_collection(ctx, cursor, cd, "structure");
+			ra = CXChildVisit_Continue;
 		break;
 
 		case CXCursor_ObjCImplementationDecl:
-			print_collection(ctx, cursor, cd, "implementation");
-		break;
-
 		case CXCursor_ObjCCategoryImplDecl:
-			print_collection(ctx, cursor, cd, "category.implementation");
+			print_collection(ctx, cursor, cd, "implementation");
+			ra = CXChildVisit_Continue;
 		break;
 
 		case CXCursor_ObjCInterfaceDecl:
-			print_collection(ctx, cursor, cd, "interface");
-		break;
-
 		case CXCursor_ObjCCategoryDecl:
-			print_collection(ctx, cursor, cd, "category");
+			print_collection(ctx, cursor, cd, "interface");
+			ra = CXChildVisit_Continue;
 		break;
 
 		case CXCursor_ObjCProtocolDecl:
 			print_collection(ctx, cursor, cd, "protocol");
+			ra = CXChildVisit_Continue;
 		break;
 
 		case CXCursor_ClassDecl:
 			print_collection(ctx, cursor, cd, "class");
+			ra = CXChildVisit_Continue;
 		break;
-
-		case CXCursor_ObjCSynthesizeDecl:
-			break;
-		case CXCursor_ObjCDynamicDecl:
-			break;
 
 		case CXCursor_IBActionAttr:
 		case CXCursor_IBOutletAttr:
@@ -882,9 +1062,6 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			print_close(ctx->elements, "field");
 		}
 		break;
-
-		case CXCursor_TypeAliasDecl:
-			break;
 
 		case CXCursor_NamespaceAlias:
 		{
@@ -922,211 +1099,41 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 		}
 		break;
 
-		case CXCursor_LinkageSpec:
-			break;
-		case CXCursor_Constructor:
-			break;
-		case CXCursor_Destructor:
-			break;
-		case CXCursor_ConversionFunction:
-			break;
-		case CXCursor_TemplateTypeParameter:
-			break;
-		case CXCursor_NonTypeTemplateParameter:
-			break;
-		case CXCursor_TemplateTemplateParameter:
-			break;
-		case CXCursor_FunctionTemplate:
-			break;
-		case CXCursor_ClassTemplate:
-			break;
-		case CXCursor_ClassTemplatePartialSpecialization:
-			break;
-		case CXCursor_UsingDirective:
-			break;
-		case CXCursor_UsingDeclaration:
-			break;
-		case CXCursor_CXXAccessSpecifier:
-			break;
-
-		case CXCursor_ParmDecl:
-			break;
-		case CXCursor_VarDecl:
-			break;
-
-		case CXCursor_ObjCSuperClassRef:
-			break;
-		case CXCursor_ObjCProtocolRef:
-			break;
-		case CXCursor_ObjCClassRef:
-			break;
-		case CXCursor_ObjCMessageExpr:
-			break;
-		case CXCursor_ObjCStringLiteral:
-			break;
-		case CXCursor_ObjCEncodeExpr:
-			break;
-		case CXCursor_ObjCSelectorExpr:
-			break;
-		case CXCursor_ObjCProtocolExpr:
-			break;
-		case CXCursor_ObjCBridgedCastExpr:
-			break;
-		case CXCursor_ObjCAtTryStmt:
-			break;
-		case CXCursor_ObjCAtCatchStmt:
-			break;
-		case CXCursor_ObjCAtFinallyStmt:
-			break;
-		case CXCursor_ObjCAtThrowStmt:
-			break;
-		case CXCursor_ObjCAtSynchronizedStmt:
-			break;
-		case CXCursor_ObjCAutoreleasePoolStmt:
-			break;
-		case CXCursor_ObjCForCollectionStmt:
-			break;
-
-		case CXCursor_NamespaceRef:
-			break;
-		case CXCursor_TypeRef:
-			break;
-		case CXCursor_DeclRefExpr:
-			break;
-		case CXCursor_MemberRefExpr:
-			break;
-		case CXCursor_AnnotateAttr:
-			break;
-		case CXCursor_CallExpr:
-			break;
-		case CXCursor_BlockExpr:
-			break;
+		case CXCursor_ObjCSynthesizeDecl:
+		case CXCursor_ObjCDynamicDecl:
+		case CXCursor_TypeAliasDecl:
 		case CXCursor_IntegerLiteral:
-			break;
 		case CXCursor_FloatingLiteral:
-			break;
 		case CXCursor_ImaginaryLiteral:
-			break;
 		case CXCursor_StringLiteral:
-			break;
 		case CXCursor_CharacterLiteral:
-			break;
-		case CXCursor_ParenExpr:
-			break;
-		case CXCursor_UnaryOperator:
-			break;
-		case CXCursor_ArraySubscriptExpr:
-			break;
-		case CXCursor_BinaryOperator:
-			break;
-		case CXCursor_CompoundAssignOperator:
-			break;
-		case CXCursor_ConditionalOperator:
-			break;
-		case CXCursor_CStyleCastExpr:
-			break;
-		case CXCursor_CompoundLiteralExpr:
-			break;
-		case CXCursor_InitListExpr:
-			break;
-		case CXCursor_AddrLabelExpr:
-			break;
-		case CXCursor_StmtExpr:
-			break;
-		case CXCursor_GenericSelectionExpr:
-			break;
-		case CXCursor_GNUNullExpr:
-			break;
-		case CXCursor_UnaryExpr:
-			break;
-		case CXCursor_PackExpansionExpr:
-			break;
-		case CXCursor_SizeOfPackExpr:
-			break;
-		case CXCursor_LabelStmt:
-			break;
+		{
+			/* Explicit continue cases; skip expression reporting. */
+			ra = CXChildVisit_Continue;
+		}
+		break;
+
+		case CXCursor_FirstExpr:
 		case CXCursor_CompoundStmt:
-			break;
-		case CXCursor_CaseStmt:
-			break;
-		case CXCursor_DefaultStmt:
-			break;
-		case CXCursor_IfStmt:
-			break;
-		case CXCursor_SwitchStmt:
-			break;
-		case CXCursor_WhileStmt:
-			break;
-		case CXCursor_DoStmt:
-			break;
-		case CXCursor_ForStmt:
-			break;
-		case CXCursor_GotoStmt:
-			break;
-		case CXCursor_IndirectGotoStmt:
-			break;
-		case CXCursor_ContinueStmt:
-			break;
-		case CXCursor_BreakStmt:
-			break;
-		case CXCursor_ReturnStmt:
-			break;
-		case CXCursor_AsmStmt:
-			break;
-		case CXCursor_SEHTryStmt:
-			break;
-		case CXCursor_SEHExceptStmt:
-			break;
-		case CXCursor_SEHFinallyStmt:
-			break;
-		case CXCursor_NullStmt:
-			break;
-		case CXCursor_DeclStmt:
-			break;
-
-		case CXCursor_CXXStaticCastExpr:
-			break;
-		case CXCursor_CXXDynamicCastExpr:
-			break;
-		case CXCursor_CXXReinterpretCastExpr:
-			break;
-		case CXCursor_CXXConstCastExpr:
-			break;
-		case CXCursor_CXXFunctionalCastExpr:
-			break;
-		case CXCursor_CXXTypeidExpr:
-			break;
-		case CXCursor_CXXBoolLiteralExpr:
-			break;
-		case CXCursor_CXXNullPtrLiteralExpr:
-			break;
-		case CXCursor_CXXThisExpr:
-			break;
-		case CXCursor_CXXThrowExpr:
-			break;
-		case CXCursor_CXXNewExpr:
-			break;
-		case CXCursor_CXXDeleteExpr:
-			break;
-		case CXCursor_CXXCatchStmt:
-			break;
-		case CXCursor_CXXTryStmt:
-			break;
-		case CXCursor_CXXForRangeStmt:
-			break;
-
-		case CXCursor_UnexposedAttr:
-			break;
-		case CXCursor_UnexposedExpr:
-			break;
-		case CXCursor_UnexposedDecl:
-			break;
 		case CXCursor_UnexposedStmt:
-			break;
-		case CXCursor_InvalidCode:
-			break;
+		case CXCursor_LastStmt:
+		case CXCursor_NullStmt:
+		case CXCursor_ParenExpr:
+		case CXCursor_PreprocessingDirective:
+		{
+			/* Explicit recurse cases; skip expression reporting. */
+			ra = CXChildVisit_Recurse;
+		}
+		break;
 
 		default:
+		{
+			if (clang_isExpression(kind) || clang_isStatement(kind))
+			{
+				expression(ctx->expr,
+					node_element_name(kind), clang_getCursorExtent(cursor), &(ctx->curs));
+			}
+		}
 		break;
 	}
 
@@ -1193,11 +1200,15 @@ main(int argc, const char *argv[])
 	ctx.doce = fopen("documented.json", "w");
 	ctx.docs = fopen("documentation.json", "w");
 	ctx.data = fopen("data.json", "w");
+	ctx.expr = fopen("expressions.json", "w");
+
+	image_initialize(&ctx, rc, &u);
 
 	print_open(ctx.elements, "unit"); /* Translation Unit */
 	print_enter(ctx.data);
 	print_enter(ctx.docs);
 	print_enter(ctx.doce);
+	print_enter(ctx.expr);
 
 	print_enter(ctx.elements);
 	{
@@ -1241,6 +1252,8 @@ main(int argc, const char *argv[])
 	}
 	print_attributes_close(ctx.elements);
 
+	print_exit_final(ctx.expr);
+	print_exit_final(ctx.expr);
 	print_exit_final(ctx.doce);
 	print_exit_final(ctx.docs);
 	print_exit_final(ctx.data);
@@ -1250,6 +1263,7 @@ main(int argc, const char *argv[])
 	fclose(ctx.docs);
 	fclose(ctx.doce);
 	fclose(ctx.data);
+	fclose(ctx.expr);
 
 	clang_disposeTranslationUnit(u);
 	clang_disposeIndex(idx);

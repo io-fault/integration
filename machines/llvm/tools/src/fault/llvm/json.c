@@ -50,13 +50,34 @@ print_number(FILE *fp, char *attrid, unsigned long n)
 }
 
 int
+print_expression_open(FILE *fp, unsigned long ln, unsigned long cn)
+{
+	fprintf(fp, "\n\t[[%lu,%lu]", ln, cn);
+	return(0);
+}
+
+int
+print_expression_node(FILE *fp, const char *ntype, unsigned long ln, unsigned long cn)
+{
+	fprintf(fp, ",[" quote("%s") ",%lu,%lu]", ntype, ln, cn);
+	return(0);
+}
+
+int
+print_expression_close(FILE *fp)
+{
+	fputs("],", fp);
+	return(0);
+}
+
+int
 print_string_attribute(FILE *fp, char *attrid, CXString cx)
 {
 	int r;
-	char *s;
+	const char *s;
 
 	s = clang_getCString(cx);
-	r = print_attribute(fp, attrid, s);
+	r = print_attribute(fp, attrid, (char *) s);
 	clang_disposeString(cx);
 
 	return(r);
