@@ -1228,6 +1228,16 @@ main(int argc, const char *argv[])
 			default:
 			break;
 		}
+
+		/* Target triple attribute. */
+		{
+			CXString ts;
+			CXTargetInfo ti;
+			ti = clang_getTranslationUnitTargetInfo(u);
+			ts = clang_TargetInfo_getTriple(ti);
+			print_attribute(ctx.elements, "target", (char *) clang_getCString(ts));
+			clang_TargetInfo_dispose(ti);
+		}
 	}
 	print_attributes_close(ctx.elements);
 
