@@ -2,7 +2,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <stdbool.h>
-#include "clang-c/Index.h"
+#include <clang-c/CXString.h>
 
 #define chrcmp(I, C) (*((char *) I) == C)
 #define quote(CSTR) "\x22" CSTR "\x22"
