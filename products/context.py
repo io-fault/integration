@@ -11,7 +11,7 @@ def select(
 		environment:str='FCC',
 		home:str='HOME',
 		user:str='.cc'
-	) -> Iterator[tuple[str, files.Path]]:
+	) -> tuple[str, files.Path]:
 	"""
 	# Generate the possible locations of construction contexts.
 	# Usually, the first existing path should be used.
@@ -33,9 +33,6 @@ def select(
 		yield ('environment', files.Path.from_absolute(os.environ[environment]))
 
 	yield ('user', files.Path.from_absolute(os.environ[home]) / user) # No HOME?
-
-	if os.environ.get(platform, None):
-		yield ('platform', files.Path.from_absolute(os.environ[platform]) / 'cc')
 
 def resolve(override:str=None) -> tuple[str, files.Path]:
 	"""

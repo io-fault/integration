@@ -101,7 +101,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		pdr = files.Path.from_path(config['product-directory'])
 		config['default-product'] = False
 	else:
-		pdr = files.Path.from_absolute(pwd)
+		pdr = pwd
 		config['default-product'] = True
 
 	pdctl_operation = getattr(module, operation)
