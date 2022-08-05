@@ -10,13 +10,13 @@ from fault.project import factory
 
 infra = {
 	'fault-c-interfaces': [
-		lsf.types.Reference('http://fault.io/integration/machine',
+		lsf.types.Reference('http://fault.io/integration/machines',
 			lsf.types.factor@'include'),
 		lsf.types.Reference('http://fault.io/integration/python',
 			lsf.types.factor@'include'),
 	],
 	'integration-llvm': [
-		lsf.types.Reference('http://fault.io/integration/machine',
+		lsf.types.Reference('http://fault.io/integration/machines',
 			lsf.types.factor@'llvm.tools'),
 	],
 	'*.c': [
@@ -38,7 +38,7 @@ infra = {
 }
 
 info = lsf.types.Information(
-	identifier = 'http://fault.io/integration/machine//llvm',
+	identifier = 'http://fault.io/integration/machines//llvm',
 	name = 'fault-llvm',
 	authority = 'fault.io',
 	abstract = "Tool adapter instance for LLVM.",

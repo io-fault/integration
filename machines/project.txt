@@ -3,13 +3,13 @@
 		&<http://if.fault.io/project/information>
 
 /identifier/
-	&<http://fault.io/integration/machine>
+	&<http://fault.io/integration/machines>
 /icon/
 	- (emoji)`🛠`
 /name/
-	`machine`
+	`machines`
 /abstract/
-	Integration tooling for common machine architectures.
+	Integration tooling and adapters for required and common machine architectures.
 
 /authority/
 	`fault.io`
