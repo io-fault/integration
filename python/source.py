@@ -77,6 +77,7 @@ def node_set_address(node, address):
 	# Set the `lineno` and `col_offset` attributes on the &node.
 	"""
 	node.lineno, node.col_offset = address
+	node.end_lineno, node.end_col_offset = address
 
 def node_remove_docstring(container):
 	"""

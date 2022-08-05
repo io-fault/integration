@@ -209,7 +209,7 @@ def construct_call_increment(node, area, path='/dev/null', lineno=1):
 	p = ast.parse(s, path)
 	k = p.body[0]
 	for x in ast.walk(k):
-		source.node_set_address(x, (-lineno, 0))
+		source.node_set_address(x, (-lineno, -1))
 
 	update = functools.partial(k.value.args.__setitem__, -1)
 	return k, update
@@ -219,7 +219,7 @@ def construct_boolop_increment(node, area, path='/dev/null', lineno=1):
 	p = ast.parse(s, path)
 	expr = p.body[0]
 	for x in ast.walk(expr):
-		source.node_set_address(x, (-lineno, 0))
+		source.node_set_address(x, (-lineno, -1))
 
 	update = functools.partial(expr.value.values.__setitem__, 1)
 	return expr, update
@@ -241,7 +241,7 @@ def construct_initialization_nodes(path="/dev/null"):
 	"""
 	nodes = ast.parse(coverage_module_context, path)
 	for x in ast.walk(nodes):
-		source.node_set_address(x, (-1, 0))
+		source.node_set_address(x, (-1, -1))
 
 	return nodes
 
