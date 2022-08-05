@@ -64,7 +64,7 @@ bootstrap_extension ()
 	compile ${CC:-cc} -w \
 		-o "../../$sofile" \
 		"-I$FAULT_SYSTEM_PATH/python/include/src" \
-		"-I$FAULT_SYSTEM_PATH/machine/include/src" \
+		"-I$FAULT_SYSTEM_PATH/machines/include/src" \
 		"-I$fault_dir/system/include/src" \
 		"-I$prefix/include" \
 		"-I$PYTHON_INCLUDE" \
