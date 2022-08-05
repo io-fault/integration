@@ -85,8 +85,8 @@ loaders and the second is for executing desired prerequisites for the primary en
 
 	#ifndef FAULT_BOOTSTRAP_BYTECODE
 		#define FAULT_BOOTSTRAP_BYTECODE \
-			(FAULT_SYSTEM_PATH "/" FACTOR_INTENTION "/" PYTHON_INTEGRALS \
-			"/bootstrap." FACTOR_INTENTION ".i")
+			(FAULT_SYSTEM_PATH "/" FACTOR_INTEGRALS "/" PYTHON_INTEGRALS \
+			"/" FAULT_INTENTION "/bootstrap.i")
 	#endif
 
 /initialize-application-context/#!syntax/c

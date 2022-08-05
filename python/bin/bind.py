@@ -100,7 +100,7 @@ def ipaths(xmacro, paths):
 		return ""
 
 def binding(platform, struct, executable, target_module, entry_point, *argv):
-	system, python, machine, intention = platform
+	system, python, machine, form = platform
 	fi, fault_location, products, control_imports, paths = struct
 
 	extensions = []
@@ -118,7 +118,7 @@ def binding(platform, struct, executable, target_module, entry_point, *argv):
 		quoted(system),
 		quoted(python),
 		quoted(machine),
-		quoted(intention),
+		quoted(form),
 		quoted(fault_location[0]),
 		quoted(fault_location[1]),
 	]
@@ -144,7 +144,7 @@ def options(argv, symbol='main'):
 	paths = []
 	defines = []
 	verbose = 0
-	intention = 'optimal'
+	form = 'optimal'
 	i = 0
 
 	for x, i in zip(argv, range(len(argv))):
@@ -175,12 +175,12 @@ def options(argv, symbol='main'):
 		elif opt == '-v':
 			verbose += 1
 		elif opt == '-i':
-			intention = x[2:]
+			form = x[2:]
 		else:
 			break
 
 	struct = (fi, fl, products, options, sys.path+paths)
-	platform = (system, python, machine, intention)
+	platform = (system, python, machine, form)
 	return effect, verbose, symbol, platform, struct, argv[i:]
 
 def render(output, factor_path, factor_argv, factor_element, platform, struct):
