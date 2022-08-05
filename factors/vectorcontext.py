@@ -16,7 +16,7 @@ from . import core
 
 def _variant_constants(variants):
 	return {
-		'fv-intention': variants.intention,
+		'fv-intention': variants.form,
 		'fv-system': variants.system,
 		'fv-architecture': variants.architecture,
 		'fv-form': variants.form
@@ -24,10 +24,10 @@ def _variant_constants(variants):
 
 def _variant_conclusions(variants):
 	return {
-		'fv-i' + variants.intention,
+		'fv-i' + variants.form,
 		'fv-system-' + variants.system,
 		'fv-architecture-' + variants.architecture,
-		'fv-intention-' + variants.intention,
+		'fv-intention-' + variants.form,
 		'fv-form-' + (variants.form or 'void'),
 	}
 
@@ -53,12 +53,12 @@ class Mechanism(object):
 		self._cache[k] = c
 		return c
 
-	def variants(self, intentions, form=''):
+	def variants(self, intentions):
 		"""
 		# Generate the full combinations of sections and variants
 		# for the given intentions.
 		"""
-		return self.context.cc_variants(self.semantics, intentions, form=form)
+		return self.context.cc_variants(self.semantics, intentions)
 
 	def unit_name_delta(self, section, variants, itype):
 		"""
@@ -158,7 +158,14 @@ class Context(object):
 
 		return unit_prefix, unit_suffix
 
-	def cc_variants(self, semantics, intentions, form=''):
+	@staticmethod
+	def _cform(intention, form):
+		if form:
+			return form
+		else:
+			return intention
+
+	def cc_variants(self, semantics, intentions):
 		"""
 		# Identify the variant combinations to use for the given &semantics and &intentions.
 		"""
@@ -167,17 +174,8 @@ class Context(object):
 		# Identify the set of variants.
 		for section in self._idefault[semantics]:
 			vfactor = (section @ 'variants')
-			try:
-				v = set(self._forms(vfactor))
-			except KeyError:
-				# Unconditional
-				v = set([form])
-
-			if form not in v:
-				continue
-
 			spec = [
-				(self.intercepts.get(i, section), lsf.types.Variants(x[0], x[1], i, form))
+				(self.intercepts.get(i, section), lsf.types.Variants(x[0], x[1], i))
 				for i, x in itertools.product(intentions, self._variants(vfactor))
 			]
 			fvp.extend(spec)
@@ -313,7 +311,11 @@ class Context(object):
 
 	def _read_cell(self, factor):
 		# Load vector.
-		product, project, fp = self.projects.split(factor)
+		try:
+			product, project, fp = self.projects.split(factor)
+		except LookupError:
+			raise LookupError(factor)
+
 		for (name, ft), fd in project.select(fp.container):
 			if name == fp:
 				syms, srcs = fd

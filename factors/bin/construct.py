@@ -30,7 +30,7 @@ class Application(kcore.Context):
 	def __init__(self,
 			executor,
 			context, cache,
-			intentions, form, telemetry,
+			intentions, telemetry,
 			product, projects,
 			symbols,
 			rebuild=0,
@@ -38,7 +38,6 @@ class Application(kcore.Context):
 		):
 		self.cxn_executor = executor
 		self.cxn_intentions = intentions
-		self.cxn_form = form
 		self.cxn_cache = cache
 		self.cxn_context = context
 		self.cxn_product = product
@@ -57,13 +56,6 @@ class Application(kcore.Context):
 
 		# Optional system command intercept.
 		executor = environ.get('FPI_EXECUTOR', None)
-
-		i = intentstr.find('/')
-		if i > -1:
-			form = intentstr[:i]
-			intentstr = intentstr[i+1:]
-		else:
-			form = ''
 
 		i = intentstr.find('@')
 		if i > -1:
@@ -95,7 +87,7 @@ class Application(kcore.Context):
 
 		return Class(
 			executor, ctx, cdi,
-			intentions, form, telemetry,
+			intentions, telemetry,
 			pd, projects,
 			symbols, rebuild=rebuild,
 		)
@@ -169,7 +161,6 @@ class Application(kcore.Context):
 				etime,
 				self.cxn_log,
 				self.cxn_intentions,
-				self.cxn_form,
 				self.cxn_telemetry,
 				self.cxn_cache,
 				self.cxn_context,

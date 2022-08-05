@@ -92,7 +92,6 @@ def work_key_cache(prefix, variants):
 	key = prefix
 	# Using slashes as separators as they should not
 	# present in the values for filesystem safety.
-	key += '/i=' + variants.intention
 	key += '/s=' + variants.system
 	key += '/a=' + variants.architecture
 	key += '/f=' + variants.form
@@ -225,7 +224,6 @@ class Construction(kcore.Context):
 			time,
 			log,
 			intentions,
-			form,
 			telemetry,
 			cache,
 			context,
@@ -251,7 +249,6 @@ class Construction(kcore.Context):
 		self.c_sequence = None
 
 		self.c_intentions = intentions
-		self.c_form = form
 		self.c_telemetry = telemetry
 		self.c_executor = executor
 		self.c_cache = cache
@@ -388,7 +385,7 @@ class Construction(kcore.Context):
 		nsources = len(factor.sources())
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
-		for section, variants in mechanism.variants(intentions, form=self.c_form):
+		for section, variants in mechanism.variants(intentions):
 			u_prefix, u_suffix = mechanism.unit_name_delta(section, variants, factor.type)
 			image = factor.image(variants)
 			iv = {}
@@ -406,11 +403,8 @@ class Construction(kcore.Context):
 				# with meta.workspaces.bin.control to connect builds to their
 				iv['factor-telemetry'] = self.c_telemetry
 				iv['telemetry-directory'] = [
-					scache(work(x, factor.name)) / variants.intention
-					for x in [
-						dataclasses.replace(variants, intention=i, form='')
-						for i in self.c_telemetry
-					]
+					scache(work(x, factor.name)) / variants.form
+					for x in map(variants.reform, self.c_telemetry)
 				]
 
 			fint = core.Integrand((

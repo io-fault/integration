@@ -236,7 +236,7 @@ class Integrand(tuple):
 
 	@property
 	def intention(self) -> str:
-		return self.variants.intention
+		return self.variants.form
 
 	@property
 	def system(self) -> str:
