@@ -9,8 +9,8 @@
 	- &..networks
 	- &..platforms
 	- &..daemons
+	- &..machines
 	- &..python
-	- &..machine
 	- &..root
 
 /*.txt/
