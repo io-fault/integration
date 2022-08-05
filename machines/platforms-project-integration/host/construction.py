@@ -13,7 +13,7 @@ from fault.system import execution
 
 from ...root import query
 
-from ...machine import __name__ as machine_project
+from ...machines import __name__ as machine_project
 from ...python import __name__ as python_project
 from ...chapters import __name__ as chapters_project
 
@@ -34,7 +34,7 @@ def mktype(semantics, type, language, identifier='http://if.fault.io/factors'):
 	return lsf.types.Reference(identifier, fpath, 'type', language)
 
 interfaces = [
-	lsf.types.Reference('http://fault.io/integration/machine', lsf.types.factor@'include'),
+	lsf.types.Reference('http://fault.io/integration/machines', lsf.types.factor@'include'),
 	lsf.types.Reference('http://fault.io/integration/python', lsf.types.factor@'include'),
 ]
 
