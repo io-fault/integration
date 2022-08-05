@@ -80,8 +80,8 @@ bootstrap_extension ()
 		"-DF_FACTOR=$projectfactor.$modname" \
 		-fwrapv src/*.c
 
-	mkdir -p "$intdir"
-	cp "../../$sofile" "$intdir/$modname.bootstrap.i"
+	mkdir -p "$intdir/bootstrap"
+	cp "../../$sofile" "$intdir/bootstrap/$modname.i"
 }
 
 bootstrap_project ()
