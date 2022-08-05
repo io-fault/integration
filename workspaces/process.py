@@ -31,7 +31,7 @@ def initialize(wkenv:system.Environment, config, command, *argv):
 	return summary
 
 # Build the product or a project set.
-def _process(wkenv, command, intentions, argv, ident, form=''):
+def _process(wkenv, command, intentions, argv, ident):
 	from system.root.query import dispatch
 	from fault.system.execution import KInvocation
 
@@ -46,7 +46,7 @@ def _process(wkenv, command, intentions, argv, ident, form=''):
 
 		cmd = xargv + [
 			str(ccontext), 'persistent', str(cache),
-			form + '/' + ':'.join(intentions),
+			':'.join(intentions) + link,
 			str(wkenv.work_product_route), str(pj.factor)
 		]
 		cmd.extend(argv[1:])
@@ -102,11 +102,9 @@ def build(wkenv:system.Environment,
 
 	monitors, summary = terminal.aggregate(control, proctheme, limit, width=180)
 	if command == 'delineate':
-		cform = 'delineated'
-	else:
-		cform = ''
+		intentions = {'delineated'}
 
-	i = tools.partial(_process, wkenv, command, intentions, symbols, form=cform)
+	i = tools.partial(_process, wkenv, command, intentions, symbols)
 
 	if explicit is not None:
 		q = SQueue(explicit)
