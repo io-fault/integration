@@ -292,6 +292,10 @@ class Integrand(tuple):
 			yield self.factor.get(field)
 			return
 
+		if field.startswith('factor-image:'):
+			yield self.factor.image(self.variants.reform(field[len('factor-image:'):]))
+			return
+
 		# Presume requirement query at this point.
 		try:
 			ref, rfield = self._qrefs(self.factor.type, field)
