@@ -247,10 +247,6 @@ class Integrand(tuple):
 		return self.variants.architecture
 
 	@property
-	def format(self) -> str:
-		return self.variants.get('format') or 'void'
-
-	@property
 	def image(self):
 		return self.locations['factor-image']
 

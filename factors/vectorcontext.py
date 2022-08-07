@@ -125,13 +125,11 @@ class Context(object):
 		# Initialization Context for loading projections and variants.
 		self._vinit = vf.Context(set(), {})
 
-	def _forms(self, factor):
-		# Read the forms vector with the initialization context.
-		# Used when loading a solution's variants.
-		return self._cat(self._vinit, self._load_vector(factor), '[forms]')
-
 	def _variants(self, factor):
-		# Read the full set of system-architecture pairs from a variants factor.
+		"""
+		# Read the full product of system-architecture pairs from
+		# the given variants &factor.
+		"""
 		v = self._load_vector(factor)
 		for system in self._cat(self._vinit, v, '[systems]'):
 			for arch in self._cat(self._vinit, v, '[' + system + ']'):
@@ -157,13 +155,6 @@ class Context(object):
 			unit_suffix = ""
 
 		return unit_prefix, unit_suffix
-
-	@staticmethod
-	def _cform(intention, form):
-		if form:
-			return form
-		else:
-			return intention
 
 	def cc_variants(self, semantics, intentions):
 		"""
@@ -310,7 +301,9 @@ class Context(object):
 		return self
 
 	def _read_cell(self, factor):
-		# Load vector.
+		"""
+		# Get the sole source type and path of the given &factor.
+		"""
 		try:
 			product, project, fp = self.projects.split(factor)
 		except LookupError:
@@ -323,14 +316,18 @@ class Context(object):
 				return first
 
 	def _load_vector(self, factor):
-		# Load vector.
+		"""
+		# Load vector formulations from the &factor.
+		"""
 		c = self._read_cell(factor)
 		if c is None:
 			raise LookupError(factor)
 		return vf.parse(c[1].fs_load().decode('utf-8'))
 
 	def _load_system(self, factor):
-		# Load system command.
+		"""
+		# Load system command vector identified by &factor.
+		"""
 		try:
 			typ, src = self._read_cell(factor)
 		except Exception as error:
@@ -343,7 +340,9 @@ class Context(object):
 		return ()
 
 	def _cat(self, ctx, index, name, fallback=None):
-		# Catenate the vectors selected in index using _vinit.
+		"""
+		# Catenate the vectors selected in &index.
+		"""
 		if name in index:
 			return ctx.chain(self._iq, index, name)
 		else:
