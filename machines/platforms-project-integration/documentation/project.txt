@@ -9,7 +9,7 @@
 /name/
 	`platforms`
 /abstract/
-	Execution Platform configuration and usage tools.
+	System Context tools for initialization, configuration, and usage.
 
 /authority/
 	`fault.io`
