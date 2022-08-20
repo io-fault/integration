@@ -204,7 +204,7 @@ def main(sysargv):
 		# Create executable.
 		assert effect == 'executable'
 
-		includes = str(project_directory / 'include' / 'src')
+		includes = str(project_directory / 'include')
 		try:
 			xargv = compile_sc(target_exe, '/dev/stdin', includes, os.environ.get('CC') or None)
 		except ImportError:
