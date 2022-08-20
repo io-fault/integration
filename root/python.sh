@@ -63,9 +63,9 @@ bootstrap_extension ()
 	intdir="../../extensions/__f-int__/$defsys-$defarch/"
 	compile ${CC:-cc} -w \
 		-o "../../$sofile" \
-		"-I$FAULT_SYSTEM_PATH/python/include/src" \
-		"-I$FAULT_SYSTEM_PATH/machines/include/src" \
-		"-I$fault_dir/system/include/src" \
+		"-I$FAULT_SYSTEM_PATH/python/include" \
+		"-I$FAULT_SYSTEM_PATH/machines/include" \
+		"-I$fault_dir/system/include" \
 		"-I$prefix/include" \
 		"-I$PYTHON_INCLUDE" \
 		\
@@ -78,7 +78,7 @@ bootstrap_extension ()
 		"-DF_FACTOR_NAME=$modname" \
 		"-DF_PROJECT_PATH=$projectfactor" \
 		"-DF_FACTOR=$projectfactor.$modname" \
-		-fwrapv src/*.c
+		-fwrapv ./*.c
 
 	mkdir -p "$intdir/bootstrap"
 	cp "../../$sofile" "$intdir/bootstrap/$modname.i"
