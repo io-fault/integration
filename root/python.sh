@@ -3,6 +3,11 @@
 # Presumes &system.root.parameters has been sourced.
 ##
 
+# Prefer connecting with a symbolic link rather than -I so that
+# &(pdctl integrate) can function without additional configuration.
+rm -f "$FAULT_SYSTEM_PATH/python/include/fault/python/implementation"
+ln -sf "$PYTHON_INCLUDE" "$FAULT_SYSTEM_PATH/python/include/fault/python/implementation"
+
 prefix="$PYTHON_PREFIX"
 pylib="python$PYTHON_VERSION$PYTHON_ABI"
 
