@@ -17,4 +17,4 @@ libexec.sh "bootstrap"
 host.sh "$FXC" "$FCC"
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-products.sh "$FXC" "$FCC" python-extension "-I$PYTHON_INCLUDE"
+products.sh "$FXC" "$FCC"
