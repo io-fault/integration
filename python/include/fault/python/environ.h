@@ -3,9 +3,9 @@
 	// and for providing additional utility.
 */
 #define PY_SSIZE_T_CLEAN
-#include <Python.h>
-#include <structmember.h>
-#include <pythread.h>
+#include <fault/python/implementation/Python.h>
+#include <fault/python/implementation/structmember.h>
+#include <fault/python/implementation/pythread.h>
 
 #if __ALWAYS__()
 	/**
