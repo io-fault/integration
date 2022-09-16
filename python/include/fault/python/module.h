@@ -1,7 +1,7 @@
 /**
 	// Included once by the source file defining module initialization.
 */
-#include "fault/symbols.h"
+#include <fault/symbols.h>
 
 #define FAULT_MODULE_FUNCTIONS() \
 	FAULT_METRICS_FUNCTIONS()

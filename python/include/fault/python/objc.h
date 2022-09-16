@@ -1,15 +1,15 @@
 /**
 	# Objective-C is not particularly interesting outside of this context, so Apple specific.
 */
-#import "CoreFoundation/CoreFoundation.h"
-#import "Foundation/NSArray.h"
-#import "Foundation/NSDictionary.h"
-#import "Foundation/NSString.h"
-#import "Foundation/NSData.h"
-#import "Foundation/NSValue.h"
-#import "Foundation/NSDecimal.h"
-#import "Foundation/NSAutoreleasePool.h"
-#import "Foundation/NSAppleScript.h"
+#import <CoreFoundation/CoreFoundation.h>
+#import <Foundation/NSArray.h>
+#import <Foundation/NSDictionary.h>
+#import <Foundation/NSString.h>
+#import <Foundation/NSData.h>
+#import <Foundation/NSValue.h>
+#import <Foundation/NSDecimal.h>
+#import <Foundation/NSAutoreleasePool.h>
+#import <Foundation/NSAppleScript.h>
 
 @interface NSObject (python)
 -(PyObj) PythonObject;
