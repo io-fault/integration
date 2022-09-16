@@ -80,6 +80,7 @@
 	fv-intention-coverage: -O0
 
 -includes:
+	: -I[http://if.fault.io/factors/meta.sources#source-paths]
 	: -I[http://if.fault.io/factors/lambda.sources#source-paths]
 	: -isystem [-system-includes]
 
