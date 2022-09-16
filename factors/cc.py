@@ -319,7 +319,10 @@ class Construction(kcore.Context):
 					ftype = _ftype(target.type)
 					fr = reqs.get(target, ())
 					fd = deps.get(target, ())
-					self.collect(self.c_intentions, self.select(ftype), target, fr, fd)
+
+					mechanism = self.select(ftype)
+					if mechanism is not None:
+						self.collect(self.c_intentions, mechanism, target, fr, fd)
 		except StopIteration:
 			self._end_of_factors = True
 			self.xact_exit_if_empty()
@@ -414,7 +417,7 @@ class Construction(kcore.Context):
 			))
 			del iv
 
-			if not fint.operable:
+			if not fint.operable(section):
 				continue
 
 			self._prepare_work_directory(locations, factor.sources())

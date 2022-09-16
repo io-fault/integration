@@ -60,6 +60,12 @@ class Mechanism(object):
 		"""
 		return self.context.cc_variants(self.semantics, intentions)
 
+	def integrates(self, section, variants, itype):
+		"""
+		# Identify whether the mechanism is operable.
+		"""
+		return str(itype) in self.context.cc_integration_types(section, variants, itype)
+
 	def unit_name_delta(self, section, variants, itype):
 		"""
 		# Identify the prefix and suffix for the unit file.
@@ -155,6 +161,15 @@ class Context(object):
 			unit_suffix = ""
 
 		return unit_prefix, unit_suffix
+
+	def cc_integration_types(self, section, variants, itype):
+		# Supported integration types.
+		ctx = vf.Context(_variant_conclusions(variants), _variant_constants(variants))
+		exe, adapter, idx = self._read_merged(
+			ctx, section, variants, 'Render', itype, None
+		)
+		aft, = (self._cat(ctx, idx, "[factor-type]"))
+		return list((aft + '.' + x) for x in self._cat(ctx, idx, "[integration-type]"))
 
 	def cc_variants(self, semantics, intentions):
 		"""

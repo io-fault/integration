@@ -221,13 +221,16 @@ class Integrand(tuple):
 	locations = property(operator.itemgetter(5))
 	vectors = property(operator.itemgetter(6))
 
-	@property
-	def operable(self):
+	def operable(self, section):
 		"""
 		# Whether the build should be considered operable.
 		"""
+		if not self.mechanism.integrates(section, self.variants, self.factor.type):
+			return False
+
 		for x in self.factor.sources():
 			return True
+
 		return False
 
 	@property
