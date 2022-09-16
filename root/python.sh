@@ -72,7 +72,6 @@ bootstrap_extension ()
 		"-I$FAULT_SYSTEM_PATH/machines/include" \
 		"-I$fault_dir/system/include" \
 		"-I$prefix/include" \
-		"-I$PYTHON_INCLUDE" \
 		\
 		"-D_DEFAULT_SOURCE" \
 		\
