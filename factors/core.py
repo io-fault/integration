@@ -17,7 +17,10 @@ class SystemFactor(object):
 	"""
 
 	fields = {
-		'source-paths': {'http://if.fault.io/factors/lambda.sources'},
+		'source-paths': {
+			'http://if.fault.io/factors/lambda.sources',
+			'http://if.fault.io/factors/meta.sources',
+		},
 		'factor-image': {
 			'http://if.fault.io/factors/system.library-name',
 			'http://if.fault.io/factors/system.library',
@@ -39,9 +42,36 @@ class SystemFactor(object):
 		return None
 
 	@property
-	def symbols(self):
+	def requirements(self):
 		# System factors are always final and dependencies are irrelevant.
-		return {}
+		return set()
+
+	libdir = lsf.types.Reference(
+		'http://if.fault.io/factors',
+		lsf.types.factor@'system.directory',
+		'type', None
+	)
+	@classmethod
+	def from_libdir(Class, path):
+		return Class(Class.libdir, path)
+
+	libname = lsf.types.Reference(
+		'http://if.fault.io/factors',
+		lsf.types.factor@'system.library-name',
+		'type', None
+	)
+	@classmethod
+	def from_libname(Class, name):
+		return Class(Class.libname, name)
+
+	include = lsf.types.Reference(
+		'http://if.fault.io/factors',
+		lsf.types.factor@'meta.sources',
+		'type', None
+	)
+	@classmethod
+	def from_include(Class, path):
+		return Class(Class.include, path)
 
 	def __init__(self, type, data):
 		self.type = type
@@ -89,6 +119,20 @@ class Target(object):
 	}
 
 	@property
+	def references(self):
+		"""
+		# Whether the Target intends to reprents a set of references.
+		"""
+		return str(self.type) == 'http://if.fault.io/factors/meta.references'
+
+	@property
+	def system(self):
+		"""
+		# Whether the Target intends to reprents a system context.
+		"""
+		return str(self.type) == 'http://if.fault.io/factors/system.references'
+
+	@property
 	def _factor_id(self):
 		return '/'.join((self.project.identifier, str(self.route)))
 
@@ -132,7 +176,7 @@ class Target(object):
 					self.project,
 					self.route,
 					self.type,
-					self.symbols,
+					self.requirements,
 					self.sources(),
 				])
 			)
@@ -166,7 +210,7 @@ class Target(object):
 			project:(lsf.Project),
 			route:(lsf.types.FactorPath),
 			type:(str),
-			symbols:(typing.Sequence[str]),
+			requirements:(typing.Sequence[str]),
 			sources:(typing.Sequence[files.Path]),
 			parameters:(typing.Mapping)=None,
 			variants:(typing.Mapping)=None,
@@ -175,7 +219,7 @@ class Target(object):
 		self.project = project
 		self.route = route
 		self.type = type
-		self.symbols = symbols
+		self.requirements = requirements
 		self._sources = list(sources)
 		self.parameters = parameters
 		self.method = method

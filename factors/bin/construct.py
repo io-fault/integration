@@ -122,6 +122,7 @@ class Application(kcore.Context):
 		pctx = lsf.Context()
 		rctx = lsf.Context.from_product_connections(pctx.connect(work))
 		rctx.load() # Connection Project Index (requirements)
+		rctx.configure()
 		pctx.load() # Build Project Index (targets)
 		pctx.configure() # Protocol Configuration Inheritance.
 
@@ -149,11 +150,10 @@ class Application(kcore.Context):
 			targets = [
 				core.Target(
 					project, fp,
-					ft, # integration-type
-					{x: symbols[x] for x in fs[0]}, # requirements
-					fs[1], # sources
+					# intergration-type, requirements, sources
+					ft, fr, fs,
 					variants={'name':fp.identifier})
-				for (fp, ft), fs in project.select(constraint)
+				for (fp, ft), (fr, fs) in project.select(constraint)
 			]
 
 			seq.append(cc.Construction(

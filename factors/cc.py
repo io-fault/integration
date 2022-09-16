@@ -129,6 +129,8 @@ def updated(outputs, inputs, never=False, cascade=False, subfactor=True):
 			# Subfactor inherits never regardless of cascade.
 			return False
 
+	# Identify the earliest modification time of the output set.
+	# If any output does not exist, return &False.
 	olm = None
 	for output in outputs:
 		if output.fs_type() == 'void':
@@ -137,7 +139,7 @@ def updated(outputs, inputs, never=False, cascade=False, subfactor=True):
 		lm = output.fs_status().system.st_mtime
 		olm = min(lm, olm or lm)
 
-	# Otherwise, check the inputs against outputs.
+	# Otherwise, check the inputs against the identified modification time.
 	# In the case of a non-cascading rebuild, it is desirable
 	# to perform the input checks.
 
@@ -160,7 +162,18 @@ def updated(outputs, inputs, never=False, cascade=False, subfactor=True):
 	# object has already been updated.
 	return True
 
-def interpret_reference(cc, ctxpath, _factor, symbol, reference, rreqs={}, rsources=[]):
+def construct_reference_target(pj, reqs, rsrc, method, record):
+	((fp, ft), (frefs, fsrcs)) = record
+	reffactor = str(ft) in {
+		'http://if.fault.io/factors/meta.references',
+		'http://if.fault.io/factors/system.references',
+	}
+	if reffactor:
+		return core.Target(pj, fp, ft, [], fsrcs, method=method)
+	else:
+		return core.Target(pj, fp, ft, reqs, rsrc, method=method)
+
+def interpret_reference(cc, ctxpath, _factor, reference, *, rreqs={}, rsources=[]):
 	"""
 	# Extract the project identifier from the &url and find a corresponding project.
 
@@ -176,42 +189,61 @@ def interpret_reference(cc, ctxpath, _factor, symbol, reference, rreqs={}, rsour
 	rproject_name = i['path'][-1]
 
 	i['path'][-1] = '' # Force the trailing slash in serialize()
-	product = ri.serialize(i)
 
-	id = product + rproject_name
+	iid = ri.serialize(i) + rproject_name
 	for ctx in ctxpath:
 		try:
-			pj = ctx.project(id) #* No project in path.
+			pj = ctx.project(iid) #* No project in path.
 		except LookupError:
 			pass
 		else:
 			break
 	else:
-		raise Exception("could not find %s project in contexts" %(id,))
+		raise LookupError("could not find %s project in the factor contexts" %(iid,))
 
 	for record in pj.select(fpath.container):
 		fp = record[0][0]
 		if fp.identifier == fpath.identifier:
-			((fp, ft), (fsyms, fsrcs)) = record
-			yield core.Target(
-				pj, fp, ft, rreqs, rsources,
-				method=reference.method)
+			yield construct_reference_target(pj, rreqs, rsources, reference.method, record)
+			break
+	else:
+		# No factor matched &fpath.container, presume directory.
+		for record in pj.select(fpath):
+			yield construct_reference_target(pj, rreqs, rsources, reference.method, record)
 
-def requirements(cc, ctxpath, symbols, factor):
+def resolve_meta_references(ir, targets):
+	for t in targets:
+		if t.references:
+			for fmt, src in t.sources():
+				for line in src.get_text_content().split('\n'):
+					line = line.strip()
+					if not line:
+						continue
+					sub = t.type.from_ri(None, line)
+					yield from resolve_meta_references(ir, ir(sub))
+		elif t.system:
+			# libraries
+			for fmt, src in t.sources():
+				prefix = ''
+				for libset in src.get_text_content().split('\n/'):
+					libdir, *libnames = src.get_text_content().split('\n')
+					yield core.SystemFactor.from_libdir(prefix+libdir)
+					prefix = '/'
+					yield from map(core.SystemFactor.from_libname, libnames)
+		else:
+			yield t
+
+def requirements(cc, ctxpath, symbols, factor:core.Target):
 	"""
 	# Return the set of factors that is required to build this Target, &factor.
 	"""
 
-	for sym, refs in factor.symbols.items():
-		if sym in symbols:
-			yield from symbols[sym]
-			continue
-
-		for r in refs:
-			if isinstance(r, (core.Target, core.SystemFactor)):
-				yield r
-			else:
-				yield from interpret_reference(cc, ctxpath, factor, sym, r)
+	for ref in factor.requirements:
+		if isinstance(ref, (core.Target, core.SystemFactor)):
+			yield ref
+		else:
+			ri = functools.partial(interpret_reference, cc, ctxpath, factor)
+			yield from resolve_meta_references(ri, ri(ref))
 
 class Construction(kcore.Context):
 	"""
@@ -382,7 +414,7 @@ class Construction(kcore.Context):
 		subfactor = (factor.project.factor == self.c_project.factor)
 		xfilter = functools.partial(self._filter, subfactor=subfactor)
 
-		# Execution override for supporting command tracing and usage constraints.
+		# Execution override for supporting command tracing.
 		exe = self.c_executor
 		skipped = 0
 		nsources = len(factor.sources())
@@ -403,7 +435,7 @@ class Construction(kcore.Context):
 
 			if self.c_telemetry:
 				# Usually, self.c_telemetry == ['metrics'] when constructing factors
-				# with meta.workspaces.bin.control to connect builds to their
+				# with meta.workspaces to connect builds to their data capture directory.
 				iv['factor-telemetry'] = self.c_telemetry
 				iv['telemetry-directory'] = [
 					scache(work(x, factor.name)) / variants.form
