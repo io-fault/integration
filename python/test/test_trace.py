@@ -70,7 +70,3 @@ events = [
 	(('test/test_trace.py', 8, 11, 'rc_method'), 3, 23),
 	(('test/test_trace.py', 22, 32, 'test_collection'), 2, 24),
 ]
-
-if __name__ == '__main__':
-	from fault.test import engine as test; import sys
-	test.execute(sys.modules[__name__])
