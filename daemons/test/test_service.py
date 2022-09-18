@@ -50,8 +50,3 @@ def test_Configuration(test):
 	srv.store_actuation()
 	srv2.load_actuation()
 	test/srv2.actuates == False
-
-if __name__ == '__main__':
-	import sys
-	from fault.test import engine
-	engine.execute(sys.modules[__name__])
