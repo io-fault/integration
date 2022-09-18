@@ -21,7 +21,3 @@ def test_updated(test):
 	of.fs_init()
 	of.set_last_modified(sf.get_last_modified().elapse(second=10))
 	test/module.updated([of], [sf], None) == True
-
-if __name__ == '__main__':
-	from fault.test import library as libtest; import sys
-	libtest.execute(sys.modules[__name__])

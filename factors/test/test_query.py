@@ -29,7 +29,3 @@ def test_executables(test):
 		found, unavail = module.executables([])
 		test/unavail == set([])
 		test/found == {}
-
-if __name__ == '__main__':
-	from .. import libtest; import sys
-	libtest.execute(sys.modules[__name__])
