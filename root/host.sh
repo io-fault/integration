@@ -6,4 +6,4 @@
 
 FXC="$1"
 shift 1
-f_pyx system.platforms.bin.initialize "$FXC" || exit
+f_pyx system.machines.bin.initialize "$FXC" || exit
