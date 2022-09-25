@@ -24,7 +24,7 @@ def mkinfo(path, name):
 		authority = 'fault.io',
 		abstract = "Construction Context.",
 		icon = dict([('emoji', "#")]),
-		contact = "&<http://fault.io/critical>"
+		contact = "http://fault.io/critical"
 	)
 
 def mktype(semantics, type, language, identifier='http://if.fault.io/factors'):
@@ -38,19 +38,26 @@ interfaces = [
 	lsf.types.Reference('http://fault.io/integration/python', lsf.types.factor@'include'),
 ]
 
-ihost = {
-	'*.c': [mktype('system', 'type', 'c.2011')],
-	'*.h': [mktype('system', 'type', 'c.header')],
+formats = {
+	'http://if.fault.io/factors/system': [
+		('type', 'c', '2011', 'c'),
+		('type', 'h', '2011', 'c'),
+	],
+	'http://if.fault.io/factors/python': [
+		('module', 'py', 'psf-v3', 'python'),
+		('interface', 'pyi', 'psf-v3', 'python'),
+	],
+	'http://if.fault.io/factors/vector': [
+		('set', 'v', '', 'fault-vc'),
+		('system', 'sys', '', 'fault-vi'),
+	],
 }
 
-ipython = {
-	'*.py': [mktype('python', 'module', 'python.psf-v3')],
-	'*.pyi': [mktype('python', 'interface', 'python.psf-v3')],
-}
-
-ivector = {
-	'*.v': [mktype('vector', 'set', 'fault-vc')],
-	'*.sys': [mktype('vector', 'system', 'fault-vi')],
+vformats = {
+	'http://if.fault.io/factors/vector': [
+		('set', 'v', '', 'fault-vc'),
+		('system', 'sys', '', 'fault-vi'),
+	],
 }
 
 vtype = 'vector.set'
@@ -270,23 +277,17 @@ def python(context, psystem, parch, factor='type', name='cc'):
 		mksole('source', vtype, ''),
 	]
 
-def mkctx(info, product, context, soles=[]):
+def mkctx(info, formats, product, context, soles=[]):
 	route = (product/context/'context').fs_alloc()
-	i = list(itertools.chain(
-		ihost.items(),
-		ipython.items(),
-		ivector.items()
-	))
-	return (factory.Parameters.define(info, i, sets=[], soles=soles), route)
+	return (factory.Parameters.define(info, formats, sets=[], soles=soles), route)
 
 def mkproject(info, product, context, project, soles):
 	route = (product/context/project).fs_alloc()
-	i = list(ivector.items())
-	return (factory.Parameters.define(info, i, sets=[], soles=soles), route)
+	return (factory.Parameters.define(info, vformats, sets=[], soles=soles), route)
 
 def mktools(context, route, name='cc-tool-adapters'):
 	pi = mkinfo(context + '.context', name)
-	pj = mkctx(pi, route, context, [])
+	pj = mkctx(pi, formats, route, context, [])
 	factory.instantiate(*pj)
 
 def system_select_linker(system):
@@ -368,7 +369,7 @@ def mkvectors(context, route, name='vectors'):
 
 	# Vectors Context
 	pi = mkinfo(context + '.context', name)
-	pj = mkctx(pi, route, context, soles)
+	pj = mkctx(pi, formats, route, context, soles)
 	factory.instantiate(*pj)
 
 	hsys, harch = identity.root_execution_context()
