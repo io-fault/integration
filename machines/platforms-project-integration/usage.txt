@@ -1,2 +1,0 @@
-Link system/machines/platforms-project-integration to system/platforms
-in order to use commits before the repository was merged into machines.
