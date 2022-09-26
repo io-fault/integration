@@ -54,8 +54,8 @@ loaders and the second is for executing desired prerequisites for the primary en
 		#define FACTOR_SYSTEM F_SYSTEM_STR
 	#endif
 
-	#ifndef FACTOR_MACHINE
-		#define FACTOR_MACHINE F_TARGET_ARCHITECTURE_STR
+	#ifndef FACTOR_ARCHITECTURE
+		#define FACTOR_ARCHITECTURE F_TARGET_ARCHITECTURE_STR
 	#endif
 
 	#ifndef FACTOR_PYTHON
@@ -339,7 +339,7 @@ loaders and the second is for executing desired prerequisites for the primary en
 			FACTOR_INTEGRALS,
 			FACTOR_SYSTEM,
 			FACTOR_PYTHON,
-			FACTOR_MACHINE,
+			FACTOR_ARCHITECTURE,
 			FACTOR_INTENTION
 
 			#define FACTOR_PATH_STRING(x) , x
