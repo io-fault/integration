@@ -13,8 +13,7 @@ from fault.system import execution
 
 from ...root import query
 
-from ...machines import __name__ as machine_project
-from ...python import __name__ as python_project
+from ...machines import __name__ as machines_project
 from ...chapters import __name__ as chapters_project
 
 def mkinfo(path, name):
@@ -35,7 +34,6 @@ def mktype(semantics, type, language, identifier='http://if.fault.io/factors'):
 
 interfaces = [
 	lsf.types.Reference('http://fault.io/integration/machines', lsf.types.factor@'include'),
-	lsf.types.Reference('http://fault.io/integration/python', lsf.types.factor@'include'),
 ]
 
 formats = {
@@ -89,8 +87,8 @@ def mkset(fpath:str, type:str, symbols, sources):
 	return (fpath, type, symbols, sources)
 
 def getsource(project, name, ext='.v'):
-	pj = factors.context.split('.'.join((project, name)))[1]
-	return pj.route/(name+ext)
+	pd, pj, fp = factors.context.split('.'.join((project, name)))
+	return (pj.route//fp).suffix(ext)
 
 def comment(text):
 	return "# " + text + "\n"
@@ -177,8 +175,8 @@ def form_host_type():
 	)
 	return common
 
-def host(context, hlinker, hsystem, harch, factor='type', name='cc', cc='/usr/bin/cc'):
-	machine_cc = getsource(machine_project, name)
+def host(context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/usr/bin/cc'):
+	machine_cc = getsource(machines_project, name)
 	deline = system(str(clang_delineate))
 	deline = query.dispatched('python', '-d', '.system', 'tools.fault-llvm.delineate')
 	adeline = query.dispatched('archive-delineated')
@@ -258,8 +256,8 @@ def form_python_type():
 	)
 	return common
 
-def python(context, psystem, parch, factor='type', name='cc'):
-	python_cc = getsource(python_project, name)
+def python(context, psystem, parch, factor='type', name='python.cc'):
+	python_cc = getsource(machines_project, name)
 	variants = form_variants(psystem, parch)
 	common = form_python_type()
 
