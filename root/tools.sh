@@ -13,7 +13,7 @@ f_pdctl ()
 
 f_bind ()
 {
-	f_pyx .module system.python.bin.bind \
+	f_pyx .module system.machines.python.bind \
 		"-F$FAULT_PYTHON_PATH" "-L$SYSTEM_PRODUCT" \
 		"$@"
 }

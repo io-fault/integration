@@ -5,8 +5,8 @@
 
 # Prefer connecting with a symbolic link rather than -I so that
 # &(pdctl integrate) can function without additional configuration.
-rm -f "$FAULT_SYSTEM_PATH/python/include/fault/python/implementation"
-ln -sf "$PYTHON_INCLUDE" "$FAULT_SYSTEM_PATH/python/include/fault/python/implementation"
+rm -f "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
+ln -sf "$PYTHON_INCLUDE" "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
 
 prefix="$PYTHON_PREFIX"
 pylib="python$PYTHON_VERSION$PYTHON_ABI"
@@ -68,7 +68,6 @@ bootstrap_extension ()
 	intdir="../../extensions/__f-int__/$defsys-$defarch/"
 	compile ${CC:-cc} -w \
 		-o "../../$sofile" \
-		"-I$FAULT_SYSTEM_PATH/python/include" \
 		"-I$FAULT_SYSTEM_PATH/machines/include" \
 		"-I$fault_dir/system/include" \
 		"-I$prefix/include" \
