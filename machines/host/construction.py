@@ -12,9 +12,7 @@ from fault.system import identity
 from fault.system import execution
 
 from ...root import query
-
 from ...machines import __name__ as machines_project
-from ...chapters import __name__ as chapters_project
 
 def mkinfo(path, name):
 	return lsf.types.Information(
@@ -202,43 +200,6 @@ def host(context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/u
 		mksole('archive', vtype, ''),
 	]
 
-def form_text_type():
-	common = ""
-	common += constant('-text-tool',
-		'.ft-text-cc',
-	)
-	common += constant('Translate',
-		'[-text-tool]',
-		'-parse-text-1',
-		'.text-delineate-1',
-	)
-	common += constant('Render',
-		'[-text-tool]',
-		'-store-chapter-1',
-		'.text-delineate-1',
-	)
-	return common
-
-def text(context, factor='type', name='cc'):
-	text_cc_vectors = getsource(chapters_project, name)
-
-	variants = form_variants('void', 'json', forms=['delineated'])
-	common = form_text_type()
-
-	txtcc = query.dispatched('text-cc')
-
-	return [
-		mksole('ft-text-cc', 'vector.system', txtcc),
-		mksole('text-delineate-1', vtype, text_cc_vectors.fs_load()),
-		mksole('variants', vtype, variants),
-		mksole('type', vtype, common),
-
-		# Intregation types.
-		mksole('chapter', vtype, ''),
-		mksole('manual', vtype, ''),
-		mksole('source', vtype, ''),
-	]
-
 def form_python_type():
 	common = ""
 	common += constant('-pyc-tool',
@@ -387,11 +348,6 @@ def mkvectors(context, route, name='vectors'):
 	psys, parch = identity.python_execution_context()
 	pi = mkinfo(context + '.python', 'python')
 	pj = mkproject(pi, route, context, 'python', python(context, psys, parch))
-	factory.instantiate(*pj)
-
-	# Chapters
-	pi = mkinfo(context + '.text', 'text')
-	pj = mkproject(pi, route, context, 'text', text(context))
 	factory.instantiate(*pj)
 
 def mkcc(route):

@@ -50,10 +50,12 @@ def main(inv:(process.Invocation)) -> (process.Exit):
 			# Initialize host default cc.
 			# Load the project index.
 			from ..host import construction as cci
+			from ..text import construction as cct
 			from fault.system import factors
 			factors.context.load()
 			factors.context.configure()
 			cci.mkcc(ccr)
+			cct.mkcc(ccr * 'documentation')
 
 	return inv.exit(0)
 
