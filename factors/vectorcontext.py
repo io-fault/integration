@@ -64,7 +64,11 @@ class Mechanism(object):
 		"""
 		# Identify whether the mechanism is operable.
 		"""
-		return str(itype) in self.context.cc_integration_types(section, variants, itype)
+		try:
+			return str(itype) in self.context.cc_integration_types(section, variants, itype)
+		except KeyError:
+			# No constraints expressed by vectors.
+			return True
 
 	def unit_name_delta(self, section, variants, itype):
 		"""
