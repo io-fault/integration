@@ -63,7 +63,7 @@ def plan_build(command,
 		':'.join(intentions),
 		str(pj.product.route),
 		pj_fp,
-	] + argv)
+	])
 
 	# Factor Processing Instructions
 	yield (pj_fp, (), pj_fp, ki)
