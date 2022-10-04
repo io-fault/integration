@@ -163,13 +163,13 @@ def updated(outputs, inputs, never=False, cascade=False, subfactor=True):
 	return True
 
 def construct_reference_target(pj, reqs, rsrc, method, record):
-	((fp, ft), (frefs, fsrcs)) = record
+	((fp, ft), (fr, fs)) = record
 	reffactor = str(ft) in {
 		'http://if.fault.io/factors/meta.references',
 		'http://if.fault.io/factors/system.references',
 	}
 	if reffactor:
-		return core.Target(pj, fp, ft, [], fsrcs, method=method)
+		return core.Target(pj, fp, ft, [], fs, method=method)
 	else:
 		return core.Target(pj, fp, ft, reqs, rsrc, method=method)
 
@@ -233,7 +233,7 @@ def resolve_meta_references(ir, targets):
 		else:
 			yield t
 
-def requirements(cc, ctxpath, symbols, factor:core.Target):
+def requirements(cc, ctxpath, factor:core.Target):
 	"""
 	# Return the set of factors that is required to build this Target, &factor.
 	"""
@@ -259,7 +259,6 @@ class Construction(kcore.Context):
 			telemetry,
 			cache,
 			context,
-			symbols,
 			pcontext,
 			ctxpath,
 			project,
@@ -287,7 +286,6 @@ class Construction(kcore.Context):
 		self.c_pcontext = pcontext
 		self.c_ctxpath = ctxpath
 		self.c_project = project
-		self.c_symbols = symbols
 		self.c_context = context
 		self.c_factors = factors
 
@@ -313,7 +311,7 @@ class Construction(kcore.Context):
 		else:
 			self._filter = functools.partial(updated)
 
-		descent = functools.partial(requirements, self.c_context, self.c_ctxpath, self.c_symbols)
+		descent = functools.partial(requirements, self.c_context, self.c_ctxpath)
 
 		# Manages the dependency order.
 		self.c_sequence = graph.sequence(descent, self.c_factors)

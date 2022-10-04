@@ -32,7 +32,6 @@ class Application(kcore.Context):
 			context, cache,
 			intentions, telemetry,
 			product, projects,
-			symbols,
 			rebuild=0,
 			connect=None,
 		):
@@ -42,7 +41,6 @@ class Application(kcore.Context):
 		self.cxn_context = context
 		self.cxn_product = product
 		self.cxn_projects = projects
-		self.cxn_local_symbols = symbols
 		self.cxn_rebuild = rebuild
 		self.cxn_extension_map = None
 		self.cxn_log = transcripts.Log.stdout()
@@ -50,7 +48,7 @@ class Application(kcore.Context):
 
 	@classmethod
 	def from_command(Class, environ, arguments):
-		ctxdir, cache_type, cache_path, intentstr, work, fpath, *symbols = arguments
+		ctxdir, cache_type, cache_path, intentstr, work, fpath = arguments
 		ctxdir = files.Path.from_path(ctxdir)
 		work = files.Path.from_path(work)
 
@@ -89,7 +87,7 @@ class Application(kcore.Context):
 			executor, ctx, cdi,
 			intentions, telemetry,
 			pd, projects,
-			symbols, rebuild=rebuild,
+			rebuild=rebuild,
 		)
 
 	def xact_void(self, final):
@@ -126,19 +124,6 @@ class Application(kcore.Context):
 		pctx.load() # Build Project Index (targets)
 		pctx.configure() # Protocol Configuration Inheritance.
 
-		# Separate options into named slots.
-		local_symbols = {}
-		selection = None
-		for x in self.cxn_local_symbols:
-			if x[:1] != '-':
-				selection = local_symbols[x] = []
-			else:
-				selection.append(x)
-
-		# Parse options for each slot.
-		for k in list(local_symbols):
-			local_symbols[k] = list(options.parse(local_symbols[k]))
-
 		seq = self.cxn_sequence = []
 		for project_factor in self.cxn_projects:
 			constraint = lsf.types.factor
@@ -146,14 +131,9 @@ class Application(kcore.Context):
 			project = pctx.project(pj_id)
 
 			# Resolve relative references to absolute while maintaining set/sequence.
-			symbols = collections.ChainMap(local_symbols, pctx.symbols(project))
 			targets = [
-				core.Target(
-					project, fp,
-					# intergration-type, requirements, sources
-					ft, fr, fs,
-					variants={'name':fp.identifier})
-				for (fp, ft), (fr, fs) in project.select(constraint)
+				core.Target.from_selection(project, r)
+				for r in project.select(constraint)
 			]
 
 			seq.append(cc.Construction(
@@ -164,7 +144,6 @@ class Application(kcore.Context):
 				self.cxn_telemetry,
 				self.cxn_cache,
 				self.cxn_context,
-				local_symbols,
 				pctx,
 				[pctx, rctx],
 				project,

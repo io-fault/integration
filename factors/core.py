@@ -111,7 +111,6 @@ class Target(object):
 
 		'factor-id': ('_factor_id',),
 		'project-id': ('project', 'identifier'),
-		'context-id': ('_context_id',),
 
 		'corpus': ('_corpus_id',),
 		'source-paths': ('_source_paths',),
@@ -135,11 +134,6 @@ class Target(object):
 	@property
 	def _factor_id(self):
 		return '/'.join((self.project.identifier, str(self.route)))
-
-	@property
-	def _context_id(self):
-		for ctx in self.context.itercontexts(self.project):
-			return ctx.identifier
 
 	@property
 	def _corpus_id(self):
@@ -205,6 +199,11 @@ class Target(object):
 		# The target's factor path.
 		"""
 		return '.'.join(self.absolute)
+
+	@classmethod
+	def from_selection(Class, project, record):
+		(fp, ft), (fr, fs) = record
+		return Class(project, fp, ft, fr, fs, variants={'name':fp.identifier})
 
 	def __init__(self,
 			project:(lsf.Project),
