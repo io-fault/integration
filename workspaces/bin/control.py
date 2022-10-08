@@ -46,29 +46,35 @@ required = {
 WORKSPACE='.workspace'
 
 command_index = {
-	# Build factor integrals, execute test factors.
+	# Build factor integrals.
 	'build': (
 		'.process', 'build',
 		({}, {}),
-		'command', 'intentions', 'relevel', 'processing-lanes', 'argv',
+		'intentions', 'relevel', 'processing-lanes', 'argv',
 	),
+	# Execute test factors.
 	'test': (
 		'.process', 'test',
 		({}, {}),
-		'command', 'intentions', 'relevel', 'processing-lanes', 'argv',
+		'intentions', 'relevel', 'processing-lanes', 'argv',
 	),
 
-	# Delineate factor sources, analyze factor fragments.
+	# Delineate factor sources, analyze factor elements.
 	'delineate': (
 		# Delineation is recognized by the command identifier.
-		'.process', 'build',
+		'.process', 'delineate',
 		({}, {}),
-		'command', 'intentions', 'relevel', 'processing-lanes', 'argv',
+		'relevel', 'processing-lanes', 'argv',
 	),
 	'analyze': (
 		'.process', 'analyze',
 		({}, {}),
-		'command', 'intentions', 'processing-lanes', 'argv',
+		'relevel', 'processing-lanes', 'argv',
+	),
+	'measure': (
+		'.process', 'measure',
+		({}, {}),
+		'intentions', 'relevel', 'processing-lanes', 'argv',
 	),
 
 	# Clear build cache, clean product integrals.
