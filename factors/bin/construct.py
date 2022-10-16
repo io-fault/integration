@@ -7,7 +7,6 @@ import itertools
 import collections
 
 from .. import core
-from .. import options
 from .. import cc
 from .. import cache
 
