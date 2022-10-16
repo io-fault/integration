@@ -44,7 +44,7 @@ def configure(restricted, required, argv):
 	config = {
 		'intentions': set(),
 		'processing-lanes': '4',
-		'execution-context': None,
+		'execution-context': context.query.platform(),
 		'construction-context': None,
 		'persistent-cache': None,
 		'product-directory': None,
@@ -76,7 +76,8 @@ def main(inv:process.Invocation) -> process.Exit:
 	if command_id == 'help':
 		sys.stderr.write(' '.join((
 			"pdctl",
-				"[-x platform-directory]"
+				"[-x execution-context-directory]"
+				"[-X construction-context-directory]"
 				"[-D product-directory]",
 			"(status | delta | integrate)",
 			"project-selector",

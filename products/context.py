@@ -5,6 +5,7 @@ import os
 from collections.abc import Iterator
 
 from fault.system import files
+from ..root import query
 
 def select(
 		local:object,
@@ -33,6 +34,7 @@ def select(
 		yield ('environment', files.Path.from_absolute(os.environ[environment]))
 
 	yield ('user', files.Path.from_absolute(os.environ[home]) / user) # No HOME?
+	yield ('fault', query.platform()/'cc')
 
 def resolve(override:str=None) -> tuple[str, files.Path]:
 	"""
