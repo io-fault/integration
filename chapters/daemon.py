@@ -14,7 +14,9 @@ from fault.web import xml
 from . import html
 
 def render_factor_html(prefix, depth, styles, type, identifier, chapter:str, Transform=html.transform):
-	return Transform(prefix, depth, chapter, styles=styles, identifier=identifier, type=type)
+	sx = html.xml.Serialization(xml_encoding='utf-8')
+	n = html.nodes.Cursor.from_chapter_text(chapter)
+	return Transform(sx, prefix, depth, n, styles=styles, identifier=identifier, type=type)
 
 def buffer(iterator, limit=1024*4):
 	current = b''

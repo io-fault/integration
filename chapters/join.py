@@ -579,10 +579,7 @@ def dr_context_path(context, project, reference):
 	"""
 	local = 'context-local'
 	target_type = None
-	cpath = lsf.types.factor
-	for cpath in project.itercontexts():
-		pass
-	cpath = cpath.container
+	cpath = project.factor.container
 
 	path = cpath@reference
 	try:

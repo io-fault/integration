@@ -168,6 +168,14 @@ class Render(comethod.object):
 
 		return prefixed
 
+	@classmethod
+	def from_chapter(Class, prefix, depth, chapter, encoding='utf-8'):
+		sx = xml.Serialization(xml_encoding=encoding)
+		n = nodes.Cursor.from_chapter_text(chapter)
+		r, = n.root
+		idx, ctx = prepare(r)
+		return Render(sx, ctx, prefix, depth, idx, n)
+
 	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:nodes.Cursor):
 		self.context = context
 		self.prefix = prefix
@@ -596,7 +604,12 @@ class Render(comethod.object):
 	@comethod('reference', 'hyperlink')
 	def hyperlink(self, resolver, context, text, *quals, title=None):
 		link_display, href = formlink(text)
-		link_content_text = self.text(title or link_display)
+
+		if link_display.startswith('data:image/'):
+			link_content_text = self.element('img', (), src=link_display)
+		else:
+			link_content_text = self.text(title or link_display)
+
 		link_content = link_content_text
 
 		link_class = 'absolute'
@@ -727,19 +740,116 @@ class Render(comethod.object):
 		for snode in sub.select("/section"):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
-def transform(prefix, depth, chapter, styles=[], identifier='', type=''):
-	c = nodes.Cursor.from_chapter_text(chapter)
-	sx = xml.Serialization(xml_encoding='utf-8')
-	r, = c.root
-	idx, ctx = prepare(r)
-	rhtml = Render(sx, ctx, prefix, depth, idx, c)
-	head = rhtml.element('head',
-		itertools.chain(
-			rhtml.element('meta', None, charset='utf-8'),
-			itertools.chain.from_iterable(
-				rhtml.element('link', (), rel='stylesheet', href=x)
-				for x in styles
+def r_icon(sx, i):
+	return sx.element('img', (), ('class', 'icon'), src=i)
+
+def r_index(sx, pathclass, abstractclass, listclass, index):
+	return sx.element('dl',
+		itertools.chain.from_iterable(
+			sx.element('a',
+				sx.element('div',
+					itertools.chain(
+						sx.element('dt',
+							itertools.chain(
+								sx.element('span',
+									icon,
+									('class', 'icon')
+								),
+								sx.element('span',
+									display,
+									('class', pathclass),
+								),
+							)
+						),
+						sx.element('dd',
+							sx.element('span',
+								abstract,
+								('class', abstractclass),
+							)
+						),
+					),
+				),
+				('href', link),
 			)
+			for link, icon, display, abstract in index
 		),
+		('class', listclass),
 	)
-	return rhtml.document(type, identifier, head=head)
+
+def r_projects(sx, index):
+	i = (
+		(x[0] + '/', r_icon(sx, x[3]), sx.escape(x[1]), sx.escape(x[-1]))
+		for x in index
+	)
+	return r_index(sx, 'factor-path', 'index-abstract', 'project-index', i)
+
+def r_factors(sx, index):
+	i = (
+		(x[0], r_icon(sx, x[1]), sx.escape(x[0]), sx.escape(x[1]))
+		for x in index
+	)
+	return r_index(sx, 'factor-path', 'index-abstract', 'factor-index', i)
+
+def r_sources(sx, index, icon=(b"\xf0\x9f\x93\x84".decode('utf-8'))):
+	i = (
+		('/'.join(x), sx.escape(icon), sx.escape('/'.join(x)), sx.escape('source'))
+		for x in index
+	)
+	return r_index(sx, 'source-path', 'index-abstract', 'source-index', i)
+
+def r_head(sx, encoding, styles, title=None, preload=True):
+	return sx.element('head',
+		itertools.chain(
+			sx.element('title', sx.escape(title)) if title is not None else (),
+			sx.element('meta', None, ('charset', encoding)),
+			itertools.chain.from_iterable(
+				sx.element('link', (), ('as', 'style'), rel='preload', href=x)
+				for x in styles
+			) if preload else (),
+			itertools.chain.from_iterable(
+				sx.element('link', (), rel='stylesheet', href=x)
+				for x in styles
+			),
+		)
+	)
+
+def indexframe(sx, type:str, identity:str, content, /, head=()):
+	return sx.element('html',
+		itertools.chain(
+			head, # r_head(sx, encoding, styles, title='head title')
+			sx.element('body',
+				sx.element('main',
+					itertools.chain(
+						sx.element('h1',
+							itertools.chain(
+								sx.element('span', sx.escape(identity)),
+								sx.element('span',
+									sx.escape(type),
+									('class', 'abstract-type')
+								)
+							)
+						),
+						content,
+						sx.element('h1', sx.escape(''), ('class', 'footer')),
+					)
+				),
+				('class', 'index'),
+			),
+		)
+	)
+
+def sourceindex(sx, head, factor, index, type='source-index'):
+	return indexframe(sx, type, factor, r_sources(sx, index), head=head)
+
+projectfactors='http://if.fault.io/factors/meta.project'
+def factorindex(sx, head, project, index, type=projectfactors):
+	return indexframe(sx, type, str(project), r_factors(sx, index), head=head)
+
+corpusfactors='http://if.fault.io/factors/meta.product'
+def projectindex(sx, head, corpus, index, type=corpusfactors):
+	return indexframe(sx, type, str(corpus), r_projects(sx, index), head=head)
+
+def transform(sx, prefix, depth, chapter, head=(), identifier='', type=''):
+	return (Render
+		.from_chapter(prefix, depth, chapter, encoding=sx.xml_encoding)
+		.document(type, identifier, head=head))

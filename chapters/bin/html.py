@@ -17,8 +17,9 @@ def main(inv:process.Invocation) -> process.Exit:
 	with sf.fs_open('r') as f:
 		doctext = f.read()
 
+	sx = html.xml.Serialization(xml_encoding='utf-8')
 	try:
-		sys.stdout.buffer.writelines(html.transform('', 0, doctext, styles=styles))
+		sys.stdout.buffer.writelines(html.transform(sx, '', 0, doctext, styles=styles))
 	except:
 		p = pdb.Pdb()
 		traceback.print_exc()
