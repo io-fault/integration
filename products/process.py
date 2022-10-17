@@ -30,6 +30,10 @@ options = (
 		'-T': ('field-replace', False, 'disable-functionality-tests'),
 		'-b': ('field-replace', True, 'disable-factor-processing'),
 		'-B': ('field-replace', False, 'disable-factor-processing'),
+
+		# Delineation of sources and chapters. Disabled by default.
+		'-y': ('field-replace', True, 'disable-delineation'),
+		'-Y': ('field-replace', False, 'disable-delineation'),
 	},
 	{}
 )
@@ -111,14 +115,14 @@ def iterconstructs(factors:lsf.Context):
 
 # Build the projects within the product.
 def build(meta, log, factors, status, pd:lsf.Product,
-	contexts:Iterable[files.Path], intention:str,
+	contexts:Iterable[files.Path], intentions:list[str],
 	cache:files.Path, symbols):
 	"""
 	# Build all projects within the product using all &contexts.
 	"""
 	control, monitors, summary = status
 
-	log.xact_open(intention, "Factor Processing Instructions", {})
+	log.xact_open(intentions[0], "Factor Processing Instructions", {})
 	try:
 		for ccontext in contexts:
 			ctxid = ccontext.identifier
@@ -126,12 +130,12 @@ def build(meta, log, factors, status, pd:lsf.Product,
 			q.extend(factors)
 			local_plan = tools.partial(
 				plan_build, 'integrate',
-				ccontext, [intention],
+				ccontext, intentions,
 				cache, symbols, factors
 			)
 			execution.dispatch(meta, log, local_plan, control, monitors, summary, "FPI", q, opened=True)
 	finally:
-		log.xact_close(intention, summary.synopsis('FPI'), {})
+		log.xact_close(intentions[0], summary.synopsis("FPI"), {})
 
 	return summary.profile()
 
@@ -166,6 +170,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 	os.environ['F_EXECUTION'] = str(fx)
 	os.environ['FRAMECHANNEL'] = 'integrate'
 
+	xdelineate = config.get('disable-delineation', True) == False
 	xbuild = config.get('disable-factor-processing', False) == False
 	xtest = config.get('disable-functionality-tests', False) == False
 
@@ -210,7 +215,23 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 
 	start_time = elapsed()
 	profiles = []
+	intentions = [intention]
 	try:
+		if xdelineate:
+			intentions.append('delineated')
+			monitors, summary = terminal.aggregate(control, proctheme, lanes, width=160)
+			status = (control, monitors, summary)
+
+			with files.Path.fs_tmpdir() as cache:
+				cd = (cache / 'build-cache').fs_mkdir()
+				try:
+					profiles.append(build(
+						meta, log, factors, status, pd,
+						[cc.container/'documentation'], ['delineated'], cd, []
+					))
+				finally:
+					control.clear()
+
 		if xbuild:
 			monitors, summary = terminal.aggregate(control, proctheme, lanes, width=160)
 			status = (control, monitors, summary)
@@ -220,7 +241,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 				try:
 					profiles.append(build(
 						meta, log, factors, status, pd,
-						[cc], intention, cd, symbols
+						[cc], intentions, cd, []
 					))
 				finally:
 					control.clear()
