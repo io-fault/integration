@@ -846,8 +846,8 @@ def factorindex(sx, head, project, index, type=projectfactors):
 	return indexframe(sx, type, str(project), r_factors(sx, index), head=head)
 
 corpusfactors='http://if.fault.io/factors/meta.product'
-def projectindex(sx, head, corpus, index, type=corpusfactors):
-	return indexframe(sx, type, str(corpus), r_projects(sx, index), head=head)
+def projectindex(sx, head, corpus, title, index, type=corpusfactors):
+	return indexframe(sx, type, str(title), r_projects(sx, index), head=head)
 
 def transform(sx, prefix, depth, chapter, head=(), identifier='', type=''):
 	return (Render

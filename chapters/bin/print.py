@@ -179,12 +179,12 @@ def removeprefix(prefixes, string):
 	return string
 
 required = {
+	'--corpus-root': ('field-replace', 'corpus-root'),
 	'--corpus-title': ('field-replace', 'corpus-title'),
 	'-P': ('set-add', 'prefixes'),
 }
 
 restricted = {
-	'--corpus-root': ('field-replace', True, 'corpus-root'),
 	'-W': ('field-replace', False, 'web-defaults'),
 	'-w': ('field-replace', True, 'web-defaults'),
 }
@@ -192,7 +192,7 @@ restricted = {
 def main(inv:process.Invocation) -> process.Exit:
 	config = {
 		'encoding': 'utf-8',
-		'corpus-root': False,
+		'corpus-root': '',
 		'corpus-title': 'corpus',
 		'prefixes': set(),
 		'web-defaults': True,
@@ -261,7 +261,9 @@ def main(inv:process.Invocation) -> process.Exit:
 			ctype = 'http://if.fault.io/factors/meta.corpus'
 		else:
 			ctype = 'http://if.fault.io/factors/meta.product'
-		f.writelines(html.projectindex(sx, head, config['corpus-title'], projects, type=ctype))
+		title = config['corpus-title']
+		croot = config['corpus-root']
+		f.writelines(html.projectindex(sx, head, croot, title, projects, type=ctype))
 
 	if config['web-defaults']:
 		wr = (out/web_resources)
