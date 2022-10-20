@@ -792,7 +792,7 @@ def r_factors(sx, index):
 
 def r_sources(sx, index, icon=(b"\xf0\x9f\x93\x84".decode('utf-8'))):
 	i = (
-		('/'.join(x), sx.escape(icon), sx.escape('/'.join(x)), sx.escape('source'))
+		(x[0], sx.escape(icon), sx.escape(x[0]), sx.escape('.'.join(x[1:2])))
 		for x in index
 	)
 	return r_index(sx, 'source-path', 'index-abstract', 'source-index', i)
@@ -845,8 +845,7 @@ projectfactors='http://if.fault.io/factors/meta.project'
 def factorindex(sx, head, project, index, type=projectfactors):
 	return indexframe(sx, type, str(project), r_factors(sx, index), head=head)
 
-corpusfactors='http://if.fault.io/factors/meta.product'
-def projectindex(sx, head, corpus, title, index, type=corpusfactors):
+def projectindex(sx, head, type, corpus, title, index):
 	return indexframe(sx, type, str(title), r_projects(sx, index), head=head)
 
 def transform(sx, prefix, depth, chapter, head=(), identifier='', type=''):

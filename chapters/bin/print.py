@@ -26,6 +26,7 @@ project_index_style = "corpus.css"
 factor_index_style = "project.css"
 factor_style = "factor.css"
 chapter_style = "chapter.css"
+sources_style = "sources.css"
 
 def styles(depth, type, directory=web_resources):
 	prefix = '../' * depth
@@ -65,16 +66,22 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	froot = [pjdir, str(fpath)]
 	fsrc = froot + ['src']
 
-	meta = froot + ['meta.json']
+	meta = froot + ['.http-resource', 'meta.json']
 	if isinstance(sources, Cell):
-		meta_prefix = False
+		sole = True
 		primary = sources[0][1].identifier
 		ddepth = 0
 	else:
 		ddepth = 1
-		meta_prefix = True
+		sole = False
 		primary = ""
-	meta_json = json.dumps([meta_prefix, primary, str(type)])
+
+	meta_json = json.dumps({
+		'sole': primary,
+		'level': ddepth,
+		'type': str(type),
+		'identifier': str(fpath),
+	})
 	yield meta, (meta_json.encode('utf-8'),)
 
 	for v in variants:
@@ -89,6 +96,7 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	srcindex = []
 	chapter = ""
 
+	# Populate source tree with delineation and metrics.
 	for fmt, x in sources:
 		# Calculate path to delineation image.
 		if str(fmt) == 'http://if.fault.io/factors/meta.unknown':
@@ -135,12 +143,17 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	else:
 		prefix = ''
 
+	# Factor Representation Resource
 	ident = str(pj.factor//fpath)
 	head = html.r_head(sx, sx.xml_encoding, styles(2, factor_style), title=ident)
 	ht = html.transform(sx, prefix, ddepth+2, chapter, head=head, identifier=ident, type=str(type))
-
 	yield froot + ['index.html'], ht
-	yield froot + ['src.json'], (json.dumps(srcindex).encode('utf-8'),)
+
+	# Render source index, but not src/index.html as it may conflict with an actual source.
+	yield froot + ['src', '.http-resource', 'index.json'], (json.dumps(srcindex).encode('utf-8'),)
+	sihead = html.r_head(sx, sx.xml_encoding, styles(3, sources_style), title=ident)
+	sihtml = html.sourceindex(sx, sihead, ident, srcindex)
+	yield froot + ['src', '.http-resource', 'index.html'], sihtml
 
 def r_project(sx, prefixes, variants, req:lsf.Context, ctx:lsf.Context, pj:lsf.Project, pjdir):
 	# Currently hardcoded.
@@ -154,13 +167,92 @@ def r_project(sx, prefixes, variants, req:lsf.Context, ctx:lsf.Context, pj:lsf.P
 		yield from r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fp, ft, fr, fs)
 		index.append((str(fp), str(ft), list(map(str, fr))))
 
-	yield [pjdir, '.index.json'], (json.dumps(index).encode('utf-8'),)
+	yield [pjdir, '.http-resource', 'index.json'], (json.dumps(index).encode('utf-8'),)
 
 	head = html.r_head(sx, sx.xml_encoding,
 		styles(1, factor_index_style),
 		title=str(pj.factor)
 	)
 	yield [pjdir, 'index.html'], html.factorindex(sx, head, str(pj.factor), index)
+
+def hrinit(prefix, type, identifier, resource='index', meta={}):
+	"""
+	# Initialize the `.http-resource` directory inside &path
+	# with a `meta.json` formed from &meta, &type, and &identifier.
+
+	# Returns the directory path that was created.
+	"""
+
+	m = dict(meta)
+	m['type'] = type
+	m['identifier'] = identifier
+	m['resource'] = resource
+
+	path = prefix + ['.http-resource', 'meta.json']
+	idata = (json.dumps(m, ensure_ascii=False).encode('utf-8'),)
+	return path, idata
+
+def r_corpus(config, out, ctx, req, variants):
+	sx = html.xml.Serialization(xml_encoding=config['encoding'])
+
+	projects = []
+	for pj in ctx.iterprojects():
+		try:
+			icon, projectabstract = abstract(pj)
+		except:
+			icon = ''
+			projectabstract = ''
+		pjdir = removeprefix(config['prefixes'], str(pj.factor))
+		yield hrinit([pjdir], 'http://if.fault.io/factors/meta.project', str(pj.factor))
+		yield from r_project(sx, config['prefixes'], variants, req, ctx, pj, pjdir)
+
+		projects.append((
+			removeprefix(config['prefixes'], str(pj.factor)),
+			str(pj.factor),
+			str(pj.identifier),
+			icon,
+			str(pj.protocol.identifier),
+			projectabstract,
+		))
+
+	# Either an anonymous product or an identified corpus.
+	title = config['corpus-title']
+	ctype = ''
+	if config['corpus-root']:
+		ctype = 'http://if.fault.io/factors/meta.corpus'
+		croot = config['corpus-root']
+	else:
+		ctype = 'http://if.fault.io/factors/meta.product'
+		croot = str(out)
+
+	yield hrinit([], ctype, croot)
+	yield ['.http-resource', 'index.json'], (json.dumps(projects, ensure_ascii=False).encode('utf-8'),)
+
+	head = html.r_head(sx,
+		config['encoding'],
+		styles(0, project_index_style),
+		title=config['corpus-title'],
+	)
+
+	yield ['index.html'], html.projectindex(sx, head, ctype, croot, title, projects)
+
+	if config['web-defaults']:
+		default = (files.Path.from_absolute(__file__) ** 2)/'theme'
+
+		# Copy all of theme to .legacy-web/default.
+		for f in default.fs_iterfiles(type='data'):
+			if f.identifier.startswith('.'):
+				continue
+			yield [web_resources, 'default', f.identifier], (f.fs_load(),)
+
+		yield [web_resources, 'core.css'], (''.join([
+			"@import 'default/if.css';\n",
+			"@import 'default/color.css';\n",
+			"@import 'default/dark.css';\n",
+			"@import 'default/admonition.css';\n",
+			"@import 'default/index.css';\n",
+			"@import 'default/log.css';\n",
+		]).encode('utf-8'),)
 
 def first_sentence(p):
 	for x in p.sentences:
@@ -199,9 +291,11 @@ def main(inv:process.Invocation) -> process.Exit:
 	}
 	v = recognition.legacy(restricted, required, inv.argv)
 	remainder = recognition.merge(config, v)
-	sx = html.xml.Serialization(xml_encoding=config['encoding'])
 
-	outstr, ctxpath, *variant_s = remainder
+	rformat, outstr, ctxpath, *variant_s = remainder
+	if rformat != 'web':
+		sys.stderr.write("ERROR: only 'web' format is supported.\n")
+		return inv.exit(1)
 
 	# Build project context for the target product.
 	ctx = lsf.Context()
@@ -220,67 +314,13 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	out = files.Path.from_path(outstr)
 	out.fs_mkdir()
-
-	projects = []
-	for pj in ctx.iterprojects():
+	for rpath, data in r_corpus(config, out, ctx, req, variants):
+		path = out + rpath
 		try:
-			icon, projectabstract = abstract(pj)
+			with path.fs_alloc().fs_open('wb') as f:
+				f.writelines(data)
 		except:
-			icon = ''
-			projectabstract = ''
-		pjdir = removeprefix(config['prefixes'], str(pj.factor))
-
-		for rpath, rcontent in r_project(sx, config['prefixes'], variants, req, ctx, pj, pjdir):
-			apath = out + rpath
-			with apath.fs_alloc().fs_open('wb') as f:
-				try:
-					f.writelines(rcontent)
-				except:
-					#print(str(apath), file=sys.stderr)
-					traceback.print_exc()
-
-		projects.append((
-			removeprefix(config['prefixes'], str(pj.factor)),
-			str(pj.factor),
-			str(pj.identifier),
-			icon,
-			str(pj.protocol.identifier),
-			projectabstract,
-		))
-
-	with (out/'.index.json').fs_open('w') as f:
-		f.write(json.dumps(projects, ensure_ascii=False))
-	head = html.r_head(sx,
-		config['encoding'],
-		styles(0, project_index_style),
-		title=config['corpus-title'],
-	)
-	with (out/'index.html').fs_open('wb') as f:
-		if config['corpus-root']:
-			# User declared corpus representation.
-			ctype = 'http://if.fault.io/factors/meta.corpus'
-		else:
-			ctype = 'http://if.fault.io/factors/meta.product'
-		title = config['corpus-title']
-		croot = config['corpus-root']
-		f.writelines(html.projectindex(sx, head, croot, title, projects, type=ctype))
-
-	if config['web-defaults']:
-		wr = (out/web_resources)
-		t = wr/'default'
-		default = (files.Path.from_absolute(__file__) ** 2)/'theme'
-
-		# Copy all of theme to .legacy-web/default.
-		t.fs_alloc().fs_mkdir().fs_replace(default)
-		core = (wr/'core.css')
-		with core.fs_open('w') as f:
-			f.writelines([
-				"@import 'default/if.css';\n",
-				"@import 'default/color.css';\n",
-				"@import 'default/dark.css';\n",
-				"@import 'default/admonition.css';\n",
-				"@import 'default/index.css';\n",
-				"@import 'default/log.css';\n",
-			])
+			print('->', str(path), file=sys.stderr)
+			traceback.print_exc()
 
 	return inv.exit(0)
