@@ -5,13 +5,14 @@
 /identifier/
 	&<http://fault.io/integration/daemons>
 /icon/
-	- (emoji)`📐`
+	&<data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2Ij48dGV4dCB4PSI0IiB5PSIwLjg4ZW0iIGZvbnQtc2l6ZT0iMjQ4Ij7wn5G/PC90ZXh0Pjwvc3ZnPg==>
 /name/
 	`daemons`
-/abstract/
-	Process management daemon.
-
 /authority/
 	`fault.io`
 /contact/
 	&<http://fault.io/critical>
+
+[ Abstract ]
+
+Process management daemon.
