@@ -5,17 +5,18 @@
 /identifier/
 	&<http://fault.io/integration/root>
 /icon/
-	- (emoji)`💾`
+	&<data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2Ij48dGV4dCB4PSI0IiB5PSIwLjg4ZW0iIGZvbnQtc2l6ZT0iMjQ4Ij7wn5K+PC90ZXh0Pjwvc3ZnPg==>
 /name/
 	`root`
-/abstract/
-	Installation, initialization, and integration tools for fault system projects.
-
-	Composed of bourne-shell scripts that intend to make the integration tools available
-	for use on the host system. The bootstrap project for for &<http://fault.io/python>
-	and &<http://fault.io/integration>
-
 /authority/
 	`fault.io`
 /contact/
 	&<http://fault.io/critical>
+
+[ Abstract ]
+
+Installation, initialization, and integration tools for fault system projects.
+
+Composed of bourne-shell scripts that intend to make the integration tools available
+for use on the host system. The bootstrap project for for &<http://fault.io/python>
+and &<http://fault.io/integration>
