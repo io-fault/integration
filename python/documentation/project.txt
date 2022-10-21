@@ -5,12 +5,14 @@
 /identifier/
 	&<http://fault.io/integration/python>
 /icon/
-	- (emoji)`🐍`
+	🐍
 /name/
 	`python`
-/abstract/
-	C-API and bytecode tooling for Python dependent builds.
 /authority/
 	`fault.io`
 /contact/
 	&<http://fault.io/critical>
+
+[ Abstract ]
+
+C-API and bytecode tooling for Python dependent builds.
