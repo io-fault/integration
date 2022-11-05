@@ -114,11 +114,16 @@
 
 -dialects:
 	# clang and gcc want the prefix here.
-	# factors/system.type uses a vendor qualified language name.
 	language-c:
 		: -std=[dialect prefix.iso9899:]
 	language-c++:
-		: -std=[dialect prefix.iso14882:]
+		dialect-2020: -std=c++20
+		dialect-2014: -std=c++14
+		dialect-2011: -std=c++11
+		dialect-2003: -std=c++03
+		dialect-1998: -std=c++98
+		!: -std=[dialect prefix.iso14882:]
+	# Unsupported dialect.
 	!: -std=[dialect]
 
 -library-directories:
