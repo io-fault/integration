@@ -266,15 +266,8 @@ def measure(wkenv:system.Environment,
 	# Command used to process factors for measurement.
 	limit, control, pjv = configure(wkenv, lanes, relevel, argv)
 
-	# Delineate sources; intentions is irrelevant here and substituted with 'delineated'.
-	construct(wkenv, 'measure/delineate', {'delineated'}, relevel, limit, control, pjv)
-
-	# Build and Test the cited intentions.
-	construct(wkenv, 'measure/build', intentions, relevel, limit, control, pjv)
-	coherency(wkenv, intentions, limit, control, pjv)
-
 	# Aggregate metrics from syntax measurements and trapped test runtime data.
-	construct(wkenv, 'measure/report', {'metrics'}, relevel, limit, control, pjv)
+	construct(wkenv, 'measure', {'metrics'}, relevel, limit, control, pjv)
 
 def test(
 		wkenv:system.Environment,
