@@ -436,7 +436,7 @@ class Construction(kcore.Context):
 				# with meta.workspaces to connect builds to their data capture directory.
 				iv['factor-telemetry'] = self.c_telemetry
 				iv['telemetry-directory'] = [
-					scache(work(x, factor.name)) / variants.form
+					scache(work(x, factor.name)) / variants.form / 'telemetry'
 					for x in map(variants.reform, self.c_telemetry)
 				]
 
