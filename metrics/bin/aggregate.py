@@ -57,7 +57,7 @@ def integrate_syntax_profiles(path, sources, rpath=files.root):
 		json.dump(src, f)
 
 def integrate_coverage_telemetry(output, telemetry):
-	for x in identify_captured_metrics(cd/'coverage'/'telemetry'):
+	for x in identify_captured_metrics(telemetry):
 		pass
 
 def main(inv:process.Invocation) -> process.Exit:
