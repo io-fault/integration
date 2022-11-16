@@ -308,6 +308,7 @@ def meta(context):
 			constant('-metrics-join',
 				'"aggregate-metrics" - -',
 				'[factor-image] [work-directory] [project-path] [factor-relative-path]',
+				'[units]',
 			) + \
 			constant('-identity-join',
 				'"combine-identities" - -',
