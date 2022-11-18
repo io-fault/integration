@@ -72,6 +72,8 @@ def meta(context):
 			cc.constant('-metrics-join',
 				'"aggregate-metrics" - -',
 				'[factor-image] [work-directory]',
+				'[project-path] [factor-relative-path]',
+				'[units]',
 			) + \
 			cc.constant('-identity-join',
 				'"combine-identities" - -',
