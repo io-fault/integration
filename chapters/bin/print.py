@@ -16,6 +16,7 @@ from fault.system import files
 from fault.system import process
 from fault.project import system as lsf
 
+from fault.text.io import structure_chapter_text, structure_paragraph_element
 from .. import join
 from .. import html
 
@@ -43,13 +44,9 @@ def abstract(project):
 		(fmt, src), = fs
 		break
 
-	cursor = html.query.navigate(join.Text.parse_chapter_text(src.get_text_content()))
-	try:
-		ipara, = cursor.select("/dictionary/item[icon]/value/paragraph#1")
-		icon = html.document.export(ipara[1]).sole.data
-	except:
-		traceback.print_exc()
-		icon = None
+	cursor = html.query.navigate(structure_chapter_text(src.get_text_content()))
+	icon, = cursor.select("/dictionary#1/item[icon]/value/paragraph#1")
+	icon = structure_paragraph_element(icon).sole.data
 
 	first, = cursor.select("/section[Abstract]/paragraph#1")
 	para = html.document.export(first[1])
@@ -200,6 +197,7 @@ def r_corpus(config, out, ctx, req, variants):
 		try:
 			icon, projectabstract = abstract(pj)
 		except:
+			traceback.print_exc()
 			icon = ''
 			projectabstract = ''
 		pjdir = removeprefix(config['prefixes'], str(pj.factor))
