@@ -1,13 +1,16 @@
-import typing
+from collections.abc import Sequence
 import itertools
 
 from fault.context import tools
 from fault.context import comethod
-
-from fault.text import nodes
 from fault.web import xml
 
-from .tools import get_properties, interpret_property_fragment, interpret_properties
+from fault.text import document
+from fault.text.io import structure_chapter_lines, structure_chapter_text
+from fault.text.io import structure_paragraph_element as ipara
+
+from .protocol import setdirectory
+from . import query
 
 def formlink(reference:str) -> (str, str):
 	"""
@@ -59,12 +62,12 @@ def formtype(tree, element):
 
 def load_control_value(value):
 	if value[0] == 'paragraph':
-		return nodes.document.export(value[1])
+		return ipara(value)
 
 	if value[0] in {'set', 'sequence'}:
 		# Presumes flag set.
 		items = value[1]
-		return list(map(nodes.document.export, (x[1][0][1] for x in value[1])))
+		return list(map(ipara, (x[1][0] for x in value[1])))
 
 	if value[0] == 'syntax':
 		lines = [x[1][0] for x in value[1]]
@@ -91,7 +94,7 @@ def integrate(index, types, node):
 			meta = fattr['type'].lower()
 			data = {
 				k: load_control_value(v)
-				for k, v in nodes.document.dictionary_pairs(fnodes[0][1])
+				for k, v in document.dictionary_pairs(fnodes[0][1])
 			}
 			attr[meta] = data
 			del fnodes[:1]
@@ -109,7 +112,7 @@ def integrate(index, types, node):
 				attr['flags'] = set(x[0][1] for x in ctl['flags'])
 			if 'element' in ctl:
 				# Language level type/syntax, type/reference, etc.
-				attr['element'] = dict(map(interpret_property_fragment, (
+				attr['element'] = dict(map(setdirectory.interpret_fragment, (
 					x.sole for x in ctl['element']
 				)))
 				if ('source', 'area') in attr['element']:
@@ -158,7 +161,7 @@ class Render(comethod.object):
 
 	@classmethod
 	@tools.cachedcalls(16)
-	def steps(Class, path:typing.Sequence[str]):
+	def steps(Class, path:Sequence[str]):
 		# Construct the absolute paths to each step in the path.
 		prefixed = [path[0]]
 
@@ -171,12 +174,12 @@ class Render(comethod.object):
 	@classmethod
 	def from_chapter(Class, prefix, depth, chapter, encoding='utf-8'):
 		sx = xml.Serialization(xml_encoding=encoding)
-		n = nodes.Cursor.from_chapter_text(chapter)
+		n = query.navigate(structure_chapter_text(chapter))
 		r, = n.root
 		idx, ctx = prepare(r)
 		return Render(sx, ctx, prefix, depth, idx, n)
 
-	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:nodes.Cursor):
+	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:query.Cursor):
 		self.context = context
 		self.prefix = prefix
 		self.depth = depth
@@ -447,13 +450,13 @@ class Render(comethod.object):
 	def dl_item(self, resolver, item, attr, sattr, prefix):
 		item_properties = {}
 		k, v = item
-		kp = nodes.document.export(k[1])
+		kp = ipara(k)
 		kpi = ''.join(self.dl_key_identifier(kp))
 		iclass = None
 		attr['super'] = sattr
 		attr['absolute'] = (sattr['absolute'] or ()) + (kpi,)
 
-		pset = get_properties(v[1])
+		pset = dict(setdirectory.select(v[1]))
 		if pset:
 			# First node was a property set.
 			del v[1][0:1]
@@ -480,7 +483,7 @@ class Render(comethod.object):
 
 				# Check for not-documented literal.
 				try:
-					vp = nodes.document.export(v[1][0][1])
+					vp = ipara(v[1][0])
 					if vp[0].type.endswith('/ctl/absent'):
 						documented = False
 				except:
@@ -557,7 +560,7 @@ class Render(comethod.object):
 		if typ == 'INHERIT':
 			yield from self.element('div',
 				self.element('code',
-					formtype(self, dict(interpret_properties(content[0][1]))),
+					formtype(self, dict(setdirectory.interpret_set_items(content[0][1]))),
 					('class', 'type'),
 				),
 				('class', 'inheritance'),
@@ -659,7 +662,7 @@ class Render(comethod.object):
 		yield from self.element(
 			'span',
 			self.text(text),
-			('class', ".".join(("text.normal",) + quals)),
+			('class', '.'.join(("text.normal",) + quals)),
 		)
 
 	@comethod('text', 'line-break')
@@ -696,7 +699,7 @@ class Render(comethod.object):
 		)
 
 	def paragraph_content(self, resolver, content, attr):
-		yield from self.paragraph(resolver, nodes.document.export(content), attr)
+		yield from self.paragraph(resolver, ipara((None, content)), attr)
 
 	def paragraph(self, resolver, para, attr):
 		for pt in para:
@@ -717,9 +720,8 @@ class Render(comethod.object):
 		# Eventually &.join was changed to integrate the documentation into
 		# the generated sections leaving this unused.
 		"""
-		text = '\n'.join(x[1][0] for x in snodes[0][1])
-
-		sub = nodes.Cursor.from_chapter_text(text)
+		lines = [x[1][0] for x in snodes[0][1]]
+		sub = query.navigate(structure_chapter_lines(lines))
 		sub.filters['titled'] = (lambda x: bool(x[-1].get('identifier')))
 
 		# Build section index and assign paths.

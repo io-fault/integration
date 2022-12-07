@@ -13,14 +13,15 @@ from fault.context import string
 from fault.system import process
 from fault.system import files
 from fault.project import system as lsf
-
-from fault.text import render
-from fault.text import nodes
-from fault.text import document
-from fault.text.types import Paragraph, Fragment
 from fault.syntax.types import Area, Address
 
-from .tools import get_properties
+from fault.text import render
+from fault.text.io import structure_chapter_lines, structure_chapter_text
+from fault.text.io import structure_paragraph_element as ipara
+from fault.text.types import Paragraph, Fragment
+
+from .protocol import setdirectory
+from . import query
 
 def itruncate(lines:[str], indentation='\t', ilevel=string.ilevel):
 	"""
@@ -43,7 +44,7 @@ def itruncate(lines:[str], indentation='\t', ilevel=string.ilevel):
 
 def interpret_dictionary_items(items):
 	return {
-		i[2]['identifier']: (nodes.document.export(i[1][0][1]), i[1][1][1])
+		i[2]['identifier']: (ipara(i[1][0]), i[1][1][1])
 		for i in items
 	}
 
@@ -164,7 +165,7 @@ def documented_field_item(resolve, element, node, identifier, cast, documentatio
 	typ_properties = map(property_item, describe_type(resolve, node))
 
 	# Merge properties of the parameter.
-	props = get_properties(documentation)
+	props = dict(setdirectory.select(documentation))
 	if not props:
 		v_content.append(('set', list(typ_properties), {}))
 	else:
@@ -213,15 +214,15 @@ class Text(comethod.object):
 		except KeyError:
 			return None
 		else:
-			if not isinstance(p, nodes.Cursor):
-				p = self.docs[path] = nodes.Cursor.from_chapter_text('\n'.join(p))
+			if not isinstance(p, query.Cursor):
+				p = self.docs[path] = query.navigate(structure_chapter_lines(p))
 
 		return p
 
 	def setdocs(self, path, cursor, section='Elements'):
 		tmap = extract(cursor, 'Elements')
 		self.docs.update(
-			(path + (k,), nodes.Cursor.from_chapter_content(('chapter', v[1], {})))
+			(path + (k,), query.navigate(('chapter', v[1], {})))
 			for k, v in tmap.items()
 		)
 
@@ -718,7 +719,7 @@ class Resolution(comethod.object):
 		if isinstance(node[1], Paragraph):
 			p = node[1]
 		else:
-			p = nodes.document.export(node[1])
+			p = ipara(node)
 
 		return p.__class__(
 			(self.resolve(element, x) if x.typepath[:2] == AR else x)

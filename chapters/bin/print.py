@@ -43,16 +43,16 @@ def abstract(project):
 		(fmt, src), = fs
 		break
 
-	cursor = html.nodes.Cursor.from_chapter_text(src.get_text_content())
+	cursor = html.query.navigate(join.Text.parse_chapter_text(src.get_text_content()))
 	try:
 		ipara, = cursor.select("/dictionary/item[icon]/value/paragraph#1")
-		icon = html.nodes.document.export(ipara[1]).sole.data
+		icon = html.document.export(ipara[1]).sole.data
 	except:
 		traceback.print_exc()
 		icon = None
 
 	first, = cursor.select("/section[Abstract]/paragraph#1")
-	para = html.nodes.document.export(first[1])
+	para = html.document.export(first[1])
 	for s in para.sentences:
 		return icon, ''.join(x[1] for x in s)
 	else:
