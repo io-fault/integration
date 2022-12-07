@@ -145,7 +145,7 @@ code {
 }
 
 section > p {
-	max-width: 52em;
+	max-width: 50em;
 }
 
 p > code {
@@ -260,8 +260,8 @@ body > main {
 	margin-top: 12px;
 	margin-bottom: 12px;
 
-	min-width: 12em;
-	max-width: 68em;
+	min-width: 16em;
+	max-width: 80em;
 
 	padding-top: 0.25em;
 	padding-bottom: 1.5em;
