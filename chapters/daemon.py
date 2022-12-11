@@ -9,7 +9,6 @@ from dataclasses import dataclass
 
 from fault.system import files
 from fault.web import service, system
-from fault.web import xml
 
 from . import html
 
@@ -386,7 +385,7 @@ class Corpus(service.Partition):
 			x for x in self.cp_read_json('.index.json')
 			if x[0].startswith(prefix)
 		]
-		sx = xml.Serialization(xml_encoding='utf-8')
+		sx = html.xml.Serialization(xml_encoding='utf-8')
 		doc = sx.element('html',
 			itertools.chain(
 				sx.element('head',
@@ -426,7 +425,7 @@ class Corpus(service.Partition):
 			x for x in self.cp_read_json(project + '/.index.json')
 			if x[0].startswith(prefix)
 		]
-		sx = xml.Serialization(xml_encoding='utf-8')
+		sx = html.xml.Serialization(xml_encoding='utf-8')
 		doc = sx.element('html',
 			itertools.chain(
 				sx.element('head',
@@ -476,7 +475,7 @@ class Corpus(service.Partition):
 			if x[0].startswith(prefix)
 		]
 
-		sx = xml.Serialization(xml_encoding='utf-8')
+		sx = html.xml.Serialization(xml_encoding='utf-8')
 		doc = sx.element('html',
 			itertools.chain(
 				sx.element('head',

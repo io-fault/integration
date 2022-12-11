@@ -3,7 +3,7 @@ import itertools
 
 from fault.context import tools
 from fault.context import comethod
-from fault.web import xml
+from fault.internet import xml
 
 from fault.text import document
 from fault.text.io import structure_chapter_lines, structure_chapter_text
