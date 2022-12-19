@@ -25,21 +25,14 @@ class Persistent(Directory):
 	"""
 
 	@tools.cachedproperty
-	def hkp(self):
-		"""
-		# HKP addressing data.
-		"""
-		from fault.hkp import library
-		return library.Hash('fnv1a_64', depth=1, length=4)
-
-	@tools.cachedproperty
-	def index(self):
-		from fault.hkp import library
-		return library.Dictionary.use(self.route, addressing=self.hkp)
+	def resource(self):
+		from fault.route.hash import Segmentation, Directory
+		s = Segmentation.from_identity('fnv1a_64', depth=1, length=4)
+		return Directory(s, self.route)
 
 	def select(self, project, factor, key):
-		prefix = str(project) + '[' + str(factor) + ']:'
-		return self.index.route(prefix.encode('utf-8') + key, filename=str)
+		prefix = (str(project) + '[' + str(factor) + ']:').encode('utf-8')
+		return self.resource.allocate(prefix + key, filename=str)
 
 class Transient(Directory):
 	"""
