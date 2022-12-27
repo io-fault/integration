@@ -7,7 +7,7 @@ from collections.abc import Iterable, Sequence
 from fault.context import tools
 from fault.system import files
 
-from fault.time.sysclock import now, elapsed
+from fault.time import system as time
 
 from fault.transcript import terminal
 from fault.transcript import fatetheme, proctheme
@@ -199,7 +199,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 	control.configure(lanes+1)
 
 	from fault.system.query import hostname
-	ts = now().select('iso')
+	ts = time.local().select('iso')
 	host = hostname()
 
 	log.xact_open('integrate',
@@ -213,7 +213,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 		}
 	)
 
-	start_time = elapsed()
+	start_time = time.elapsed()
 	profiles = []
 	intentions = [intention]
 	try:
@@ -256,7 +256,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 				control.clear()
 				control.device.drain()
 	finally:
-		stop_time = elapsed()
+		stop_time = time.elapsed()
 		duration = stop_time.decrease(start_time)
 		ru = zero.usage
 		for start, stop, m in profiles:
