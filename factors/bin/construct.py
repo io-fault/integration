@@ -18,7 +18,7 @@ from fault.project import system as lsf
 from fault.kernel import core as kcore
 from fault.kernel import system as ksystem
 
-from fault.time import sysclock
+from fault.time import system as time
 from fault.transcript import io as transcripts
 
 class Application(kcore.Context):
@@ -107,7 +107,7 @@ class Application(kcore.Context):
 		# Prepare the entire package building factor targets and writing bytecode.
 		"""
 
-		etime = sysclock.elapsed()
+		etime = time.elapsed()
 		self.cxn_log.declare()
 		self.cxn_log.flush()
 

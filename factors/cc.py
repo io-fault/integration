@@ -10,7 +10,7 @@ import typing
 import dataclasses
 
 from fault.context import tools
-from fault.time import sysclock
+from fault.time import system as time
 from fault.system import execution as libexec
 from fault.system import files
 from fault.internet import ri
@@ -300,7 +300,7 @@ class Construction(kcore.Context):
 		self.activity = set()
 
 	def time(self):
-		return sysclock.elapsed().decrease(self._etime)
+		return time.elapsed().decrease(self._etime)
 
 	def actuate(self):
 		if self.reconstruct:
