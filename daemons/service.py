@@ -174,10 +174,9 @@ class Configuration(object):
 		self.prepare()
 		self.store()
 
-		from fault.time import sysclock
-		n = sysclock.now()
+		from fault.time.system import local
 		with (self.route/'critical.log').fs_open('w') as f:
-			f.write("[<> service created at %s]\n" %(n.select('iso'),))
+			f.write("[<> service created at %s]\n" %(local().select('iso'),))
 
 	def exists(self):
 		"""
