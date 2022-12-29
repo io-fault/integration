@@ -43,6 +43,8 @@ def abstract(project):
 			continue
 		(fmt, src), = fs
 		break
+	else:
+		raise FileNotFoundError("documentation.project factor not available")
 
 	cursor = html.query.navigate(structure_chapter_text(src.get_text_content()))
 	icon, = cursor.select("/dictionary#1/item[icon]/value/paragraph#1")
