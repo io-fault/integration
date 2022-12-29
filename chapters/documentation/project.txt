@@ -15,4 +15,4 @@
 
 [ Abstract ]
 
-Documentation processing and publishing tools for software projects.
+Documentation processing and publishing tools for factored projects.
