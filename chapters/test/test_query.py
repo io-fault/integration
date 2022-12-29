@@ -4,7 +4,7 @@
 # check the functionality with respect to the configured &module.context.
 """
 from .. import query as module
-from fault.text.tools import structure_chapter_text
+from fault.text.io import structure_chapter_text
 
 cursor = None
 document_text = "\n".join([
