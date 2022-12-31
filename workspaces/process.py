@@ -5,8 +5,6 @@ import sys
 import os
 from collections.abc import Set
 
-from fault.time.sysclock import now
-
 from fault.context import tools
 from fault.project import system as lsf
 from fault.system import files
