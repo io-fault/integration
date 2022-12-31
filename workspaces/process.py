@@ -7,6 +7,7 @@ from collections.abc import Set
 
 from fault.context import tools
 from fault.project import system as lsf
+from fault.vector import recognition
 from fault.system import files
 
 from fault.transcript import terminal
@@ -52,7 +53,7 @@ class SQueue(object):
 	def status(self):
 		return (self.count - len(self.items), self.count)
 
-def plan_testing(wkenv:system.Environment, intention:str, argv, pcontext:lsf.Context, identifier):
+def plan_testing(wkenv:system.Environment, prefixes, intention:str, argv, pcontext:lsf.Context, identifier):
 	"""
 	# Create an invocation for processing the project from &pcontext selected using &identifier.
 	"""
@@ -70,7 +71,9 @@ def plan_testing(wkenv:system.Environment, intention:str, argv, pcontext:lsf.Con
 		kwcheck = (lambda x: True) # Always true if unconstrainted
 
 	for (fp, ft), fd in pj.select(lsf.types.factor@'test'):
-		if not fp.identifier.startswith('test_') or not kwcheck(fp):
+		if not fp.identifier.startswith('test_') and fp.identifier[:2] not in prefixes:
+			continue
+		if not kwcheck(fp):
 			continue
 
 		pj_fp = str(project)
@@ -140,7 +143,7 @@ def construct(wkenv:system.Environment,
 		log.xact_close(xid, summary.synopsis(), {})
 
 def coherency(wkenv:system.Environment,
-		intentions, limit, control, pjv,
+		intentions, types, limit, control, pjv,
 	):
 	from fault.transcript import fatetheme
 
@@ -166,7 +169,7 @@ def coherency(wkenv:system.Environment,
 				q = graph.Queue()
 				q.extend(wkenv.work_project_context)
 
-			i = tools.partial(plan_testing, wkenv, intent, [], wkenv.work_project_context)
+			i = tools.partial(plan_testing, wkenv, types, intent, [], wkenv.work_project_context)
 
 			execution.dispatch(meta, log, i, control, monitors, summary, "Fates", q,)
 			metrics += summary.profile()[-1]
@@ -184,14 +187,19 @@ def configure(wkenv, lanes, relevel, argv):
 	cc = wkenv.work_construction_context
 	projectvector = None
 	if argv and argv[0] != '.':
+		pj_selector = argv[0]
+
 		try:
+			# Exact project factor.
 			projectvector = [
 				wkenv.work_project_context.split(x)[1].identifier
-				for x in map(lsf.types.factor.__matmul__, argv)
+				for x in [lsf.types.factor@pj_selector]
 			]
 		except LookupError:
+			# Presume factor prefix match.
 			projectvector = [
 				pj.identifier for pj in wkenv.work_project_context.iterprojects()
+				if str(pj.factor).startswith(pj_selector)
 			]
 
 	limit = min(lanes, len(projectvector) if projectvector is not None else lanes)
@@ -274,5 +282,18 @@ def test(
 		lanes:int,
 		argv,
 	):
-	limit, control, pjv = configure(wkenv, lanes, relevel, argv)
-	coherency(wkenv, intentions, limit, control, pjv)
+	from . import analysis
+	required = {}
+	config = {
+		'test-types': set([]),
+	}
+
+	oeg = recognition.legacy(analysis.test_type_set_control, {}, argv)
+	remainder = recognition.merge(config, oeg)
+
+	test_prefixes = set([
+		analysis.test_type_map[x] for x in config['test-types'] or {'integration', 'unit'}
+	])
+
+	limit, control, pjv = configure(wkenv, lanes, relevel, remainder)
+	coherency(wkenv, intentions, test_prefixes, limit, control, pjv)
