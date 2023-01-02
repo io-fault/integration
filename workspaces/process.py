@@ -98,7 +98,7 @@ def plan_processing(wkenv, command, intentions, argv, ident, /, link='metrics'):
 
 	env, exepath, xargv = dispatch('factors-cc')
 
-	cache = wkenv.build_cache
+	cache = str(wkenv.work_cache)
 	ccs = [wkenv.work_construction_context]
 	pj = wkenv.work_project_context.project(ident)
 
@@ -106,7 +106,7 @@ def plan_processing(wkenv, command, intentions, argv, ident, /, link='metrics'):
 		fpath = str(pj.factor)
 
 		cmd = xargv + [
-			str(ccontext), 'persistent', str(cache),
+			str(ccontext), 'persistent', cache,
 			':'.join(intentions) + '@' + link,
 			str(wkenv.work_product_route), str(pj.factor)
 		]
@@ -120,6 +120,7 @@ def construct(wkenv:system.Environment,
 		limit, control, projectvector
 	):
 	from fault.transcript import proctheme
+	ws = wkenv.work_space
 	wd = wkenv.work_product_route
 	cc = wkenv.work_construction_context
 
@@ -136,7 +137,7 @@ def construct(wkenv:system.Environment,
 	log = Log.stdout()
 
 	xid = 'build'
-	log.xact_open(xid, "FPI: %s %s %s" %(command, str(wd), str(cc)), {})
+	log.xact_open(xid, "FPI: %s %s %s %s" %(ws, command, wd, cc), {})
 	try:
 		execution.dispatch(meta, log, i, control, monitors, summary, "FPI", q,)
 	finally:
@@ -145,6 +146,7 @@ def construct(wkenv:system.Environment,
 def coherency(wkenv:system.Environment,
 		intentions, types, limit, control, pjv,
 	):
+	ws = wkenv.work_space
 	from fault.transcript import fatetheme
 
 	# Project Context
@@ -158,7 +160,7 @@ def coherency(wkenv:system.Environment,
 
 	for intent in intentions:
 		xid = 'test/' + intent
-		log.xact_open(xid, "Testing %s %s" %(intent, str(xc)), {})
+		log.xact_open(xid, "Test: %s %s %s" %(ws, intent, xc), {})
 		try:
 			os.environ['INTENTION'] = intent
 

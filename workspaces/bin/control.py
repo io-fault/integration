@@ -14,6 +14,7 @@ from .. import system
 from .. import __name__ as project_package_name
 
 restricted = {
+	# Intentions effecting executable factors.
 	'-I': ('set-add', 'identity', 'intentions'),
 	'-O': ('set-add', 'optimal', 'intentions'),
 	'-o': ('set-add', 'portable', 'intentions'),
@@ -25,6 +26,7 @@ restricted = {
 	'-P': ('set-add', 'profile', 'intentions'),
 	'-C': ('set-add', 'coverage', 'intentions'),
 
+	# Reprocess levels.
 	'-U': ('field-replace', -1, 'relevel'),
 	'-u': ('field-replace', +0, 'relevel'),
 	'-r': ('field-replace', +1, 'relevel'),
@@ -35,15 +37,15 @@ restricted = {
 required = {
 	'-i': ('set-add', 'intentions'),
 	'-W': ('field-replace', 'workspace-directory'),
+	'-w': ('field-replace', 'workspace-name'),
+	'-D': ('field-replace', 'product-directory'),
 
 	'-x': ('field-replace', 'execution-context'),
 	'-X': ('field-replace', 'construction-context'),
-	'-D': ('field-replace', 'product-directory'),
 	'-L': ('field-replace', 'processing-lanes'),
-}
 
-# Default relative subdirectory containing cc's, build support, and cache.
-WORKSPACE='.workspace'
+	'--cache': ('field-replace', 'cache-directory'),
+}
 
 command_index = {
 	# Build factor integrals.
@@ -97,8 +99,10 @@ def main(inv:process.Invocation) -> process.Exit:
 		'processing-lanes': '4',
 		'construction-context': None,
 		'execution-context': None,
-		'workspace-directory': None,
 		'product-directory': None,
+		'workspace-directory': None,
+		'workspace-name': system.WORKSPACE,
+		'cache-directory': None,
 	}
 	oeg = recognition.legacy(restricted, required, inv.argv)
 	remainder = recognition.merge(config, oeg)
@@ -118,17 +122,21 @@ def main(inv:process.Invocation) -> process.Exit:
 	module_name, opname, opargs, *opconfig = command_index[command_id]
 	module = importlib.import_module(module_name, project_package_name)
 	opcall = getattr(module, opname)
+	pwd = process.fs_pwd()
+
+	wkname = config['workspace-name']
+	if config['workspace-directory'] is None:
+		route = pwd/wkname
+	else:
+		route = files.Path.from_path(config['workspace-directory'])/wkname
+	route.fs_require('rx/') # -W/.workspace does not exist.
+	os.environ['WORKSPACE'] = str(route)
 
 	if config['product-directory'] is None:
-		product = process.fs_pwd()
+		product = pwd
 	else:
 		product = files.Path.from_path(config['product-directory'])
 	os.environ['PRODUCT'] = str(product)
-
-	if config['workspace-directory'] is None:
-		route = product/WORKSPACE
-	else:
-		route = files.Path.from_path(config['workspace-directory'])
 
 	# Override .workspace/cc default? Option consistent with pdctl.
 	if config['construction-context'] is None:
@@ -144,8 +152,12 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	os.environ['F_PRODUCT'] = str(cc)
 
+	if config['cache-directory'] is not None:
+		cache = files.Path.from_path(config['cache-directory'])
+	else:
+		cache = (route * system.CACHE) # workspace-directory/.cache
 	works = system.Tooling(cc/'tools')
-	wkenv = system.Environment(works, product, cc, xc)
+	wkenv = system.Environment(+route, +cache, works, product, cc, xc)
 
 	status = opcall(wkenv, *[config.get(x) for x in opconfig])
 	return inv.exit(0)

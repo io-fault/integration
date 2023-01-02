@@ -10,6 +10,12 @@ import typing
 from fault.system import files
 from fault.project import system as lsf
 
+# Default relative subdirectory containing the workspace's configuration.
+WORKSPACE='.workspace'
+
+# Default relative subdirectory containing the processing cache.
+CACHE='.cache'
+
 class Tooling(object):
 	"""
 	# Support directory interface providing access to Construction Contexts and integration tools.
@@ -32,6 +38,8 @@ class Environment(object):
 	# A sole product referring to the subject projects and a &Tooling instance.
 	"""
 
+	work_space: files.Path = None
+	work_cache: files.Path = None
 	work_project_context: lsf.Context = None
 	work_product_index: lsf.Product = None
 	work_product_route: files.Path = None
@@ -39,7 +47,13 @@ class Environment(object):
 	work_construction_context: files.Path = None
 	work_execution_context: files.Path = None
 
-	def __init__(self, works:Tooling, product:files.Path, cc:files.Path, xc:files.Path):
+	def __init__(self,
+			path:files.Path, cache:files.Path,
+			works:Tooling, product:files.Path,
+			cc:files.Path, xc:files.Path,
+		):
+		self.work_space = path
+		self.work_cache = cache
 		self.work_project_context = lsf.Context() # Subject/Target Set
 		self.work_space_tooling = works
 		self.work_product_route = product
@@ -52,10 +66,6 @@ class Environment(object):
 		# Whether the workspace context is contained in the subject product directory.
 		"""
 		return self.work_space_tooling.route.container == self.work_product_route
-
-	@property
-	def build_cache(self) -> files.Path:
-		return self.work_product_route / '.cache'
 
 	@property
 	def project_count(self) -> int:
