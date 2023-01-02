@@ -128,32 +128,32 @@ def main(inv:process.Invocation) -> process.Exit:
 	if config['workspace-directory'] is None:
 		route = pwd/wkname
 	else:
-		route = files.Path.from_path(config['workspace-directory'])/wkname
+		route = (pwd@config['workspace-directory'])/wkname
 	route.fs_require('rx/') # -W/.workspace does not exist.
 	os.environ['WORKSPACE'] = str(route)
 
 	if config['product-directory'] is None:
 		product = pwd
 	else:
-		product = files.Path.from_path(config['product-directory'])
+		product = (pwd@config['product-directory'])
 	os.environ['PRODUCT'] = str(product)
 
 	# Override .workspace/cc default? Option consistent with pdctl.
 	if config['construction-context'] is None:
 		cc = (route/'cc')
 	else:
-		cc = files.Path.from_path(config['construction-context'])
+		cc = (pwd@config['construction-context'])
 
 	# Override .workspace/xc default? Option consistent with pdctl.
 	if config['execution-context'] is None:
 		xc = (route/'xc')
 	else:
-		xc = files.Path.from_path(config['execution-context'])
+		xc = (pwd@config['execution-context'])
 
 	os.environ['F_PRODUCT'] = str(cc)
 
 	if config['cache-directory'] is not None:
-		cache = files.Path.from_path(config['cache-directory'])
+		cache = (pwd@config['cache-directory'])
 	else:
 		cache = (route * system.CACHE) # workspace-directory/.cache
 	works = system.Tooling(cc/'tools')
