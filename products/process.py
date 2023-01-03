@@ -186,7 +186,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 		# This is different from &manipulate.delta's default.
 		from . import manipulate
 		if manipulate.index(lsf.Product(pdr), idx_update):
-			meta.notice(None, "updated (" + str(idx_update) + ") project index using the directory")
+			meta.notice("updated (" + str(idx_update) + ") project index using the directory")
 
 	# Project Context
 	factors = lsf.Context()
