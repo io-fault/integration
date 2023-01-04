@@ -231,6 +231,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 					))
 				finally:
 					control.clear()
+					control.flush()
 
 		if xbuild:
 			monitors, summary = terminal.aggregate(control, proctheme, lanes, width=160)
@@ -245,6 +246,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 					))
 				finally:
 					control.clear()
+					control.flush()
 
 		if xtest:
 			monitors, summary = terminal.aggregate(control, fatetheme, lanes, width=160)
@@ -254,7 +256,7 @@ def integrate(meta, log, config, fx, cc, pdr:files.Path, argv, intention='optima
 				profiles.append(test(meta, log, factors, status, pd, [], intention))
 			finally:
 				control.clear()
-				control.device.drain()
+				control.flush()
 	finally:
 		stop_time = time.elapsed()
 		duration = stop_time.decrease(start_time)
