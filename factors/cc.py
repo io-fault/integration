@@ -227,8 +227,13 @@ def resolve_meta_references(ir, targets):
 				prefix = ''
 				for libset in src.get_text_content().split('\n/'):
 					libdir, *libnames = src.get_text_content().split('\n')
+
 					yield core.SystemFactor.from_libdir(prefix+libdir)
+					# Update libdir prefix to compensate for the split.
 					prefix = '/'
+
+					# Filter empty lines.
+					libnames = [x.strip() for x in libnames if x and not x.isspace()]
 					yield from map(core.SystemFactor.from_libname, libnames)
 		else:
 			yield t
