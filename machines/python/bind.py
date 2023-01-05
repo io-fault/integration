@@ -20,6 +20,7 @@ def compile_sc(target, source, include, compiler=None):
 
 	ldflags = tuple(sysconfig.get_config_var('LDFLAGS').split())
 	libs = sysconfig.get_config_var('SHLIBS').split()
+	libs += sysconfig.get_config_var('SYSLIBS').split()
 	libdir = sysconfig.get_config_var('LIBDIR')
 	pyversion = sysconfig.get_config_var('VERSION')
 	pyabi = sysconfig.get_config_var('ABIFLAGS') or ''
