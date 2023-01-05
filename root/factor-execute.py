@@ -22,9 +22,14 @@ def extend_python_path(pathrefs):
 	sys.path.extend(ext)
 
 	# Some tools (root.cc) need to resolve non-python factors.
-	factors = importlib.import_module(factors_module_path)
-	factors.setup(paths=ext)
-	del sys.meta_path[0:1]
+	try:
+		factors = importlib.import_module(factors_module_path)
+		factors.setup(paths=ext)
+		del sys.meta_path[0:1]
+	except FileNotFoundError:
+		# Compensates for the initialization stage where
+		# project indexes have yet to be built.
+		pass
 
 def av_execution(module_path):
 	extend_python_path(path_sources)
