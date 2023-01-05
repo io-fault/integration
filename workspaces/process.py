@@ -144,7 +144,7 @@ def construct(wkenv:system.Environment,
 		log.xact_close(xid, summary.synopsis(), {})
 
 def coherency(wkenv:system.Environment,
-		intentions, types, limit, control, pjv,
+		intentions, types, limit, control, pjv, argv
 	):
 	ws = wkenv.work_space
 	from fault.transcript import fatetheme
@@ -171,7 +171,7 @@ def coherency(wkenv:system.Environment,
 				q = graph.Queue()
 				q.extend(wkenv.work_project_context)
 
-			i = tools.partial(plan_testing, wkenv, types, intent, [], wkenv.work_project_context)
+			i = tools.partial(plan_testing, wkenv, types, intent, argv, wkenv.work_project_context)
 
 			execution.dispatch(meta, log, i, control, monitors, summary, "Fates", q,)
 			metrics += summary.profile()[-1]
@@ -298,4 +298,4 @@ def test(
 	])
 
 	limit, control, pjv = configure(wkenv, lanes, relevel, remainder)
-	coherency(wkenv, intentions, test_prefixes, limit, control, pjv)
+	coherency(wkenv, intentions, test_prefixes, limit, control, pjv, remainder[1:])
