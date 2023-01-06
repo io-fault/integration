@@ -84,7 +84,7 @@ def plan_test(intention:str, argv, pcontext:lsf.Context, identifier):
 	xargv.append('-d')
 
 	for (fp, ft), fd in pj.select(lsf.types.factor@'test'):
-		if not fp.identifier.startswith('test_') and not fp.identifier[:2] in {'i-', 'u-'}:
+		if not fp.identifier[:2] in {'i-', 'u-'}:
 			continue
 
 		pj_fp = str(project)
