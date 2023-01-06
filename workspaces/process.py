@@ -71,7 +71,7 @@ def plan_testing(wkenv:system.Environment, prefixes, intention:str, argv, pconte
 		kwcheck = (lambda x: True) # Always true if unconstrainted
 
 	for (fp, ft), fd in pj.select(lsf.types.factor@'test'):
-		if not fp.identifier.startswith('test_') and fp.identifier[:2] not in prefixes:
+		if not fp.identifier[:2] in prefixes:
 			continue
 		if not kwcheck(fp):
 			continue
