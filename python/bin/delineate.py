@@ -82,7 +82,11 @@ class Fragment(object):
 	# with respect to that node's context path.
 	"""
 
-	_method_types = {'property', 'staticmethod', 'classmethod'}
+	_method_types = {
+		'property',
+		'abstractproperty', 'abstractmethod',
+		'staticmethod', 'classmethod'
+	}
 	_type_map = {
 		ast.Module: 'module',
 		ast.FunctionDef: 'function',
@@ -378,8 +382,10 @@ class Switch(comethod.object):
 		)
 
 	@comethod('property')
+	@comethod('abstractproperty')
 	def extract_property(self, fragment):
-		return self.element('property',
+		return self.element(
+			fragment.abstract_type,
 			self.effects(fragment),
 			*self.attributes(fragment)
 		)
@@ -445,6 +451,7 @@ class Switch(comethod.object):
 
 	@comethod('function')
 	@comethod('method')
+	@comethod('abstractmethod')
 	@comethod('classmethod')
 	@comethod('staticmethod')
 	def extract_function(self, fragment):
