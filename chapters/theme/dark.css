@@ -105,6 +105,10 @@ a {
 	text-underline-offset: 2px;
 }
 
+a.section-reference {
+	white-space: pre;
+}
+
 a.section-reference:before {
 	content: '[';
 	color: var(--link-type-indicator);
@@ -117,11 +121,6 @@ a.section-reference:after {
 	font-size: 120%;
 }
 
-a.section-reference {
-}
-
-dd {
-}
 dd {
 	max-width: 68%;
 }
@@ -229,7 +228,7 @@ section > h1 code.type {
 	font-weight: normal;
 }
 
-main section:not(.unspecified) > section.unspecified {
+main section > section.unspecified {
 	border-width: 0px;
 	border-top-width: 1px;
 	border-top-style: solid;
