@@ -21,11 +21,11 @@ def delineate(output, source):
 	"""
 	# Parse kleptic text and serialize its element tree as JSON.
 	"""
-	from fault.text.bin import parse
+	from fault.text.io import structure_chapter_text
 	import json
 
 	with source.fs_open('r') as f:
-		chapter = parse.chapter(f.read())
+		chapter = structure_chapter_text(f.read())
 	root = ('factor', [chapter], {})
 
 	r = output
