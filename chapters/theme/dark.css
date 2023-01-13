@@ -228,13 +228,6 @@ section > h1 code.type {
 	font-weight: normal;
 }
 
-main section > section.unspecified {
-	border-width: 0px;
-	border-top-width: 1px;
-	border-top-style: solid;
-	border-top-color: #1A1A1A;
-}
-
 html {
 	background-color: #444444;
 	color: #C2C2C2;
@@ -501,6 +494,16 @@ h1 > span.factor-type {
 	color: gray;
 }
 
+/**
+	# Sections inside of elements.
+*/
+main section > section.unspecified {
+	border-width: 0px;
+	border-top-width: 1px;
+	border-top-style: solid;
+	border-top-color: #1A1A1A;
+}
+
 /* Need the varying depths to override other selectors */
 section > h1.integrate,
 section > section.unspecified > h1.integrate,
@@ -516,7 +519,7 @@ section > section > section.unspecified > h1.integrate
 	margin-left: 4px;
 	margin-right: 4px;
 
-	font-size: 102%;
+	font-size: 108%;
 	font-variant: all-small-caps;
 	color: var(--integrated-titles);
 }
