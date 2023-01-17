@@ -87,6 +87,17 @@ def extract(sub, section):
 
 	return interpret_dictionary_items(items)
 
+def section_items(chapter, section):
+	"""
+	# Get the first dictionary in &section and its interpreted items.
+	"""
+	d = chapter.fork('/section[%s]/dictionary#1' %(section,))
+	if d.root:
+		pd = d.root[0]
+	else:
+		pd = ('dictionary', [], {})
+	return pd, interpret_dictionary_items(d.select('item'))
+
 def insert_before(type, elements, node):
 	for i, n in enumerate(elements):
 		if n[0] == type:
@@ -269,12 +280,12 @@ class Text(comethod.object):
 		if doc is not None:
 			r = doc.root[0]
 
-			params = extract(doc, 'Parameters')
+			pd, params = section_items(doc, 'Parameters')
 			if params:
-				pd = ('dictionary', [], {})
-				insert_before('section', r[1], pd)
+				pi = pd[1]
+				del pi[:]
 				for nid, p_documented, i in self.r_parameters(elements, (), r, params):
-					pd[1].append(i)
+					pi.append(i)
 
 			# Rewrite ambiguous references found in the documentation.
 			if r[1]:
@@ -342,13 +353,12 @@ class Text(comethod.object):
 
 		if doc:
 			self.setdocs(path, doc, section='Elements')
-
-			params = extract(doc, 'Parameters')
+			pd, params = section_items(doc, 'Parameters')
 			if params:
-				pd = ('dictionary', [], {})
-				insert_before('section', doc.root[0][1], pd)
-				for nid, p_documented, i in self.r_parameters(node, path, doc.root, params):
-					pd[1].append(i)
+				pi = pd[1]
+				del pi[:]
+				for nid, p_documented, i in self.r_parameters(elements, (), r, params):
+					pi.append(i)
 
 			# Rewrite ambiguous references found in the documentation.
 			r = self.resolution.rewrite(path, doc.root[0])
@@ -441,21 +451,20 @@ class Text(comethod.object):
 		# Parse documentation and identify documented parameters.
 		documented = set()
 		if doc:
-			params = extract(doc, 'Parameters')
 			r = doc.root[0]
+			# Identify documentation relative to the element's path.
 			prefix(path, r)
 
-			# Add new parameters.
-			pd = ('dictionary', [], {})
-			insert_before('section', r[1], pd)
-
-			# Process the parameters section.
+			# Join parameters.
+			pd, params = section_items(doc, 'Parameters')
+			pi = pd[1]
+			del pi[:]
 			for nid, p_documented, i in self.r_parameters(node, path, param_nodes, params):
-				pd[1].append(i)
+				pi.append(i)
 				if p_documented:
 					documented.add(nid)
 		else:
-			params = {}
+			# No documentation; empty chapter element.
 			r = ('chapter', [], {})
 
 		# Callable signature production.
@@ -690,6 +699,8 @@ def find(index, path:typing.Sequence[str], rpath:typing.Sequence[str]):
 		parts = match(index, path, rpath)
 		if parts > 0:
 			matches.append((parts, path))
+
+		# Ascend
 		path = path[:-1]
 
 	parts = match(index, (), rpath)
@@ -819,7 +830,10 @@ class Resolution(comethod.object):
 						title, link, name_type, local = absdata
 					else:
 						name_type = target_node[0]
-						link = '#' + '.'.join(target)
+						if name_type == 'parameter':
+							link = '#' + '.'.join(target[:-1]) + '.Parameters.' + target[-1]
+						else:
+							link = '#' + '.'.join(target)
 						title = '[' + reference + ']'
 				else:
 					# No such element.
