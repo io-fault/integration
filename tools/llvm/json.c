@@ -127,7 +127,7 @@ print_area(FILE *fp, unsigned long eln, unsigned long ecn, unsigned long xln, un
 	if (xcn > 0)
 		--xcn;
 
-	fprintf(fp, "[[%ul,%ul],[%ul,%ul]]", eln, ecn, xln, xcn);
+	fprintf(fp, "[[%lu,%lu],[%lu,%lu]]", eln, ecn, xln, xcn);
 	return(0);
 }
 
