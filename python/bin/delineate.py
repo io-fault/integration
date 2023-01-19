@@ -554,6 +554,13 @@ def load(source_path:str, identifier=None):
 
 	return root
 
+class LEncoder(json.JSONEncoder):
+	def default(self, o):
+		if isinstance(o, bytes):
+			return repr(o)[2:-1]
+		else:
+			return super().default(o)
+
 def process_source(output, input, fpath):
 	root = load(input, input)
 	s = Switch(fpath)
@@ -587,8 +594,9 @@ def process_source(output, input, fpath):
 			continue
 		keys.append([x for x in k if x is not None])
 		data.append(v)
+
 	with (r/"data.json").fs_open('w') as f:
-		json.dump([keys, data], f)
+		json.dump([keys, data], f, cls=LEncoder)
 
 def main(inv:process.Invocation) -> process.Exit:
 	target, source, fpath = inv.args
