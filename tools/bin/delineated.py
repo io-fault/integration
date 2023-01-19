@@ -19,14 +19,14 @@ def main(inv:process.Invocation) -> process.Exit:
 			continue
 
 		urpath = d.segment(root)
-		(target + urpath).fs_alloc().fs_mkdir()
+		(target // urpath).fs_alloc().fs_mkdir()
 
 		for f in ds:
 			rpath = f.segment(root)
 			b = f.fs_load()
 			b = b.replace(b',}', b'}')
 			b = b.replace(b',]', b']')
-			(target + rpath).fs_store(b)
+			(target // rpath).fs_store(b)
 
 	return inv.exit(0)
 
