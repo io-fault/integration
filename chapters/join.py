@@ -278,6 +278,7 @@ class Text(comethod.object):
 
 		doc = self.getdoc(())
 		if doc is not None:
+			self.setdocs((), doc, section='Elements')
 			r = doc.root[0]
 
 			pd, params = section_items(doc, 'Parameters')
