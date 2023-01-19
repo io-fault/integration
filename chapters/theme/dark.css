@@ -489,9 +489,10 @@ h1 > a.section:after {content: '.';}
 h1 > span.factor-type {
 	float: right;
 	font-family: cursive;
-	font-size: 64%;
+	font-size: 82%;
 	user-select: none;
 	color: gray;
+	line-height: 1em;
 }
 
 /**
@@ -805,20 +806,20 @@ dl > div.parameter > dd {
 dl > div.parameter > dt > a.dkn {
 	text-shadow: none;
 }
-dl > div.parameter > dt > a.dkn:before {
+
+section:not(.unspecified) > section[local-identifier='Parameters'] > dl > div > dt > a.dkn:before {
 	content: '\2192'; /* right arrow into box */
 	margin-right: 2px;
 }
-
 section:not(.unspecified) > section[local-identifier='Returns'] > dl > div > dt > a.dkn:before {
-	content: '\2190'; /* left arrow away from box */
+	content: '\2190'; /* left arrow out of box */
 	margin-right: 2px;
 }
 section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > dt > a.dkn:before {
 	content: '\2191'; /* up arrow */
 	margin-right: 8px;
 }
-section:not(.unspecified) > section[local-identifier='Messages'] > dl > div > dt > a.dkn:before {
+section:not(.unspecified) > section[local-identifier='Effects'] > dl > div > dt > a.dkn:before {
 	content: '\2193'; /* down arrow */
 	margin-right: 8px;
 }
