@@ -126,16 +126,15 @@ def associate_siblings(following, nodes,
 			continue
 		elif ln is None:
 			# Find a child with location data.
-			sub = [(x.lineno, x.col_offset) for x in ast.walk(node) if hasattr(x, 'lineno')]
-			sub.sort()
-			if sub:
-				node.lineno, node.col_offset = sub[0]
-				ln = node.lineno
-			else:
+			try:
+				node.lineno, node.col_offset = min(
+					(x.lineno, x.col_offset)
+					for x in ast.walk(node) if hasattr(x, 'lineno')
+				)
+			except ValueError:
 				continue
 
-		address = (ln, node.col_offset)
-		n_map[address].append(node)
+		n_map[(node.lineno, node.col_offset)].append(node)
 
 	positions = list(n_map.keys())
 	positions.sort()
@@ -152,7 +151,7 @@ def associate_siblings(following, nodes,
 
 def map_tokens(tokens, STRING=tokenize.STRING):
 	"""
-	# Construct a dictionary associating start addresses with their corresponding token.
+	# Construct a dictionary associating addresses with their corresponding token.
 	"""
 
 	token_map = {}
@@ -456,6 +455,26 @@ def _prepare(nodes, tokens, filter=bottom, identify=_lookup_region):
 	lookup = functools.partial(_lookup_region, sa, d, tokens, tmap)
 	yield from join(lookup, filter(nodes))
 
+def shift_column(lines, ln, co, *, encoding='utf-8'):
+	"""
+	# Adjust the &str column offset, &co, to its utf-8 position.
+
+	# [ Parameters ]
+	# /lines/
+		# The source as a sequence of lines.
+	# /ln/
+		# The line number in &lines.
+	# /co/
+		# The column in the line's &str that will be
+		# adjusted into its `utf-8` position.
+
+	# [ Returns ]
+	# Line number and column offset as a tuple.
+	"""
+	if co == 0:
+		return (ln, 0)
+	return (ln, len(lines[ln-1][:co].encode(encoding)))
+
 def parse(source:str, path:str, filter=bottom, encoding='utf-8'):
 	"""
 	# Parse the given &source creating an &ast.Module whose child nodes have their exact areas
@@ -465,8 +484,24 @@ def parse(source:str, path:str, filter=bottom, encoding='utf-8'):
 	ast.fix_missing_locations(nodes)
 
 	sourcelines = source.encode(encoding).splitlines(True)
-	readline = iter(sourcelines).__next__
-	tokens = list(tokenize.tokenize(readline))
+	try:
+		# Use C tokenizer if available as it gives utf-8 offsets.
+		import _tokenize
+		tokens = [
+			tokenize.TokenInfo(t[1], t[0], (t[2], t[4]), (t[3], t[5]), t[-1])
+			for t in _tokenize.TokenizerIter(source)
+		]
+	except ImportError:
+		readline = iter(sourcelines).__next__
+		ulines = source.splitlines(True)
+		tokens = [
+			tokenize.TokenInfo(t.type, t.string,
+				shift_column(ulines, *t.start),
+				shift_column(ulines, *t.end),
+				t.line
+			)
+			for t in tokenize.tokenize(readline)
+		]
 
 	return sourcelines, nodes, _prepare(nodes, tokens, filter=filter)
 
@@ -474,7 +509,7 @@ if __name__ == '__main__':
 	import sys
 	src, = sys.argv[1:]
 	with open(src) as f:
-		nodes, selected = parse(f.read(), src)
+		srclines, nodes, selected = parse(f.read(), src)
 
 	buffer = []
 	for nd in selected:
