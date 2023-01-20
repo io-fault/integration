@@ -146,7 +146,13 @@ class Fragment(object):
 		self._init()
 
 	def _init(self):
-		sl, sc, el, ec = self.node._f_area
+		try:
+			sl, sc, el, ec = self.node._f_area
+		except AttributeError:
+			sl = self.node.lineno
+			sc = self.node.col_offset
+			el = self.node.end_lineno
+			ec = self.node.end_col_offset
 
 		ctx = getattr(self.node, '_f_context', None)
 		if ctx is not None:
