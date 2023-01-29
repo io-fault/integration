@@ -115,7 +115,7 @@ def form_host_target(hlinker):
 
 	target += "\n"
 	target += comment("Defines (-D implied) to include as command options.")
-	target += constant('-system-defines')
+	target += constant('-system-defines', '_DEFAULT_SOURCE')
 
 	target += "\n"
 	target += comment("Libraries to unconditionally link against.")
