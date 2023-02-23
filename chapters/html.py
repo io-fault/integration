@@ -456,7 +456,11 @@ class Render(comethod.object):
 		attr['super'] = sattr
 		attr['absolute'] = (sattr['absolute'] or ()) + (kpi,)
 
-		pset = dict(setdirectory.select(v[1]))
+		try:
+			pset = dict(setdirectory.select(v[1]))
+		except Exception:
+			pset = None
+
 		if pset:
 			# First node was a property set.
 			del v[1][0:1]
