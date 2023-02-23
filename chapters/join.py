@@ -443,7 +443,7 @@ class Text(comethod.object):
 		param_nodes = []
 		try:
 			for n in node[1]:
-				if n and n[0] in {'parameter', 'option', 'mapping', 'vector'}:
+				if n and n[0] in {'parameter'}:
 					param_nodes.append((n[2]['identifier'], n))
 		except:
 			# Not a parameterized element.
@@ -475,7 +475,7 @@ class Text(comethod.object):
 				# If the element provides an override syntax,
 				# prefer it over the exact identifier.
 				x[1][2].get('syntax', x[0]) for x in param_nodes
-				if x[0] in documented or x[1][0] != 'option'
+				if x[0] in documented or not x[1][2].get('optional', False)
 			)
 			sig = '(signature)' + "`%s(%s)`" % (path[-1], ", ".join(dparams))
 			sig += self.newline
