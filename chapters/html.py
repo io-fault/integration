@@ -694,13 +694,40 @@ class Render(comethod.object):
 			('class', cl),
 		)
 
+	# Handle (date)`...`, (timestamp)`...`, etc.
+	semantic_literals = {
+		# (self, default-class-attribute, quals, literal-text)
+		'date': (
+			(lambda s, c, q, x: s.element(
+				'time', s.text(x),
+				('class', 'gregorian-calendar-date'),
+				('datetime', x),
+			))
+		),
+		'timestamp': (
+			(lambda s, c, q, x: s.element(
+				'time', s.text(x),
+				('class', 'point'),
+				('datetime', x),
+			))
+		),
+	}
+
 	@comethod('literal', 'grave-accent')
 	def inline_literal(self, resolver, context, text, *quals):
-		yield from self.element(
-			'code',
-			self.text(text),
-			('class', '.'.join(quals)),
-		)
+		if quals and quals[0] in self.semantic_literals:
+			sl = self.semantic_literals[quals[0]]
+			slq = quals[1:]
+			yield from sl(self,
+				('class', '.'.join(slq)),
+				slq, text,
+			)
+		else:
+			yield from self.element(
+				'code',
+				self.text(text),
+				('class', '.'.join(quals)),
+			)
 
 	def paragraph_content(self, resolver, content, attr):
 		yield from self.paragraph(resolver, ipara((None, content)), attr)
