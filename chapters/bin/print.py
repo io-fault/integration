@@ -248,6 +248,7 @@ def r_corpus(config, out, ctx, req, variants):
 		yield [web_resources, 'core.css'], (''.join([
 			"@import 'default/if.css';\n",
 			"@import 'default/color.css';\n",
+			"@import 'default/icon.css';\n",
 			"@import 'default/dark.css';\n",
 			"@import 'default/admonition.css';\n",
 			"@import 'default/index.css';\n",

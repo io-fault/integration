@@ -540,7 +540,7 @@ article section > h1 {
 
 div[class="section"] > div.title:before
 {
-	content: '\1F4C3';
+	content: var(--section-icon);
 	margin-right: 0.5em;
 	padding-left: 0.5em;
 }
@@ -809,22 +809,22 @@ dl > div.parameter > dt > a.dkn {
 }
 
 section:not(.unspecified) > section[local-identifier='Parameters'] > dl > div > dt > a.dkn:before {
-	content: '\2192'; /* right arrow into box */
+	content: var(--parameter-type);
 	margin-right: 2px;
 	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Returns'] > dl > div > dt > a.dkn:before {
-	content: '\2190'; /* left arrow out of box */
+	content: var(--return-type);
 	margin-right: 2px;
 	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > dt > a.dkn:before {
-	content: '\2191'; /* up arrow */
+	content: var(--exceptions-type);
 	margin-right: 8px;
 	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Effects'] > dl > div > dt > a.dkn:before {
-	content: '\2193'; /* down arrow */
+	content: var(--effect-type);
 	margin-right: 8px;
 	font-stretch: 100%;
 }
@@ -968,14 +968,14 @@ time.stamp {
 }
 
 time.stamp[precision!="day"]:before {
-	content: '\1F570\FE0F';
+	content: var(--clock-icon);
 	padding-right: 2px;
 }
 
 time.stamp[precision="year"]:before,
 time.stamp[precision="month"]:before,
 time.stamp[precision="day"]:before {
-	content: '\1F4C5';
+	content: var(--calendar-icon);
 	padding-right: 2px;
 }
 
