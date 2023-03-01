@@ -787,6 +787,7 @@ dl.text > dd > *:first-child {
 
 a.dkn:before {
 	content: '\21A3';
+	font-stretch: 150%;
 	margin-right: 4px;
 }
 
@@ -810,18 +811,22 @@ dl > div.parameter > dt > a.dkn {
 section:not(.unspecified) > section[local-identifier='Parameters'] > dl > div > dt > a.dkn:before {
 	content: '\2192'; /* right arrow into box */
 	margin-right: 2px;
+	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Returns'] > dl > div > dt > a.dkn:before {
 	content: '\2190'; /* left arrow out of box */
 	margin-right: 2px;
+	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > dt > a.dkn:before {
 	content: '\2191'; /* up arrow */
 	margin-right: 8px;
+	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Effects'] > dl > div > dt > a.dkn:before {
 	content: '\2193'; /* down arrow */
 	margin-right: 8px;
+	font-stretch: 100%;
 }
 
 a.dkn {
@@ -832,6 +837,9 @@ a.dkn {
 
 	margin-left: 2px;
 	margin-right: 2px;
+
+	vertical-align: middle;
+	padding-bottom: 0.2em;
 }
 
 dl.text > dt {
@@ -945,4 +953,38 @@ div.subject-reference-display {
 
 	background-color: rgba(255, 255, 255, 0.15);
 	font-family: monospace;
+}
+
+time.stamp {
+	display: 'inline-block';
+
+	font-size: 90%;
+	font-family: monospace;
+	border-width: 1px;
+	border-color: gray;
+	border-style: solid;
+	background-color: black;
+	padding: 2px;
+}
+
+time.stamp[precision!="day"]:before {
+	content: '\1F570\FE0F';
+	padding-right: 2px;
+}
+
+time.stamp[precision="year"]:before,
+time.stamp[precision="month"]:before,
+time.stamp[precision="day"]:before {
+	content: '\1F4C5';
+	padding-right: 2px;
+}
+
+dl dt > time.stamp {
+}
+dl dt > time.stamp[positional-relation="-1"] {
+	margin-right: 0.5em;
+}
+
+dl dt > time.stamp[positional-relation="+1"] {
+	margin-left: 0.5em;
 }

@@ -461,10 +461,27 @@ class Render(comethod.object):
 		except Exception:
 			pset = None
 
+		dated = ()
+		pdate = None
 		if pset:
 			# First node was a property set.
 			del v[1][0:1]
 			item_properties.update(pset.items())
+
+			pdate = pset.get(('time-context',)) or None
+			if pdate:
+				if ' ' in pdate or 'T' in pdate:
+					precision = None
+				else:
+					precision = 'day'
+
+				dated = self.element('time',
+					self.text(pdate),
+					('datetime', pdate),
+					('class', 'stamp'),
+					('positional-relation', '+1'),
+					('precision', precision),
+				)
 
 		documented = True
 		typannotation = ()
@@ -503,6 +520,7 @@ class Render(comethod.object):
 					itertools.chain(
 						self.dl_item_anchor(attr['absolute']),
 						self.paragraph_content(resolver, k[1], attr),
+						dated,
 						typannotation,
 					),
 				),
@@ -510,7 +528,8 @@ class Render(comethod.object):
 			),
 			('id', self.slug(prefix(kpi))),
 			('class', iclass),
-			('documented', str(documented).lower())
+			('documented', str(documented).lower()),
+			('when', pdate),
 		)
 
 	@comethod('dictionary')
