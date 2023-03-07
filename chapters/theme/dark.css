@@ -819,7 +819,7 @@ section:not(.unspecified) > section[local-identifier='Returns'] > dl > div > dt 
 	font-stretch: 100%;
 }
 section:not(.unspecified) > section[local-identifier='Exceptions'] > dl > div > dt > a.dkn:before {
-	content: var(--exceptions-type);
+	content: var(--exception-type);
 	margin-right: 8px;
 	font-stretch: 100%;
 }
