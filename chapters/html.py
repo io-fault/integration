@@ -383,15 +383,10 @@ class Render(comethod.object):
 		else:
 			ilines = lines
 
-		if attr['type'].startswith('/pl/'):
-			cl = 'language-' + attr['type'][4:]
-		else:
-			cl = None
-
 		yield from self.element('pre',
 			self.element('code',
 				self.text(''.join(ilines)),
-				('class', cl)
+				('class', attr['type'] or None),
 			),
 			('class', 'text.syntax'),
 		)
