@@ -725,6 +725,7 @@ pre[class="text.syntax"] {
 	border-style: solid;
 	padding: 8px;
 	margin-left: 48px;
+	overflow: scoll;
 }
 
 /* Avoid redundant indentation for sole syntax directory entries. */
