@@ -456,11 +456,19 @@ class Render(comethod.object):
 		attr['super'] = sattr
 		attr['absolute'] = (sattr['absolute'] or ()) + (kpi,)
 
+		# Identify syntax only items to help with special cases in styling.
+		solecontent = None
+		if len(v[1]) == 1:
+			if v[1][0][0] == 'syntax':
+				# dl > div > dd[sole='syntax'] { ... }
+				solecontent = 'syntax'
+
 		try:
 			pset = dict(setdirectory.select(v[1]))
 		except Exception:
 			pset = None
 
+		# Append date given a time-context property.
 		dated = ()
 		pdate = None
 		if pset:
@@ -524,7 +532,10 @@ class Render(comethod.object):
 						typannotation,
 					),
 				),
-				self.element('dd', self.switch(resolver, v[1], attr)),
+				self.element('dd',
+					self.switch(resolver, v[1], attr),
+					('sole', solecontent),
+				),
 			),
 			('id', self.slug(prefix(kpi))),
 			('class', iclass),

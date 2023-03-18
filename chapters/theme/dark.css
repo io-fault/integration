@@ -121,6 +121,10 @@ a.section-reference:after {
 	font-size: 120%;
 }
 
+dl > div > dd[sole="syntax"] {
+	margin-left: 2em;
+}
+
 dd {
 	max-width: 68%;
 }
@@ -721,6 +725,11 @@ pre[class="text.syntax"] {
 	border-style: solid;
 	padding: 8px;
 	margin-left: 48px;
+}
+
+/* Avoid redundant indentation for sole syntax directory entries. */
+dd > pre[class="text.syntax"]:first-child:last-child {
+	margin-left: 0;
 }
 
 div[class^="frame.instructions"] {
