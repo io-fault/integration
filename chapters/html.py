@@ -542,7 +542,7 @@ class Render(comethod.object):
 			prefix = ('.'.join(p) + '.').__add__
 			attr['absolute'] = tuple(p)
 		else:
-			prefix = (lambda x: None)
+			prefix = (lambda x: x)
 			attr['absolute'] = None
 
 		yield from self.element(
