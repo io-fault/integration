@@ -42,7 +42,7 @@ def itruncate(lines:[str], indentation='\t', ilevel=string.ilevel):
 		for il, line in clines
 	]
 
-def interpret_dictionary_items(items):
+def interpret_directory_items(items):
 	return {
 		i[2]['identifier']: (ipara(i[1][0]), i[1][1][1])
 		for i in items
@@ -78,25 +78,25 @@ def extract(sub, section):
 	# Extract the mapping from the identified &section removing its node from the tree.
 	"""
 	r = sub.root[0]
-	items = sub.select('/section[%s]/dictionary/item' %(section,))
+	items = sub.select('/section[%s]/directory/item' %(section,))
 
 	# Remove extracted section entirely.
 	for i, x in enumerate(r[1]):
 		if x[0] == 'section' and x[2]['identifier'] == section:
 			del r[1][i]
 
-	return interpret_dictionary_items(items)
+	return interpret_directory_items(items)
 
 def section_items(chapter, section):
 	"""
-	# Get the first dictionary in &section and its interpreted items.
+	# Get the first directory in &section and its interpreted items.
 	"""
-	d = chapter.fork('/section[%s]/dictionary#1' %(section,))
+	d = chapter.fork('/section[%s]/directory#1' %(section,))
 	if d.root:
 		pd = d.root[0]
 	else:
-		pd = ('dictionary', [], {})
-	return pd, interpret_dictionary_items(d.select('item'))
+		pd = ('directory', [], {})
+	return pd, interpret_directory_items(d.select('item'))
 
 def insert_before(type, elements, node):
 	for i, n in enumerate(elements):
@@ -112,7 +112,7 @@ def control(**kw):
 	"""
 	return (
 		'admonition', [
-			('dictionary', [
+			('directory', [
 				_item(k, v)
 				for k, v in kw.items()
 			], {})
@@ -163,9 +163,9 @@ def property_item(pf):
 
 def documented_field_item(resolve, element, node, identifier, cast, documentation):
 	"""
-	# Construct the dictionary item node for a documented field.
+	# Construct the directory item node for a documented field.
 	"""
-	v_content = [] # Content of the new parameter dictionary item.
+	v_content = [] # Content of the new parameter directory item.
 
 	# Build item element for rendering.
 	i = ('item', [
@@ -183,17 +183,17 @@ def documented_field_item(resolve, element, node, identifier, cast, documentatio
 		# Prefix onto existing set.
 		documentation[0][1][:0] = typ_properties
 
-	# Copy the documentation from the Parameters section's dictionary item.
+	# Copy the documentation from the Parameters section's directory item.
 	v_content.extend(documentation)
 
 	return i
 
 def undocumented_field_item(resolve, element, node, identifier, cast, documentation=None):
 	"""
-	# Construct the dictionary item node for representing an undocumented field.
+	# Construct the directory item node for representing an undocumented field.
 	# The &documentation parameter is provided for type consistency with &documented_field_item.
 	"""
-	v_content = [] # Content of the new parameter dictionary item.
+	v_content = [] # Content of the new parameter directory item.
 
 	# Build item element for rendering.
 	i = ('item', [

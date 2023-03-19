@@ -333,6 +333,7 @@ class Render(comethod.object):
 		*args, _ = tools.interlace(argtext, itertools.repeat(' , '))
 		yield self.element('.It', 'Fa', *args)
 
+	@comethod('directory')
 	@comethod('dictionary')
 	def mapping(self, resolver, items, attr):
 		yield self.element('.Bl', "-tag -width indent")
@@ -456,7 +457,7 @@ def _pararefs(n):
 def recognize_synopsis_options(section):
 	e = None
 	for si, e in enumerate(section):
-		if e[0] == 'dictionary':
+		if e[0] in {'directory', 'dictionary'}:
 			del section[si:si+1]
 			break
 	else:
@@ -514,10 +515,10 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 
 	xrs, _ = index[(relation,)] #* Missing OPTIONS/PARAMETERS?
 	for node in xrs[1]:
-		if node[0] != 'dictionary':
+		if node[0] not in {'directory', 'dictionary'}:
 			continue
 
-		# First dictionary, structure synopsis.
+		# First directory, structure synopsis.
 		for i in node[1]:
 			# Name and Parameter/Option list.
 			key, value = i[1]
@@ -548,8 +549,8 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 			i[1][0] = (case_id, [], struct)
 		break
 	else:
-		# No dictionary in found.
-		raise Exception("synopsis option section contained no dictionary")
+		# No directory in found.
+		raise Exception("synopsis option section contained no directory")
 
 	if syn is not None:
 		syn[-1]['names'] = names

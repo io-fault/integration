@@ -94,7 +94,7 @@ def integrate(index, types, node):
 			meta = fattr['type'].lower()
 			data = {
 				k: load_control_value(v)
-				for k, v in document.dictionary_pairs(fnodes[0][1])
+				for k, v in document.directory_pairs(fnodes[0][1])
 			}
 			attr[meta] = data
 			del fnodes[:1]

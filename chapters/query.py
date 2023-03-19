@@ -26,6 +26,7 @@ context = Context(
 		'section',
 		'admonition',
 		'dictionary',
+		'directory',
 		'sequence',
 		'set',
 
@@ -36,7 +37,7 @@ context = Context(
 	{
 		'p': 'paragraph',
 		'i': 'item',
-		'd': 'dictionary',
+		'd': 'directory',
 		's': 'sequence',
 		'S': 'section',
 		'C': 'chapter',

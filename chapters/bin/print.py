@@ -47,7 +47,7 @@ def abstract(project):
 		raise FileNotFoundError("documentation.project factor not available")
 
 	cursor = html.query.navigate(structure_chapter_text(src.get_text_content()))
-	icon, = cursor.select("/dictionary#1/item[icon]/value/paragraph#1")
+	icon, = cursor.select("/directory#1/item[icon]/value/paragraph#1")
 	icon = structure_paragraph_element(icon).sole.data
 
 	first, = cursor.select("/section[Abstract]/paragraph#1")
