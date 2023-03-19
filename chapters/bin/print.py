@@ -246,10 +246,10 @@ def r_corpus(config, out, ctx, req, variants):
 			yield [web_resources, 'default', f.identifier], (f.fs_load(),)
 
 		yield [web_resources, 'core.css'], (''.join([
+			"@import 'default/sheet.css';\n",
 			"@import 'default/if.css';\n",
-			"@import 'default/color.css';\n",
+			"@import 'default/select.css';\n",
 			"@import 'default/icon.css';\n",
-			"@import 'default/dark.css';\n",
 			"@import 'default/admonition.css';\n",
 			"@import 'default/index.css';\n",
 			"@import 'default/log.css';\n",
