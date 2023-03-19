@@ -538,6 +538,7 @@ class Render(comethod.object):
 			('when', pdate),
 		)
 
+	@comethod('directory')
 	@comethod('dictionary')
 	def dl_dict(self, resolver, items, attr):
 		p = attr['super']
