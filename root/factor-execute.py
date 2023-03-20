@@ -14,7 +14,7 @@ import importlib
 path_sources = ['FAULT_PYTHON_PATH', 'FAULT_SYSTEM_PATH']
 fault_name = os.environ['FAULT_CONTEXT_NAME']
 factors_module_path = '.'.join((fault_name, 'system', 'factors'))
-subexec_module_path = '.'.join((fault_name, 'system', 'bin', 'subexec'))
+subexec_module_path = '.'.join((fault_name, 'system', 'execute'))
 
 def extend_python_path(pathrefs):
 	# Use sys.path entries and bootstrapped (python.sh) extension modules.
