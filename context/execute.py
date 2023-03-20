@@ -2,7 +2,7 @@
 # Executable factor index for &fault.system.bin.tool bindings.
 """
 import importlib
-from ... import __name__ as context_name
+from .. import __name__ as context_name
 from fault.system import process
 
 index = {
@@ -12,7 +12,7 @@ index = {
 	'python-cc': context_name + '.python.bin.compile',
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.bin.control',
-	'man': context_name + '.context.bin.manual',
+	'man': context_name + '.context.read',
 }
 
 def activate(factor, element, interface=None):

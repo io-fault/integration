@@ -6,7 +6,7 @@ import sys
 import os
 from fault.system import process
 from fault.system import query
-from ...root.query import ipath
+from ..root.query import ipath
 
 def main(inv:process.Invocation) -> process.Exit:
 	suffix = os.environ.get('MANPATH') or ''
