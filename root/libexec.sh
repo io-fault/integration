@@ -10,11 +10,11 @@ f_bind -i$INTENTION \
 	"$FAULT_TOOL_PATH/pdctl" "system.products.bin.control" || exit
 
 f_bind -i$INTENTION \
-	"-lfault.context.bin.tools" \
-	"-lsystem.context.bin.tools" \
-	"$FAULT_TOOL_PATH/fault-tool" "fault.system.bin.tool" || exit
+	"-lfault.context.execute" \
+	"-lsystem.context.execute" \
+	"$FAULT_TOOL_PATH/fault-tool" "fault.system.tool" || exit
 
 f_bind -i$INTENTION \
-	"-lfault.context.bin.tools" \
-	"-lsystem.context.bin.tools" \
-	"$FAULT_LIBEXEC_PATH/fault-dispatch" "fault.system.bin.tool" || exit
+	"-lfault.context.execute" \
+	"-lsystem.context.execute" \
+	"$FAULT_LIBEXEC_PATH/fault-dispatch" "fault.system.tool" || exit
