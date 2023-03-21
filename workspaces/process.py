@@ -141,6 +141,8 @@ def construct(wkenv:system.Environment,
 	try:
 		execution.dispatch(meta, log, i, control, monitors, summary, "FPI", q,)
 	finally:
+		control.clear()
+		control.flush()
 		log.xact_close(xid, summary.synopsis(), {})
 
 def coherency(wkenv:system.Environment,
@@ -176,6 +178,8 @@ def coherency(wkenv:system.Environment,
 			execution.dispatch(meta, log, i, control, monitors, summary, "Fates", q,)
 			metrics += summary.profile()[-1]
 		finally:
+			control.clear()
+			control.flush()
 			summary.title('Fates', intent)
 			log.xact_close(xid, summary.synopsis(), {})
 
