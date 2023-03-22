@@ -126,13 +126,13 @@ dl > div > dd[sole="syntax"] {
 }
 
 dd {
-	max-width: 68%;
+	max-width: 54%;
 }
 dd dd {
-	max-width: 86%;
+	max-width: 48%;
 }
 dd dd dd {
-	max-width: 100%;
+	max-width: 42%;
 }
 
 table {
