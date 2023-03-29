@@ -539,7 +539,6 @@ class Render(comethod.object):
 		)
 
 	@comethod('directory')
-	@comethod('dictionary')
 	def dl_dict(self, resolver, items, attr):
 		p = attr['super']
 		if p is not None:

@@ -25,7 +25,6 @@ context = Context(
 		'chapter',
 		'section',
 		'admonition',
-		'dictionary',
 		'directory',
 		'sequence',
 		'set',

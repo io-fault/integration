@@ -334,7 +334,6 @@ class Render(comethod.object):
 		yield self.element('.It', 'Fa', *args)
 
 	@comethod('directory')
-	@comethod('dictionary')
 	def mapping(self, resolver, items, attr):
 		yield self.element('.Bl', "-tag -width indent")
 
@@ -457,7 +456,7 @@ def _pararefs(n):
 def recognize_synopsis_options(section):
 	e = None
 	for si, e in enumerate(section):
-		if e[0] in {'directory', 'dictionary'}:
+		if e[0] in {'directory'}:
 			del section[si:si+1]
 			break
 	else:
@@ -515,7 +514,7 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 
 	xrs, _ = index[(relation,)] #* Missing OPTIONS/PARAMETERS?
 	for node in xrs[1]:
-		if node[0] not in {'directory', 'dictionary'}:
+		if node[0] not in {'directory'}:
 			continue
 
 		# First directory, structure synopsis.
