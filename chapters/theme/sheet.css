@@ -123,6 +123,7 @@ a.section-reference:after {
 
 dl > div > dd[sole="syntax"] {
 	margin-left: 2em;
+	max-width: 100%;
 }
 
 dd {
