@@ -208,11 +208,6 @@ a:visited:hover, a:hover {
 
 a.dkn:hover {
 	color: var(--link-hover);
-	text-shadow:
-		3px 3px 2px rgba(0,0,0,1),
-		-3px 3px 2px rgba(0,0,0,1),
-		3px -3px 2px rgba(0,0,0,1),
-		-3px -3px 2px rgba(0,0,0,1)
 }
 
 section:target > h1 {
