@@ -1,5 +1,5 @@
 /**
-	/* Dark theme for HTML documents leveraging semantic elements.
+	// Dark theme for HTML documents leveraging semantic elements.
 */
 @charset "utf-8";
 
@@ -793,7 +793,7 @@ dl.text > dd > *:first-child {
 
 /* Directory item indicator */
 a.dkn:before {
-	content: '\21A3';
+	content: var(--directory-arrow);
 	font-stretch: 150%;
 	margin-right: 4px;
 
