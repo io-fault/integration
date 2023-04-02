@@ -791,10 +791,19 @@ dl.text > dd > *:first-child {
 	margin-top: 4px;
 }
 
+/* Directory item indicator */
 a.dkn:before {
 	content: '\21A3';
 	font-stretch: 150%;
 	margin-right: 4px;
+
+	border-width: 1px;
+	border-style: solid;
+	border-color: black;
+	background-color: #222222;
+	padding: 4px;
+	padding-top: 0px;
+	padding-bottom: 0px;
 }
 
 dl > div.parameter {
@@ -836,7 +845,7 @@ section:not(.unspecified) > section[local-identifier='Effects'] > dl > div > dt 
 }
 
 a.dkn {
-	color: var(--mapping-item-symbol);
+	color: var(--directory-item-symbol);
 
 	font-family: sans-serif;
 	font-size: 115%;

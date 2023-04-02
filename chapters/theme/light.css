@@ -1,15 +1,15 @@
 /**
-	/* Color variables used by the styles.
+	// Variables for light theme.
 */
 
 :root {
-	--element-titles: cornflowerblue; /* titles normally in an h1 heading */
-	--integrated-titles: #b19cd9; /* purple */
+	--element-titles: cornflowerblue;
+	--integrated-titles: #b19cd9;
 
-	--mapping-item-symbol: cornflowerblue;
+	--directory-item-symbol: cornflowerblue;
 
 	--link-hover: cornflowerblue;
-	--link-type-indicator: cornflowerblue; /* () suffix for methods/functions. */
+	--link-type-indicator: cornflowerblue;
 	--invalid-link: red;
-	--target-highlighting: #fdfd96; /* yellow */
+	--target-highlighting: #fdfd96;
 }
