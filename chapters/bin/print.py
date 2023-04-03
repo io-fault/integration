@@ -75,13 +75,12 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 		sole = False
 		primary = ""
 
-	meta_json = json.dumps({
+	meta_json = {
 		'sole': primary,
 		'level': ddepth,
 		'type': str(type),
 		'identifier': str(fpath),
-	})
-	yield meta, (meta_json.encode('utf-8'),)
+	}
 
 	for v in variants:
 		img = pj.image(v.reform('delineated'), fpath)
@@ -123,6 +122,11 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 					yield outsrc + ['metrics', f.identifier], (f.fs_load(),)
 
 		if di.fs_type() == 'directory':
+			if (di/'context.json').fs_type() == 'data':
+				# If context extraction was performed, merge with meta.json.
+				with (di/'context.json').fs_open() as f:
+					meta_json.update(json.load(f))
+
 			# Copy the contents of the delineation image.
 			for dirpath, dfiles in di.fs_index():
 				for f in dfiles:
@@ -134,6 +138,19 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 
 			chapter += "\n[]\n"
 			chapter += fet
+
+	yield meta, (json.dumps(meta_json).encode('utf-8'),)
+	if 'icon' in meta_json:
+		icon_data = meta_json['icon']
+		if 'image/svg' in icon_data:
+			try:
+				empty, b64 = icon_data.split('data:image/svg+xml;base64,', 1)
+			except ValueError:
+				pass
+			else:
+				import base64
+				svg = base64.b64decode(b64)
+				yield (froot + ['.http-resource', 'icon.svg'], (svg,))
 
 	for x in prefixes:
 		if str(pj.factor).startswith(x):
