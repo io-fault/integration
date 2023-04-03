@@ -20,14 +20,14 @@ from fault.text.io import structure_chapter_text, structure_paragraph_element
 from .. import join
 from .. import html
 
-web_resources = ".legacy-web"
-core_style = "core.css"
+web_resources = '.legacy-web'
+core_style = 'core.css'
 
-project_index_style = "corpus.css"
-factor_index_style = "project.css"
-factor_style = "factor.css"
-chapter_style = "chapter.css"
-sources_style = "sources.css"
+project_index_style = 'corpus.css'
+factor_index_style = 'project.css'
+factor_style = 'factor.css'
+chapter_style = 'chapter.css'
+sources_style = 'sources.css'
 
 def styles(depth, type, directory=web_resources):
 	prefix = '../' * depth
