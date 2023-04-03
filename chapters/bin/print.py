@@ -299,6 +299,72 @@ restricted = {
 	'-w': ('field-replace', True, 'web-defaults'),
 }
 
+def extract_image_reference(svg):
+	"""
+	# Extract the hyperlink from the first image element in an SVG image.
+	# The `href` attribute must be directly adjacent to the `=` character.
+
+	# [ Parameters ]
+	# /svg/
+		# The SVG XML string.
+	# [ Returns ]
+	# /&str/
+		# The contents of the href attribute.
+	# [ Exceptions ]
+	# /&ValueError/
+		# No image tag with an href attribute.
+	"""
+	imgat = svg.find('<image')
+	prefix, href = svg[imgat+6:].split('href=', 1)
+	return href[1:href.find(href[:1], 1)]
+
+def transfer(xfers):
+	"""
+	# Transfer the remote resources to their associated filesystem location.
+	"""
+	from system.root import query
+	from fault.system import execution
+	fd = str(query.libexec() / 'fault-dispatch')
+
+	for remote, local in xfers:
+		ki = execution.KInvocation(fd, [fd, 'http-cache', str(remote), str(local)])
+		execution.perform(ki)
+
+def icons(out:files.Path, ctx:lsf.Context):
+	"""
+	# Print the icons of the factor types used by the projects in &ctx.
+	# The icons are placed stored in `.factor-type-icon/` relative to &out
+	# according to &html.icon_identity.
+	"""
+	factortypes = set()
+	for pj in ctx.iterprojects():
+		for ((fp, ft), (fr, fs)) in pj.select(lsf.types.factor):
+			factortypes.add(ft)
+
+	xfer_index = []
+	for ft in factortypes:
+		remote = str(ft) + '/.http-resource/icon.svg'
+		local = out@(html.icon_identity(str(ft)) + '.svg')
+		local.fs_alloc()
+		if local.fs_type() == 'data':
+			local.fs_void()
+		xfer_index.append((remote, local))
+
+	# Transfer resources to the local filesystem.
+	transfer(xfer_index)
+
+	# Check for nested images. Presume SVG.
+	overwrites = []
+	for r, f in xfer_index:
+		try:
+			ref = extract_image_reference(f.fs_load().decode('utf-8'))
+			if not ref.startswith('data:'):
+				overwrites.append((ref, f))
+				f.fs_void()
+		except ValueError:
+			pass
+	transfer(overwrites)
+
 def main(inv:process.Invocation) -> process.Exit:
 	config = {
 		'encoding': 'utf-8',
@@ -311,8 +377,8 @@ def main(inv:process.Invocation) -> process.Exit:
 	remainder = recognition.merge(config, v)
 
 	rformat, outstr, ctxpath, *variant_s = remainder
-	if rformat != 'web':
-		sys.stderr.write("ERROR: only 'web' format is supported.\n")
+	if rformat not in {'web', 'icons'}:
+		sys.stderr.write("ERROR: only 'web' and 'icons' format is supported.\n")
 		return inv.exit(1)
 
 	# Build project context for the target product.
@@ -332,13 +398,16 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	out = files.Path.from_path(outstr)
 	out.fs_mkdir()
-	for rpath, data in r_corpus(config, out, ctx, req, variants):
-		path = out + rpath
-		try:
-			with path.fs_alloc().fs_open('wb') as f:
-				f.writelines(data)
-		except:
-			print('->', str(path), file=sys.stderr)
-			traceback.print_exc()
+	if rformat == 'icons':
+		icons(out, ctx)
+	elif rformat == 'web':
+		for rpath, data in r_corpus(config, out, ctx, req, variants):
+			path = out + rpath
+			try:
+				with path.fs_alloc().fs_open('wb') as f:
+					f.writelines(data)
+			except:
+				print('->', str(path), file=sys.stderr)
+				traceback.print_exc()
 
 	return inv.exit(0)
