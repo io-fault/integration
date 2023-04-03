@@ -4,6 +4,7 @@ import itertools
 from fault.context import tools
 from fault.context import comethod
 from fault.internet import xml
+from fault.internet import ri
 
 from fault.text import document
 from fault.text.io import structure_chapter_lines, structure_chapter_text
@@ -798,8 +799,29 @@ class Render(comethod.object):
 		for snode in sub.select("/section"):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
-def r_icon(sx, i):
-	return sx.element('img', (), ('class', 'icon'), src=i)
+@tools.cachedcalls(16)
+def icon_identity(ftype, prefix='.factor-type-icon/'):
+	"""
+	# Construct the `.icon` identifier from a factor type identifier.
+	"""
+	ftri = ri.parse(ftype.strip('/'))
+	return prefix + ftri['host'] + '/' + ftri['path'][-1].replace('.', '-')
+
+def r_icon(sx, depth, i):
+	if i.startswith('data:'):
+		# Usually a Project Icon
+		href = i
+		title = None
+	else:
+		# Factor Type Reference
+		href = ('../' * depth) + icon_identity(i) + '.svg'
+		title = i
+
+	return sx.element('img', (),
+		('class', 'icon'),
+		('src', href),
+		('title', title),
+	)
 
 def r_index(sx, pathclass, abstractclass, listclass, index):
 	return sx.element('dl',
@@ -836,19 +858,20 @@ def r_index(sx, pathclass, abstractclass, listclass, index):
 
 def r_projects(sx, index):
 	i = (
-		(x[0] + '/', r_icon(sx, x[3]), sx.escape(x[1]), sx.escape(x[-1]))
+		(x[0] + '/', r_icon(sx, 0, x[3]), sx.escape(x[1]), sx.escape(x[-1]))
 		for x in index
 	)
 	return r_index(sx, 'factor-path', 'index-abstract', 'project-index', i)
 
 def r_factors(sx, index):
 	i = (
-		(x[0], r_icon(sx, x[1]), sx.escape(x[0]), sx.escape(x[1]))
+		(x[0], r_icon(sx, 1, x[1]), sx.escape(x[0]), sx.escape(x[1]))
 		for x in index
 	)
 	return r_index(sx, 'factor-path', 'index-abstract', 'factor-index', i)
 
 def r_sources(sx, index, icon=(b"\xf0\x9f\x93\x84".decode('utf-8'))):
+	# If r_icon is ever used for source documents, the depth should always be 2.
 	i = (
 		(x[0], sx.escape(icon), sx.escape(x[0]), sx.escape('.'.join(x[1:2])))
 		for x in index
