@@ -41,9 +41,7 @@ info = lsf.types.Information(
 	identifier = 'http://fault.io/integration/machines//llvm',
 	name = 'fault-llvm',
 	authority = 'fault.io',
-	abstract = "Tool adapter instance for LLVM.",
-	icon = dict([('emoji', "🛠️")]),
-	contact = "&<http://fault.io/critical>"
+	contact = "http://fault.io/critical"
 )
 
 def declare():

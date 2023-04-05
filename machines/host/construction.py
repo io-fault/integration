@@ -19,8 +19,6 @@ def mkinfo(path, name):
 		identifier = 'i-http://fault.io//construction/' + path,
 		name = name,
 		authority = 'fault.io',
-		abstract = "Construction Context.",
-		icon = dict([('emoji', "#")]),
 		contact = "http://fault.io/critical"
 	)
 
