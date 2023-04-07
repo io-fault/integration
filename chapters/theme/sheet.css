@@ -3,6 +3,10 @@
 */
 @charset "utf-8";
 
+p {
+	line-height: 1.12em;
+}
+
 /* Undocumented Elements */
 section[documented="false"] {
 	display: none;
@@ -59,6 +63,7 @@ a:not([class='title']) > span.function:after
 
 /* Link that was not identified as being local. */
 a.absolute {
+	font-family: monospace;
 	text-decoration: underline;
 	text-decoration-color: #0366bd;
 }
@@ -971,7 +976,7 @@ div.subject-reference-display {
 }
 
 time.stamp {
-	display: 'inline-block';
+	display: inline-block;
 
 	font-size: 90%;
 	font-family: monospace;
