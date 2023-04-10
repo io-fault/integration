@@ -36,27 +36,6 @@ def styles(depth, type, directory=web_resources):
 		prefix + directory + '/' + type,
 	]
 
-def abstract(project):
-	for factor in project.select(lsf.types.factor@'documentation'):
-		(fp, ft), (fr, fs) = factor
-		if fp.identifier != 'project':
-			continue
-		(fmt, src), = fs
-		break
-	else:
-		raise FileNotFoundError("documentation.project factor not available")
-
-	cursor = html.query.navigate(structure_chapter_text(src.get_text_content()))
-	icon, = cursor.select("/directory#1/item[icon]/value/paragraph#1")
-	icon = structure_paragraph_element(icon).sole.data
-
-	first, = cursor.select("/section[Abstract]/paragraph#1")
-	para = html.document.export(first[1])
-	for s in para.sentences:
-		return icon, ''.join(x[1] for x in s)
-	else:
-		return icon, ''
-
 def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requirements, sources):
 	# project/factor
 	img = None
@@ -213,12 +192,7 @@ def r_corpus(config, out, ctx, req, variants):
 
 	projects = []
 	for pj in ctx.iterprojects():
-		try:
-			icon, projectabstract = abstract(pj)
-		except:
-			traceback.print_exc()
-			icon = ''
-			projectabstract = ''
+		ext = pj.extensions
 		pjdir = removeprefix(config['prefixes'], str(pj.factor))
 		yield hrinit([pjdir], 'http://if.fault.io/factors/meta.project', str(pj.factor))
 		yield from r_project(sx, config['prefixes'], variants, req, ctx, pj, pjdir)
@@ -227,9 +201,9 @@ def r_corpus(config, out, ctx, req, variants):
 			removeprefix(config['prefixes'], str(pj.factor)),
 			str(pj.factor),
 			str(pj.identifier),
-			icon,
+			ext.icon,
 			str(pj.protocol.identifier),
-			projectabstract,
+			ext.synopsis,
 		))
 
 	# Either an anonymous product or an identified corpus.
