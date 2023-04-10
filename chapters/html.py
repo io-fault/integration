@@ -178,7 +178,7 @@ class Render(comethod.object):
 		n = query.navigate(structure_chapter_text(chapter))
 		r, = n.root
 		idx, ctx = prepare(r)
-		return Render(sx, ctx, prefix, depth, idx, n)
+		return Class(sx, ctx, prefix, depth, idx, n)
 
 	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:query.Cursor):
 		self.context = context
@@ -827,28 +827,26 @@ def r_index(sx, pathclass, abstractclass, listclass, index):
 	return sx.element('dl',
 		itertools.chain.from_iterable(
 			sx.element('a',
-				sx.element('div',
-					itertools.chain(
-						sx.element('dt',
-							itertools.chain(
-								sx.element('span',
-									icon,
-									('class', 'icon')
-								),
-								sx.element('span',
-									display,
-									('class', pathclass),
-								),
-							)
-						),
-						sx.element('dd',
+				sx.element('div', itertools.chain(
+					sx.element('dt',
+						itertools.chain(
 							sx.element('span',
-								abstract,
-								('class', abstractclass),
-							)
-						),
+								icon,
+								('class', 'icon')
+							),
+							sx.element('span',
+								display,
+								('class', pathclass),
+							),
+						)
 					),
-				),
+					sx.element('dd',
+						sx.element('span',
+							abstract,
+							('class', abstractclass),
+						)
+					),
+				)),
 				('href', link),
 			)
 			for link, icon, display, abstract in index
