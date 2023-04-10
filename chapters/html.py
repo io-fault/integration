@@ -483,7 +483,7 @@ class Render(comethod.object):
 					self.text(pdate),
 					('datetime', pdate),
 					('class', 'stamp'),
-					('positional-relation', '+1'),
+					('positional-relation', '-1'),
 					('precision', precision),
 				)
 
@@ -523,8 +523,12 @@ class Render(comethod.object):
 				self.element('dt',
 					itertools.chain(
 						self.dl_item_anchor(attr['absolute']),
-						self.paragraph_content(resolver, k[1], attr),
 						dated,
+						# Primary directory key content.
+						self.element('span',
+							self.paragraph_content(resolver, k[1], attr),
+							('class', 'directory-key'),
+						),
 						typannotation,
 					),
 				),
