@@ -17,8 +17,8 @@ from fault.system import process
 from fault.project import system as lsf
 
 from fault.text.io import structure_chapter_text, structure_paragraph_element
-from .. import join
-from .. import html
+from . import join
+from . import html
 
 web_resources = '.legacy-web'
 core_style = 'core.css'
