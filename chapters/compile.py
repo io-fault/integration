@@ -25,7 +25,7 @@ def delineate(output, source):
 	import functools
 	from fault.text.io import structure_chapter_text, structure_paragraph_element
 	P = functools.partial(map, structure_paragraph_element)
-	from .. import query
+	from . import query
 
 	with source.fs_open('r') as f:
 		chapter = structure_chapter_text(f.read())
