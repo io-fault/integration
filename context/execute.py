@@ -6,9 +6,8 @@ from .. import __name__ as context_name
 from fault.system import process
 
 index = {
-	'delineate-kleptic-text': context_name + '.chapters.bin.delineate',
 	'archive-delineated': context_name + '.machines.bin.delineated',
-	'text-cc': context_name + '.chapters.bin.compile',
+	'text-cc': context_name + '.chapters.compile',
 	'python-cc': context_name + '.python.bin.compile',
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.bin.control',
