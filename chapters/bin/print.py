@@ -140,15 +140,29 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 
 	# Factor Representation Resource
 	ident = str(pj.factor//fpath)
+	sub = html.PageSubject(
+		html.factor_type_icon(2, str(type)), fpath.identifier,
+		str(type.factor), str(type)
+	)
+	ctx = html.PageContext(pj.extensions.icon, str(pj.factor), '../')
+
 	head = html.r_head(sx, sx.xml_encoding, styles(2, factor_style), title=ident)
-	ht = html.transform(sx, prefix, ddepth+2, chapter, head=head, identifier=ident, type=str(type))
+	ht = html.transform(sx, prefix, ddepth+2, sub, ctx, chapter, head=head)
 	yield froot + ['index.html'], ht
 
 	# Render source index, but not src/index.html as it may conflict with an actual source.
 	yield froot + ['src', '.http-resource', 'index.json'], (json.dumps(srcindex).encode('utf-8'),)
+
 	sihead = html.r_head(sx, sx.xml_encoding, styles(3, sources_style), title=ident)
-	sihtml = html.sourceindex(sx, sihead, ident, srcindex)
+	srctyp = 'http://if.fault.io/factors/meta.sources'
+	icon = html.factor_type_icon(3, srctyp)
+	srcsub = html.PageSubject(icon, '/src/', 'meta.sources', srctyp)
+	srcctx = html.PageContext(pj.extensions.icon, ident, '../')
+
+	index = html.r_sources(sx, srcindex)
+	sihtml = list(html.indexframe(sx, sihead, srcsub, srcctx, index, depth=3))
 	yield froot + ['src', '.http-resource', 'index.html'], sihtml
+	yield froot + ['src', 'index.html'], sihtml
 
 def r_project(sx, prefixes, variants, req:lsf.Context, ctx:lsf.Context, pj:lsf.Project, pjdir):
 	# Currently hardcoded.
@@ -168,7 +182,14 @@ def r_project(sx, prefixes, variants, req:lsf.Context, ctx:lsf.Context, pj:lsf.P
 		styles(1, factor_index_style),
 		title=str(pj.factor)
 	)
-	yield [pjdir, 'index.html'], html.factorindex(sx, head, str(pj.factor), index)
+
+	typ = 'http://if.fault.io/factors/meta.project'
+	ctxtyp = 'http://if.fault.io/factors/meta.corpus'
+	icon = pj.extensions.icon or html.factor_type_icon(1, typ)
+	sub = html.PageSubject(icon, pj.factor.identifier, 'meta.project', typ)
+	ctx = html.PageContext(html.factor_type_icon(1, ctxtyp), str(pj.factor ** 1), '../')
+
+	yield [pjdir, 'index.html'], html.indexframe(sx, head, sub, ctx, html.r_factors(sx, index), depth=1)
 
 def hrinit(prefix, type, identifier, resource='index', meta={}):
 	"""
@@ -225,7 +246,10 @@ def r_corpus(config, out, ctx, req, variants):
 		title=config['corpus-title'],
 	)
 
-	yield ['index.html'], html.projectindex(sx, head, ctype, croot, title, projects)
+	sub = html.PageSubject(html.factor_type_icon(0, ctype), title, 'meta.corpus', ctype)
+	ctx = html.PageContext('//favicon.ico', '', '/')
+	index = html.r_projects(sx, projects)
+	yield ['index.html'], html.indexframe(sx, head, sub, ctx, index)
 
 	if config['web-defaults']:
 		default = (files.Path.from_absolute(__file__) ** 2)/'theme'
@@ -318,7 +342,7 @@ def icons(out:files.Path, ctx:lsf.Context, types):
 	xfer_index = []
 	for ft in types:
 		remote = str(ft) + '/.http-resource/icon.svg'
-		local = out@(html.icon_identity(str(ft)) + '.svg')
+		local = out@('.factor-type-icon/' + html.icon_identity(str(ft)) + '.svg')
 		local.fs_alloc()
 		if local.fs_type() == 'data':
 			local.fs_void()

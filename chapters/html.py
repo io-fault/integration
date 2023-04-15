@@ -148,6 +148,64 @@ def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
 
 	return idx, ctx
 
+@tools.struct
+class PageSubject():
+	"""
+	# Page subject fields.
+	"""
+	ps_icon: str
+	ps_identifier: str
+	ps_type: str
+	ps_type_hyperlink: str
+
+@tools.struct
+class PageContext():
+	"""
+	# Page context fields.
+	"""
+	pc_icon: str
+	pc_identifier: str
+	pc_hyperlink: str
+
+def page_heading(tree, depth, subject, context):
+	"""
+	# Construct the elements of a page's initial heading.
+	"""
+
+	return itertools.chain(
+		tree.element('div',
+			itertools.chain(
+				r_icon(tree, subject.ps_icon, titled=False),
+				tree.element('span',
+					tree.escape(subject.ps_identifier),
+					('class', 'subject-identifier'),
+				),
+				tree.element('a',
+					tree.element('code',
+						tree.escape(subject.ps_type),
+						('class', 'type'),
+					),
+					('href', subject.ps_type_hyperlink),
+				),
+			),
+			('class', 'page-subject'),
+		),
+		tree.element('div',
+			itertools.chain(
+				tree.element('a',
+					r_icon(tree, context.pc_icon, titled=False)
+					if context.pc_icon else (),
+					('href', context.pc_hyperlink),
+				),
+				tree.element('span',
+					tree.escape(context.pc_identifier),
+					('class', 'context-identifier'),
+				),
+			),
+			('class', 'page-context'),
+		),
+	)
+
 class Render(comethod.object):
 	"""
 	# Render an HTML document for the configured text document.
@@ -199,17 +257,13 @@ class Render(comethod.object):
 		return self.element(
 			tag,
 			itertools.chain(
-				self.element('div', itertools.chain(
-					self.element('div', self.text(''), ('class', 'left')),
-					self.element('div', self.text(''), ('class', 'right')),
-				), ('class', 'parallel')),
 				self.element('span', self.text(''), ('class', 'prefix')),
 				content,
 			),
 			('class', None if integrate == False else 'integrate')
 		)
 
-	def document(self, type, identifier, head=(), header=(), footer=(), resolver=None):
+	def document(self, subject, context, head=(), header=(), footer=(), resolver=None):
 		"""
 		# Render the HTML document from the given chapter.
 		"""
@@ -217,20 +271,7 @@ class Render(comethod.object):
 		resolver = resolver or self.default_resolver()
 		rnode, = self.input.root
 
-		title = self.title(resolver,
-			itertools.chain(
-				self.element('span',
-					self.text(identifier),
-					('class', 'title'),
-				),
-				self.element('span',
-					self.text(type),
-					('class', 'factor-type'),
-				),
-			),
-			False
-		)
-
+		title = self.title(resolver, page_heading(self.output, 2, subject, context), False)
 		return self.element('html',
 			itertools.chain(
 				head,
@@ -248,6 +289,7 @@ class Render(comethod.object):
 					)
 				),
 			),
+			('root', str(self.depth)),
 		)
 
 	def abstract(self, resolver, nodes, attr):
@@ -804,27 +846,38 @@ class Render(comethod.object):
 			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
 
 @tools.cachedcalls(16)
-def icon_identity(ftype, prefix='.factor-type-icon/'):
+def icon_identity(ftype):
 	"""
 	# Construct the `.icon` identifier from a factor type identifier.
 	"""
 	ftri = ri.parse(ftype.strip('/'))
-	return prefix + ftri['host'] + '/' + ftri['path'][-1].replace('.', '-')
+	return ftri['host'] + '/' + ftri['path'][-1].replace('.', '-')
 
-def r_icon(sx, depth, i):
-	if i.startswith('data:'):
-		# Usually a Project Icon
-		href = i
-		title = None
-	else:
-		# Factor Type Reference
-		href = ('../' * depth) + icon_identity(i) + '.svg'
-		title = i
+def factor_type_icon(depth, reference, prefix='.factor-type-icon/'):
+	"""
+	# Construct a hyperlink to a printed icon for the given factor type.
+	"""
+
+	# Factor Type Reference
+	prefix = ('../' * depth) + prefix
+
+	try:
+		ii = icon_identity(reference)
+	except:
+		import traceback
+		traceback.print_exc()
+		ii = 'if.fault.io/meta-unknown'
+
+	return prefix + ii + '.svg'
+
+def r_icon(sx, href, *, title:str=None, titled:bool=True):
+	if title is None:
+		title = href
 
 	return sx.element('img', (),
 		('class', 'icon'),
 		('src', href),
-		('title', title),
+		('title', title if titled else None),
 	)
 
 def r_index(sx, pathclass, abstractclass, listclass, index):
@@ -860,20 +913,20 @@ def r_index(sx, pathclass, abstractclass, listclass, index):
 
 def r_projects(sx, index):
 	i = (
-		(x[0] + '/', r_icon(sx, 0, x[3]), sx.escape(x[1]), sx.escape(x[-1]))
+		(x[0] + '/', r_icon(sx, x[3]), sx.escape(x[1]), sx.escape(x[-1] or ''))
 		for x in index
 	)
 	return r_index(sx, 'factor-path', 'index-abstract', 'project-index', i)
 
 def r_factors(sx, index):
 	i = (
-		(x[0], r_icon(sx, 1, x[1]), sx.escape(x[0]), sx.escape(x[1]))
+		(x[0], r_icon(sx, factor_type_icon(1, x[1])), sx.escape(x[0]), sx.escape(x[1]))
 		for x in index
 	)
 	return r_index(sx, 'factor-path', 'index-abstract', 'factor-index', i)
 
 def r_sources(sx, index, icon=(b"\xf0\x9f\x93\x84".decode('utf-8'))):
-	# If r_icon is ever used for source documents, the depth should always be 2.
+	# If r_icon is ever used for source documents, the depth should always be 3.
 	i = (
 		(x[0], sx.escape(icon), sx.escape(x[0]), sx.escape('.'.join(x[1:2])))
 		for x in index
@@ -896,42 +949,25 @@ def r_head(sx, encoding, styles, title=None, preload=True):
 		)
 	)
 
-def indexframe(sx, type:str, identity:str, content, /, head=()):
+def indexframe(sx, head, subject, context, content, /, depth=0):
 	return sx.element('html',
 		itertools.chain(
 			head, # r_head(sx, encoding, styles, title='head title')
 			sx.element('body',
 				sx.element('main',
 					itertools.chain(
-						sx.element('h1',
-							itertools.chain(
-								sx.element('span', sx.escape(identity)),
-								sx.element('span',
-									sx.escape(type),
-									('class', 'abstract-type')
-								)
-							)
-						),
+						sx.element('h1', page_heading(sx, depth, subject, context)),
 						content,
 						sx.element('h1', sx.escape(''), ('class', 'footer')),
 					)
 				),
 				('class', 'index'),
 			),
-		)
+		),
+		('root', str(depth)),
 	)
 
-def sourceindex(sx, head, factor, index, type='source-index'):
-	return indexframe(sx, type, factor, r_sources(sx, index), head=head)
-
-projectfactors='http://if.fault.io/factors/meta.project'
-def factorindex(sx, head, project, index, type=projectfactors):
-	return indexframe(sx, type, str(project), r_factors(sx, index), head=head)
-
-def projectindex(sx, head, type, corpus, title, index):
-	return indexframe(sx, type, str(title), r_projects(sx, index), head=head)
-
-def transform(sx, prefix, depth, chapter, head=(), identifier='', type=''):
+def transform(sx, prefix, depth, subject, context, chapter, head=()):
 	return (Render
 		.from_chapter(prefix, depth, chapter, encoding=sx.xml_encoding)
-		.document(type, identifier, head=head))
+		.document(subject, context, head=head))
