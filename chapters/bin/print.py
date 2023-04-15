@@ -305,19 +305,18 @@ def transfer(xfers):
 		ki = execution.KInvocation(fd, [fd, 'http-cache', str(remote), str(local)])
 		execution.perform(ki)
 
-def icons(out:files.Path, ctx:lsf.Context):
+def icons(out:files.Path, ctx:lsf.Context, types):
 	"""
 	# Print the icons of the factor types used by the projects in &ctx.
 	# The icons are placed stored in `.factor-type-icon/` relative to &out
 	# according to &html.icon_identity.
 	"""
-	factortypes = set()
 	for pj in ctx.iterprojects():
 		for ((fp, ft), (fr, fs)) in pj.select(lsf.types.factor):
-			factortypes.add(ft)
+			types.add(ft)
 
 	xfer_index = []
-	for ft in factortypes:
+	for ft in types:
 		remote = str(ft) + '/.http-resource/icon.svg'
 		local = out@(html.icon_identity(str(ft)) + '.svg')
 		local.fs_alloc()
@@ -374,7 +373,19 @@ def main(inv:process.Invocation) -> process.Exit:
 	out = files.Path.from_path(outstr)
 	out.fs_mkdir()
 	if rformat == 'icons':
-		icons(out, ctx)
+		icons(out, ctx, set([
+			'http://if.fault.io/factors/meta.sources',
+			'http://if.fault.io/factors/meta.references',
+
+			'http://if.fault.io/factors/meta.void',
+			'http://if.fault.io/factors/meta.unknown',
+			'http://if.fault.io/factors/meta.parameter',
+			'http://if.fault.io/factors/meta.directory',
+			'http://if.fault.io/factors/meta.project',
+			'http://if.fault.io/factors/meta.corpus',
+			'http://if.fault.io/factors/meta.product',
+			'http://if.fault.io/factors/meta.type',
+		]))
 	elif rformat == 'web':
 		for rpath, data in r_corpus(config, out, ctx, req, variants):
 			path = out + rpath
