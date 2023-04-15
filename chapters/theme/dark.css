@@ -1,8 +1,13 @@
 /**
-	// Variables for dark theme.
+	// Variables for dark sheet theme.
 */
 
 :root {
+	/* Backgrounds */
+	--root: #444;
+	--sheet: #303030;
+	--division: #1D1D1D;
+
 	--element-titles: cornflowerblue;
 	--integrated-titles: #b19cd9;
 
