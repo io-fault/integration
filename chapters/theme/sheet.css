@@ -7,6 +7,13 @@ p {
 	line-height: 1.12em;
 }
 
+/* Chapter Sections */
+main > section.chapter:not([id]) {
+	display: block;
+	margin: 0;
+	margin-bottom: -1em;
+}
+
 /* Undocumented Elements */
 section[documented="false"] {
 	display: none;

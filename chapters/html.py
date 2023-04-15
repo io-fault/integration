@@ -255,9 +255,9 @@ class Render(comethod.object):
 		# Extract the non-section content from the chapter.
 		"""
 		yield from self.element(
-			'div',
+			'section',
 			self.switch(resolver, nodes, attr),
-			('class', "text.abstract")
+			('class', "chapter")
 		)
 
 	def root(self, resolver, nodes, attr):
