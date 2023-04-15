@@ -906,12 +906,12 @@ h1 > div.parallel > div.right {
 	left: 100%;
 }
 
-dl > div.parameter:target > dt > a.dkn {
+dl > div:target > dt > a.dkn {
 	font-size: 130%;
 	color: var(--target-highlighting);
 }
 
-*:target > a.dkn {
+*:target a.dkn {
 	color: var(--target-highlighting);
 }
 
