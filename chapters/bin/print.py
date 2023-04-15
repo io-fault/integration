@@ -291,6 +291,7 @@ required = {
 	'--corpus-root': ('field-replace', 'corpus-root'),
 	'--corpus-title': ('field-replace', 'corpus-title'),
 	'-P': ('set-add', 'prefixes'),
+	'-I': ('set-add', 'variants'),
 }
 
 restricted = {
@@ -370,11 +371,12 @@ def main(inv:process.Invocation) -> process.Exit:
 		'corpus-title': 'corpus',
 		'prefixes': set(),
 		'web-defaults': True,
+		'variants': set(['void/json']),
 	}
 	v = recognition.legacy(restricted, required, inv.argv)
 	remainder = recognition.merge(config, v)
 
-	rformat, outstr, ctxpath, *variant_s = remainder
+	rformat, outstr, ctxpath = remainder
 	if rformat not in {'web', 'icons'}:
 		sys.stderr.write("ERROR: only 'web' and 'icons' format is supported.\n")
 		return inv.exit(1)
@@ -391,7 +393,7 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	variants = [
 		lsf.types.Variants(*x.split('/'))
-		for x in variant_s
+		for x in config['variants']
 	]
 
 	out = files.Path.from_path(outstr)
