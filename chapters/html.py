@@ -971,3 +971,26 @@ def transform(sx, prefix, depth, subject, context, chapter, head=()):
 	return (Render
 		.from_chapter(prefix, depth, chapter, encoding=sx.xml_encoding)
 		.document(subject, context, head=head))
+
+def r_page(chapter, styles, encoding='utf-8'):
+	"""
+	# Transform the given &chapter file into HTML.
+	"""
+	doctext = chapter.fs_load().decode('utf-8')
+
+	sx = xml.Serialization(xml_encoding=encoding)
+	typ = '://if.fault.io/factors/meta.chapter'
+	sub = PageSubject('https' + typ + '/.http-resource/icon.svg',
+		chapter.identifier, 'meta.chapter', 'http' + typ
+	)
+
+	ctxpath = chapter ** 1
+	ctxstr = str(ctxpath)
+	ctxtyp = '://if.fault.io/factors/meta.directory'
+	ctx = PageContext(
+		'https' + ctxtyp + '/.http-resource/icon.svg',
+		ctxstr, 'file://' + ctxstr,
+	)
+
+	head = r_head(sx, encoding, styles=styles)
+	return transform(sx, '', 0, sub, ctx, doctext, head=head)

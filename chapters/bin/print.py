@@ -364,7 +364,17 @@ def icons(out:files.Path, ctx:lsf.Context, types):
 			pass
 	transfer(overwrites)
 
-def main(inv:process.Invocation) -> process.Exit:
+def web(argv):
+	"""
+	# Print factor representations for web publication.
+	"""
+	job = argv[0]
+	if job == 'page':
+		src = process.fs_pwd() @ argv[1]
+		styles = [process.fs_pwd() @ x for x in argv[2:]]
+		sys.stdout.buffer.writelines(html.r_page(src, styles))
+		return
+
 	config = {
 		'encoding': 'utf-8',
 		'corpus-root': '',
@@ -373,17 +383,13 @@ def main(inv:process.Invocation) -> process.Exit:
 		'web-defaults': True,
 		'variants': set(['void/json']),
 	}
-	v = recognition.legacy(restricted, required, inv.argv)
+	v = recognition.legacy(restricted, required, argv[1:])
 	remainder = recognition.merge(config, v)
-
-	rformat, outstr, ctxpath = remainder
-	if rformat not in {'web', 'icons'}:
-		sys.stderr.write("ERROR: only 'web' and 'icons' format is supported.\n")
-		return inv.exit(1)
+	out, ctxpath = map(process.fs_pwd().__matmul__, remainder)
 
 	# Build project context for the target product.
 	ctx = lsf.Context()
-	pd = ctx.connect(files.Path.from_absolute(ctxpath))
+	pd = ctx.connect(ctxpath)
 	ctx.load()
 	ctx.configure()
 
@@ -391,14 +397,14 @@ def main(inv:process.Invocation) -> process.Exit:
 	req = ctx.from_product_connections(pd)
 	req.load()
 
+	# Identify variants to scan for delineated sources.
 	variants = [
 		lsf.types.Variants(*x.split('/'))
 		for x in config['variants']
 	]
 
-	out = files.Path.from_path(outstr)
 	out.fs_mkdir()
-	if rformat == 'icons':
+	if job == 'icons':
 		icons(out, ctx, set([
 			'http://if.fault.io/factors/meta.sources',
 			'http://if.fault.io/factors/meta.references',
@@ -412,7 +418,7 @@ def main(inv:process.Invocation) -> process.Exit:
 			'http://if.fault.io/factors/meta.product',
 			'http://if.fault.io/factors/meta.type',
 		]))
-	elif rformat == 'web':
+	elif job == 'factors':
 		for rpath, data in r_corpus(config, out, ctx, req, variants):
 			path = out + rpath
 			try:
@@ -421,5 +427,19 @@ def main(inv:process.Invocation) -> process.Exit:
 			except:
 				print('->', str(path), file=sys.stderr)
 				traceback.print_exc()
+	else:
+		sys.stderr.write(f"ERROR: unknown job {job!r}; only 'factors', 'icons', 'page'.\n")
+		return 1
 
-	return inv.exit(0)
+def main(inv:process.Invocation) -> process.Exit:
+	ptype = inv.argv[0]
+
+	if ptype == 'web':
+		code = web(inv.argv[1:])
+	elif ptype == 'manual':
+		pass
+	else:
+		sys.stderr.write("ERROR: only 'web' and 'manuals' print type are supported.\n")
+		code = 1
+
+	return inv.exit(code or 0)
