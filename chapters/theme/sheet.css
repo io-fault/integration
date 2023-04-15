@@ -1,5 +1,5 @@
 /**
-	// Dark theme for HTML documents leveraging semantic elements.
+	// Primary layout of the single sheet (factor) element view.
 */
 @charset "utf-8";
 
@@ -355,10 +355,6 @@ div.navigation > div[class="subfactors"] {
 	overflow: hidden;
 }
 
-section[class~="undocumented"] {
-	display: none;
-}
-
 div[id] div[id]:hover {
 	border-color: rgba(114, 159, 229, 0.50);
 }
@@ -432,8 +428,6 @@ code.type {
 dd>*:first-child {
 	margin-block-start: 0em;
 }
-
-main > article {}
 
 div[class="syntax."] {
 	width: 100%;
@@ -533,14 +527,10 @@ section > section > section.unspecified > h1.integrate
 h1 > span.abstract-type {
 	float: right;
 	font-family: cursive;
-	font-size: 64%;
-	user-select: none;
+	font-size: 72%;
 	color: gray;
-}
-
-article section > h1 {
-	border-width: 0px;
-	background: inherit;
+	user-select: none;
+	text-shadow: none;
 }
 
 div[class="section"] > div.title:before
@@ -604,30 +594,8 @@ div.representation {
 	font-family: monospace;
 }
 
-/*
-	# Text Portions Contained in doc-strings.
-*/
-main > article {
-	font-size: 90%;
-}
-
-main > article > section > p:first-child {
-	margin-top: 0.1em;
-}
-
-main > div[class="text.abstract"]
-{
-	margin-left: 0.25em;
-	margin-right: 0.25em;
-	margin-bottom: 0;
-}
-
 main section {
 	margin-top: 2em;
-}
-
-main article section {
-	margin-top: 1em;
 }
 
 /**
@@ -637,23 +605,6 @@ main section>*:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5)
 {
 	margin-left: 12px;
 	margin-right: 8px;
-}
-
-/**
-	# Leading article content.
-*/
-main article section > *:not(section):not(article):not(h1):not(h2):not(h3):not(h4):not(h5):not(h6):not(pre),
-article > *:not(section):not(article),
-main > div[class="text.abstract"] > *:not(section):not(article):not(pre):not(div[class|='admonition'])
-{
-	margin-left: 4px;
-	margin-right: 4px;
-}
-
-main > h1 {
-	font-size: 240%;
-	font-family: sans-serif;
-	padding-left: 12px;
 }
 
 main section.unspecified > h1 {
@@ -726,7 +677,7 @@ pre[class="text.syntax"] {
 	border-style: solid;
 	padding: 8px;
 	margin-left: 48px;
-	overflow: scoll;
+	overflow: scroll;
 }
 
 /* Avoid redundant indentation for sole syntax directory entries. */
