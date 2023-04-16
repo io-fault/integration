@@ -815,36 +815,6 @@ class Render(comethod.object):
 
 			yield from self.comethod(typ, subtype)(resolver, attr, txt, *local)
 
-	def subtext(self, resolver, snodes, attr):
-		"""
-		# Currently unused.
-
-		# Originally, this parsed the syntax node content as kleptic text.
-		# Eventually &.join was changed to integrate the documentation into
-		# the generated sections leaving this unused.
-		"""
-		lines = [x[1][0] for x in snodes[0][1]]
-		sub = query.navigate(structure_chapter_lines(lines))
-		sub.filters['titled'] = (lambda x: bool(x[-1].get('identifier')))
-
-		# Build section index and assign paths.
-		r, = sub.root
-
-		# Prefix with empty path.
-		r[-1]['absolute'] = ()
-		idx, ctx = prepare(r)
-		for v, subs in idx.values():
-			a = v[2]['absolute']
-			a = ('',) + tuple(a or ())
-			v[2]['absolute'] = a
-
-		# Module abstract.
-		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), r[1]))
-		yield from self.abstract(resolver, chapter_content, attr)
-
-		for snode in sub.select("/section"):
-			yield from self.semantic_section(resolver, snode[1], snode[-1], tag='article')
-
 @tools.cachedcalls(16)
 def icon_identity(ftype):
 	"""
