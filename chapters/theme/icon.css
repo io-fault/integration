@@ -11,6 +11,10 @@
 	--clock-icon: '\1F570\FE0F';
 	--paper-icon: '\1F4C4';
 
+	/* Filesystem */
+	--fs-directory: '\1F4C1';
+	--fs-file: '\1F4C4';
+
 	/* Clipboard I/O */
 	--scissors-icon: '\2702\FE0F';
 	--clipboard-icon: '\1F4CB';
