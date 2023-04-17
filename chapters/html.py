@@ -76,17 +76,17 @@ def load_control_value(value):
 			del lines[-1:]
 		return (value[-1].get('type'), lines)
 
-def integrate(index, types, node):
+def integrate(index, types, element):
 	"""
-	# Traverse the sections of the &node converting CONTEXT and CONTROL
-	# admonition nodes into &node attributes.
+	# Traverse the sections of the &element converting CONTEXT and CONTROL
+	# admonition elements into &element attributes.
 	"""
-	attr = node[2]
+	attr = element[2]
 	subsect = []
-	index[tuple(attr.get('absolute', ()) or ())] = (node, subsect)
+	index[tuple(attr.get('absolute', ()) or ())] = (element, subsect)
 
 	try:
-		ftype, fnodes, fattr = node[1][0]
+		ftype, felements, fattr = element[1][0]
 	except (LookupError, ValueError):
 		# No elements at all
 		pass
@@ -95,10 +95,10 @@ def integrate(index, types, node):
 			meta = fattr['type'].lower()
 			data = {
 				k: load_control_value(v)
-				for k, v in document.directory_pairs(fnodes[0][1])
+				for k, v in document.directory_pairs(felements[0][1])
 			}
 			attr[meta] = data
-			del fnodes[:1]
+			del felements[:1]
 
 		if 'control' in attr:
 			ctl = attr['control']
@@ -120,16 +120,16 @@ def integrate(index, types, node):
 					attr['area'] = map(int, attr['element'][('source', 'area')].split())
 				#XXX if ('source', 'path') in attr['element']:
 
-	for x in node[1]:
+	for x in element[1]:
 		if x[0] == 'section':
 			sid = x[2].get('identifier', '')
 			subsect.append(sid)
 			integrate(index, types, x)
 
-	return node
+	return element
 
 def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
-	# Prepare the chapter by relocating metadata nodes into preferred locations.
+	# Prepare the chapter's elements by relocating metadata nodes into preferred locations.
 
 	idx = {}
 	integrate(idx, types, chapter)

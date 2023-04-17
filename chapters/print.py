@@ -1,7 +1,5 @@
 """
-# Construct an archive for a Product's Internet Representation.
-
-# This provides the input used by &.daemon web partitions.
+# Print representations of factors for publication and reading.
 """
 import sys
 import os
@@ -388,13 +386,13 @@ def web(argv):
 	out, ctxpath = map(process.fs_pwd().__matmul__, remainder)
 
 	# Build project context for the target product.
-	ctx = lsf.Context()
-	pd = ctx.connect(ctxpath)
-	ctx.load()
-	ctx.configure()
+	factors = lsf.Context()
+	pd = factors.connect(ctxpath)
+	factors.load()
+	factors.configure()
 
 	# Construct dependency context.
-	req = ctx.from_product_connections(pd)
+	req = factors.from_product_connections(pd)
 	req.load()
 
 	# Identify variants to scan for delineated sources.
@@ -405,7 +403,7 @@ def web(argv):
 
 	out.fs_mkdir()
 	if job == 'icons':
-		icons(out, ctx, set([
+		icons(out, factors, set([
 			'http://if.fault.io/factors/meta.sources',
 			'http://if.fault.io/factors/meta.references',
 
@@ -419,7 +417,7 @@ def web(argv):
 			'http://if.fault.io/factors/meta.type',
 		]))
 	elif job == 'factors':
-		for rpath, data in r_corpus(config, out, ctx, req, variants):
+		for rpath, data in r_corpus(config, out, factors, req, variants):
 			path = out + rpath
 			try:
 				with path.fs_alloc().fs_open('wb') as f:
