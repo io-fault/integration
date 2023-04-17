@@ -137,28 +137,29 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 		prefix = ''
 
 	# Factor Representation Resource
+	depth = 2 # Corpus / Project / [Factor]
 	ident = str(pj.factor//fpath)
 	sub = html.PageSubject(
-		html.factor_type_icon(2, str(type)), fpath.identifier,
+		html.factor_type_icon(depth, str(type)), fpath.identifier,
 		str(type.factor), str(type)
 	)
 	ctx = html.PageContext(pj.extensions.icon, str(pj.factor), '../')
 
-	head = html.r_head(sx, sx.xml_encoding, styles(2, factor_style), title=ident)
-	ht = html.transform(sx, prefix, ddepth+2, sub, ctx, chapter, head=head)
-	yield froot + ['index.html'], ht
+	head = html.r_head(sx, sx.xml_encoding, styles(depth, factor_style), title=ident)
+	yield froot + ['index.html'], html.r_factor_page(sx, prefix, depth, sub, ctx, chapter, head=head)
 
 	# Render source index, but not src/index.html as it may conflict with an actual source.
 	yield froot + ['src', '.http-resource', 'index.json'], (json.dumps(srcindex).encode('utf-8'),)
 
-	sihead = html.r_head(sx, sx.xml_encoding, styles(3, sources_style), title=ident)
+	depth += 1 # Corpus / Project / Factor / [Source]
+	sihead = html.r_head(sx, sx.xml_encoding, styles(depth, sources_style), title=ident)
 	srctyp = 'http://if.fault.io/factors/meta.sources'
-	icon = html.factor_type_icon(3, srctyp)
+	icon = html.factor_type_icon(depth, srctyp)
 	srcsub = html.PageSubject(icon, '/src/', 'meta.sources', srctyp)
 	srcctx = html.PageContext(pj.extensions.icon, ident, '../')
 
 	index = html.r_sources(sx, srcindex)
-	sihtml = list(html.indexframe(sx, sihead, srcsub, srcctx, index, depth=3))
+	sihtml = list(html.indexframe(sx, sihead, srcsub, srcctx, index, depth=depth))
 	yield froot + ['src', '.http-resource', 'index.html'], sihtml
 	yield froot + ['src', 'index.html'], sihtml
 

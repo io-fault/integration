@@ -11,7 +11,7 @@ from fault.text.io import structure_chapter_lines, structure_chapter_text
 from fault.text.io import structure_paragraph_element as ipara
 
 from .protocol import setdirectory
-from . import query
+from .query import Cursor, navigate
 
 def formlink(reference:str) -> (str, str):
 	"""
@@ -131,7 +131,7 @@ def integrate(index, types, element):
 def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
 	# Prepare the chapter's elements by relocating metadata nodes into preferred locations.
 
-	idx = {}
+	idx = chapter[-1]['index'] = {}
 	integrate(idx, types, chapter)
 
 	if 'context' in chapter[-1]:
@@ -144,9 +144,7 @@ def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
 	else:
 		ctx['section-type'] = 'unspecified'
 
-	chapter[-1]['index'] = idx
-
-	return idx, ctx
+	return chapter
 
 @tools.struct
 class PageSubject():
@@ -208,8 +206,28 @@ def page_heading(tree, depth, subject, context):
 
 class Render(comethod.object):
 	"""
-	# Render an HTML document for the configured text document.
+	# Rendering context for constructing an HTML document.
+
+	# [ Properties ]
+	# /output/
+		# The tree builder used to form elements and escape text.
+	# /prefix/
+		# The target prefix to remove from context-local references.
+	# /depth/
+		# The position of the document relative to the root of the collection.
+	# /context/
+		# The chapter's context information.
+	# /index/
+		# The chapter's element index constructed by &integrate.
+	# /input/
+		# The cursor identifying the root chapter element.
 	"""
+	output: object = None
+	prefix: str = None
+	depth: int = 0
+	context: dict
+	index: dict
+	input: Cursor
 
 	@staticmethod
 	@tools.cachedcalls(16)
@@ -230,25 +248,17 @@ class Render(comethod.object):
 
 		return prefixed
 
-	@classmethod
-	def from_chapter(Class, prefix, depth, chapter, encoding='utf-8'):
-		sx = xml.Serialization(xml_encoding=encoding)
-		n = query.navigate(structure_chapter_text(chapter))
-		r, = n.root
-		idx, ctx = prepare(r)
-		return Class(sx, ctx, prefix, depth, idx, n)
-
-	def __init__(self, output:xml.Serialization, context, prefix, depth, index, input:query.Cursor):
-		self.context = context
+	def __init__(self, output, prefix, depth, context, index, input):
+		self.output = output
 		self.prefix = prefix
 		self.depth = depth
-		self.input = input
+		self.context = context
 		self.index = index
-		self.output = output
+		self.input = input
 
 		# Shorthand
 		self.element = output.element
-		self.text = output.escape
+		self.escape = self.text = output.escape
 
 	def default_resolver(self, capacity=16):
 		return tools.cachedcalls(capacity)(self.comethod)
@@ -937,10 +947,14 @@ def indexframe(sx, head, subject, context, content, /, depth=0):
 		('root', str(depth)),
 	)
 
-def transform(sx, prefix, depth, subject, context, chapter, head=()):
-	return (Render
-		.from_chapter(prefix, depth, chapter, encoding=sx.xml_encoding)
-		.document(subject, context, head=head))
+def r_factor_page(sx, prefix, depth, subject, context, chapter:str, head=()):
+	"""
+	# Structure the given chapter text and prepare the context, index, and element query
+	# context for a new &Render instance.
+	"""
+	ce = prepare(structure_chapter_text(chapter))
+	r_ops = Render(sx, prefix, depth, ce[-1]['context'], ce[-1]['index'], navigate(ce))
+	return r_ops.document(subject, context, head=head)
 
 def r_page(chapter, styles, encoding='utf-8'):
 	"""
