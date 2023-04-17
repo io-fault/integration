@@ -250,7 +250,7 @@ def r_corpus(config, out, ctx, req, variants):
 	yield ['index.html'], html.indexframe(sx, head, sub, ctx, index)
 
 	if config['web-defaults']:
-		default = (files.Path.from_absolute(__file__) ** 2)/'theme'
+		default = (files.Path.from_absolute(__file__) ** 1)/'theme'
 
 		# Copy all of theme to .legacy-web/default.
 		for f in default.fs_iterfiles(type='data'):
