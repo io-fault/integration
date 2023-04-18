@@ -6,12 +6,13 @@ import typing
 import itertools
 import collections
 
+from fault.system import files
 from fault.context import tools
 from fault.context import comethod
-from fault.text import nodes
-from fault.system import files
 
-from .tools import get_properties, interpret_property_fragment, interpret_properties
+from fault.text.io import structure_chapter_text, structure_paragraph_element
+from fault.text.document import export as iparagraph
+from .query import Cursor, navigate
 from .html import prepare, formlink
 
 escape_characters = {
@@ -90,7 +91,7 @@ class Render(comethod.object):
 	# Render an HTML document for the configured text document.
 	"""
 
-	def __init__(self, output, context, prefix, index, input:nodes.Cursor, relation):
+	def __init__(self, output, context, prefix, index, input:Cursor, relation):
 		self.context = context
 		self.prefix = prefix
 		self.input = input
@@ -253,18 +254,16 @@ class Render(comethod.object):
 			for line in lines:
 				yield self.element('.Dl', self.text(line))
 
-	@comethod('paragraph')
-	def normal_paragraph(self, resolver, nodes, attr):
-		if attr.get('index', -1) != 0:
-			# Ignore initial paragraphs breaks in sequences.
-			yield self.element('.Pp')
-		yield from self.paragraph_content(resolver, nodes, attr)
-
 	def sequencing(self, type, resolver, items, attr):
 		yield self.element('.Bl', type, '-compact')
 
+		if type in {'-dash', '-enum'}:
+			end = ()
+		else:
+			end = ('Ns',)
+
 		for i in items:
-			yield self.element('.It', 'Ns')
+			yield self.element('.It', *end)
 			yield from self.switch(resolver, i[1], attr)
 
 		yield self.element('.El')
@@ -279,14 +278,14 @@ class Render(comethod.object):
 
 	@comethod('mapping', 'key')
 	def paragraph_key(self, resolver, items, attr):
-		macros = self.paragraph(resolver, nodes.document.export(items), attr)
+		macros = self.paragraph(resolver, items, attr)
 		yield self.element('.It', *(x[1:] for x in macros))
 
 	def format_option_arguments(self, arglist):
 		for x in arglist:
 			f = x.sole
 
-			if f.type.endswith('optional'):
+			if f.type.endswith('/optional'):
 				yield self.element('.Op', 'Ar', self.text(f.data))
 			else:
 				yield self.element('.Ar', self.text(f.data))
@@ -364,6 +363,23 @@ class Render(comethod.object):
 		yield from self.switch(resolver, content, attr)
 		yield self.element('.Ed')
 
+	@comethod('paragraph')
+	def normal_paragraph(self, resolver, nodes, attr):
+		if attr.get('index', -1) != 0:
+			# Ignore initial paragraphs breaks in sequences.
+			yield self.element('.Pp')
+		yield from self.paragraph(resolver, nodes, attr)
+
+	def paragraph(self, resolver, pnodes, attr, *, interpret=iparagraph):
+		for qual, txt in interpret(pnodes):
+			typ, subtype, *local = qual.split('/')
+
+			# Filter void zones.
+			if len(local) == 1 and local[0] == 'void':
+				continue
+
+			yield resolver(typ, subtype)(resolver, attr, txt, *local)
+
 	@comethod('reference', 'section')
 	def reference_section(self, resolver, context, text, *quals):
 		return self.element('.Sx', self.text(text), 'Ns')
@@ -412,22 +428,8 @@ class Render(comethod.object):
 		if cast == 'mdoc-comment':
 			return ' '.join((literal_casts[cast], text))
 		else:
-			macro = literal_casts.get(cast, 'Ql')
+			macro = literal_casts.get(cast, '.Ql')
 			return self.element(macro, self.text(text), 'Ns')
-
-	def paragraph_content(self, resolver, content, attr):
-		yield from self.paragraph(resolver, nodes.document.export(content), attr)
-
-	def paragraph(self, resolver, para, attr):
-		for pt in para:
-			qual, txt = pt
-			typ, subtype, *local = qual.split('/')
-
-			# Filter void zones.
-			if len(local) == 1 and local[0] == 'void':
-				continue
-
-			yield resolver(typ, subtype)(resolver, attr, txt, *local)
 
 def split_option_flags(p):
 	"""
@@ -450,7 +452,7 @@ def split_option_flags(p):
 def _pararefs(n):
 	n = n[1][1][1][0][1]
 	for i in n:
-		p = nodes.document.export(i[1][0][1])
+		p = structure_paragraph_element(i[1][0])
 		yield p #* Not a sole reference.
 
 def recognize_synopsis_options(section):
@@ -464,13 +466,17 @@ def recognize_synopsis_options(section):
 
 	return [
 		(i[-1]['identifier'],
-			nodes.document.export(i[1][0][1]).sole.type.split('/')[-1],
+			structure_paragraph_element(i[1][0]).sole.type.split('/')[-1],
 			list(map(split_option_flags, _pararefs(i)))
 		)
 		for i in e[1]
 	]
 
 def join_synopsis_details(context, index, synsect='SYNOPSIS'):
+	"""
+	# Join some of the information defined in `OPTIONS` or `PARAMETERS`
+	# with the references cited in `SYNOPSIS`.
+	"""
 	if ('OPTIONS',) in index:
 		relation = 'OPTIONS'
 		case_id = 'option-case'
@@ -504,7 +510,7 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 			optindex[optref] = optset
 
 	if not names:
-		names = [p.sole.data for p in context['names']]
+		names = [p.sole.data for p in context.get('names', ())]
 
 	if ('NAME',) in index:
 		index[('NAME',)][0][-1]['names'] = names
@@ -520,23 +526,17 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 		# First directory, structure synopsis.
 		for i in node[1]:
 			# Name and Parameter/Option list.
+			arglist = []
 			key, value = i[1]
 
 			refname = i[-1]['identifier']
+			first = value[1][0]
 
-			if value[1][0][0] == 'sequence':
-				argpara = (i[1][0] for i in value[1][0][1])
-				arglist = [
-					nodes.document.export(x[1])
-					for x in argpara
-				]
+			if first[0] == 'sequence':
+				arglist = [structure_paragraph_element(x[1][0]) for x in first[1]]
 				del value[1][:1]
-			else:
-				# Likely option set.
-				arglist = []
 
 			fields[refname] = arglist
-
 			struct = {
 				'identifier': refname,
 				'arguments': arglist,
@@ -548,21 +548,21 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 			i[1][0] = (case_id, [], struct)
 		break
 	else:
-		# No directory in found.
+		# No directory in found section.
 		raise Exception("synopsis option section contained no directory")
 
 	if syn is not None:
-		syn[-1]['names'] = names
-		syn[-1]['types'] = types
-		syn[-1]['options'] = optlists
-		syn[-1]['fields'] = fields
+		sa = syn[-1]
+		sa['names'] = names
+		sa['types'] = types
+		sa['options'] = optlists
+		sa['fields'] = fields
 
 	return relation
 
 def transform(prefix, chapter, identifier='', type=''):
-	c = nodes.Cursor.from_chapter_text(chapter)
-	r, = c.root
-	idx, ctx = prepare(r)
+	idx = chapter[-1]['index']
+	ctx = chapter[-1]['context']
 	rel = join_synopsis_details(ctx, idx)
-	man = Render(None, ctx, prefix, idx, c, rel.lower())
+	man = Render(None, ctx, prefix, idx, navigate(chapter), rel.lower())
 	return man.document(type, identifier)

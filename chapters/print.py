@@ -363,6 +363,79 @@ def icons(out:files.Path, ctx:lsf.Context, types):
 			pass
 	transfer(overwrites)
 
+def manual(argv, variants=lsf.types.Variants('void', 'json', 'delineated')):
+	"""
+	# Print system manuals from chapter elements.
+	"""
+	from .manual import transform, prepare
+
+	job = argv[0]
+	if job == 'page':
+		src = process.fs_pwd() @ argv[1]
+		chapter = prepare(structure_chapter_text(src.fs_load().decode('utf-8')))
+		sys.stdout.writelines(
+			x + '\n'
+			for x in transform('', chapter)
+		)
+		return
+	elif job != 'factors':
+		sys.stderr.write(f"ERROR: unknown job {job!r}; only 'page'.\n")
+		return 1
+
+	marg_restrict = {}
+	marg_require = {}
+	config = {
+		'encoding': 'utf-8',
+		'prefixes': set(),
+		'variants': set(['void/json']),
+	}
+	v = recognition.legacy(marg_restrict, marg_require, argv[1:])
+	remainder = recognition.merge(config, v)
+	out, factorpath = map(process.fs_pwd().__matmul__, remainder[:2])
+	projects = remainder[2:]
+	outenc = config['encoding']
+
+	# Build project context for the target product.
+	factors = lsf.Context()
+	products = list(map(factors.connect, [factorpath]))
+	factors.load()
+	factors.configure()
+	requirements = list(map(factors.from_product_connections, products))
+
+	# Filter to selected projects.
+	if projects:
+		projects = set(projects)
+		iprojects = (
+			x for x in factors.iterprojects()
+			if str(x.factor) in projects
+		)
+	else:
+		iprojects = factors.iterprojects()
+
+	# Print manual factors available in the factor context.
+	for pj in iprojects:
+		for fi, fd in pj.select(lsf.types.factor):
+			fp, ft = fi
+			if str(ft) == 'http://if.fault.io/factors/meta.chapter':
+				fmt, file = fd[1][0]
+				i = pj.image(variants, fp) / file.identifier
+
+				ctx = json.loads((i / 'context.json').fs_load().decode('utf-8'))
+				if ctx['protocol'] == 'http://if.fault.io/chapters/system.manual':
+					chapter_path = (i / 'elements.json')
+					chapter_json = chapter_path.fs_load().decode('utf-8')
+
+					chapter = prepare(json.loads(chapter_json)[1][0])
+					mansection = str(chapter[-1]['context']['section'].sole[1])
+					manpath = out/('man' + mansection)
+					manpath = manpath/(fp.identifier + '.' + mansection)
+
+					with manpath.fs_alloc().fs_open('w', encoding=outenc) as f:
+						f.writelines(
+							x + '\n'
+							for x in transform('', chapter)
+						)
+
 def web(argv):
 	"""
 	# Print factor representations for web publication.
@@ -436,7 +509,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	if ptype == 'web':
 		code = web(inv.argv[1:])
 	elif ptype == 'manual':
-		pass
+		code = manual(inv.argv[1:])
 	else:
 		sys.stderr.write("ERROR: only 'web' and 'manuals' print type are supported.\n")
 		code = 1
