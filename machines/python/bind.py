@@ -208,8 +208,11 @@ def main(sysargv):
 			raise
 
 		exe = xargv[0]
-		for exe in query.executables(exe):
-			break
+		if exe[0] == '/':
+			exe = files.root@exe
+		else:
+			for exe in query.executables(exe):
+				break
 
 		if verbose:
 			sys.stderr.write(' '.join(xargv) + '\n')
