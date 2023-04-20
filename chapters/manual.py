@@ -112,10 +112,10 @@ class Render(comethod.object):
 		"""
 
 		resolver = resolver or self.default_resolver()
-		rnode, = self.input.root
-		context = rnode[-1]['context']
+		relement, = self.input.root
+		context = relement[-1]['context']
 
-		t = rnode[-1]['context']['title'].sole.data.upper()
+		t = relement[-1]['context']['title'].sole.data.upper()
 		heading = [
 			self.text(context[x].sole.data) for x in (
 				'title', 'section', 'volume'
@@ -129,11 +129,11 @@ class Render(comethod.object):
 		yield self.element('.Dt', *heading)
 		yield self.element('.Os', self.text(context['system'].sole.data))
 
-		yield from self.root(resolver, rnode[1], rnode[-1])
+		yield from self.root(resolver, relement[1], relement[-1])
 
-	def root(self, resolver, nodes, attr):
+	def root(self, resolver, elements, attr):
 		# Currently discarded.
-		for v in nodes:
+		for v in elements:
 			if v[0] != 'section':
 				# Ignore non-section chapter content.
 				continue
@@ -221,31 +221,31 @@ class Render(comethod.object):
 			yield self.element('.Fc')
 
 	@comethod('section')
-	def subsection(self, resolver, nodes, attr):
+	def subsection(self, resolver, elements, attr):
 		yield self.element('.Ss', attr['identifier'])
-		yield from self.switch(resolver, nodes, attr)
+		yield from self.switch(resolver, elements, attr)
 
 	@comethod('section', 'synopsis')
 	@comethod('section', 'chapter')
-	def semantic_section(self, resolver, nodes, attr):
+	def semantic_section(self, resolver, elements, attr):
 		yield self.element('.Sh', attr['identifier'])
-		yield from self.switch(resolver, nodes, attr)
+		yield from self.switch(resolver, elements, attr)
 
-	def switch(self, resolver, nodes, attr):
+	def switch(self, resolver, elements, attr):
 		"""
-		# Perform the transformation for the given node.
+		# Perform the transformation for the given element.
 		"""
-		for i, node in enumerate(nodes):
-			node[-1]['super'] = attr
-			node[-1]['index'] = i
-			yield from resolver(node[0])(resolver, node[1], node[-1])
+		for i, element in enumerate(elements):
+			element[-1]['super'] = attr
+			element[-1]['index'] = i
+			yield from resolver(element[0])(resolver, element[1], element[-1])
 
 	@comethod('syntax')
-	def code_block(self, resolver, nodes, attr):
-		if nodes[-1][1][0].strip() == '':
-			del nodes[-1:]
+	def code_block(self, resolver, elements, attr):
+		if elements[-1][1][0].strip() == '':
+			del elements[-1:]
 
-		lines = (x[1][0] for x in nodes)
+		lines = (x[1][0] for x in elements)
 
 		if attr['type'] == 'comment':
 			for line in lines:
@@ -364,11 +364,11 @@ class Render(comethod.object):
 		yield self.element('.Ed')
 
 	@comethod('paragraph')
-	def normal_paragraph(self, resolver, nodes, attr):
+	def normal_paragraph(self, resolver, elements, attr):
 		if attr.get('index', -1) != 0:
 			# Ignore initial paragraphs breaks in sequences.
 			yield self.element('.Pp')
-		yield from self.paragraph(resolver, nodes, attr)
+		yield from self.paragraph(resolver, elements, attr)
 
 	def paragraph(self, resolver, pnodes, attr, *, interpret=iparagraph):
 		for qual, txt in interpret(pnodes):
@@ -519,12 +519,12 @@ def join_synopsis_details(context, index, synsect='SYNOPSIS'):
 		return relation
 
 	xrs, _ = index[(relation,)] #* Missing OPTIONS/PARAMETERS?
-	for node in xrs[1]:
-		if node[0] not in {'directory'}:
+	for element in xrs[1]:
+		if element[0] not in {'directory'}:
 			continue
 
 		# First directory, structure synopsis.
-		for i in node[1]:
+		for i in element[1]:
 			# Name and Parameter/Option list.
 			arglist = []
 			key, value = i[1]

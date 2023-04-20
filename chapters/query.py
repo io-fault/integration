@@ -1,21 +1,21 @@
 """
-# Query context for navigating chapter nodes.
+# Query context for navigating chapter elements.
 """
 from fault.route.query import Context, Cursor, InvalidPath
 
-def identify(title, node):
+def identify(title, element):
 	"""
-	# Identification function for chapter nodes providing
+	# Identification function for chapter elements providing
 	# shortcuts for directories and sequences.
 	"""
-	if node[0] in ('admonition', 'syntax'):
-		if node[2]['type'] == title:
-			yield node
+	if element[0] in ('admonition', 'syntax'):
+		if element[2]['type'] == title:
+			yield element
 	else:
-		if node[2]['identifier'] == title:
-			yield node
+		if element[2]['identifier'] == title:
+			yield element
 
-# Path expression context for navigation chapter node trees.
+# Path expression context for navigating chapter element trees.
 context = Context(
 	{
 		'paragraph',

@@ -21,25 +21,25 @@ def interpret_set_items(items):
 	"""
 	# Get the set of unordered list based properties from the &items.
 
-	# Returns the number of items present in the initial set found in &nodes,
+	# Returns the number of items present in the initial set found in &items,
 	# and the set of sole paragraph fragments contained by each item.
 	"""
 	return map(interpret_fragment, (ipara(i[1][0]).sole for i in items))
 
-def select(nodes, *, index=0):
+def select(elements, *, index=0):
 	"""
 	# Given the contents of an element, extract the properties from the set
 	# located at the designated &index. Normally, properties are expected to be
 	# presented at the beginning of some content and, therefore, &index defaults to `1`.
 
-	# If the element at &index is not a `'set'`, or &nodes is an empty,
+	# If the element at &index is not a `'set'`, or &elements is empty,
 	# an empty iterator will be returned.
 
 	# Error conditions produced during the production of a property set indicate
 	# that it is not a property set at all and will cause an empty list to be returned.
 	"""
-	if nodes and nodes[index][0] == 'set':
-		typ, items, attr = nodes[index]
+	if elements and elements[index][0] == 'set':
+		typ, items, attr = elements[index]
 		if typ == 'set':
 			try:
 				return interpret_set_items(items)

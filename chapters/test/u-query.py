@@ -1,5 +1,5 @@
 """
-# Analyze the &.nodes.Cursor implementation.
+# Analyze the &.query.Cursor implementation.
 # Currently, somewhat redundant with the route tests, but
 # check the functionality with respect to the configured &module.context.
 """
@@ -67,12 +67,12 @@ def test_union(test):
 	test/union[1][0] == 'sequence'
 
 def test_filter(test):
-	def f(node):
-		return node[0] == 'section'
+	def f(element):
+		return element[0] == 'section'
 	cursor.context.filters['test-section'] = f
 
-	for node in cursor.select('/*?test-section'):
-		test/node[0] == 'section'
+	for element in cursor.select('/*?test-section'):
+		test/element[0] == 'section'
 
 def test_identifier_escapes(test):
 	odd, = cursor.select("/section[\\] Odd Section []")

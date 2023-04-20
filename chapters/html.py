@@ -129,7 +129,7 @@ def integrate(index, types, element):
 	return element
 
 def prepare(chapter, path=(), types={'CONTROL', 'CONTEXT'}):
-	# Prepare the chapter's elements by relocating metadata nodes into preferred locations.
+	# Prepare the chapter's elements by relocating metadata elements into preferred locations.
 
 	idx = chapter[-1]['index'] = {}
 	integrate(idx, types, chapter)
@@ -279,7 +279,7 @@ class Render(comethod.object):
 		"""
 
 		resolver = resolver or self.default_resolver()
-		rnode, = self.input.root
+		relement, = self.input.root
 
 		title = self.title(resolver, page_heading(self.output, 2, subject, context), False)
 		return self.element('html',
@@ -291,7 +291,7 @@ class Render(comethod.object):
 						self.element('main',
 							itertools.chain(
 								title,
-								self.root(resolver, rnode[1], rnode[-1]),
+								self.root(resolver, relement[1], relement[-1]),
 								self.element('h1', self.text(''), ('class', 'footing')),
 							),
 						),
@@ -302,23 +302,23 @@ class Render(comethod.object):
 			('root', str(self.depth)),
 		)
 
-	def abstract(self, resolver, nodes, attr):
+	def abstract(self, resolver, elements, attr):
 		"""
 		# Extract the non-section content from the chapter.
 		"""
 		yield from self.element(
 			'section',
-			self.switch(resolver, nodes, attr),
+			self.switch(resolver, elements, attr),
 			('class', "chapter")
 		)
 
-	def root(self, resolver, nodes, attr):
-		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), nodes))
+	def root(self, resolver, elements, attr):
+		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), elements))
 		yield from self.abstract(resolver, chapter_content, attr)
-		yield from self.switch(resolver, nodes[len(chapter_content):], attr)
+		yield from self.switch(resolver, elements[len(chapter_content):], attr)
 
 	@comethod('section')
-	def semantic_section(self, resolver, nodes, attr, adjustment=0, tag='section'):
+	def semantic_section(self, resolver, elements, attr, adjustment=0, tag='section'):
 		ref = attr.get('reference', None)
 		path = attr.get('absolute', ())
 		if path is None:
@@ -338,7 +338,7 @@ class Render(comethod.object):
 			if sl is not None and sl > 0 and len(sp or (1,2)) == 1:
 				integrate = True
 
-		subcount = sum(1 for x in nodes if x[0] == 'section')
+		subcount = sum(1 for x in elements if x[0] == 'section')
 		htag = 'h1'
 		leading = [(self.slug('.'.join(path[0:i+1])), path[i]) for i in range(depth - 1)]
 
@@ -392,7 +392,7 @@ class Render(comethod.object):
 			itertools.chain(
 				title,
 				self.reference_target(resolver, ref.sole[1]) if ref is not None else (),
-				self.switch(resolver, nodes, attr)
+				self.switch(resolver, elements, attr)
 			),
 			('class', typ),
 			('documented', str(documented).lower()),
@@ -416,21 +416,21 @@ class Render(comethod.object):
 			('class', 'subject-reference-display'),
 		)
 
-	def switch(self, resolver, nodes, attr):
+	def switch(self, resolver, elements, attr):
 		"""
-		# Perform the transformation for the given node.
+		# Perform the transformation for the given element.
 		"""
-		for node in nodes:
-			node[-1]['super'] = attr
-			yield from resolver(node[0])(resolver, node[1], node[-1])
+		for element in elements:
+			element[-1]['super'] = attr
+			yield from resolver(element[0])(resolver, element[1], element[-1])
 
 	@comethod('exception')
-	def error(self, resolver, nodes, attr):
-		yield from self.element('pre', self.text(str(nodes)))
+	def error(self, resolver, elements, attr):
+		yield from self.element('pre', self.text(str(elements)))
 
 	@comethod('syntax')
-	def code_block(self, resolver, nodes, attr):
-		lines = [x[1][0] + "\n" for x in nodes]
+	def code_block(self, resolver, elements, attr):
+		lines = [x[1][0] + "\n" for x in elements]
 		if lines[-1] == "\n":
 			ilines = itertools.islice(lines, 0, len(lines)-1)
 		else:
@@ -520,7 +520,7 @@ class Render(comethod.object):
 		dated = ()
 		pdate = None
 		if pset:
-			# First node was a property set.
+			# First element was a property set.
 			del v[1][0:1]
 			item_properties.update(pset.items())
 

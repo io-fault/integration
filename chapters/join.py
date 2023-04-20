@@ -16,7 +16,7 @@ from fault.project import system as lsf
 from fault.syntax.types import Area, Address
 
 from fault.text import render
-from fault.text.io import structure_chapter_lines, structure_chapter_text
+from fault.text.io import structure_chapter_lines
 from fault.text.io import structure_paragraph_element as ipara
 from fault.text.types import Paragraph, Fragment
 
@@ -48,12 +48,12 @@ def interpret_directory_items(items):
 		for i in items
 	}
 
-def prefix(path, node):
+def prefix(path, element):
 	"""
-	# Adjust the sections in &node to be relative to &path.
+	# Adjust the sections in &element to be relative to &path.
 	"""
 	depth = len(path) - 1
-	stack = [x for x in node[1] if x[0] == 'section']
+	stack = [x for x in element[1] if x[0] == 'section']
 
 	while stack:
 		subsections = []
@@ -75,7 +75,7 @@ def prefix(path, node):
 
 def extract(sub, section):
 	"""
-	# Extract the mapping from the identified &section removing its node from the tree.
+	# Extract the mapping from the identified &section removing its element from the tree.
 	"""
 	r = sub.root[0]
 	items = sub.select('/section[%s]/directory/item' %(section,))
@@ -98,17 +98,17 @@ def section_items(chapter, section):
 		pd = ('directory', [], {})
 	return pd, interpret_directory_items(d.select('item'))
 
-def insert_before(type, elements, node):
+def insert_before(type, elements, element):
 	for i, n in enumerate(elements):
 		if n[0] == type:
-			elements.insert(i, node)
+			elements.insert(i, element)
 			return
 
-	elements.append(node)
+	elements.append(element)
 
 def control(**kw):
 	"""
-	# Construct a CONTROL admonition node.
+	# Construct a CONTROL admonition element.
 	"""
 	return (
 		'admonition', [
@@ -120,12 +120,12 @@ def control(**kw):
 		{'type': 'CONTROL'}
 	)
 
-def type_property_fragments(resolve, node, titled=True):
+def type_property_fragments(resolve, element, titled=True):
 	"""
 	# Construct &Fragment instances for populating a property set to describe the type.
 	"""
-	typsyntax = node[2]['syntax'].replace('\n', '')
-	typref = node[2].get('reference')
+	typsyntax = element[2]['syntax'].replace('\n', '')
+	typref = element[2].get('reference')
 
 	tsf = Fragment(('literal/grave-accent/type/syntax', typsyntax))
 	yield tsf
@@ -138,32 +138,32 @@ def type_property_fragments(resolve, node, titled=True):
 		reftype, refsubtype, *local = trf.typepath
 		yield Fragment(('/'.join([reftype, refsubtype, 'type'] + local), trf[1]))
 
-def describe_type(resolve, node, titled=True):
+def describe_type(resolve, element, titled=True):
 	"""
 	# Produce tuples used to form `'item'` paragraphs describing the type
-	# element found within &node.
+	# element found within &element.
 	"""
-	if not node or not node[1]:
+	if not element or not element[1]:
 		return ()
 
 	try:
-		if node[1][0][0] != 'type' or not node[1][0][2].get('syntax'):
+		if element[1][0][0] != 'type' or not element[1][0][2].get('syntax'):
 			return ()
 	except IndexError:
 		return ()
 
-	typnode = node[1][0]
-	return type_property_fragments(resolve, typnode, titled=titled)
+	typ = element[1][0]
+	return type_property_fragments(resolve, typ, titled=titled)
 
 def property_item(pf):
 	"""
-	# Construct single paragraph item nodes for populating a set or sequence node.
+	# Construct single paragraph item elements for populating a set or sequence element.
 	"""
 	return ('item', [('paragraph', Paragraph.of(pf), {})], {})
 
-def documented_field_item(resolve, element, node, identifier, cast, documentation):
+def documented_field_item(cast, resolve, context, element, identifier, documentation):
 	"""
-	# Construct the directory item node for a documented field.
+	# Construct the directory item element for a documented field.
 	"""
 	v_content = [] # Content of the new parameter directory item.
 
@@ -173,7 +173,7 @@ def documented_field_item(resolve, element, node, identifier, cast, documentatio
 		('value', v_content, {}),
 	], {'identifier': identifier})
 
-	typ_properties = map(property_item, describe_type(resolve, node))
+	typ_properties = map(property_item, describe_type(resolve, element))
 
 	# Merge properties of the parameter.
 	props = dict(setdirectory.select(documentation))
@@ -188,9 +188,9 @@ def documented_field_item(resolve, element, node, identifier, cast, documentatio
 
 	return i
 
-def undocumented_field_item(resolve, element, node, identifier, cast, documentation=None):
+def undocumented_field_item(cast, resolve, context, element, identifier, documentation=None):
 	"""
-	# Construct the directory item node for representing an undocumented field.
+	# Construct the directory item element for representing an undocumented field.
 	# The &documentation parameter is provided for type consistency with &documented_field_item.
 	"""
 	v_content = [] # Content of the new parameter directory item.
@@ -201,7 +201,7 @@ def undocumented_field_item(resolve, element, node, identifier, cast, documentat
 		('value', v_content, {}),
 	], {'identifier': identifier})
 
-	propset = list(map(property_item, describe_type(resolve, node)))
+	propset = list(map(property_item, describe_type(resolve, element)))
 	v_content.append(('set', propset, {},))
 	v_content.append((
 		'paragraph',
@@ -216,7 +216,7 @@ def undocumented_field_item(resolve, element, node, identifier, cast, documentat
 
 class Text(comethod.object):
 	"""
-	# Materialization routines for source elements.
+	# Linked chapter construction for factor elements.
 	"""
 
 	def getdoc(self, path):
@@ -237,11 +237,11 @@ class Text(comethod.object):
 			for k, v in tmap.items()
 		)
 
-	def r_control(self, node, documented=True, element=(), **ctlkeys):
+	def r_control(self, factorelement, documented=True, element=(), **ctlkeys):
 		ctl = [
 			"! CONTROL:\n",
 			"\t/type/\n",
-			"\t\t" + node[0] + "\n",
+			"\t\t" + factorelement[0] + "\n",
 		]
 		for k, v in ctlkeys.items():
 			if v is not None:
@@ -262,7 +262,7 @@ class Text(comethod.object):
 		# Element properties.
 		ctl.append("\t/element/\n")
 		try:
-			area = node[2]['area']
+			area = factorelement[2]['area']
 		except LookupError:
 			ctl.append("\t\t- (source/area)``\n")
 		else:
@@ -273,8 +273,8 @@ class Text(comethod.object):
 
 		return ctl
 
-	def r_root(self, elements):
-		yield from self.r_control(elements, syntax=elements[2].get('syntax', None))
+	def r_root(self, factor):
+		yield from self.r_control(factor, syntax=factor[2].get('syntax', None))
 
 		doc = self.getdoc(())
 		if doc is not None:
@@ -285,7 +285,7 @@ class Text(comethod.object):
 			if params:
 				pi = pd[1]
 				del pi[:]
-				for nid, p_documented, i in self.r_parameters(elements, (), r, params):
+				for nid, p_documented, i in self.r_parameters(factor, (), r, params):
 					pi.append(i)
 
 			# Rewrite ambiguous references found in the documentation.
@@ -293,63 +293,63 @@ class Text(comethod.object):
 				r = self.resolution.rewrite((), r)
 				yield from render.chapter(r)
 
-		yield from self.switch((), elements[1])
+		yield from self.switch((), factor[1])
 
-	def r_inherits(self, path, node):
+	def r_inherits(self, path, element):
 		lines = []
 
 		resolve = self.resolution.partial(path)
-		while node[1]:
+		while element[1]:
 			lines = ["! INHERIT:\n"]
-			typnode = node[1][0]
+			typ = element[1][0]
 
 			try:
-				area = typnode[2]['area']
+				area = typ[2]['area']
 			except LookupError:
 				lines.append("\t- (source/area)``\n")
 			else:
 				lines.append("\t- (source/area)`{0[0]} {0[1]} {1[0]} {1[1]}`\n".format(*area))
 
-			typdata = list(map(property_item, describe_type(resolve, node)))
+			typdata = list(map(property_item, describe_type(resolve, element)))
 			lines.extend(render.elements([('set', typdata, {})], adjustment=1))
 
-			# &describe_type presumes a single type entry for a node.
-			del node[1][:1]
+			# &describe_type presumes a single type entry for an element.
+			del element[1][:1]
 
 		return lines
 
 	@comethod('class')
 	@comethod('structure')
 	@comethod('exception')
-	def r_container(self, path, node):
+	def r_container(self, path, element):
 		yield self.newline
 		yield self.section(0, None, path)
 
 		typdata = None
 		inherits = ()
 		offset = 0
-		subnodes = node[1]
+		subelements = element[1]
 		resolve = self.resolution.partial(path)
 
 		# If the container has a type element, it's a metaclass or similar concept.
 		try:
-			if subnodes[offset][0] == 'type':
-				typdata = list(map(property_item, describe_type(resolve, node)))
+			if subelements[offset][0] == 'type':
+				typdata = list(map(property_item, describe_type(resolve, element)))
 				offset += 1
 		except LookupError:
 			pass
 
 		doc = self.getdoc(path)
-		yield from self.r_control(node, documented=bool(doc), element=typdata)
+		yield from self.r_control(element, documented=bool(doc), element=typdata)
 
 		# Collect inheritance if any is specified and increment offset for &switch.
 		try:
-			inherits = subnodes[offset]
+			inherits = subelements[offset]
 		except LookupError:
 			inherits = ()
 		else:
 			if inherits[0] == 'inheritance':
-				yield from self.r_inherits(path, subnodes[offset])
+				yield from self.r_inherits(path, subelements[offset])
 				offset += 1
 
 		if doc:
@@ -366,16 +366,25 @@ class Text(comethod.object):
 			prefix(path, r)
 			yield from render.chapter(r)
 
-		yield from self.switch(path, subnodes[offset:])
+		yield from self.switch(path, subelements[offset:])
 
-	def r_parameters(self, node, path, nodes, params):
+	def r_parameters(self, element, path, parameters, documented):
 		resolve = self.resolution.partial(path)
-		for nid, n in nodes:
-			if nid in params:
-				k, v = params[nid]
-				yield nid, True, documented_field_item(resolve, node, n, nid, 'parameter', v)
+
+		# Generate elements for each parameter,
+		# and join with the documentation associated with the &element.
+		for pid, pelement in parameters:
+			if pid in documented:
+				yield pid, True, documented_field_item('parameter',
+					resolve, element,
+					pelement, pid,
+					documented[pid][1]
+				)
 			else:
-				yield nid, False, undocumented_field_item(resolve, node, n, nid, 'parameter')
+				yield pid, False, undocumented_field_item('parameter',
+					resolve, element,
+					pelement, pid
+				)
 
 	def section(self, rdepth, rmult, path):
 		p = render.section_path(rdepth, rmult, *path)
@@ -383,23 +392,23 @@ class Text(comethod.object):
 		return "".join(p)
 
 	@comethod('include')
-	def r_void(self, path, node):
+	def r_void(self, path, element):
 		"""
-		# Unsupported node type.
+		# Unsupported element type.
 		"""
 		return ()
 
 	@comethod('chapter')
-	def r_text(self, path, node):
+	def r_text(self, path, element):
 		"""
 		# Rewrite references in the text tree and render the changes.
 		"""
-		r = self.resolution.rewrite(path, node)
+		r = self.resolution.rewrite(path, element)
 		yield from render.chapter(r)
 
 	@comethod('define')
 	@comethod('data')
-	def r_source(self, path, node):
+	def r_source(self, path, element):
 		"""
 		# Render a capture of the source after the documentation.
 		"""
@@ -407,11 +416,11 @@ class Text(comethod.object):
 
 		# Retrieve the type element.
 		resolve = self.resolution.partial(path)
-		typdata = list(map(property_item, describe_type(resolve, node)))
+		typdata = list(map(property_item, describe_type(resolve, element)))
 
 		yield self.newline
 		yield self.section(0, None, path)
-		yield from self.r_control(node, documented=bool(doc), element=typdata)
+		yield from self.r_control(element, documented=bool(doc), element=typdata)
 
 		if doc is not None:
 			if doc.root[0][1]:
@@ -419,16 +428,14 @@ class Text(comethod.object):
 				yield from render.chapter(r)
 
 		yield "#!source\n"
-		for x in itruncate(self.selectlines(node)):
+		for x in itruncate(self.selectlines(element)):
 			yield "\t" + x
 
-	def r_element(self, path, node):
+	def r_element(self, path, element):
 		"""
 		# Emit a section containing the element's documentation.
 
-		# If the documentation of the element contains a `Parameters`
-		# section, integrate it into the element's section along with
-		# any undocumented parameters.
+		# The default switch target.
 		"""
 		yield self.newline
 		yield self.section(0, None, path)
@@ -437,19 +444,19 @@ class Text(comethod.object):
 
 		# Retrieve the type of the element.
 		resolve = self.resolution.partial(path)
-		typdata = list(map(property_item, describe_type(resolve, node)))
-		yield from self.r_control(node, documented=bool(doc), element=typdata)
+		typdata = list(map(property_item, describe_type(resolve, element)))
+		yield from self.r_control(element, documented=bool(doc), element=typdata)
 
-		param_nodes = []
+		parameters = []
 		try:
-			for n in node[1]:
+			for n in element[1]:
 				if n and n[0] in {'parameter'}:
-					param_nodes.append((n[2]['identifier'], n))
+					parameters.append((n[2]['identifier'], n))
 		except:
 			# Not a parameterized element.
 			pass
 
-		# Parse documentation and identify documented parameters.
+		# Structure documentation and identify documented parameters.
 		documented = set()
 		if doc:
 			r = doc.root[0]
@@ -457,10 +464,10 @@ class Text(comethod.object):
 			prefix(path, r)
 
 			# Join parameters.
-			pd, params = section_items(doc, 'Parameters')
+			pd, docparams = section_items(doc, 'Parameters')
 			pi = pd[1]
 			del pi[:]
-			for nid, p_documented, i in self.r_parameters(node, path, param_nodes, params):
+			for nid, p_documented, i in self.r_parameters(element, path, parameters, docparams):
 				pi.append(i)
 				if p_documented:
 					documented.add(nid)
@@ -469,12 +476,12 @@ class Text(comethod.object):
 			r = ('chapter', [], {})
 
 		# Callable signature production.
-		if node[0] not in {'property', 'data', 'field', 'import'}:
+		if element[0] not in {'property', 'data', 'field', 'import'}:
 			# Only show required parameters and documented options.
 			dparams = (
 				# If the element provides an override syntax,
 				# prefer it over the exact identifier.
-				x[1][2].get('syntax', x[0]) for x in param_nodes
+				x[1][2].get('syntax', x[0]) for x in parameters
 				if x[0] in documented or not x[1][2].get('optional', False)
 			)
 			sig = '(signature)' + "`%s(%s)`" % (path[-1], ", ".join(dparams))
@@ -488,8 +495,8 @@ class Text(comethod.object):
 			r = self.resolution.rewrite(path, r)
 			yield from render.chapter(r)
 
-	def switch(self, path, nodes, *suffix):
-		for x in nodes:
+	def switch(self, path, elements, *suffix):
+		for x in elements:
 			p = path + (x[2].get('identifier'),)
 			try:
 				selected_method = self.comethod(x[0], *suffix)
@@ -503,8 +510,8 @@ class Text(comethod.object):
 		with self.source_path.fs_open('r') as f:
 			return list(f)
 
-	def selectlines(self, node):
-		start, stop = node[2]['area']
+	def selectlines(self, element):
+		start, stop = element[2]['area']
 		a = Area((Address(start), Address(stop)))
 
 		prefix, suffix, lines = a.select(self.source)
@@ -632,35 +639,35 @@ def dr_project_path(project, reference):
 
 	return title, link
 
-def index(root, deque=collections.deque, none={}):
+def index(factor, deque=collections.deque, none={}):
 	"""
 	# Construct an index of elements using the identifier paths.
 	"""
-	subnodes = set(x[2].get('identifier') for x in root[1])
-	idx = {(): (root, subnodes)}
+	subids = set(x[2].get('identifier') for x in factor[1])
+	idx = {(): (factor, subids)}
 
 	q = deque()
-	q.extend(((), x) for x in root[1])
+	q.extend(((), x) for x in factor[1])
 	while q:
-		p, n = q.popleft()
+		# Process next queued element for indexing.
+		prefix, element = q.popleft()
 		try:
-			ni = n[2].get('identifier')
-		except KeyError:
-			print(n)
+			element_id = element[2].get('identifier')
+		except (KeyError, IndexError):
 			continue
-		except IndexError:
-			continue
+		else:
+			if not element_id:
+				continue
 
-		# Descend
-		if ni:
-			sp = p + (ni,)
-			try:
-				subnodes = set(x[2].get('identifier') for x in n[1])
-			except IndexError:
-				subnodes = set()
-			subnodes.discard(None)
-			idx[sp] = (n, subnodes)
-			q.extend((sp, x) for x in n[1])
+		# Descend into element's content by extending the queue.
+		path = prefix + (element_id,)
+		try:
+			subids = set(x[2].get('identifier') for x in element[1])
+		except IndexError:
+			subids = set()
+		subids.discard(None)
+		idx[path] = (element, subids)
+		q.extend((path, x) for x in element[1])
 
 	return idx
 
@@ -725,29 +732,29 @@ class Resolution(comethod.object):
 
 	@comethod('key')
 	@comethod('paragraph')
-	def disambiguate(self, element, path, node, *suffix, AR=['reference', 'ambiguous']):
-		assert node[0] in {'paragraph', 'key'}
+	def disambiguate(self, context, path, element, *suffix, AR=['reference', 'ambiguous']):
+		assert element[0] in {'paragraph', 'key'}
 
-		if isinstance(node[1], Paragraph):
-			p = node[1]
+		if isinstance(element[1], Paragraph):
+			p = element[1]
 		else:
-			p = ipara(node)
+			p = ipara(element)
 
 		return p.__class__(
-			(self.resolve(element, x) if x.typepath[:2] == AR else x)
+			(self.resolve(context, x) if x.typepath[:2] == AR else x)
 			for x in p
 		)
 
 	# Anything that is guaranteed to not contain references.
 	@comethod('syntax')
 	@comethod('line')
-	def transparent(self, element, path, node, *suffix):
-		return node[1]
+	def transparent(self, context, path, element, *suffix):
+		return element[1]
 
-	def switch(self, element, path, node, *suffix):
-		subnodes = node[1]
+	def switch(self, context, path, element, *suffix):
+		subelements = element[1]
 
-		for i, x in zip(range(len(subnodes)), subnodes):
+		for i, x in zip(range(len(subelements)), subelements):
 			xid = x[2].get('identifier') or None
 			if xid is not None:
 				p = path + (xid,)
@@ -756,21 +763,21 @@ class Resolution(comethod.object):
 
 			try:
 				method = self.comethod(x[0], *suffix)
-				subnodes[i] = (x[0], method(element, p, x)) + tuple(x[2:])
+				subelements[i] = (x[0], method(element, p, x)) + tuple(x[2:])
 			except comethod.MethodNotFound:
 				# Not being re-written.
-				self.switch(element, p, x, *suffix)
+				self.switch(context, p, x, *suffix)
 
-	def rewrite(self, element, root):
+	def rewrite(self, context, root):
 		"""
-		# Rewrite the references in the node tree &root as relative IRI's.
+		# Rewrite the references in the element tree &root as relative IRI's.
 		# [ Parameters ]
-		# /element/
+		# /context/
 			# The identifier path of the documented element.
 		# /root/
 			# The documentation's element tree.
 		"""
-		self.switch(element, (), root)
+		self.switch(context, (), root)
 		return root
 
 	def resolve(self, path, fragment, depth=0, titled=True):
@@ -812,12 +819,12 @@ class Resolution(comethod.object):
 					mdepth, prefix = targets[0]
 					target = prefix + tuple(rpath[:mdepth])
 
-					target_node = self.index[target][0]
-					target_is_factor = target_node[2].get('factor') or None
+					target_element = self.index[target][0]
+					target_is_factor = target_element[2].get('factor') or None
 					if target_is_factor:
 						# The targeted element is potentially from a factor.
-						target_path = target_node[2].get('path', [])
-						target_relative = target_node[2].get('relative', 0)
+						target_path = target_element[2].get('path', [])
+						target_relative = target_element[2].get('relative', 0)
 						target_element = rpath[mdepth:]
 
 						if target_relative:
@@ -830,7 +837,7 @@ class Resolution(comethod.object):
 						absdata = dr_absolute_path(self.requirements, self.context, self.project, redirect)
 						title, link, name_type, local = absdata
 					else:
-						name_type = target_node[0]
+						name_type = target_element[0]
 						if name_type == 'parameter':
 							link = '#' + '.'.join(target[:-1]) + '.Parameters.' + target[-1]
 						else:
@@ -872,8 +879,8 @@ def transform(resolution, datadir:files.Path, source:files.Path):
 	test_factor = (tf.fs_type() == 'file')
 
 	with re.fs_open('r') as f:
-		elements = load(f)
-		resolution.add_index(elements)
+		factorelement = load(f)
+		resolution.add_index(factorelement)
 
 	try:
 		with dd.fs_open('r') as f:
@@ -892,5 +899,5 @@ def transform(resolution, datadir:files.Path, source:files.Path):
 	except:
 		data = dict()
 
-	t = Text(resolution, elements, docs, data, source)
-	return t.r_root(elements)
+	t = Text(resolution, factorelement, docs, data, source)
+	return t.r_root(factorelement)

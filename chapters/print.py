@@ -391,13 +391,13 @@ def manual(argv, variants=lsf.types.Variants('void', 'json', 'delineated')):
 	}
 	v = recognition.legacy(marg_restrict, marg_require, argv[1:])
 	remainder = recognition.merge(config, v)
-	out, factorpath = map(process.fs_pwd().__matmul__, remainder[:2])
+	out, productpath = map(process.fs_pwd().__matmul__, remainder[:2])
 	projects = remainder[2:]
 	outenc = config['encoding']
 
-	# Build project context for the target product.
+	# Build factor context for the target product.
 	factors = lsf.Context()
-	products = list(map(factors.connect, [factorpath]))
+	products = list(map(factors.connect, [productpath]))
 	factors.load()
 	factors.configure()
 	requirements = list(map(factors.from_product_connections, products))
@@ -511,7 +511,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	elif ptype == 'manual':
 		code = manual(inv.argv[1:])
 	else:
-		sys.stderr.write("ERROR: only 'web' and 'manuals' print type are supported.\n")
+		sys.stderr.write("ERROR: only 'web' and 'manual' types are supported.\n")
 		code = 1
 
 	return inv.exit(code or 0)
