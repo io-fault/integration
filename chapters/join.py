@@ -741,7 +741,7 @@ class Resolution(comethod.object):
 			p = ipara(element)
 
 		return p.__class__(
-			(self.resolve(context, x) if x.typepath[:2] == AR else x)
+			(self.resolve(path, x) if x.typepath[:2] == AR else x)
 			for x in p
 		)
 
