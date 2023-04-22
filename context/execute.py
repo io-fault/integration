@@ -12,6 +12,7 @@ index = {
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.bin.control',
 	'man': context_name + '.context.read',
+	'error': context_name + '.factors.error',
 }
 
 def activate(factor, element, interface=None):
