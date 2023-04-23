@@ -52,8 +52,8 @@ def meta(context):
 	return text(context) + [
 		cc.fx('intention-error', 'python', '.string', 'exit(1)'),
 
-		cc.fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.bin.measure', 'source'),
-		cc.fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.bin.aggregate'),
+		cc.fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.measure', 'source'),
+		cc.fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.aggregate'),
 		cc.fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
 		cc.fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
 

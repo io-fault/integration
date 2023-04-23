@@ -280,8 +280,8 @@ def meta(context):
 	return [
 		fx('intention-error', 'python', '.string', 'exit(1)'),
 
-		fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.bin.measure', 'source'),
-		fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.bin.aggregate'),
+		fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.measure', 'source'),
+		fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.aggregate'),
 		fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
 		fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
 
