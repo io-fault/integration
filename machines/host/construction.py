@@ -258,8 +258,11 @@ def system_select_linker(system):
 	else:
 		return '[-llvm-ld-elf]'
 
-def form_meta_type():
+def form_meter_type():
 	common = comment("Process intercepted metrics and identity intentions.")
+	common += define('[factor-type]',
+		('', 'http://if.fault.io/factors/meter'),
+	) + '\n'
 
 	common += define('Translate',
 		('fv-intention-metrics', '.measure-source -stdio .adapters'),
@@ -275,25 +278,15 @@ def form_meta_type():
 
 	return common
 
-def meta(context):
+def meter(context):
 	mfactors = str(query.ipath/'development')
 	return [
 		fx('intention-error', 'python', '.string', 'exit(1)'),
-
 		fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.measure', 'source'),
 		fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.aggregate'),
 		fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
 		fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
 
-		mksole('projections', vtype,
-			constant('host', 'http://if.fault.io/factors/system') + \
-			constant('python', 'http://if.fault.io/factors/python') + \
-			constant('text', 'http://if.fault.io/factors/text')
-		),
-		mksole('intercepts', vtype,
-			constant('metrics', 'meta') + \
-			constant('identity', 'meta')
-		),
 		mksole('adapters', vtype,
 			constant('-stdio',
 				'"measure-source-file" input output',
@@ -314,6 +307,52 @@ def meta(context):
 				'[factor-image]',
 				'[units]',
 			)
+		),
+		mksole('type', vtype, form_meter_type()),
+	]
+
+def text(context, factor='type', name='text.cc'):
+	text_cc_vectors = getsource(machines_project, name)
+	variants = form_variants('void', 'json', forms=['delineated'])
+	txtcc = query.dispatched('text-cc')
+
+	return [
+		mksole('ft-text-cc', 'vector.system', txtcc),
+		mksole('text-delineate-1', vtype, text_cc_vectors.fs_load()),
+		mksole('variants', vtype, variants),
+	]
+
+def form_meta_type():
+	common = comment("Process intercepted metrics and identity intentions.")
+	common += define('[factor-type]',
+		('', 'http://if.fault.io/factors/meta'),
+	) + '\n'
+	common += define('[integration-type]',
+		('', 'chapter'),
+	) + '\n'
+
+	common += define('Translate',
+		('fv-intention-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
+	) + '\n'
+
+	common += define('Render',
+		('fv-intention-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
+	) + '\n'
+
+	return common
+
+def meta(context):
+	mfactors = str(query.ipath/'development')
+	return text(context) + [
+		mksole('projections', vtype,
+			constant('host', 'http://if.fault.io/factors/system') + \
+			constant('python', 'http://if.fault.io/factors/python') + \
+			constant('meta', 'http://if.fault.io/factors/meta') + \
+			constant('text', 'http://if.fault.io/factors/text')
+		),
+		mksole('intercepts', vtype,
+			constant('metrics', 'meter') + \
+			constant('identity', 'meter')
 		),
 		mksole('type', vtype, form_meta_type()),
 	]
@@ -337,6 +376,11 @@ def mkvectors(context, route, name='vectors'):
 	# Meta. projections, intercepts, and error cases.
 	pi = mkinfo(context + '.meta', 'meta')
 	pj = mkproject(pi, route, context, 'meta', meta(context))
+	factory.instantiate(*pj)
+
+	# Meter. Source measurements.
+	pi = mkinfo(context + '.meter', 'meter')
+	pj = mkproject(pi, route, context, 'meter', meter(context))
 	factory.instantiate(*pj)
 
 	# Host Machine
