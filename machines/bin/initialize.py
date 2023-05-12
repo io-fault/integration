@@ -55,7 +55,6 @@ def main(inv:(process.Invocation)) -> (process.Exit):
 			factors.context.load()
 			factors.context.configure()
 			cci.mkcc(ccr)
-			cct.mkcc(ccr * 'documentation')
 
 	return inv.exit(0)
 
