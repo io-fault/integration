@@ -6,6 +6,7 @@ import functools
 import itertools
 import typing
 import collections
+from dataclasses import dataclass
 
 from fault.system import files
 from fault.system import execution
@@ -13,6 +14,24 @@ from fault.project import system as lsf
 from fault.vector import formulation as vf
 
 from . import core
+
+@dataclass(eq=True, unsafe_hash=True)
+class Void(Exception):
+	"""
+	# Raised when a empty vector is composed, but more than
+	# zero fields are required by the caller.
+
+	# [ Properties ]
+	# /v_type/
+		# A classification identifier for the type of request that caused the exception.
+	# /v_required/
+		# The minimum number of fields required by the caller.
+	"""
+	v_type: str
+	v_required: int = 1
+
+	def __str__(self):
+		return f"{self.v_type!r} inquery requires {self.v_required} fields"
 
 def _variant_constants(variants):
 	return {
@@ -74,7 +93,11 @@ class Mechanism(object):
 		"""
 		# Identify the prefix and suffix for the unit file.
 		"""
-		return self.context.cc_unit_name_delta(section, variants, itype)
+		try:
+			return self.context.cc_unit_name_delta(section, variants, itype)
+		except Void:
+			# Allow unspecified extensions.
+			return "", ""
 
 	def prepare(self, section, variants, itype, srctype):
 		"""
@@ -169,9 +192,14 @@ class Context(object):
 	def cc_integration_types(self, section, variants, itype):
 		# Supported integration types.
 		ctx = vf.Context(_variant_conclusions(variants), _variant_constants(variants))
-		exe, adapter, idx = self._read_merged(
-			ctx, section, variants, 'Render', itype, None
-		)
+		try:
+			exe, adapter, idx = self._read_merged(
+				ctx, section, variants, 'Render', itype, None
+			)
+		except Void:
+			# Must support rendering.
+			return []
+
 		aft, = (self._cat(ctx, idx, "[factor-type]"))
 		return list((aft + '.' + x) for x in self._cat(ctx, idx, "[integration-type]"))
 
@@ -257,10 +285,12 @@ class Context(object):
 		return self._vcache[k]
 
 	def _read_merged(self, vctx, section, variants, phase, itype, xtype):
-		exeref, adapter, *composition = self._load_descriptor(
-			vctx, section, variants, phase, itype, xtype
-		)
+		vector = self._load_descriptor(vctx, section, variants, phase, itype, xtype)
+		if len(vector) == 0:
+			# Empty
+			raise Void('composition', 2)
 
+		exeref, adapter, *composition = vector
 		idx = {}
 		for x in composition:
 			vects = self._ref(section, x)
