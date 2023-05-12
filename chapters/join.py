@@ -777,7 +777,7 @@ class Resolution(comethod.object):
 		# /root/
 			# The documentation's element tree.
 		"""
-		self.switch(context, (), root)
+		self.switch(context, context, root)
 		return root
 
 	def resolve(self, path, fragment, depth=0, titled=True):
