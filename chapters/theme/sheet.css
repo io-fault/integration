@@ -835,6 +835,10 @@ dl a.dkn {
 	min-height: 16px;
 }
 
+dl a.dkn img.icon {
+	margin-top: 3px;
+}
+
 /* Allow local overrides for the handle's representation. */
 dl a.dkn:empty:before {
 	content: var(--directory-arrow);
