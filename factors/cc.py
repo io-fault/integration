@@ -214,6 +214,7 @@ def interpret_reference(cc, ctxpath, _factor, reference, *, rreqs={}, rsources=[
 def resolve_meta_references(ir, targets):
 	for t in targets:
 		if t.references:
+			# Factor References
 			for fmt, src in t.sources():
 				for line in src.get_text_content().split('\n'):
 					line = line.strip()
@@ -222,15 +223,17 @@ def resolve_meta_references(ir, targets):
 					sub = t.type.from_ri(None, line)
 					yield from resolve_meta_references(ir, ir(sub))
 		elif t.system:
-			# libraries
+			# System Libraries
 			for fmt, src in t.sources():
 				prefix = ''
 				for libset in src.get_text_content().split('\n/'):
 					libdir, *libnames = src.get_text_content().split('\n')
 
-					yield core.SystemFactor.from_libdir(prefix+libdir)
-					# Update libdir prefix to compensate for the split.
-					prefix = '/'
+					if libdir != '':
+						# Conditionally so that the path may be presumed.
+						yield core.SystemFactor.from_libdir(prefix+libdir)
+						# Update libdir prefix to compensate for the split.
+						prefix = '/'
 
 					# Filter empty lines.
 					libnames = [x.strip() for x in libnames if x and not x.isspace()]
