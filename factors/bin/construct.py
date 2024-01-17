@@ -147,7 +147,9 @@ class Application(kcore.Context):
 				[pctx, rctx],
 				project,
 				targets,
-				processors=8, # overcommit significantly
+				# Eight as a immutable default does not seem like much,
+				# but construct is normally being called in parallel.
+				processors=8,
 				reconstruct=re,
 			))
 

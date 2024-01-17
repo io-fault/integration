@@ -25,6 +25,8 @@ class SystemFactor(object):
 			'http://if.fault.io/factors/system.library-name',
 			'http://if.fault.io/factors/system.library',
 			'http://if.fault.io/factors/system.directory',
+			'http://if.fault.io/factors/system.framework-name',
+			'http://if.fault.io/factors/system.framework-directory',
 		},
 		'parameters': {'http://if.fault.io/factors/lambda.control'},
 	}
@@ -73,15 +75,40 @@ class SystemFactor(object):
 	def from_include(Class, path):
 		return Class(Class.include, path)
 
+	fwdir = lsf.types.Reference(
+		'http://if.fault.io/factors',
+		lsf.types.factor@'system.framework-directory',
+		'type', None
+	)
+	@classmethod
+	def from_framework_directory(Class, path):
+		return Class(Class.fwdir, path)
+
+	fwname = lsf.types.Reference(
+		'http://if.fault.io/factors',
+		lsf.types.factor@'system.framework-name',
+		'type', None
+	)
+	@classmethod
+	def from_framework_name(Class, name):
+		return Class(Class.fwname, files.root/name)
+
 	def __init__(self, type, data):
 		self.type = type
 		self.data = data
+
+	def __repr__(self):
+		return f"<{self.data}[{self.type}] @ {hex(id(self))}>"
 
 	def sources(self):
 		return self.data
 
 	def image(self, variants):
 		return self.data
+
+	@property
+	def _factor_id(self):
+		return '#'.join((str(self.type), str(self.data)))
 
 	def get(self, field):
 		typset = self.fields[field]
@@ -104,6 +131,7 @@ class Target(object):
 		'factor-path': ('absolute',),
 		'project-path': ('project', 'factor'),
 		'context-path': ('project', 'factor', 'container'),
+		'product-path': ('project', 'product', 'route'),
 
 		'factor-name': ('route', 'identifier'),
 		'project-name': ('project', 'factor', 'identifier'),
@@ -160,7 +188,7 @@ class Target(object):
 		return obj
 
 	def __repr__(self):
-		return "<%s:%s>" %(self.type, self.route)
+		return f"<{self.project.factor}.{self.route}[{self.type}] @ {hex(id(self))}>"
 
 	def __r_repr__(self):
 		return "{0.__class__.__name__}({1})".format(
@@ -322,6 +350,7 @@ class Integrand(tuple):
 		"""
 		# Retrieve information from requirements and components.
 		"""
+
 		if field in self.locations:
 			yield self.locations[field]
 			return
@@ -345,11 +374,14 @@ class Integrand(tuple):
 			return
 
 		if self.requirements:
-			if rfield in {'factor-image', 'factor-image-name'}:
+			if rfield in {'factor-image', 'factor-image-name', 'image-directory'}:
 				# Special case image as it requires variants.
 				if rfield.endswith('-name'):
 					for r in self.requirements.get(ref, ()):
 						yield r.image(self.variants).identifier
+				elif rfield == 'image-directory':
+					for r in self.requirements.get(ref, ()):
+						yield r.image(self.variants).container
 				else:
 					for r in self.requirements.get(ref, ()):
 						yield r.image(self.variants)

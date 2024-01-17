@@ -8,6 +8,7 @@ import collections
 import contextlib
 import typing
 import dataclasses
+import itertools
 
 from fault.context import tools
 from fault.time import system as time
@@ -223,7 +224,25 @@ def interpret_reference(cc, ctxpath, _factor, reference, *, rreqs={}, rsources=[
 		for record in pj.select(fpath):
 			yield construct_reference_target(pj, rreqs, rsources, reference.method, record)
 
+def structure_system_references(source):
+	ignored, *sets = ('ignored\n' + source).split('\n/')
+	stype = 'library'
+
+	for libset in sets:
+		context, *resources = libset.split('\n')
+		try:
+			fsd, stype = ('/'+context).rsplit('//')
+		except ValueError:
+			fsd = context
+
+		# Filter empty lines.
+		yield stype, fsd, [x.strip() for x in resources if x and not x.isspace()]
+
 def resolve_meta_references(ir, targets):
+	"""
+	# Construct &core.SystemFactor instances from the reference factors.
+	"""
+
 	for t in targets:
 		if t.references:
 			# Factor References
@@ -235,22 +254,27 @@ def resolve_meta_references(ir, targets):
 					sub = t.type.from_ri(None, line)
 					yield from resolve_meta_references(ir, ir(sub))
 		elif t.system:
-			# System Libraries
+			# System libraries, frameworks, and interfaces.
 			for fmt, src in t.sources():
-				prefix = ''
-				for libset in src.get_text_content().split('\n/'):
-					libdir, *libnames = src.get_text_content().split('\n')
+				irefs = structure_system_references(src.get_text_content())
 
-					if libdir != '':
-						# Conditionally so that the path may be presumed.
-						yield core.SystemFactor.from_libdir(prefix+libdir)
-						# Update libdir prefix to compensate for the split.
-						prefix = '/'
-
-					# Filter empty lines.
-					libnames = [x.strip() for x in libnames if x and not x.isspace()]
-					yield from map(core.SystemFactor.from_libname, libnames)
+				for stype, rcontext, rnames in irefs:
+					if not stype or stype == 'library':
+						if rcontext != '':
+							# Conditionally so that the path may be presumed.
+							yield core.SystemFactor.from_libdir(files.root@rcontext)
+						yield from map(core.SystemFactor.from_libname, rnames)
+					elif stype == 'interfaces':
+						include = files.root@rcontext
+						yield core.SystemFactor.from_include(include)
+						yield from (core.SystemFactor.from_include(include@name) for name in rnames)
+					elif stype == 'framework':
+						if rcontext != '':
+							# Conditionally so that the path may be presumed.
+							yield core.SystemFactor.from_framework_directory(files.root@rcontext)
+						yield from map(core.SystemFactor.from_framework_name, rnames)
 		else:
+			# Factor
 			yield t
 
 def requirements(cc, ctxpath, factor:core.Target):
@@ -260,8 +284,10 @@ def requirements(cc, ctxpath, factor:core.Target):
 
 	for ref in factor.requirements:
 		if isinstance(ref, (core.Target, core.SystemFactor)):
+			# Already recognized.
 			yield ref
 		else:
+			# Presume reference.
 			ri = functools.partial(interpret_reference, cc, ctxpath, factor)
 			yield from resolve_meta_references(ri, ri(ref))
 
@@ -363,16 +389,19 @@ class Construction(kcore.Context):
 			work, reqs, deps = self.c_sequence.send(factors) # raises StopIteration
 			for target in work:
 				if isinstance(target, core.SystemFactor):
-					self.tracking[target] = []
-					self.finish([target])
+					mechanism = None
 				else:
 					ftype = _ftype(target.type)
-					fr = reqs.get(target, ())
-					fd = deps.get(target, ())
+					fr = reqs.get(target, ()) # Factors required.
+					fd = deps.get(target, ()) # Factors depending on this.
 
 					mechanism = self.select(ftype)
-					if mechanism is not None:
-						self.collect(self.c_intentions, mechanism, target, fr, fd)
+
+				if mechanism is not None:
+					self.collect(self.c_intentions, mechanism, target, fr, fd)
+				else:
+					self.tracking[target] = []
+					self.finish([target])
 		except StopIteration:
 			self._end_of_factors = True
 			self.xact_exit_if_empty()
@@ -446,6 +475,7 @@ class Construction(kcore.Context):
 			cdr = scache(work(variants, factor.name))
 			locations = {
 				'factor-image': image,
+				'image-directory': image.container,
 				'work-directory': cdr,
 				'log-directory': (cdr / 'log').delimit(),
 				'unit-directory': (cdr / 'units').delimit(),
@@ -476,7 +506,14 @@ class Construction(kcore.Context):
 
 			translations = []
 			unitseq = []
-			for fmt, src in factor.sources():
+
+			# Avoid processing SystemFactors (system.references).
+			if isinstance(factor, core.SystemFactor):
+				sources = []
+			else:
+				sources = factor.sources()
+
+			for fmt, src in sources:
 				unit_name = u_prefix + src.identifier + u_suffix
 				tlout = files.Path(units, src.points[:-1] + (unit_name,))
 				unitseq.append(str(tlout))
@@ -499,7 +536,8 @@ class Construction(kcore.Context):
 
 			tracks.append(('translate', translations))
 
-			if translations or not xfilter((image,), fint.required(variants)):
+			ifpaths = [x for x in fint.required(variants) if not isinstance(x, str)]
+			if translations or not xfilter((image,), ifpaths):
 				# Build is triggered unconditionally if any translations are performed
 				# or if the target image is older than any requirement image.
 
@@ -564,7 +602,7 @@ class Construction(kcore.Context):
 					sp = kdispatch.Subprocess(self._reapusage(pid), {
 						pid: (start_time, factor, cerr, opid, tfile)
 					})
-			xact = kcore.Transaction.create(sp)
+					xact = kcore.Transaction.create(sp)
 
 		env = [
 			('@STDERR', str(cerr)),
@@ -681,6 +719,7 @@ class Construction(kcore.Context):
 		# Usually called indirectly by &process_exit, this manages the collection
 		# of further work identified by the sequenced dependency tree managed by &sequence.
 		"""
+
 		# Reset continuation
 		self.continued = False
 		factors = list(self.activity)
@@ -712,7 +751,13 @@ class Construction(kcore.Context):
 				pass
 
 		if completions:
-			self.finish(completions)
+			try:
+				self.finish(completions)
+			except Exception as err:
+				# XXX: Workaround for unknown error.
+				# Current theory being a false exception signal.
+				import traceback
+				traceback.print_exception(err.__class__, err, err.__traceback__)
 
 		self.drain_process_queue()
 
