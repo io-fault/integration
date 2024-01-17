@@ -26,6 +26,18 @@ from . import vectorcontext
 
 open_fs_context = vectorcontext.Context.from_directory
 devnull = files.Path.from_absolute(os.devnull)
+job_priority = 10
+
+try:
+	def adjust_priority(pid, *, setprio=os.setpriority, which=os.PRIO_PROCESS):
+		try:
+			return setprio(which, pid, job_priority)
+		except Exception as error:
+			import warnings
+			warnings.warn(error)
+except (NameError, AttributeError):
+	def adjust_priority(pid):
+		pass
 
 def local_query(integrand, local, query):
 	if query in local:
@@ -548,6 +560,7 @@ class Construction(kcore.Context):
 						(co.fileno(), 1),
 						(cl.fileno(), 2),
 					))
+					adjust_priority(pid)
 					sp = kdispatch.Subprocess(self._reapusage(pid), {
 						pid: (start_time, factor, cerr, opid, tfile)
 					})
