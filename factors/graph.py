@@ -48,12 +48,13 @@ def sequence(directory, nodes, defaultdict=collections.defaultdict, tuple=tuple)
 	tree = dict() # dependency tree; F -> {DF1, DF2, ..., DFN}
 	inverse = defaultdict(set)
 	working = set()
+	empty = set()
 
 	for node in nodes:
 		traverse(directory, working, tree, inverse, node)
 
 	new = working
-	# Copy tree.
+	# Organize requirements by their factor type.
 	for x, y in tree.items():
 		cs = reqs[x] = defaultdict(set)
 		for f in y:
@@ -62,13 +63,7 @@ def sequence(directory, nodes, defaultdict=collections.defaultdict, tuple=tuple)
 	yield None
 
 	while working:
-		for x in new:
-			if x not in reqs:
-				reqs[x] = defaultdict(set)
-
 		completion = (yield tuple(new), reqs, {x: tuple(inverse[x]) for x in new if inverse[x]})
-		for x in new:
-			reqs.pop(x, None)
 		new = set() # &completion triggers new additions to &working
 
 		for node in (completion or ()):
@@ -76,11 +71,10 @@ def sequence(directory, nodes, defaultdict=collections.defaultdict, tuple=tuple)
 			working.discard(node)
 
 			for deps in inverse[node]:
-				tree[deps].discard(node)
-				if not tree[deps]:
+				fd = tree.get(deps, empty)
+				fd.discard(node)
+				if not fd:
 					# Add to both; new is the set reported to caller,
 					# and working tracks when the graph has been fully sequenced.
 					new.add(deps)
 					working.add(deps)
-
-					del tree[deps]
