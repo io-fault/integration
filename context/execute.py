@@ -10,7 +10,8 @@ index = {
 	'text-cc': context_name + '.chapters.compile',
 	'python-cc': context_name + '.python.bin.compile',
 	'factors-cc': context_name + '.factors.bin.construct',
-	'products-cc': context_name + '.products.bin.control',
+	'products-cc': context_name + '.products.control',
+	'pdctl': context_name + '.products.control',
 	'man': context_name + '.context.read',
 	'error': context_name + '.factors.error',
 }
