@@ -15,6 +15,7 @@ path_sources = ['FAULT_PYTHON_PATH', 'FAULT_SYSTEM_PATH']
 fault_name = os.environ['FAULT_CONTEXT_NAME']
 factors_module_path = '.'.join((fault_name, 'system', 'factors'))
 subexec_module_path = '.'.join((fault_name, 'system', 'execute'))
+tool_module_path = '.'.join((fault_name, 'system', 'tool'))
 
 def extend_python_path(pathrefs):
 	# Use sys.path entries and bootstrapped (python.sh) extension modules.
@@ -34,7 +35,13 @@ def extend_python_path(pathrefs):
 def av_execution(module_path):
 	extend_python_path(path_sources)
 	subexec = importlib.import_module(module_path)
-	subexec.process.control(subexec.main, subexec.process.Invocation.system())
+	inv = subexec.process.Invocation.system()
+	inv.argv[0:0] = [
+		'-lfault.context.execute',
+		'-lsystem.context.execute',
+		tool_module_path,
+	]
+	subexec.process.control(subexec.main, inv)
 
 if __name__ == '__main__':
 	av_execution(subexec_module_path)

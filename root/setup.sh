@@ -11,6 +11,14 @@
 	# Normally this identified relatively from &.setup.
 ##
 
+if test x"$1" = x"-x"
+then
+	SCRIPT="$2"
+	shift 2
+else
+	SCRIPT='integrate.sh'
+fi
+
 rpath () { (cd "$1" && pwd) }
 SCRIPT_DIRNAME="$(dirname "$0")"
 SCRIPT_DIR="$(rpath "$SCRIPT_DIRNAME")"
@@ -39,4 +47,4 @@ set -- "$FAULT_INSTALLATION" "$python"
 
 (PATH="$FAULT_TOOL_PATH:$FAULT_LIBEXEC_PATH:$FAULT_ROOT_PATH:$PATH"
 	cd "$FAULT_INSTALLATION_PATH" || exit 13
-	. "$SCRIPT_DIR/integrate.sh")
+	. "$SCRIPT_DIR/$SCRIPT")

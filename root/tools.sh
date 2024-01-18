@@ -8,12 +8,12 @@ f_pyx ()
 
 f_pdctl ()
 {
-	f_pyx system.products.bin.control "$@"
+	f_pyx products-cc "$@"
 }
 
-f_bind ()
+f_image ()
 {
-	f_pyx .module system.machines.python.bind \
-		"-F$FAULT_PYTHON_PATH" "-L$SYSTEM_PRODUCT" \
+	f_pyx python .script \
+		"$FAULT_ROOT_PATH/image-select.py" \
 		"$@"
 }
