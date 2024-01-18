@@ -2,6 +2,7 @@
 # Runtime object patterns.
 # Currently unused as the compiler driver is used for linkage.
 """
+from collections.abc import Sequence, Set, Mapping
 from fault.system import files
 
 def strings(x):
@@ -14,9 +15,9 @@ def prepare(select, pattern, *, adjust=(lambda x: x + '.o')):
 	]
 
 def _search(
-		search_paths:typing.Sequence[str],
-		xset:typing.Set[str]
-	) -> typing.Tuple[typing.Mapping[str, files.Path], typing.Set[str]]:
+		search_paths:Sequence[str],
+		xset:Set[str]
+	) -> tuple[Mapping[str, files.Path], Set[str]]:
 	"""
 	# Query the sequence of search paths for the given set of files.
 
