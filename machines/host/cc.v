@@ -83,6 +83,7 @@
 	: -I[http://if.fault.io/factors/meta.sources#source-paths]
 	: -I[http://if.fault.io/factors/lambda.sources#source-paths]
 	: -isystem [-system-includes]
+	: -F [http://if.fault.io/factors/system.framework-directory#factor-image]
 
 -variants:
 	# Variants
@@ -99,6 +100,7 @@
 	: -DF_FACTOR_NAME=[factor-name]
 	: -DF_PROJECT_PATH=[project-path]
 	: -DF_PROJECT_ID=[project-id quoted]
+	: -DF_PRODUCT_PATH=[product-path quoted]
 
 -positioning-format:
 	# Position formatting.
@@ -140,13 +142,33 @@
 
 # Non-component requirements.
 -linker-requirements:
+	: -L[http://if.fault.io/factors/system.library#image-directory]
 	: -L[-system-library-directories]
 	: -l[-system-libraries]
 	: -L[-library-directories]
 	: -l[-library-names]
 	: -l:[-library-factors]
-	# Non-integrated archives.
 	: -l:[-archive-factors]
+
+-macho-library-factors:
+	: -needed_library [http://if.fault.io/factors/system.library#factor-image]
+
+-macho-framework-directories:
+	: -F [http://if.fault.io/factors/system.framework-directory#factor-image]
+
+-macho-framework-names:
+	: -framework [http://if.fault.io/factors/system.framework-name#factor-image-name]
+
+-macho-requirements:
+	# image-directory is not necessary on macos as ld can link directly against a file
+	: -L[-system-library-directories]
+	: -l[-system-libraries]
+	: -L[-library-directories]
+	: -l[-library-names]
+	: -Xlinker [-macho-library-factors]
+	: -Xlinker [-macho-framework-directories]
+	: -Xlinker [-macho-framework-names]
+	: [-archive-factors]
 
 -compile-header:
 	: [-languages]
@@ -281,17 +303,17 @@
 
 -macho-itype-switch:
 	it-executable:
-		: -Wl,-execute
+		: -execute
 
 	it-library:
-		: -Wl,-dylib
+		: -dylib
 
 	it-extension:
-		: -Wl,-bundle,-undefined,dynamic_lookup
+		: -bundle -undefined dynamic_lookup
 
 -macho-rpath:
 	# Requirements of factor.
-	: -Xlinker -rpath -Xlinker [http://if.fault.io/factors/system.directory#factor-image]
+	: -rpath [http://if.fault.io/factors/system.directory#factor-image]
 
 -apple-ld-macho:
 	: "link-macho-image" - -
@@ -299,10 +321,10 @@
 	: -shared
 
 	: [-llvm-instrumentation]
-	: [-macho-itype-switch]
+	: -Xlinker [-macho-itype-switch]
 	: [-system-context]
-	: [-macho-rpath]
-	: [-linker-requirements]
+	: -Xlinker [-macho-rpath]
+	: [-macho-requirements]
 
 	: -o [factor-image File]
 	: [units File]
