@@ -1,10 +1,16 @@
 /**
-	# Inline functions supporting Python [executable] bindings.
+	// Inline functions supporting Python [executable] bindings.
 */
 
 /**
-	# Create a &fault.system.process.Invocation instance from the system process.
-	# Used by bindings calling explicit entry points.
+	// Signature for interpreter setup functions passed to
+	// the Python coprocess runtime.
+*/
+typedef int (*setup_f)(const char *module, void *context);
+
+/**
+	// Create a &fault.system.process.Invocation instance from the system process.
+	// Used by bindings calling explicit entry points.
 */
 static PyObject *
 _fault_system_invocation(PyObject **process_module)
@@ -22,6 +28,7 @@ _fault_system_invocation(PyObject **process_module)
 		return(NULL);
 	}
 
+	/* Construct Invocation instance using (Python) system provided arguments */
 	inv = PyObject_CallMethod(ic, "system", "");
 	Py_DECREF(ic);
 	if (inv == NULL)

@@ -1,28 +1,88 @@
-#ifdef __APPLE__
-	#include <TargetConditionals.h>
-#endif
+#ifndef FAULT_SUPPRESS_CONTEXT
+	#ifdef __APPLE__
+		#include <TargetConditionals.h>
+	#endif
 
-#include <Python.h>
-#include <marshal.h>
-#include <sysexits.h>
-#include <unistd.h>
-#include <signal.h>
+	#if FAULT_PYTHON_IMPLEMENTATION == 1
+		#include <fault/python/implementation/Python.h>
+		#include <fault/python/implementation/marshal.h>
+	#else
+		#include <Python.h>
+		#include <marshal.h>
+	#endif
 
-#ifdef __FreeBSD__
-	#include <fenv.h>
-#endif
+	#include <unistd.h>
+	#include <signal.h>
 
-#ifndef FAULT_CONTEXT_NAME
-	#define FAULT_CONTEXT_NAME "fault"
-#endif
+	#ifdef __FreeBSD__
+		#include <fenv.h>
+	#endif
 
-#ifdef _FAULT_INVOCATION
+	#ifndef FAULT_CONTEXT_NAME
+		#define FAULT_CONTEXT_NAME "fault"
+	#endif
+
 	#include "invocation.h"
+
+	#if PY_VERSION_HEX < 0x03050000
+		/* Renamed in 3.5+ */
+		#define Py_DecodeLocale _Py_char2wchar
+	#endif
+
+	#include <fault/libc.h>
 #endif
 
-#if PY_VERSION_HEX < 0x03050000
-	/* Renamed in 3.5+ */
-	#define Py_DecodeLocale _Py_char2wchar
+/**
+	// Identify the initialization method to employ.
+
+	// Version 1 being nearly bitrot with the changes to
+	// tool bindings using the &system.root.python generated
+	// header.
+*/
+#ifndef PYTHON_INITIALIZATION_VERSION
+	#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION >= 8
+		/* PyPreConfig and PyConfig */
+		#define PYTHON_INITIALIZATION_VERSION 2
+	#else
+		/* Py_* globals and Py_Initialize */
+		#define PYTHON_INITIALIZATION_VERSION 1
+		#ifndef PYTHON_PATH
+			#error PYTHON_PATH must be supplied with versions before 3.8
+		#endif
+	#endif
+#endif
+
+/**
+	// Defines controlling the exit procedure after encountering errors.
+
+	// For single execution cases, exiting with signal status (panic) is consistent with return.
+	// However, in embedding contexts, it is likely that the controlling environment
+	// needs to continue and may even be able to correct the issue.
+*/
+#ifndef EX_INIT
+	#define EX_INIT 254
+#endif
+
+#ifdef EX_PANIC
+	#define panic() do {signal(SIGUSR2, SIG_DFL); kill(getpid(), SIGUSR2);} while(0)
+#else
+	#define panic() do {} while(0)
+#endif
+
+/**
+	// Rename the main symbol for isolated environments.
+	// `#define main ...` would work as well, but avoid the risk
+	// of unwanted substitutions with an explicit and longer name.
+*/
+#ifndef SYSTEM_ENTRY_POINT
+	#define SYSTEM_ENTRY_POINT main
+#endif
+
+#ifndef DEFAULT_ENTRY_POINT
+	/*
+		// The attribute on TARGET_MODULE to execute.
+	*/
+	#define DEFAULT_ENTRY_POINT "main"
 #endif
 
 #define _PREFIX(X,STRING) X##STRING
@@ -30,26 +90,38 @@
 #define QUOTE(FIELD) #FIELD
 #define log(category, message, ...) \
 	fprintf(stderr, "[!* " category ": " message "]\n", ##__VA_ARGS__)
-#define panic() do {signal(SIGUSR2, SIG_DFL); kill(getpid(), SIGUSR2);} while(0)
 
 #ifndef CONTROL_ACTIVATION_SYMBOL
 	#define CONTROL_ACTIVATION_SYMBOL "activate"
 #endif
 
 #ifndef FACTOR_SYSTEM
-	#define FACTOR_SYSTEM F_SYSTEM_STR
+	#define FACTOR_SYSTEM FV_SYSTEM_STR
 #endif
 
 #ifndef FACTOR_ARCHITECTURE
-	#define FACTOR_ARCHITECTURE F_TARGET_ARCHITECTURE_STR
+	#define FACTOR_ARCHITECTURE FV_ARCHITECTURE_STR
 #endif
 
 #ifndef FACTOR_PYTHON
-	#define FACTOR_PYTHON "cpython" QUOTE(PY_MAJOR_VERSION) QUOTE(PY_MINOR_VERSION)
+	#define FACTOR_PYTHON "cpython" \
+		STRING_FROM_IDENTIFIER(PY_MAJOR_VERSION) \
+		STRING_FROM_IDENTIFIER(PY_MINOR_VERSION)
 #endif
 
-#ifndef FACTOR_INTEGRALS
-	#define FACTOR_INTEGRALS "__f-int__"
+#ifndef ARGUMENTS
+	#define ARGUMENT_COUNT 0
+	#define ARGUMENTS
+#endif
+
+#ifndef EXECUTION_FACTOR_PATH
+	#define EXECUTION_FACTOR_PATH_STR F_PRODUCT_PATH
+	#define EXECUTION_FACTOR_PATH \
+		FACTOR_PATH_STRING(F_PRODUCT_PATH)
+#endif
+
+#ifndef FACTOR_IMAGES
+	#define FACTOR_IMAGES "__f-int__"
 #endif
 
 #ifndef FACTOR_INTENTION
@@ -62,7 +134,7 @@
 
 #define FAULT_CONTEXT_PATH FAULT_PYTHON_PRODUCT "/" FAULT_CONTEXT_NAME
 #define FAULT_SYSTEM_PATH FAULT_CONTEXT_PATH "/system"
-#define PYTHON_INTEGRALS FACTOR_SYSTEM "-" FACTOR_PYTHON
+#define PYTHON_IMAGES FACTOR_SYSTEM "-" FACTOR_PYTHON
 
 #ifndef FAULT_BOOTSTRAP_SOURCE
 	#define FAULT_BOOTSTRAP_SOURCE \
@@ -71,45 +143,9 @@
 
 #ifndef FAULT_BOOTSTRAP_BYTECODE
 	#define FAULT_BOOTSTRAP_BYTECODE \
-		(FAULT_SYSTEM_PATH "/" FACTOR_INTEGRALS "/" PYTHON_INTEGRALS \
+		(FAULT_SYSTEM_PATH "/" FACTOR_IMAGES "/" PYTHON_IMAGES \
 		"/" FAULT_INTENTION "/bootstrap.i")
 #endif
-
-/**
-	// Disable most environment based configuration.
-*/
-static void
-initialize_context(void)
-{
-	wchar_t **wargv;
-
-	/**
-		// The python.org binary conditionally runs this on FreeBSD.
-		// Arguably, it should be a no-op on any platform if it's already off.
-	*/
-	#ifdef __FreeBSD__
-		fedisableexcept(FE_OVERFLOW);
-	#endif
-
-	/**
-		// Presume user site might interfere with the application.
-		// Application can activate it in an initializer if it's desired.
-	*/
-	Py_NoUserSiteDirectory = 1;
-
-	/**
-		// Application Context settings.
-	*/
-	Py_IgnoreEnvironmentFlag = 1;
-	Py_DebugFlag = 0;
-	Py_BytesWarningFlag = 2;
-	Py_IsolatedFlag = 1;
-
-	/**
-		// Avoid implicit side effects; even generally accepted ones.
-	*/
-	Py_DontWriteBytecodeFlag = 1;
-}
 
 /**
 	// Execute the bytecode or source for bootstrapping the factor loader.
@@ -228,71 +264,166 @@ aalloc(int argc, char *argv[])
 
 static wchar_t executable_path[] = LSTR(PYTHON_EXECUTABLE_PATH);
 int
-main(int argc, char *argv[])
+fault_python_main_v1(setup_f cfg, void *ctx, const char *module, const char *attr, int argc, const char *argv[])
 {
 	/**
 		// SIGUSR1 is used to signal initialization or bootstrap exceptions.
 		// SIGUSR2 is used to designate that a python initialization error occurred.
-		// EX_SOFTWARE is returned, but usually unreachable as panic() causes a signal exit.
+		// EX_INIT is returned, but may be unreached if panic() is configured.
 	*/
 
-	int r, nbytes;
+	int r;
 	wchar_t **wargv;
 	PyObject *ob, *mod;
 
-	initialize_context();
-	wargv = aalloc(argc, argv);
-	if (wargv == NULL)
+	#if PYTHON_INITIALIZATION_VERSION == 1
 	{
-		panic();
-		return(EX_SOFTWARE);
-	}
-
-	/*
-		// sys.executable explicitly configured by the binding.
-		// Normally this should point to the Python executable within the installation prefix.
-	*/
-	Py_SetProgramName(executable_path);
-
-	#ifdef PYTHON_PATH
-		/*
-			// Hardcoded at compile time. Relocating/removing the dependency requires
-			// the executable to be rebuilt.
+		/**
+			// The python.org binary conditionally runs this on FreeBSD.
+			// Arguably, it should be a no-op on any platform if it's already off.
 		*/
-		Py_SetPath(LSTR(PYTHON_PATH_STR));
-	#endif
+		#ifdef __FreeBSD__
+			fedisableexcept(FE_OVERFLOW);
+		#endif
 
-	Py_Initialize();
-	if (!Py_IsInitialized())
-	{
-		log("ERROR", "could not initialize python");
-		panic();
-		return(EX_SOFTWARE);
-	}
+		Py_NoUserSiteDirectory = 1;
+		Py_IgnoreEnvironmentFlag = 1;
+		Py_DebugFlag = 0;
+		Py_BytesWarningFlag = 2;
+		Py_IsolatedFlag = 1;
+		Py_DontWriteBytecodeFlag = 1;
 
-	PySys_SetArgvEx(argc+ARGUMENT_COUNT, wargv, 0);
-
-	#if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 7) || PY_MAJOR_VERSION < 3
-	{
-		PyEval_InitThreads();
-		if (!PyEval_ThreadsInitialized())
+		wargv = aalloc(argc, argv);
+		if (wargv == NULL)
 		{
-			log("ERROR", "could not initialize threading");
 			panic();
-			return(EX_SOFTWARE);
+			return(EX_INIT);
+		}
+
+		/*
+			// sys.executable explicitly configured by the binding.
+			// Normally this should point to the Python executable within the installation prefix.
+		*/
+		Py_SetProgramName(executable_path);
+
+		#ifdef PYTHON_PATH
+			/*
+				// Hardcoded at compile time. Relocating/removing the dependency requires
+				// the executable to be rebuilt.
+			*/
+			Py_SetPath(LSTR(PYTHON_PATH_STR));
+		#endif
+
+		Py_Initialize();
+		if (!Py_IsInitialized())
+		{
+			log("ERROR", "could not initialize python runtime");
+			panic();
+			return(EX_INIT);
+		}
+
+		PySys_SetArgvEx(argc + ARGUMENT_COUNT, wargv, 0);
+
+		#if (PY_MAJOR_VERSION == 3 && PY_MINOR_VERSION < 7) || PY_MAJOR_VERSION < 3
+		{
+			PyEval_InitThreads();
+			if (!PyEval_ThreadsInitialized())
+			{
+				log("ERROR", "could not initialize threading");
+				panic();
+				return(EX_INIT);
+			}
+		}
+		#endif
+
+		/* Check the success of the prior Py_SetPath */
+		ob = PySys_GetObject("path");
+		if (ob == NULL)
+		{
+			log("ERROR", "could not initialize execution context");
+			panic();
+			return(EX_INIT);
 		}
 	}
+	#elif PYTHON_INITIALIZATION_VERSION == 2
+	{
+		PyStatus status;
+		PyPreConfig precfg;
+		PyConfig cfg;
+
+		wargv = aalloc(argc, argv);
+		if (wargv == NULL)
+		{
+			panic();
+			return(EX_INIT);
+		}
+
+		PyPreConfig_InitIsolatedConfig(&precfg);
+		precfg.utf8_mode = 1;
+		precfg.parse_argv = 0;
+
+		status = Py_PreInitialize(&precfg);
+		if (PyStatus_IsError(status))
+			goto initerror;
+
+		PyConfig_InitIsolatedConfig(&cfg);
+
+		cfg.pathconfig_warnings = 0;
+		cfg.use_environment = 0;
+		cfg.bytes_warning = 0;
+		cfg.configure_c_stdio = 1;
+		cfg.install_signal_handlers = 0;
+		cfg.interactive = 0;
+		cfg.isolated = 1;
+		cfg.optimization_level = 2;
+		cfg.site_import = 0;
+		cfg.user_site_directory = 0;
+		cfg.write_bytecode = 0;
+		cfg.quiet = 1;
+		cfg.module_search_paths_set = 0;
+
+		#ifdef PYTHON_EXECUTABLE_PATH
+			status = PyConfig_SetString(&cfg, &cfg.base_executable, LSTR(PYTHON_EXECUTABLE_PATH));
+			if (PyStatus_IsError(status))
+				goto initerror;
+		#endif
+
+		status = PyConfig_SetArgv(&cfg, argc + ARGUMENT_COUNT, wargv);
+		if (PyStatus_IsError(status))
+			goto initerror;
+
+		status = Py_InitializeFromConfig(&cfg);
+		if (PyStatus_IsError(status))
+			goto initerror;
+
+		goto finish;
+
+		initerror:
+		{
+			log("ERROR", "could not initialize execution context");
+			fprintf(stderr, "%s: %s\n", status.func ? status.func : "", status.err_msg);
+			panic();
+			PyConfig_Clear(&cfg);
+			fflush(stderr);
+			return(EX_INIT);
+		}
+
+		finish:
+		{
+			PyConfig_Clear(&cfg);
+		}
+	}
+	#else
+		#error unrecognized initialization version
 	#endif
 
-	ob = PySys_GetObject("path");
-	if (ob == NULL)
-	{
-		log("ERROR", "could not initialize execution context");
-		panic();
-		return(EX_SOFTWARE);
-	}
+	/*
+		// Inherit compile time default if unspecified.
+	*/
+	if (module == NULL)
+		module = TARGET_MODULE;
 
-	#ifdef _FAULT_INVOCATION
+	#ifndef PYTHON_MAIN_MODULE
 	{
 		PyObject *boots, *factors;
 
@@ -303,27 +434,27 @@ main(int argc, char *argv[])
 			PyErr_Print();
 			fflush(stderr);
 			panic();
-			return(EX_SOFTWARE);
+			return(EX_INIT);
 		}
 
 		/* Product paths given as varargs. */
 		factors = PyObject_CallMethod(boots, "integrate",
 			#define FACTOR_PATH_STRING(x) "s"
 				"ssssssss"
-				FACTOR_PATH,
+				EXECUTION_FACTOR_PATH,
 			#undef FACTOR_PATH_STRING
 
 			FAULT_PYTHON_PRODUCT,
 			FAULT_CONTEXT_NAME,
 			FAULT_INTENTION,
-			FACTOR_INTEGRALS,
+			FACTOR_IMAGES,
 			FACTOR_SYSTEM,
 			FACTOR_PYTHON,
 			FACTOR_ARCHITECTURE,
 			FACTOR_INTENTION
 
 			#define FACTOR_PATH_STRING(x) , x
-				FACTOR_PATH
+				EXECUTION_FACTOR_PATH
 			#undef FACTOR_PATH_STRING
 		);
 		Py_DECREF(boots);
@@ -334,20 +465,28 @@ main(int argc, char *argv[])
 			PyErr_Print();
 			fflush(stderr);
 			panic();
-			return(EX_SOFTWARE);
+			return(EX_INIT);
 		}
 
 		Py_DECREF(factors);
 	}
 	#endif
 
-	mod = PyImport_ImportModule(TARGET_MODULE);
-	if (mod == NULL)
+	if (cfg != NULL && cfg(module, ctx) < 0)
 	{
-		log("ERROR", "could not import application module: " TARGET_MODULE);
+		log("ERROR", "could not initialize application context");
 		PyErr_Print();
 		panic();
-		return(EX_SOFTWARE);
+		return(EX_INIT);
+	}
+
+	mod = PyImport_ImportModule(module);
+	if (mod == NULL)
+	{
+		log("ERROR", "could not import application module: %s", module);
+		PyErr_Print();
+		panic();
+		return(EX_INIT);
 	}
 	else
 		Py_DECREF(mod);
@@ -364,17 +503,17 @@ main(int argc, char *argv[])
 				PyErr_Print(); \
 				fflush(stderr); \
 				panic(); \
-				return(EX_SOFTWARE); \
+				return(EX_INIT); \
 			} \
 			init_exit_object = PyObject_CallMethod(control_module, \
-				CONTROL_ACTIVATION_SYMBOL, "ss", TARGET_MODULE, DEFAULT_ENTRY_POINT); \
+				CONTROL_ACTIVATION_SYMBOL, "ss", module, DEFAULT_ENTRY_POINT); \
 			Py_DECREF(control_module); \
 			if (init_exit_object == NULL) { \
 				log("ERROR", "control module (%s) activation raised exception", x); \
 				PyErr_Print(); \
 				fflush(stderr); \
 				panic(); \
-				return(EX_SOFTWARE); \
+				return(EX_INIT); \
 			} \
 			else \
 				Py_DECREF(init_exit_object);
@@ -390,18 +529,18 @@ main(int argc, char *argv[])
 		// is created and passed to main.
 	*/
 	{
-		#ifdef _FAULT_INVOCATION
+		#ifndef PYTHON_MAIN_MODULE
 			PyObject *_f_process = NULL;
 			PyObject *_f_sysinv = NULL;
 			PyObject *_f_main = NULL;
 
-			_f_main = PyObject_GetAttrString(mod, DEFAULT_ENTRY_POINT);
+			_f_main = PyObject_GetAttrString(mod, attr);
 			if (_f_main == NULL)
 			{
 				log("ERROR", "could not get entry point from "
-					"application module: " DEFAULT_ENTRY_POINT);
+					"application module: %s", attr);
 				panic();
-				return(EX_SOFTWARE);
+				return(EX_INIT);
 			}
 			_f_sysinv = _fault_system_invocation(&_f_process);
 
@@ -409,7 +548,7 @@ main(int argc, char *argv[])
 			{
 				log("ERROR", "could not create Invocation instance");
 				panic();
-				return(EX_SOFTWARE);
+				return(EX_INIT);
 			}
 			ob = PyObject_CallMethod(_f_process, "control", "OO", _f_main, _f_sysinv);
 
@@ -417,11 +556,11 @@ main(int argc, char *argv[])
 			Py_DECREF(_f_main);
 			Py_DECREF(_f_sysinv);
 		#else
-			ob = PyObject_CallMethod(mod, DEFAULT_ENTRY_POINT, "");
+			ob = PyObject_CallMethod(mod, attr, "");
 		#endif
 	}
 
-	r = EX_SOFTWARE;
+	r = EX_INIT;
 
 	if (ob != NULL)
 	{
@@ -432,7 +571,7 @@ main(int argc, char *argv[])
 
 		if (ob == Py_None)
 		{
-			r = EX_OK;
+			r = 0;
 		}
 		else if (PyLong_Check(ob))
 		{
@@ -444,6 +583,7 @@ main(int argc, char *argv[])
 	}
 	else
 	{
+		/* Capture exit code from raise SystemExit */
 		if (PyErr_ExceptionMatches(PyExc_SystemExit))
 		{
 			PyObject *exc, *val, *tb;
@@ -471,10 +611,15 @@ main(int argc, char *argv[])
 			log("ERROR", "application raised exception");
 			PyErr_Print();
 			fflush(stderr);
-			r = EX_SOFTWARE;
 		}
 	}
 
-	Py_Exit(r);
+	Py_Finalize();
 	return(r);
+}
+
+int
+SYSTEM_ENTRY_POINT(int argc, char *argv[])
+{
+	return(fault_python_main_v1(NULL, NULL, TARGET_MODULE, DEFAULT_ENTRY_POINT, argc, argv));
 }
