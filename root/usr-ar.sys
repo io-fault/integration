@@ -1,0 +1,3 @@
+#!/usr/bin/env fault-tool system-execute
+/usr/bin/ar
+	-
