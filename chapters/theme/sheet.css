@@ -3,6 +3,10 @@
 */
 @charset "utf-8";
 
+:root {
+	--directory-key-height: 26px;
+}
+
 p {
 	line-height: 1.12em;
 }
@@ -167,7 +171,7 @@ section > p {
 
 p > code {
 	max-height: 1.2em; /* Limit effect box on paragraphs. */
-	background-color: rgba(0,0,0,0.2);
+	background-color: var(--box);
 
 	border: 1px solid rgba(0,0,0,1);
 	border-width: 2px;
@@ -820,11 +824,11 @@ dl a.dkn {
 	border-width: 1px;
 	border-style: solid;
 	border-color: black;
-	background-color: #222222;
+	background-color: var(--box);
 
-	width: 26px;
-	height: 26px;
-	line-height: 26px;
+	width: var(--directory-key-height);
+	height: var(--directory-key-height);
+	line-height: var(--directory-key-height);
 
 	vertical-align: middle;
 	text-align: center;
@@ -833,6 +837,10 @@ dl a.dkn {
 	max-height: 2em;
 	min-width: 16px;
 	min-height: 16px;
+
+	/* Withdraw */
+	border-style: none;
+	background-color: inherit;
 }
 
 dl a.dkn img.icon {
@@ -847,9 +855,11 @@ dl a.dkn:empty:before {
 dl dt > a.dkn {
 }
 
-dt > span.directory-key {
-	font-weight: 400;
+dt > .directory-key {
+	font-weight: 500;
 	margin-left: 0.2em;
+
+	vertical-align: middle;
 }
 
 /* Method, Function, Procedure Parameter Controls */
@@ -863,7 +873,6 @@ dl > div.parameter {
 	padding-top: 2px;
 }
 dl > div.parameter > dd {
-	font-size: 90%;
 }
 
 dl > div.parameter > dt > a.dkn {
@@ -1002,9 +1011,9 @@ time.stamp {
 	font-size: 90%;
 	font-family: monospace;
 	border-width: 1px;
-	border-color: gray;
+	border-color: var(--box-border);
 	border-style: solid;
-	background-color: black;
+	background-color: var(--box);
 	padding: 2px;
 }
 
@@ -1018,17 +1027,6 @@ time.stamp[precision="month"]:before,
 time.stamp[precision="day"]:before {
 	content: var(--calendar-icon);
 	padding-right: 2px;
-}
-
-dl dt > time.stamp {
-}
-
-dl dt > time.stamp[positional-relation="-1"] {
-	margin-right: 0.5em;
-}
-
-dl dt > time.stamp[positional-relation="+1"] {
-	margin-left: 0.5em;
 }
 
 /* Visually break the main element without exiting. */
@@ -1077,4 +1075,72 @@ main > div.sheet-break > div.sheet-continue {
 		4px 0px 12px 4px rgba(0, 0, 0, 0.9),
 		4px 0px 12px 4px rgba(0, 0, 0, 0.9);
 	clip-path: inset(-16px -24px 0px -12px);
+}
+
+/*
+	// Time Context Properties
+*/
+
+div.status {
+	display: flex;
+	overflow: hidden;
+	position: relative;
+	flex-direction: row;
+	flex-wrap: nowrap !important;
+	align-items: center;
+	align-content: center;
+	white-space: nowrap;
+	margin-left: -2.4em;
+}
+
+div.status > * {
+	margin: 0;
+}
+
+div.status > time.stamp {
+	--column: 'time-context';
+	padding: 0px;
+	padding-left: 1px;
+	padding-right: 1px;
+	height: var(--directory-key-height);
+
+	line-height: var(--directory-key-height);
+	vertical-align: middle;
+	text-align: center;
+
+	border-left-width: 0;
+	padding-left: 4px;
+
+	filter: brightness(0.7) grayscale(0.5);
+
+	/* Withdraw */
+	border-style: none;
+	background-color: inherit;
+}
+
+div.status > time.stamp[positional-relation="-1"] {
+	margin-right: 0.5em;
+}
+
+div.status > time.stamp[positional-relation="+1"] {
+	margin-left: 0.5em;
+}
+
+/*
+	// Site sections for link indexes.
+*/
+
+div.status > code.resource-indicator {
+	--column: 'uri-text';
+
+	padding-left: 1em;
+	max-width: 100%;
+	white-space: nowrap;
+	text-overflow: clip;
+	overflow: hidden;
+
+	/* Withdraw emphasis to avoid distracting from the title. */
+	filter: brightness(0.5);
+	border-width: 0px;
+	background-color: inherit;
 }

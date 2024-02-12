@@ -475,11 +475,18 @@ class Render(comethod.object):
 			('class', "text.sequence")
 		)
 
-	def dl_item_anchor(self, path):
-		return self.element('a', (),
-			('class', 'dkn'),
-			('href', "#" + self.slug(".".join(path))),
-		)
+	def dl_item_anchor(self, path, icon=None):
+		if icon:
+			return self.element('a',
+				self.element('img', (), ('class', 'icon'), src=icon),
+				('class', 'dkn'),
+				('href', "#" + self.slug(".".join(path))),
+			)
+		else:
+			return self.element('a', (),
+				('class', 'dkn'),
+				('href', "#" + self.slug(".".join(path))),
+			)
 
 	def dl_key_identifier(self, kpg):
 		for typ, data in kpg:
@@ -496,6 +503,7 @@ class Render(comethod.object):
 				yield data
 
 	def dl_item(self, resolver, item, attr, sattr, prefix):
+		ktag = 'span' # <dt><{ktag}>...</{ktag}></dt>
 		item_properties = {}
 		k, v = item
 		kp = ipara(k)
@@ -512,17 +520,23 @@ class Render(comethod.object):
 				solecontent = 'syntax'
 
 		try:
-			pset = dict(setdirectory.select(v[1]))
+			pset = setdirectory.select(v[1])
 		except Exception:
-			pset = None
+			pset = ()
 
 		# Append date given a time-context property.
-		dated = ()
+		kdate = ()
+		kref = ()
+		picon = None
+		pref = None
 		pdate = None
 		if pset:
+			pset = dict(pset)
 			# First element was a property set.
 			del v[1][0:1]
 			item_properties.update(pset.items())
+
+			picon = pset.get(('icon',)) or None
 
 			pdate = pset.get(('time-context',)) or None
 			if pdate:
@@ -531,12 +545,19 @@ class Render(comethod.object):
 				else:
 					precision = 'day'
 
-				dated = self.element('time',
+				kdate = self.element('time',
 					self.text(pdate),
 					('datetime', pdate),
 					('class', 'stamp'),
-					('positional-relation', '-1'),
 					('precision', precision),
+				)
+
+			pref = pset.get(('reference',)) or None
+			if pref:
+				ktag = 'a'
+				kref = self.element('code',
+					self.text(pref),
+					('class', 'resource-indicator'),
 				)
 
 		documented = True
@@ -561,7 +582,7 @@ class Render(comethod.object):
 				# Check for not-documented literal.
 				try:
 					vp = ipara(v[1][0])
-					if vp[0].type.endswith('/ctl/absent'):
+					if vp[0].type.endswith('/control/absent'):
 						documented = False
 				except:
 					pass
@@ -574,18 +595,27 @@ class Render(comethod.object):
 			itertools.chain(
 				self.element('dt',
 					itertools.chain(
-						self.dl_item_anchor(attr['absolute']),
-						dated,
+						self.dl_item_anchor(attr['absolute'], picon),
 						# Primary directory key content.
-						self.element('span',
+						self.element(ktag,
 							self.paragraph_content(resolver, k[1], attr),
 							('class', 'directory-key'),
+							('href', pref),
 						),
 						typannotation,
 					),
 				),
 				self.element('dd',
-					self.switch(resolver, v[1], attr),
+					itertools.chain(
+						self.element('div',
+							itertools.chain(
+								kdate,
+								kref,
+							),
+							('class', 'status'),
+						),
+						self.switch(resolver, v[1], attr)
+					),
 					('sole', solecontent),
 				),
 			),

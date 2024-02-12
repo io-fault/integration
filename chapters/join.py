@@ -173,15 +173,15 @@ def documented_field_item(cast, resolve, context, element, identifier, documenta
 		('value', v_content, {}),
 	], {'identifier': identifier})
 
-	typ_properties = map(property_item, describe_type(resolve, element))
+	typp = map(property_item, describe_type(resolve, element))
 
 	# Merge properties of the parameter.
 	props = dict(setdirectory.select(documentation))
 	if not props:
-		v_content.append(('set', list(typ_properties), {}))
+		v_content.append(('set', list(typp), {}))
 	else:
 		# Prefix onto existing set.
-		documentation[0][1][:0] = typ_properties
+		documentation[0][1][:0] = typp
 
 	# Copy the documentation from the Parameters section's directory item.
 	v_content.extend(documentation)
@@ -201,12 +201,12 @@ def undocumented_field_item(cast, resolve, context, element, identifier, documen
 		('value', v_content, {}),
 	], {'identifier': identifier})
 
-	propset = list(map(property_item, describe_type(resolve, element)))
-	v_content.append(('set', propset, {},))
+	typp = list(map(property_item, describe_type(resolve, element)))
+	v_content.append(('set', typp, {},))
 	v_content.append((
 		'paragraph',
 		Paragraph.of(
-			Fragment(('literal/grave-accent/ctl/absent', "Undocumented")),
+			Fragment(('literal/grave-accent/control/absent', "Undocumented")),
 			Fragment(('text/normal', "."))
 		),
 		{}
@@ -261,6 +261,7 @@ class Text(comethod.object):
 
 		# Element properties.
 		ctl.append("\t/element/\n")
+		ctl.append("\t\t- (control)`property-set`\n")
 		try:
 			area = factorelement[2]['area']
 		except LookupError:
@@ -301,6 +302,7 @@ class Text(comethod.object):
 		resolve = self.resolution.partial(path)
 		while element[1]:
 			lines = ["! INHERIT:\n"]
+			lines.append("\t- (control)`property-set`\n")
 			typ = element[1][0]
 
 			try:
@@ -453,8 +455,7 @@ class Text(comethod.object):
 				if n and n[0] in {'parameter'}:
 					parameters.append((n[2]['identifier'], n))
 		except:
-			# Not a parameterized element.
-			pass
+			del parameters[:]
 
 		# Structure documentation and identify documented parameters.
 		documented = set()
@@ -465,6 +466,7 @@ class Text(comethod.object):
 
 			# Join parameters.
 			pd, docparams = section_items(doc, 'Parameters')
+			# Clear and rebuild with joined data.
 			pi = pd[1]
 			del pi[:]
 			for nid, p_documented, i in self.r_parameters(element, path, parameters, docparams):
@@ -552,10 +554,13 @@ def relation(origin, target):
 	# Identify the relation of the &target project to &origin project.
 	"""
 	if target.factor == origin.factor:
+		# Same factor project.
 		return 'project-local'
 	elif target.factor.container == origin.factor.container:
+		# Same factor context.
 		return 'context-local'
 	else:
+		# External. Use independent identifier.
 		return 'remote'
 
 def dr_absolute_path(requirements, context, project, reference):
@@ -673,8 +678,7 @@ def index(factor, deque=collections.deque, none={}):
 
 def match(index, path, subpath):
 	"""
-	# Check for the presence of &subpath in &path in &index and return
-	# the level of consistency it has at that location.
+	# Check for the presence of &subpath in the element identified by &path in &index.
 
 	# [ Returns ]
 	# Returns the number of leading &subpath items that matched at that position.
@@ -748,25 +752,33 @@ class Resolution(comethod.object):
 	# Anything that is guaranteed to not contain references.
 	@comethod('syntax')
 	@comethod('line')
-	def transparent(self, context, path, element, *suffix):
+	def reflect(self, context, path, element, *suffix):
+		"""
+		# Trap for elements where descent should not occur.
+		"""
 		return element[1]
 
 	def switch(self, context, path, element, *suffix):
 		subelements = element[1]
 
 		for i, x in zip(range(len(subelements)), subelements):
+			# Continue path when identifier is present.
 			xid = x[2].get('identifier') or None
 			if xid is not None:
 				p = path + (xid,)
+				subcontext = element
 			else:
 				p = path
+				subcontext = context
 
 			try:
+				# Push context and overwrite elements.
 				method = self.comethod(x[0], *suffix)
-				subelements[i] = (x[0], method(element, p, x)) + tuple(x[2:])
+				# Reconstruct element with contents.
+				subelements[i] = (x[0], method(subcontext, p, x)) + tuple(x[2:])
 			except comethod.MethodNotFound:
-				# Not being re-written.
-				self.switch(context, p, x, *suffix)
+				# Not directly rewritten.
+				self.switch(subcontext, p, x, *suffix)
 
 	def rewrite(self, context, root):
 		"""
@@ -775,7 +787,7 @@ class Resolution(comethod.object):
 		# /context/
 			# The identifier path of the documented element.
 		# /root/
-			# The documentation's element tree.
+			# The documentation's chapter.
 		"""
 		self.switch(context, context, root)
 		return root
@@ -802,14 +814,18 @@ class Resolution(comethod.object):
 		elif leading == 2:
 			# Corpus Relative; root context.
 			depth += 1
-			title, link, name_type, local = dr_context_path(self.context, self.project, reference.lstrip('.'))
+			title, link, name_type, local = dr_context_path(
+				self.context, self.project, reference.lstrip('.')
+			)
 		elif leading == 1:
 			# Project Relative.
 			title, link = dr_project_path(self.project, reference.lstrip('.'))
 			local = 'project-local'
 		else:
 			if reference[:1] == '@':
-				title, link, name_type, local = dr_absolute_path(self.requirements, self.context, self.project, reference[1:])
+				title, link, name_type, local = dr_absolute_path(
+					self.requirements, self.context, self.project, reference[1:]
+				)
 			else:
 				# Element Context Relative.
 				local = 'factor-local'
@@ -825,7 +841,7 @@ class Resolution(comethod.object):
 						# The targeted element is potentially from a factor.
 						target_path = target_element[2].get('path', [])
 						target_relative = target_element[2].get('relative', 0)
-						target_element = rpath[mdepth:]
+						target_element_path = rpath[mdepth:]
 
 						if target_relative:
 							factor = ((self.project.factor // self.factor) ** target_relative) + target_path
@@ -833,8 +849,10 @@ class Resolution(comethod.object):
 							factor = self.factor.__class__.from_sequence(target_path)
 
 						target_factor = list(factor.iterpoints())
-						redirect = '.'.join(target_factor + target_element)
-						absdata = dr_absolute_path(self.requirements, self.context, self.project, redirect)
+						redirect = '.'.join(target_factor + target_element_path)
+						absdata = dr_absolute_path(
+							self.requirements, self.context, self.project, redirect
+						)
 						title, link, name_type, local = absdata
 					else:
 						name_type = target_element[0]

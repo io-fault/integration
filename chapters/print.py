@@ -499,6 +499,8 @@ def web(argv):
 			except:
 				print('->', str(path), file=sys.stderr)
 				traceback.print_exc()
+				import pdb
+				pdb.set_trace()
 	else:
 		sys.stderr.write(f"ERROR: unknown job {job!r}; only 'factors', 'icons', 'page'.\n")
 		return 1
@@ -506,12 +508,18 @@ def web(argv):
 def main(inv:process.Invocation) -> process.Exit:
 	ptype = inv.argv[0]
 
-	if ptype == 'web':
-		code = web(inv.argv[1:])
-	elif ptype == 'manual':
-		code = manual(inv.argv[1:])
-	else:
-		sys.stderr.write("ERROR: only 'web' and 'manual' types are supported.\n")
+	try:
+		if ptype == 'web':
+			code = web(inv.argv[1:])
+		elif ptype == 'manual':
+			code = manual(inv.argv[1:])
+		else:
+			sys.stderr.write("ERROR: only 'web' and 'manual' types are supported.\n")
+			code = 1
+	except Exception as err:
+		import pdb, traceback
+		traceback.print_exc()
+		pdb.post_mortem(err.__traceback__)
 		code = 1
 
 	return inv.exit(code or 0)

@@ -28,27 +28,31 @@ def interpret_set_items(items):
 
 def select(elements, *, index=0):
 	"""
-	# Given the contents of an element, extract the properties from the set
-	# located at the designated &index. Normally, properties are expected to be
-	# presented at the beginning of some content and, therefore, &index defaults to `1`.
+	# The interpreted property set items in &elements at &index.
 
-	# If the element at &index is not a `'set'`, or &elements is empty,
-	# an empty iterator will be returned.
-
-	# Error conditions produced during the production of a property set indicate
-	# that it is not a property set at all and will cause an empty list to be returned.
+	# [ Returns ]
+	# An iterable of key-value pairs forming the property set
+	# or an empty iterable if not a property set or no properties
+	# were specified.
 	"""
-	if elements and elements[index][0] == 'set':
-		typ, items, attr = elements[index]
-		if typ == 'set':
-			try:
-				return interpret_set_items(items)
-			except (TypeError, ValueError):
-				# Probably not a property set.
-				pass
+	if len(elements) <= index:
+		return ()
 
-	# Errors, empty list, and non-set cases.
-	return iter(())
+	se = elements[index]
+	if not se[0] == 'set':
+		return ()
+
+	items = iter(interpret_set_items(se[1]))
+
+	# Iterate once to check for (control)`property-set` declaration.
+	for kv in items:
+		if kv != (('control',), 'property-set'):
+			return ()
+		break
+	else:
+		return ()
+
+	return items
 
 def formulate_fragment(item, *, isinstance=isinstance) -> types.Fragment:
 	"""
