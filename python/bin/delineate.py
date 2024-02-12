@@ -315,10 +315,16 @@ class Switch(comethod.object):
 			('documented', docarea),
 		]
 
-	def param_attributes(self, fragment):
+	def parameter_attributes(self, fragment):
 		return [
 			('identifier', fragment.identifier),
 			('area', fragment.area),
+		]
+
+	def option_attributes(self, fragment, default):
+		return self.parameter_attributes(fragment) + [
+			('default', repr(default)),
+			('optional', True),
 		]
 
 	def annotation_type(self, fragment, node):
@@ -405,42 +411,47 @@ class Switch(comethod.object):
 		args = fragment.node.args
 		required_count = len(args.args) - len(args.defaults)
 
+		# Required.
 		for a in args.args[0:required_count]:
 			f = fragment.subnode(a, a.arg)
 			yield from self.element('parameter',
 				self.annotate(f),
-				*self.param_attributes(f),
+				*self.parameter_attributes(f),
 			)
 
+		# Vector.
 		if args.vararg:
 			f = fragment.subnode(args.vararg, args.vararg.arg)
 
-			yield from self.element('vector',
+			yield from self.element('parameter',
 				self.annotate(f),
-				*self.param_attributes(fragment.subnode(args.vararg, args.vararg.arg)),
+				*self.parameter_attributes(fragment.subnode(args.vararg, args.vararg.arg)),
 				syntax="*"+args.vararg.arg
 			)
 
+		# Optional. Positional or Keyword.
 		for kw, kwd in zip(args.args[required_count:], args.defaults):
 			f = fragment.subnode(kw, kw.arg)
-			yield from self.element('option',
+			yield from self.element('parameter',
 				self.annotate(f),
-				*self.param_attributes(f),
+				*self.option_attributes(f, kwd),
 			)
 
+		# Optional. Keyword only.
 		for kw, kwd in zip(args.kwonlyargs, args.kw_defaults):
 			f = fragment.subnode(kw, kw.arg)
-			yield from self.element('option',
+			yield from self.element('parameter',
 				self.annotate(f),
-				*self.param_attributes(f),
+				*self.option_attributes(f, kwd),
 			)
 
+		# Mapping.
 		if args.kwarg:
 			f = fragment.subnode(args.kwarg, args.kwarg.arg)
 
-			yield from self.element('map',
+			yield from self.element('parameter',
 				self.annotate(f),
-				*self.param_attributes(f),
+				*self.parameter_attributes(f),
 				syntax="**"+args.kwarg.arg
 			)
 
