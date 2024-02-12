@@ -12,6 +12,7 @@ python.sh
 	echo "#!/bin/sh"
 	echo "exec '$PYTHON'" "'$PYX'" '"$@"'
 ) >"$FAULT_LIBEXEC_PATH/fault-dispatch"
+chmod a+x "$FAULT_LIBEXEC_PATH/fault-dispatch"
 
 # Create product index.
 f_pdctl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
