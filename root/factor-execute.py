@@ -1,9 +1,5 @@
 """
 # Python factor execution script used in the absence of system bindings.
-
-# Normally, this is only executed by &.setup, but in cases where &..python.bin.bind
-# cannot create usable executables with the system's compiler driver, shell scripts
-# will be created instead invoking this script with the necessary environment variables.
 """
 import sys
 import os

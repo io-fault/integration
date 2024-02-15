@@ -11,8 +11,8 @@ from fault.system import process
 from fault.system import files
 
 def mkbytecode(intention, target, unit, language, dialect, optimize, parameters=None):
-	from .. import module
-	from .. import bytecode
+	from . import module
+	from . import bytecode
 
 	if not parameters:
 		parameters = {}
@@ -31,7 +31,7 @@ def mkbytecode(intention, target, unit, language, dialect, optimize, parameters=
 	bytecode.store('never', target, co, -1, None)
 
 def mkast(intention, target, origin, language, dialect, optimize, parameters=None):
-	from .. import module
+	from . import module
 	constants = []
 
 	if not parameters:
@@ -41,7 +41,7 @@ def mkast(intention, target, origin, language, dialect, optimize, parameters=Non
 
 	encoding = parameters.pop('encoding', 'utf-8')
 	if intention == 'coverage':
-		from .. import instrumentation
+		from . import instrumentation
 		compiler = instrumentation.compile
 		optimize = 0
 	else:

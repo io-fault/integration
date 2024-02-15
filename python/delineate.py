@@ -15,8 +15,8 @@ from fault.syntax import types as syntax
 from fault.context import comethod
 from fault.context.tools import cachedcalls
 
-from .. import source
-from .. import comments
+from . import source
+from . import comments
 
 Assignments = (ast.Assign, ast.AnnAssign)
 

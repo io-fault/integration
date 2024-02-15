@@ -283,8 +283,8 @@ def meter(context):
 		fx('intention-error', 'python', '.string', 'exit(1)'),
 		fx('measure-source', 'python', 'system.metrics.measure', 'source'),
 		fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
-		fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
-		fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
+		fx('identify-source', 'python', 'system.factors.identify', 'source', '-'),
+		fx('form-identity', 'python', 'system.factors.identify', 'index'),
 
 		mksole('adapters', vtype,
 			constant('-stdio',

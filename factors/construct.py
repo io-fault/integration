@@ -6,9 +6,9 @@ import sys
 import itertools
 import collections
 
-from .. import core
-from .. import cc
-from .. import cache
+from . import core
+from . import cc
+from . import cache
 
 from fault.context import tools
 from fault.system import process

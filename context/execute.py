@@ -8,8 +8,8 @@ from fault.system import process
 index = {
 	'archive-delineated': context_name + '.machines.bin.delineated',
 	'text-cc': context_name + '.chapters.compile',
-	'python-cc': context_name + '.python.bin.compile',
-	'factors-cc': context_name + '.factors.bin.construct',
+	'python-cc': context_name + '.python.compile',
+	'factors-cc': context_name + '.factors.construct',
 	'products-cc': context_name + '.products.control',
 	'pdctl': context_name + '.products.control',
 	'fictl': context_name + '.products.control',
