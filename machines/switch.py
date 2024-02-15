@@ -12,7 +12,7 @@ from fault.vector import recognition
 from fault.project.system import Context
 from fault.system.execution import Platform, serialize_sx_plan
 
-from .. import query
+from . import query
 
 restricted = {
 	# Common intentions.
