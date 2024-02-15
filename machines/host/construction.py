@@ -279,11 +279,10 @@ def form_meter_type():
 	return common
 
 def meter(context):
-	mfactors = str(query.ipath/'development')
 	return [
 		fx('intention-error', 'python', '.string', 'exit(1)'),
-		fx('measure-source', 'python', '-L'+mfactors, 'meta.metrics.measure', 'source'),
-		fx('aggregate-metrics', 'python', '-L'+mfactors, 'meta.metrics.aggregate'),
+		fx('measure-source', 'python', 'system.metrics.measure', 'source'),
+		fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
 		fx('identify-source', 'python', 'system.factors.bin.identify', 'source', '-'),
 		fx('form-identity', 'python', 'system.factors.bin.identify', 'index'),
 
@@ -342,7 +341,6 @@ def form_meta_type():
 	return common
 
 def meta(context):
-	mfactors = str(query.ipath/'development')
 	return text(context) + [
 		mksole('projections', vtype,
 			constant('host', 'http://if.fault.io/factors/system') + \

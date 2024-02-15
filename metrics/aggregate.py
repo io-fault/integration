@@ -9,7 +9,7 @@ import json
 from fault.system import process
 from fault.system import files
 
-from .. import calculations
+from . import calculations
 
 # Fate records.
 testforms = [
