@@ -4,6 +4,7 @@
 import sys
 import os
 import importlib
+import contextlib
 
 from fault.vector import recognition
 from fault.system import files
@@ -14,7 +15,25 @@ from . import __name__ as project_package_name
 from . import context
 
 restricted = {
-	'-c': ('field-replace', ".build-cache", 'persistent-cache'),
+	'-c': ('field-replace', 'transient', 'cache-type'),
+
+	'-I': ('set-add', 'identity', 'intentions'),
+	'-O': ('set-add', 'optimal', 'intentions'),
+	'-o': ('set-add', 'portable', 'intentions'),
+	'-g': ('set-add', 'debug', 'intentions'),
+
+	'-y': ('set-add', 'auxilary', 'intentions'),
+	'-Y': ('set-add', 'capture', 'intentions'),
+
+	'--profile': ('set-add', 'profile', 'intentions'),
+	'--coverage': ('set-add', 'coverage', 'intentions'),
+
+	# Reprocess levels.
+	'-U': ('field-replace', -1, 'relevel'),
+	'-u': ('field-replace', +0, 'relevel'),
+	'-r': ('field-replace', +1, 'relevel'),
+	'-R': ('field-replace', +2, 'relevel'),
+	'-.': ('ignore', None, None),
 }
 
 required = {
@@ -29,6 +48,8 @@ required = {
 command_index = {
 	# Process factors with respect to the product index.
 	'integrate': ('.process', 'options', 'integrate'),
+	'measure': ('.process', 'options', 'measure'),
+	'test': ('.analysis', 'options', 'test'),
 
 	# Manipulate product index and connections.
 	'delta': ('.manipulate', 'options', 'delta'),
@@ -47,6 +68,7 @@ def configure(restricted, required, argv):
 		'execution-context': context.query.platform(),
 		'construction-context': None,
 		'persistent-cache': None,
+		'cache-type': 'persistent',
 		'product-directory': None,
 		'default-product': None,
 
@@ -54,10 +76,18 @@ def configure(restricted, required, argv):
 		'interpreted-disconnections': [],
 		'direct-connections': [],
 		'direct-disconnections': [],
+
+		'relevel': 0,
+		'cache-directory': None,
+		'test-types': set(),
+		'test-filters': [],
 	}
 
 	oeg = recognition.legacy(restricted, required, argv)
 	remainder = recognition.merge(config, oeg)
+
+	if not config['intentions']:
+		config['intentions'].add('optimal')
 
 	return config, remainder
 
@@ -75,7 +105,7 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	if command_id == 'help':
 		sys.stderr.write(' '.join((
-			"pdctl",
+			"fictl",
 				"[-x execution-context-directory]"
 				"[-X construction-context-directory]"
 				"[-D product-directory]",
@@ -88,6 +118,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		sys.stderr.write("ERROR: unknown command '%s'." %(command_id,))
 		return inv.exit(2)
 
+	# Identify command module, and merge global config with command options.
 	module_name, optset, operation = command_index[command_id]
 	module = importlib.import_module(module_name, project_package_name)
 	oprestricted, oprequired = getattr(module, optset)
@@ -105,6 +136,12 @@ def main(inv:process.Invocation) -> process.Exit:
 		pdr = pwd
 		config['default-product'] = True
 
-	pdctl_operation = getattr(module, operation)
-	pdctl_operation(Log.stderr(), Log.stdout(), config, fx, cc, pdr, cmd_remainder)
+	if config['cache-directory'] is not None:
+		cache = (pwd@config['cache-directory'])
+	else:
+		cache = (pdr/'.cache')
+
+	fictl_operation = getattr(module, operation)
+	with contextlib.ExitStack() as ctx:
+		fictl_operation(ctx, Log.stderr(), Log.stdout(), config, fx, cc, pdr, cmd_remainder)
 	return inv.exit(0)

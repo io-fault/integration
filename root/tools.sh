@@ -6,7 +6,7 @@ f_pyx ()
 	"$PYTHON" "$PYX" "$@"
 }
 
-f_pdctl ()
+f_fictl ()
 {
 	f_pyx products-cc "$@"
 }

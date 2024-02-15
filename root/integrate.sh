@@ -15,17 +15,17 @@ python.sh
 chmod a+x "$FAULT_LIBEXEC_PATH/fault-dispatch"
 
 # Create product index.
-f_pdctl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
-f_pdctl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT"
+f_fictl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
+f_fictl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT"
 
 # Initialize execution platform and construction context for the host.
 f_pyx python system.machines.initialize "$FXC"
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-f_pdctl -D "$(dirname "$FAULT_PYTHON_PATH")" -x "$FXC" -X "$FCC" \
-	integrate -t "$FAULT_CONTEXT_NAME" "$@"
-f_pdctl -D "$(dirname "$FAULT_SYSTEM_PATH")" -x "$FXC" -X "$FCC" \
-	integrate -t system "$@"
+f_fictl -D "$(dirname "$FAULT_PYTHON_PATH")" -x "$FXC" -X "$FCC" \
+	integrate "$FAULT_CONTEXT_NAME" "$@"
+f_fictl -D "$(dirname "$FAULT_SYSTEM_PATH")" -x "$FXC" -X "$FCC" \
+	integrate system "$@"
 
 # Copy host executables.
 # Overwrites the script calling factor-execute.py.

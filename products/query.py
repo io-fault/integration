@@ -3,7 +3,7 @@
 
 # [ Engineering ]
 # Current implementation is incomplete and serves only as guidance for the intention
-# of the pdctl command. In addition, it is desirable that integration status be shown
+# of the fictl command. In addition, it is desirable that integration status be shown
 # as well. Future changes will likely include keeping integration records inside the
 # product index.
 """
@@ -35,7 +35,7 @@ def stats(projects):
 
 	return rows
 
-def report(meta, log, config, fx, cc, pdr, remainder):
+def report(exits, meta, log, config, fx, cc, pdr, remainder):
 	"""
 	# Write human readable information about the product and the identified projects.
 	"""

@@ -8,7 +8,7 @@ fault_dir="$(pwd)"
 container_dir="$(dirname "$fault_dir")"
 
 # Prefer connecting with a symbolic link rather than -I so that
-# &(pdctl integrate) can function without additional configuration.
+# &(fictl integrate) can function without additional configuration.
 rm -f "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
 ln -sf "$PYTHON_INCLUDE" "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
 

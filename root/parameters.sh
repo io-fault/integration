@@ -21,9 +21,9 @@
 	# String path identifier for the location that will contain tool bindings used
 	# to support initialization and default construction contexts.
 # /FXC/
-	# Factor Execution Context to be used by `pdctl` in order to execute tests.
+	# Factor Execution Context to be used by `fictl` in order to execute tests.
 # /FCC/
-	# Factor Construction Context path to be used by `pdctl`.
+	# Factor Construction Context path to be used by `fictl`.
 # /PYTHON_PREFIX/
 	# The `sys.path` reported by Python.
 # /PYTHON_VERSION/

@@ -12,6 +12,7 @@ index = {
 	'factors-cc': context_name + '.factors.bin.construct',
 	'products-cc': context_name + '.products.control',
 	'pdctl': context_name + '.products.control',
+	'fictl': context_name + '.products.control',
 	'man': context_name + '.context.read',
 	'error': context_name + '.factors.error',
 }
