@@ -420,7 +420,10 @@ class Construction(kcore.Context):
 		logs = locations['log-directory']
 
 		workdir = ftr.container
-		workdir.fs_mkdir()
+		try:
+			workdir.fs_mkdir()
+		except FileExistsError:
+			workdir.fs_require('/')
 
 		emitted = set((units, logs))
 
@@ -431,8 +434,13 @@ class Construction(kcore.Context):
 			emitted.update((unit, log))
 
 		for x in emitted:
-			if x.fs_type() == 'void':
+			if x.fs_type() != 'void':
+				continue
+
+			try:
 				x.fs_alloc().fs_mkdir()
+			except FileExistsError:
+				x.fs_require('/') # Possible race.
 
 	if 0:
 		# End of project processing.
