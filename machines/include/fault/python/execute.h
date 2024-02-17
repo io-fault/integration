@@ -129,7 +129,7 @@
 #endif
 
 #ifndef FACTOR_IMAGES
-	#define FACTOR_IMAGES "__f-int__"
+	#define FACTOR_IMAGES ".images"
 #endif
 
 #ifndef FACTOR_INTENTION
@@ -151,8 +151,9 @@
 
 #ifndef FAULT_BOOTSTRAP_BYTECODE
 	#define FAULT_BOOTSTRAP_BYTECODE \
-		(FAULT_SYSTEM_PATH "/" FACTOR_IMAGES "/" PYTHON_IMAGES \
-		"/" FAULT_INTENTION "/bootstrap.i")
+		(FAULT_PYTHON_PRODUCT "/" FACTOR_IMAGES "/" PYTHON_IMAGES \
+		"/" FAULT_CONTEXT_NAME "/" "system" "/" \
+		"bootstrap.i")
 #endif
 
 /**
@@ -230,7 +231,7 @@ fault_python_bootstrap(const char *bytecode, const char *source)
 					return(module);
 				}
 
-				/* Execute source instead */
+				/* Fallback on source. */
 				PyErr_Clear();
 			}
 		}
