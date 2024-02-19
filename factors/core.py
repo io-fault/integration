@@ -291,26 +291,11 @@ class Integrand(tuple):
 	variants = property(operator.itemgetter(4))
 	locations = property(operator.itemgetter(5))
 	vectors = property(operator.itemgetter(6))
-
-	def operable(self, section):
-		"""
-		# Whether the build should be considered operable.
-		"""
-		if not self.mechanism.integrates(section, self.variants, self.factor.type):
-			return False
-
-		for x in self.factor.sources():
-			return True
-
-		return False
+	features = property(operator.itemgetter(7))
 
 	@property
 	def itype(self):
 		return self.factor.type
-
-	@property
-	def intention(self) -> str:
-		return self.variants.form
 
 	@property
 	def system(self) -> str:

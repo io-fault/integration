@@ -23,7 +23,7 @@ def text(context, factor='type', name='text.cc'):
 	]
 
 def form_meta_type():
-	common = cc.comment("Process intercepted metrics and identity intentions.")
+	common = cc.comment("Process intercepted metrics and identity forms.")
 	common += cc.define('[factor-type]',
 		('', 'http://if.fault.io/factors/meta'),
 	) + '\n'
@@ -32,24 +32,24 @@ def form_meta_type():
 	) + '\n'
 
 	common += cc.define('Translate',
-		('fv-intention-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
-		('fv-intention-metrics', '.measure-source -stdio .adapters'),
-		('fv-intention-identity', '.identify-source -stdio .adapters'),
-		('!', '.intention-error -error-context .adapters'),
+		('fv-form-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
+		('fv-form-metrics', '.measure-source -stdio .adapters'),
+		('fv-form-identity', '.identify-source -stdio .adapters'),
+		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
 	common += cc.define('Render',
-		('fv-intention-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
-		('fv-intention-metrics', '.aggregate-metrics -metrics-join .adapters'),
-		('fv-intention-identity', '.form-identity -identity-join .adapters'),
-		('!', '.intention-error -error-context .adapters'),
+		('fv-form-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
+		('fv-form-metrics', '.aggregate-metrics -metrics-join .adapters'),
+		('fv-form-identity', '.form-identity -identity-join .adapters'),
+		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
 	return common
 
 def meta(context):
 	return text(context) + [
-		cc.fx('intention-error', 'python', '.string', 'exit(1)'),
+		cc.fx('form-error', 'python', '.string', 'exit(1)'),
 
 		cc.fx('measure-source', 'python', 'system.metrics.measure', 'source'),
 		cc.fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
@@ -66,7 +66,7 @@ def meta(context):
 			cc.constant('-error-context',
 				'"unconditional-failure" - -',
 				'[factor]',
-				'[fv-intention]',
+				'[fv-form]',
 			) + \
 			cc.constant('-metrics-join',
 				'"aggregate-metrics" - -',

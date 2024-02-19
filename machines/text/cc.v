@@ -25,4 +25,3 @@
 	: [factor-image File]
 	: [unit-directory File]
 	: format directory.tree
-	: intention [fv-intention]

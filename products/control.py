@@ -16,23 +16,6 @@ from . import context
 
 restricted = {
 	'-c': ('field-replace', 'transient', 'cache-type'),
-
-	'-I': ('set-add', 'identity', 'intentions'),
-	'-O': ('set-add', 'optimal', 'intentions'),
-	'-o': ('set-add', 'portable', 'intentions'),
-	'-g': ('set-add', 'debug', 'intentions'),
-
-	'-y': ('set-add', 'auxilary', 'intentions'),
-	'-Y': ('set-add', 'capture', 'intentions'),
-
-	'--profile': ('set-add', 'profile', 'intentions'),
-	'--coverage': ('set-add', 'coverage', 'intentions'),
-
-	# Reprocess levels.
-	'-U': ('field-replace', -1, 'relevel'),
-	'-u': ('field-replace', +0, 'relevel'),
-	'-r': ('field-replace', +1, 'relevel'),
-	'-R': ('field-replace', +2, 'relevel'),
 	'-.': ('ignore', None, None),
 }
 
@@ -63,7 +46,7 @@ def configure(restricted, required, argv):
 	# Root option parser.
 	"""
 	config = {
-		'intentions': set(),
+		'features': set(),
 		'processing-lanes': '4',
 		'execution-context': context.query.platform(),
 		'construction-context': None,
@@ -86,8 +69,8 @@ def configure(restricted, required, argv):
 	oeg = recognition.legacy(restricted, required, argv)
 	remainder = recognition.merge(config, oeg)
 
-	if not config['intentions']:
-		config['intentions'].add('optimal')
+	if not config['features']:
+		config['features'].add('optimal')
 
 	return config, remainder
 

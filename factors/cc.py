@@ -101,17 +101,23 @@ def _ftype(itype):
 	return itype.project + '/' + str(itype.factor ** 1)
 
 @tools.cachedcalls(8)
-def work_key_cache(prefix, variants):
+def work_key_cache(prefix, features, variants):
 	key = prefix
 	# Using slashes as separators as they should not
 	# present in the values for filesystem safety.
+	key += '/if=' + features
 	key += '/s=' + variants.system
 	key += '/a=' + variants.architecture
 	key += '/f=' + variants.form
 	return key
 
-def work(variants, name, /, encoding='utf-8'):
-	key = work_key_cache('fpi-work', variants) + '/N=' + name
+def work(features, variants, name, /, encoding='utf-8'):
+	key = work_key_cache('fpi-work', '|'.join(features), variants) + '/N=' + name
+	return key.encode(encoding)
+
+def telemetry(variants, name, /, encoding='utf-8'):
+	# Cache directory shared by any metrics featured image.
+	key = work_key_cache('fpi-telemetry', '', variants) + '/N=' + name
 	return key.encode(encoding)
 
 def rebuild(outputs, inputs, subfactor=True, cascade=False):
@@ -447,11 +453,13 @@ class Construction(kcore.Context):
 		def finish_termination(self):
 			return super().finish_termination()
 
-	def collect(self, intentions, mechanism, factor, requirements, dependents=()):
+	def collect(self, features, mechanism, factor, requirements, dependents=()):
 		"""
 		# Collect the parameters and work to be done for processing the &factor.
 
 		# [ Parameters ]
+		# /features/
+			# Image features to request. (debug/optimal/coverage/profile)
 		# /mechanism/
 			# The abstraction to the Construction Context providing
 			# translation and rendering command constructors for the variant set.
@@ -472,15 +480,16 @@ class Construction(kcore.Context):
 		# Execution override for supporting command tracing.
 		exe = self.c_executor
 		skipped = 0
-		nsources = len(factor.sources())
+		sources = factor.sources()
+		nsources = len(sources)
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
-		for section, variants in mechanism.variants(intentions):
-			u_prefix, u_suffix = mechanism.unit_name_delta(section, variants, factor.type)
-			image = factor.image(variants)
+		for vtype in mechanism.vectortypes('executable', features):
+			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
+			image = factor.image(vtype.variants)
 			iv = {}
 
-			cdr = scache(work(variants, factor.name))
+			cdr = scache(work(vtype.features, vtype.variants, factor.name))
 			locations = {
 				'factor-image': image,
 				'image-directory': image.container,
@@ -490,22 +499,28 @@ class Construction(kcore.Context):
 			}
 
 			if self.c_telemetry:
-				# Usually, self.c_telemetry == ['metrics'] when constructing factors
-				# with meta.workspaces to connect builds to their data capture directory.
+				# Usually, self.c_telemetry == ['metrics'] when integrating
+				# with a persistent cache.
 				iv['factor-telemetry'] = self.c_telemetry
 				iv['telemetry-directory'] = [
-					scache(work(x, factor.name)) / variants.form / 'telemetry'
-					for x in map(variants.reform, self.c_telemetry)
+					scache(telemetry(vtype.variants, factor.name))
+					for x in self.c_telemetry
 				]
 
 			fint = core.Integrand((
 				mechanism, factor,
 				requirements, dependents,
-				variants, locations, iv
+				vtype.variants, locations, iv,
+				vtype.features,
 			))
 			del iv
 
-			if not fint.operable(section):
+			if not mechanism.integrates(vtype, factor.type):
+				# Unrecognized type.
+				continue
+
+			if nsources < 1:
+				# No sources to process.
 				continue
 
 			self._prepare_work_directory(locations, factor.sources())
@@ -514,12 +529,6 @@ class Construction(kcore.Context):
 
 			translations = []
 			unitseq = []
-
-			# Avoid processing SystemFactors (system.references).
-			if isinstance(factor, core.SystemFactor):
-				sources = []
-			else:
-				sources = factor.sources()
 
 			for fmt, src in sources:
 				unit_name = u_prefix + src.identifier + u_suffix
@@ -530,7 +539,7 @@ class Construction(kcore.Context):
 					continue
 
 				tllog = files.Path(logs, src.points)
-				cmd, tlc = mechanism.translate(section, variants, factor.type, fmt)
+				cmd, tlc = mechanism.translate(vtype, factor.type, fmt)
 				local = {
 					'source': str(src),
 					'unit': str(tlout),
@@ -544,12 +553,12 @@ class Construction(kcore.Context):
 
 			tracks.append(('translate', translations))
 
-			ifpaths = [x for x in fint.required(variants) if not isinstance(x, str)]
+			ifpaths = [x for x in fint.required(vtype.variants) if not isinstance(x, str)]
 			if translations or not xfilter((image,), ifpaths):
 				# Build is triggered unconditionally if any translations are performed
 				# or if the target image is older than any requirement image.
 
-				cmd, ric = mechanism.render(section, variants, factor.type)
+				cmd, ric = mechanism.render(vtype, factor.type)
 				local = {
 					'units': unitseq,
 				}

@@ -46,7 +46,8 @@
 -clang-diagnostics:
 	: -fmax-errors=[error-limit env.ERRLIMIT]
 	: -fcolor-diagnostics -fansi-escape-codes
-	: -Wno-everthing
+	: -Wno-unknown-warning-option
+	: -w
 	: -W[-clang-warnings]
 	: -Werror=[-clang-errors]
 
@@ -74,10 +75,8 @@
 	: -g
 
 -optimization-level:
-	fv-intention-debug: -O0
-	fv-intention-profile: -O2
-	fv-intention-optimal: -O2
-	fv-intention-coverage: -O0
+	if-optimal: -O2
+	!: -O0
 
 -includes:
 	: -I[http://if.fault.io/factors/meta.sources#source-paths]
@@ -87,10 +86,9 @@
 
 -variants:
 	# Variants
-	: -DFV_INTENTION=[fv-intention]
 	: -DFV_ARCHITECTURE=[fv-architecture]
 	: -DFV_SYSTEM=[fv-system]
-	!fv-form-void: -DFV_FORM=[fv-form]
+	: -DFV_FORM=[fv-form]
 
 -factor-identity:
 	# Identification
@@ -187,12 +185,12 @@
 	!: [-compile-source]
 
 -llvm-instrumentation:
-	fv-intention-coverage:
+	if-coverage:
 		: -fprofile-instr-generate -fcoverage-mapping
-	fv-intention-profile:
+	if-profile:
 		: -fprofile-instr-generate
 -llvm-instrumentation-defines:
-	: -DF_LLVM_INSTRUMENTATION=[fv-intention]
+	: -DF_LLVM_INSTRUMENTATION
 -factor-telemetry:
 	: -DF_TELEMETRY_[factor-telemetry]=""""[telemetry-directory File]""""
 
@@ -203,17 +201,16 @@
 	: -c
 
 	: [-optimization-level]
-	fv-intention-debug:
+	if-debug:
 		: [-debug]
 
 	: [-llvm-instrumentation]
 	:
-		fv-intention-coverage: [-llvm-instrumentation-defines]
-		fv-intention-profile: [-llvm-instrumentation-defines]
+		if-coverage: [-llvm-instrumentation-defines]
+		if-profile: [-llvm-instrumentation-defines]
 	: [-factor-telemetry]
 
 	: [-language-injections]
-	: [-intention-injections]
 
 	# Target defined options.
 	: [-system-cc-options]
@@ -222,6 +219,7 @@
 	: [-positioning-format]
 
 	# Defines.
+	: -DIF_[if-set]
 	: [-factor-identity]
 	: [-variants]
 
@@ -261,9 +259,9 @@
 
 -gnu-instrumentation:
 	# meta.metrics does not support collecting data from the gnu toolchain.
-	fv-intention-coverage:
+	if-coverage:
 		: --coverage
-	fv-intention-profile:
+	if-profile:
 		: -pg
 
 -gnu-ld-elf:

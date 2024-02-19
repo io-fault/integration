@@ -19,13 +19,25 @@ from . import filters
 
 options = (
 	{
+		'-O': ('set-add', 'optimal', 'features'),
+		'-o': ('set-add', 'portable', 'features'),
+		'-g': ('set-add', 'debug', 'features'),
+
+		'-y': ('set-add', 'auxilary', 'features'),
+		'-Y': ('set-add', 'capture', 'features'),
+
+		'--profile': ('set-add', 'profile', 'features'),
+		'--coverage': ('set-add', 'coverage', 'features'),
+
+		# Reprocess levels.
+		'-N': ('field-replace', -1, 'relevel'),
+		'-n': ('field-replace', +0, 'relevel'),
+		'-r': ('field-replace', +1, 'relevel'),
+		'-R': ('field-replace', +2, 'relevel'),
+
 		# Defaults to update when missing.
 		'-u': ('field-replace', 'never', 'update-product-index'),
 		'-U': ('field-replace', 'always', 'update-product-index'),
-
-		# Delineation of sources and chapters. Disabled by default.
-		'-y': ('field-replace', True, 'disable-delineation'),
-		'-Y': ('field-replace', False, 'disable-delineation'),
 	},
 	{}
 )
@@ -33,7 +45,7 @@ options = (
 def plan(command,
 		cc:files.Path,
 		factors:lsf.Context,
-		intentions:Sequence[str],
+		features:Sequence[str],
 		cachetype:str,
 		cachepath:files.Path,
 		identifier,
@@ -61,7 +73,7 @@ def plan(command,
 	pj_fp = str(project)
 	ki = KInvocation(xargv[0], xargv + [
 		str(cc), cachetype, str(cachepath),
-		':'.join(intentions) + metricslink,
+		':'.join(features) + metricslink,
 		str(pj.product.route),
 		pj_fp,
 	])
@@ -117,10 +129,10 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	factors.configure()
 
 	projects = argv
-	intentions = config['intentions']
+	features = sorted(list(config['features']))
 
-	# Signal factors.construct to create links to metrics.
-	if intentions != {'metrics'} and cachetype == 'persistent':
+	# Signal factors.construct to create links to measurements.
+	if cachetype == 'persistent':
 		metricslink = 'metrics'
 	else:
 		metricslink = None
@@ -138,7 +150,7 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 			q = filters.projectgraph(factors, projects)
 			local_plan = tools.partial(
 				plan, 'integrate',
-				cc, factors, intentions,
+				cc, factors, features,
 				cachetype, cachepath,
 				link=metricslink
 			)
@@ -150,5 +162,4 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 		control.flush()
 
 def measure(*args):
-	args[3]['intentions'] = {'metrics'}
 	return integrate(*args)

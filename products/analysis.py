@@ -58,7 +58,7 @@ options = (
 	test_type_set_control, required
 )
 
-def plan(prefixes, intention:str, keywords, factors:lsf.Context, identifier):
+def plan(prefixes, keywords, factors:lsf.Context, identifier):
 	"""
 	# Create an invocation for processing the project from &factors selected using &identifier.
 	"""
@@ -104,10 +104,7 @@ def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 
 	from fault.transcript import terminal
 	from fault.transcript import fatetheme
-	from fault.transcript.metrics import Procedure
 
-	intentions = config['intentions']
-	zero = Procedure.create()
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
 	os.environ['F_EXECUTION'] = str(fx)
@@ -115,12 +112,7 @@ def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	test_prefixes = set([
 		test_type_map[x] for x in config['test-types'] or {'integration', 'unit'}
 	])
-
 	lanes = int(config['processing-lanes'])
-	connections = []
-	metrics = []
-	symbol_index = 0
-	symbols = argv
 
 	# Project Context
 	factors = lsf.Context()
@@ -132,47 +124,15 @@ def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	control = terminal.setup()
 	control.configure(lanes+1)
 
-	from fault.system.query import hostname
-	ts = time.local().select('iso')
-	host = hostname()
+	monitors, summary = terminal.aggregate(control, fatetheme, lanes, width=160)
 
-	log.xact_open('test',
-		"Runtime Analysis (%s) of %r on %s at %s" %(
-			'|'.join(intentions), str(pd.route), host, ts,
-		),
-		{
-			'timestamp': [ts],
-			'hostname': [host],
-			'product': [str(pd.route)],
-		}
-	)
-
-	start_time = time.elapsed()
-	profiles = []
 	try:
-		for intention in intentions:
-			os.environ['INTENTION'] = str(intention)
-			monitors, summary = terminal.aggregate(control, fatetheme, lanes, width=160)
+		log.xact_open('coherency', "Revealing fates.", {})
 
-			try:
-				log.xact_open(intention, "Testing %s." %(intention,), {})
-
-				q = filters.projectgraph(factors, argv)
-				local_plan = tools.partial(plan, test_prefixes, intention, config['test-filters'], factors)
-				execution.dispatch(meta, log, local_plan, control, monitors, summary, "Fates", q, opened=True)
-				profiles.append(summary.profile())
-			finally:
-				log.xact_close(intention, summary.synopsis('Fates'), {})
-				control.clear()
-				control.flush()
+		q = filters.projectgraph(factors, argv)
+		local_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors)
+		execution.dispatch(meta, log, local_plan, control, monitors, summary, "Fates", q, opened=True)
 	finally:
-		stop_time = time.elapsed()
-		duration = stop_time.decrease(start_time)
-		ru = zero.usage
-		for start, stop, m in profiles:
-			ru += m.usage
-		totals = Procedure(work=zero.work, msg=zero.msg, usage=ru)
-		summary.reset(start_time, zero)
-		summary.update(start_time, zero)
-		summary.update(stop_time, totals)
-		log.emit(summary.frame('<-', "Runtime Analysis", log.channel))
+		log.xact_close('coherency', summary.synopsis('Fates'), {})
+		control.clear()
+		control.flush()

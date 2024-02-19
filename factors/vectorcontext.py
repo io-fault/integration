@@ -8,6 +8,7 @@ import typing
 import collections
 from dataclasses import dataclass
 
+from fault.context import tools
 from fault.system import files
 from fault.system import execution
 from fault.project import system as lsf
@@ -33,9 +34,14 @@ class Void(Exception):
 	def __str__(self):
 		return f"{self.v_type!r} inquery requires {self.v_required} fields"
 
+def _feature_constants(features):
+	return {'if-set': features}
+
+def _feature_conclusions(features):
+	return frozenset(['if-' + f for f in features])
+
 def _variant_constants(variants):
 	return {
-		'fv-intention': variants.form,
 		'fv-system': variants.system,
 		'fv-architecture': variants.architecture,
 		'fv-form': variants.form
@@ -43,12 +49,31 @@ def _variant_constants(variants):
 
 def _variant_conclusions(variants):
 	return {
-		'fv-i' + variants.form,
 		'fv-system-' + variants.system,
 		'fv-architecture-' + variants.architecture,
-		'fv-intention-' + variants.form,
 		'fv-form-' + (variants.form or 'void'),
 	}
+
+@tools.struct()
+class VectorParameters(object):
+	section: str
+	variants: lsf.types.Variants
+	features: list[str]
+
+	def constants(self):
+		return \
+			{'fi-section': str(self.section)} | \
+			_variant_constants(self.variants) | \
+			_feature_constants(self.features)
+
+	def conclusions(self):
+		return \
+			{'fi-' + str(self.section)} | \
+			_variant_conclusions(self.variants) | \
+			_feature_conclusions(self.features)
+
+	def context(self):
+		return self.conclusions(), self.constants()
 
 class Mechanism(object):
 	"""
@@ -63,59 +88,58 @@ class Mechanism(object):
 	def __repr__(self):
 		return repr((self.context.route, self.semantics))
 
-	def _cc(self, phase, section, variants, itype, xtype):
-		k = (phase, section, variants, itype, xtype)
+	def _cc(self, phase, vtype, itype, xtype):
+		k = (phase, vtype.section, vtype.variants, itype, xtype)
 		if k in self._cache:
 			return self._cache[k]
 
-		c = self.context.cc_compose(phase, section, variants, itype, xtype)
+		c = self.context.cc_compose(phase, vtype, itype, xtype)
 		self._cache[k] = c
 		return c
 
-	def variants(self, intentions):
+	def vectortypes(self, form, features):
 		"""
-		# Generate the full combinations of sections and variants
-		# for the given intentions.
+		# Identify formulation types for the given form and feature set.
 		"""
-		return self.context.cc_variants(self.semantics, intentions)
+		return list(self.context.vectortypes(self.semantics, form, features))
 
-	def integrates(self, section, variants, itype):
+	def integrates(self, vtype, itype):
 		"""
 		# Identify whether the mechanism is operable.
 		"""
 		try:
-			return str(itype) in self.context.cc_integration_types(section, variants, itype)
+			return str(itype) in self.context.cc_integration_types(vtype, itype)
 		except KeyError:
 			# No constraints expressed by vectors.
 			return True
 
-	def unit_name_delta(self, section, variants, itype):
+	def unit_name_delta(self, vtype, itype):
 		"""
 		# Identify the prefix and suffix for the unit file.
 		"""
 		try:
-			return self.context.cc_unit_name_delta(section, variants, itype)
+			return self.context.cc_unit_name_delta(vtype, itype)
 		except Void:
 			# Allow unspecified extensions.
 			return "", ""
 
-	def prepare(self, section, variants, itype, srctype):
+	def prepare(self, vtype, itype, srctype):
 		"""
 		# Construct the command constructor for source preparation.
 		"""
-		return self._cc('Prepare', section, variants, itype, srctype)
+		return self._cc('Prepare', vtype, itype, srctype)
 
-	def translate(self, section, variants, itype, srctype):
+	def translate(self, vtype, itype, srctype):
 		"""
 		# Construct the command constructor for translating sources.
 		"""
-		return self._cc('Translate', section, variants, itype, srctype)
+		return self._cc('Translate', vtype, itype, srctype)
 
-	def render(self, section, variants, itype):
+	def render(self, vtype, itype):
 		"""
 		# Construct the command constructor for rendering the factor's image.
 		"""
-		return self._cc('Render', section, variants, itype, None)
+		return self._cc('Render', vtype, itype, None)
 
 class Context(object):
 	"""
@@ -137,16 +161,15 @@ class Context(object):
 		return ref
 
 	@classmethod
-	def from_directory(Class, route:files.Path, intention:str='optimal'):
+	def from_directory(Class, route:files.Path):
 		"""
 		# Create instance using a directory. Defaults depending intention to (id)`optimal`.
 		"""
-		return Class(route, intention)
+		return Class(route)
 
-	def __init__(self, route:files.Path, intention:str):
+	def __init__(self, route:files.Path):
 		self.route = route
 		# Requirement intention for metadata contexts.
-		self.intention = intention
 		self.projects = lsf.Context()
 		self.intercepts = {}
 
@@ -168,12 +191,12 @@ class Context(object):
 			for arch in self._cat(self._vinit, v, '[' + system + ']'):
 				yield (system, arch)
 
-	def cc_unit_name_delta(self, section, variants, itype):
+	def cc_unit_name_delta(self, vtype, itype):
 		# Unit name adjustments.
-		initctx = vf.Context(_variant_conclusions(variants), _variant_constants(variants))
+		initctx = vf.Context(*vtype.context())
 		exe, adapter, idx = self._read_merged(
 			initctx,
-			section, variants,
+			vtype.section, vtype.variants,
 			'Render', itype, None
 		)
 
@@ -189,12 +212,12 @@ class Context(object):
 
 		return unit_prefix, unit_suffix
 
-	def cc_integration_types(self, section, variants, itype):
+	def cc_integration_types(self, vtype, itype):
 		# Supported integration types.
-		ctx = vf.Context(_variant_conclusions(variants), _variant_constants(variants))
+		ctx = vf.Context(*vtype.context())
 		try:
 			exe, adapter, idx = self._read_merged(
-				ctx, section, variants, 'Render', itype, None
+				ctx, vtype.section, vtype.variants, 'Render', itype, None
 			)
 		except Void:
 			# Must support rendering.
@@ -203,31 +226,25 @@ class Context(object):
 		aft, = (self._cat(ctx, idx, "[factor-type]"))
 		return list((aft + '.' + x) for x in self._cat(ctx, idx, "[integration-type]"))
 
-	def cc_variants(self, semantics, intentions):
+	def vectortypes(self, semantics, form, features):
 		"""
 		# Identify the variant combinations to use for the given &semantics and &intentions.
 		"""
-		fvp = list()
 
 		# Identify the set of variants.
 		for section in self._idefault[semantics]:
 			vfactor = (section @ 'variants')
-			spec = [
-				(self.intercepts.get(i, section), lsf.types.Variants(x[0], x[1], i))
-				for i, x in itertools.product(intentions, self._variants(vfactor))
-			]
-			fvp.extend(spec)
+			for x in self._variants(vfactor):
+				yield VectorParameters(section, lsf.types.Variants(x[0], x[1], form), features)
 
-		return fvp
-
-	def _constants(self, section, variants, itype, xtype, **kw):
+	def _constants(self, vtype, itype, xtype, **kw):
 		if xtype:
 			fmt = xtype.format
 			kw.update({'language': fmt.language, 'dialect': fmt.dialect})
 
 		kw['null'] = '/dev/null'
 		kw['factor-integration-type'] = str(itype.factor)
-		kw.update(_variant_constants(variants))
+		kw.update(vtype.constants())
 
 		from fault.system import identity
 		kw['host-system'], kw['host-architecture'] = identity.root_execution_context()
@@ -235,7 +252,7 @@ class Context(object):
 
 		return kw
 
-	def _conclusions(self, section, variants, itype, xtype):
+	def _conclusions(self, vtype, itype, xtype):
 		if xtype and xtype.isolation:
 			fmt = xtype.format
 			l = {'language-' + fmt.language, 'dialect-' + (fmt.dialect or '')}
@@ -244,8 +261,7 @@ class Context(object):
 
 		return l | {
 			'it-' + itype.factor.identifier,
-			'cc-' + str(section),
-		} | _variant_conclusions(variants)
+		} | vtype.conclusions()
 
 	def _compose(self, vctx, section, composition, itype, name, fallback):
 		idx = {}
@@ -298,19 +314,19 @@ class Context(object):
 
 		return exeref, adapter, idx
 
-	def cc_compose(self, phase, section, variants, itype, xtype):
+	def cc_compose(self, phase, vtype, itype, xtype):
 		vctx = vf.Context(
-			self._conclusions(section, variants, itype, xtype),
-			self._constants(section, variants, itype, xtype)
+			self._conclusions(vtype, itype, xtype),
+			self._constants(vtype, itype, xtype)
 		)
-		exeref, adapter, idx = self._read_merged(vctx, section, variants, phase, itype, xtype)
+		exeref, adapter, idx = self._read_merged(vctx, vtype.section, vtype.variants, phase, itype, xtype)
 
 		# Compose command constructor.
 		vr = vctx.compose(idx, adapter)
 		def Adapt(query, Format=list(vr), Chain=itertools.chain.from_iterable):
 			return Chain(x(query) for x in Format)
 
-		return self._load_system(self._ref(section, exeref)), Adapt
+		return self._load_system(self._ref(vtype.section, exeref)), Adapt
 
 	def _load_intercepts(self,
 			context:lsf.types.FactorPath,
@@ -326,10 +342,10 @@ class Context(object):
 			return
 
 		# Map semantics identifier to the adapter projects in cc.
-		for intention in sections_vf.keys():
-			v = self._cat(self._vinit, sections_vf, intention)
+		for form in sections_vf.keys():
+			v = self._cat(self._vinit, sections_vf, form)
 			for i in v:
-				yield intention, context @ i
+				yield form, context @ i
 
 	def load(self):
 		"""
@@ -448,8 +464,8 @@ if __name__ == '__main__':
 	mech = Mechanism(ctx, 'http://if.fault.io/factors/system')
 	print(repr(mech))
 	for i in range(1):
-		for section, variants in mech.variants(['debug', 'optimal']):
-			print('-->', section, variants)
+		for vtype in mech.vectortypes(['debug', 'optimal']):
+			print('-->', vtyep.section, vtype.variants)
 			plan, vcon = mech.render(section, variants, itype)
 			outv = list(vcon(lambda x: r.get(x, ())))
 			print(outv)

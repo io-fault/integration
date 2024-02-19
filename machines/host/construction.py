@@ -105,7 +105,7 @@ def define(name, *types):
 def form_host_target(hlinker):
 	target = ""
 	target += comment("Options for the selected CC. Included regardless of language.")
-	target += constant('-system-cc-options')
+	target += constant('-system-cc-options', "[-clang-diagnostics]")
 
 	target += "\n"
 	target += comment("Directory paths (-isystem) to system headers.")
@@ -259,28 +259,28 @@ def system_select_linker(system):
 		return '[-llvm-ld-elf]'
 
 def form_meter_type():
-	common = comment("Process intercepted metrics and identity intentions.")
+	common = comment("Process intercepted metrics and identity forms.")
 	common += define('[factor-type]',
 		('', 'http://if.fault.io/factors/meter'),
 	) + '\n'
 
 	common += define('Translate',
-		('fv-intention-metrics', '.measure-source -stdio .adapters'),
-		('fv-intention-identity', '.identify-source -stdio .adapters'),
-		('!', '.intention-error -error-context .adapters'),
+		('fv-form-metrics', '.measure-source -stdio .adapters'),
+		('fv-form-identity', '.identify-source -stdio .adapters'),
+		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
 	common += define('Render',
-		('fv-intention-metrics', '.aggregate-metrics -metrics-join .adapters'),
-		('fv-intention-identity', '.form-identity -identity-join .adapters'),
-		('!', '.intention-error -error-context .adapters'),
+		('fv-form-metrics', '.aggregate-metrics -metrics-join .adapters'),
+		('fv-form-identity', '.form-identity -identity-join .adapters'),
+		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
 	return common
 
 def meter(context):
 	return [
-		fx('intention-error', 'python', '.string', 'exit(1)'),
+		fx('form-error', 'python', '.string', 'exit(1)'),
 		fx('measure-source', 'python', 'system.metrics.measure', 'source'),
 		fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
 		fx('identify-source', 'python', 'system.factors.identify', 'source', '-'),
@@ -293,7 +293,7 @@ def meter(context):
 			constant('-error-context',
 				'"unconditional-failure" - -',
 				'[factor]',
-				'[fv-intention]',
+				'[fv-form]',
 			) + \
 			constant('-metrics-join',
 				'"aggregate-metrics" - -',
@@ -322,7 +322,7 @@ def text(context, factor='type', name='text.cc'):
 	]
 
 def form_meta_type():
-	common = comment("Process intercepted metrics and identity intentions.")
+	common = comment("Process intercepted metrics and identity forms.")
 	common += define('[factor-type]',
 		('', 'http://if.fault.io/factors/meta'),
 	) + '\n'
@@ -331,11 +331,11 @@ def form_meta_type():
 	) + '\n'
 
 	common += define('Translate',
-		('fv-intention-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
+		('fv-form-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
 	) + '\n'
 
 	common += define('Render',
-		('fv-intention-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
+		('fv-form-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
 	) + '\n'
 
 	return common
