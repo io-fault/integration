@@ -307,7 +307,7 @@ class Construction(kcore.Context):
 			executor,
 			time,
 			log,
-			intentions,
+			features,
 			telemetry,
 			cache,
 			context,
@@ -331,7 +331,7 @@ class Construction(kcore.Context):
 		self.exits = 0
 		self.c_sequence = None
 
-		self.c_intentions = intentions
+		self.c_features = features
 		self.c_telemetry = telemetry
 		self.c_executor = executor
 		self.c_cache = cache
@@ -404,7 +404,7 @@ class Construction(kcore.Context):
 					mechanism = self.select(ftype)
 
 				if mechanism is not None:
-					self.collect(self.c_intentions, mechanism, target, fr, fd)
+					self.collect(self.c_features, mechanism, target, fr, fd)
 				else:
 					self.tracking[target] = []
 					self.finish([target])

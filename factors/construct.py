@@ -29,13 +29,13 @@ class Application(kcore.Context):
 	def __init__(self,
 			executor,
 			context, cache,
-			intentions, telemetry,
+			features, telemetry,
 			product, projects,
 			rebuild=0,
 			connect=None,
 		):
 		self.cxn_executor = executor
-		self.cxn_intentions = intentions
+		self.cxn_features = features
 		self.cxn_cache = cache
 		self.cxn_context = context
 		self.cxn_product = product
@@ -47,21 +47,21 @@ class Application(kcore.Context):
 
 	@classmethod
 	def from_command(Class, environ, arguments):
-		ctxdir, cache_type, cache_path, intentstr, work, fpath = arguments
+		ctxdir, cache_type, cache_path, ifeatures, work, fpath = arguments
 		ctxdir = files.Path.from_path(ctxdir)
 		work = files.Path.from_path(work)
 
 		# Optional system command intercept.
 		executor = environ.get('FPI_EXECUTOR', None)
 
-		i = intentstr.find('@')
+		i = ifeatures.find('@')
 		if i > -1:
-			telemetry = intentstr[i+1:].split(':')
-			intentstr = intentstr[:i]
+			telemetry = ifeatures[i+1:].split(':')
+			ifeatures = ifeatures[:i]
 		else:
 			telemetry = []
 
-		intentions = list(tools.unique(intentstr.split(':'), None))
+		features = list(tools.unique(ifeatures.split(':'), None))
 
 		if cache_type == 'transient':
 			cdi = cache.Transient(files.Path.from_path(cache_path))
@@ -84,7 +84,7 @@ class Application(kcore.Context):
 
 		return Class(
 			executor, ctx, cdi,
-			intentions, telemetry,
+			features, telemetry,
 			pd, projects,
 			rebuild=rebuild,
 		)
@@ -139,7 +139,7 @@ class Application(kcore.Context):
 				self.cxn_executor,
 				etime,
 				self.cxn_log,
-				self.cxn_intentions,
+				self.cxn_features,
 				self.cxn_telemetry,
 				self.cxn_cache,
 				self.cxn_context,
@@ -159,11 +159,7 @@ class Application(kcore.Context):
 def main(inv:process.Invocation) -> process.Exit:
 	inv.imports([
 		'FPI_EXECUTOR',
-		'FPI_CACHE',
 		'FPI_REBUILD',
-		'FPI_MECHANISMS',
-		'FACTORPATH',
-		'FRAMECHANNEL',
 	])
 
 	cxn = Application.from_command(inv.environ, inv.argv)
