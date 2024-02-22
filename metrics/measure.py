@@ -8,7 +8,7 @@
 """
 import sys
 from fault.system import process
-from .. import syntax
+from . import syntax
 
 def main(inv:process.Invocation) -> process.Exit:
 	# Ignore arguments; standard I/O processing.
