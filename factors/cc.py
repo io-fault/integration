@@ -308,9 +308,9 @@ class Construction(kcore.Context):
 			time,
 			log,
 			features,
-			telemetry,
 			cache,
 			context,
+			mode,
 			pcontext,
 			ctxpath,
 			project,
@@ -332,13 +332,13 @@ class Construction(kcore.Context):
 		self.c_sequence = None
 
 		self.c_features = features
-		self.c_telemetry = telemetry
 		self.c_executor = executor
 		self.c_cache = cache
 		self.c_pcontext = pcontext
 		self.c_ctxpath = ctxpath
-		self.c_project = project
 		self.c_context = context
+		self.c_mode = mode
+		self.c_project = project
 		self.c_factors = factors
 
 		self.tracking = collections.defaultdict(list) # factor -> sequence of sets of tasks
@@ -380,8 +380,8 @@ class Construction(kcore.Context):
 		if ftype in self._mcache:
 			return self._mcache[ftype]
 
-		mech = self._mcache[ftype] = vectorcontext.Mechanism(self.c_context, ftype)
-		return mech
+		m = self._mcache[ftype] = vectorcontext.Mechanism(self.c_context, self.c_mode, ftype)
+		return m
 
 	def finish(self, factors):
 		"""
@@ -484,7 +484,7 @@ class Construction(kcore.Context):
 		nsources = len(sources)
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
-		for vtype in mechanism.vectortypes('executable', features):
+		for vtype in mechanism.vectortypes(features):
 			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
 			image = factor.image(vtype.variants)
 			iv = {}
@@ -498,13 +498,9 @@ class Construction(kcore.Context):
 				'unit-directory': (cdr / 'units').delimit(),
 			}
 
-			if self.c_telemetry:
-				# Usually, self.c_telemetry == ['metrics'] when integrating
-				# with a persistent cache.
-				iv['factor-telemetry'] = self.c_telemetry
+			if 'metrics' in features:
 				iv['telemetry-directory'] = [
-					scache(telemetry(vtype.variants, factor.name))
-					for x in self.c_telemetry
+					scache(telemetry(vtype.variants.reform('metrics'), factor.name))
 				]
 
 			fint = core.Integrand((

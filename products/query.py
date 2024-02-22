@@ -1,11 +1,5 @@
 """
 # Product reporting functions for integration status and profile information.
-
-# [ Engineering ]
-# Current implementation is incomplete and serves only as guidance for the intention
-# of the fictl command. In addition, it is desirable that integration status be shown
-# as well. Future changes will likely include keeping integration records inside the
-# product index.
 """
 import collections
 

@@ -5,7 +5,7 @@
 /**
 	// fault-metrics LLVM profile support.
 */
-#if defined(F_LLVM_INSTRUMENTATION) && defined(F_TELEMETRY_metrics)
+#if defined(F_LLVM_INSTRUMENTATION) && defined(F_TELEMETRY)
 	#include <fault/fs.h>
 	void __llvm_profile_write_file(void);
 	void __llvm_profile_reset_counters(void);
@@ -27,7 +27,15 @@
 
 		/* METRICS_CAPTURE or the compile time default. */
 		if (mcp == NULL)
-			mcp = F_TELEMETRY_metrics;
+		{
+			#if defined(IF_coverage)
+				mcp = F_TELEMETRY "/coverage";
+			#elif defined(IF_profile)
+				mcp = F_TELEMETRY "/profile";
+			#else
+				mcp = F_TELEMETRY "/unclassified";
+			#endif
+		}
 
 		/* PROCESS_IDENTITY or the string representation of getpid() */
 		if (pid == NULL)

@@ -5,11 +5,11 @@
 	: http://if.fault.io/project/integration.vectors
 
 [unit-suffix]:
-	fv-form-delineated:
+	cc-mode-delineation:
 		# Delineation, no extension.
 		: ""
 	!:
-		# Execution imaging.
+		# Executable imaging.
 		: ".ast"
 
 [factor-type]:
@@ -20,36 +20,33 @@
 	: interface
 
 -cpy-optimize:
-	fv-intention-coverage:
-		: 0
-	fv-intention-debug:
-		: 0
-	fv-intention-profile:
+	if-optimal:
 		: 2
-	fv-intention-optimal:
-		: 2
-	!: 1
+	!:
+		if-debug:
+			: 0
+		!:
+			: 1
 
 -pyc-ast-1:
 	: "interpret-ast" - -
 	: [unit File]
 	: [source File]
-	fv-form-delineated:
+	cc-mode-delineation:
 		: delineated json
 	: factor [factor-path]
 	: format [language].[dialect]
 	: cpython-optimize [-cpy-optimize]
-	: intention [fv-intention]
-	: [factor-telemetry]-trap [telemetry-directory File]
+	if-coverage: instrumentation coverage
+	: metrics-trap [telemetry-directory File]
 
 -pyc-reduce-1:
 	: "compile-bytecode" - -
 	: [factor-image File]
 	:
-		fv-form-delineated:
+		cc-mode-delineation:
 			: [unit-directory File]
 			: delineated archive
 		!: [unit File]
 	: format python.ast
-	: intention [fv-intention]
-	: [factor-telemetry]-trap [telemetry-directory File]
+	: metrics-trap [telemetry-directory File]

@@ -56,19 +56,24 @@ def _variant_conclusions(variants):
 
 @tools.struct()
 class VectorParameters(object):
+	mode: str
 	section: str
 	variants: lsf.types.Variants
 	features: list[str]
 
 	def constants(self):
-		return \
-			{'fi-section': str(self.section)} | \
+		return {
+				'cc-mode': str(self.mode),
+				'fi-section': str(self.section),
+			} | \
 			_variant_constants(self.variants) | \
 			_feature_constants(self.features)
 
 	def conclusions(self):
-		return \
-			{'fi-' + str(self.section)} | \
+		return {
+				'cc-mode-' + str(self.mode),
+				'fi-' + str(self.section),
+			} | \
 			_variant_conclusions(self.variants) | \
 			_feature_conclusions(self.features)
 
@@ -80,8 +85,9 @@ class Mechanism(object):
 	# A section of a construction context that can formulate adapters for factor processing.
 	"""
 
-	def __init__(self, context, semantics):
+	def __init__(self, context, mode, semantics):
 		self.context = context
+		self.mode = mode
 		self.semantics = semantics
 		self._cache = {}
 
@@ -97,11 +103,11 @@ class Mechanism(object):
 		self._cache[k] = c
 		return c
 
-	def vectortypes(self, form, features):
+	def vectortypes(self, features):
 		"""
 		# Identify formulation types for the given form and feature set.
 		"""
-		return list(self.context.vectortypes(self.semantics, form, features))
+		return list(self.context.vectortypes(self.mode, self.semantics, features))
 
 	def integrates(self, vtype, itype):
 		"""
@@ -163,13 +169,12 @@ class Context(object):
 	@classmethod
 	def from_directory(Class, route:files.Path):
 		"""
-		# Create instance using a directory. Defaults depending intention to (id)`optimal`.
+		# Create instance using a directory.
 		"""
 		return Class(route)
 
 	def __init__(self, route:files.Path):
 		self.route = route
-		# Requirement intention for metadata contexts.
 		self.projects = lsf.Context()
 		self.intercepts = {}
 
@@ -180,6 +185,18 @@ class Context(object):
 
 		# Initialization Context for loading projections and variants.
 		self._vinit = vf.Context(set(), {})
+
+	def _modes(self, factor):
+		"""
+		# Read the modes vector from factor.
+		"""
+
+		try:
+			v = self._load_vector(factor)
+		except LookupError:
+			return []
+
+		return list(self._cat(self._vinit, v, '[modes]'))
 
 	def _variants(self, factor):
 		"""
@@ -226,16 +243,42 @@ class Context(object):
 		aft, = (self._cat(ctx, idx, "[factor-type]"))
 		return list((aft + '.' + x) for x in self._cat(ctx, idx, "[integration-type]"))
 
-	def vectortypes(self, semantics, form, features):
+	def vectortypes(self, mode, semantics, features):
 		"""
-		# Identify the variant combinations to use for the given &semantics and &intentions.
+		# Identify the &VectorParameter combinations to use for the given &semantics and &modes.
 		"""
 
 		# Identify the set of variants.
 		for section in self._idefault[semantics]:
+			# The original section provides the variants and the intercepts
+			# redirect the section when a mode matches one in the mapping.
 			vfactor = (section @ 'variants')
+
+			if mode in self.intercepts:
+				applied, reform, fmode = self.intercepts[mode]
+
+				if fmode == '.':
+					fmode = mode
+
+				if applied == '.':
+					applied = section
+				else:
+					applied = (section * applied)
+
+				if reform == '.':
+					reform = mode
+			else:
+				applied = section
+				reform = mode
+				fmode = mode
+
+			if fmode not in self._modes(section @ 'variants'):
+				continue
+
+			# Construct vtype instances for each variant replacing the section
+			# with the intercept's substitution.
 			for x in self._variants(vfactor):
-				yield VectorParameters(section, lsf.types.Variants(x[0], x[1], form), features)
+				yield VectorParameters(mode, applied, lsf.types.Variants(x[0], x[1], reform), features)
 
 	def _constants(self, vtype, itype, xtype, **kw):
 		if xtype:
@@ -342,10 +385,9 @@ class Context(object):
 			return
 
 		# Map semantics identifier to the adapter projects in cc.
-		for form in sections_vf.keys():
-			v = self._cat(self._vinit, sections_vf, form)
-			for i in v:
-				yield form, context @ i
+		for mode in sections_vf.keys():
+			v = self._cat(self._vinit, sections_vf, mode)
+			yield (mode, tuple(v))
 
 	def load(self):
 		"""

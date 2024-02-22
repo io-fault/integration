@@ -71,7 +71,6 @@ def select(
 		factor:str, argv,
 		/,
 		architecture=None,
-		intention='optimal',
 		form='',
 	):
 	"""
@@ -79,7 +78,7 @@ def select(
 	# using a runtime identified by the &execution platform.
 	"""
 	pd, pj, fp = projects.split(factor)
-	v = Variants(execution.system, architecture, intention=intention, form=form)
+	v = Variants(execution.system, architecture, form=form)
 
 	# Scan for integrals executable by the platform in priority order.
 	try:

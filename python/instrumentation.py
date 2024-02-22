@@ -108,14 +108,16 @@ if True:
 			# If capture is defined, qualify with the module name.
 			# /../metrics/{pid}/{module}/{project}/{factor}/{test}/.fault-syntax-counters
 			path = os.environ['METRICS_CAPTURE']
+			path += '/coverage'
 			path += '/' + pid
 			path += '/' + __name__
 		else:
-			# /../metrics/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
+			# /../metrics/coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
 
 			# Resolve __metrics_trap__ global at exit in order to allow the runtime
 			# to designate it given compile time absence.
 			path = __metrics_trap__
+			path += '/coverage'
 			path += '/' + pid
 
 		path += '/' + os.environ.get('METRICS_IDENTITY', '.fault-python')
@@ -158,25 +160,16 @@ if True:
 			for x in sources:
 				f.writelines(['%d\\n' %(c,) for c in occurrences[x]])
 
-	# Filter when METRICS_IDENTITY is not the PROJECT.
-	if _fi_identity.startswith(_fi_os.environ.get('PROJECT', '') + '/'):
-		_fi_ae.register(_fi_record)
+	_fi_ae.register(_fi_record)
 
-		try:
-			_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
-		except:
-			_FI_INCREMENT__ = _fi_counters__.update
+	try:
+		_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
+	except:
+		_FI_INCREMENT__ = _fi_counters__.update
 
-		def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
-			C(((F, area),))
-			return rob
-	else:
-		# Factor's project is not the test's project.
-		def _FI_INCREMENT__(*args):
-			pass
-
-		def _FI_COUNT__(area, rob):
-			return rob
+	def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
+		C(((F, area),))
+		return rob
 
 	# Limit names left in the module globals.
 	del _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_record, _fi_identity

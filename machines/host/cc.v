@@ -192,7 +192,7 @@
 -llvm-instrumentation-defines:
 	: -DF_LLVM_INSTRUMENTATION
 -factor-telemetry:
-	: -DF_TELEMETRY_[factor-telemetry]=""""[telemetry-directory File]""""
+	: -DF_TELEMETRY=""""[telemetry-directory File]""""
 
 ##
 # Primary compilation constructor.
@@ -208,7 +208,7 @@
 	:
 		if-coverage: [-llvm-instrumentation-defines]
 		if-profile: [-llvm-instrumentation-defines]
-	: [-factor-telemetry]
+		if-metrics: [-factor-telemetry]
 
 	: [-language-injections]
 

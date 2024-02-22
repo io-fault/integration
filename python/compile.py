@@ -10,7 +10,7 @@ import pickle
 from fault.system import process
 from fault.system import files
 
-def mkbytecode(intention, target, unit, language, dialect, optimize, parameters=None):
+def mkbytecode(target, unit, language, dialect, optimize, parameters=None):
 	from . import module
 	from . import bytecode
 
@@ -30,7 +30,7 @@ def mkbytecode(intention, target, unit, language, dialect, optimize, parameters=
 	co = builtins.compile(stored_ast, origin, 'exec', optimize=optimize)
 	bytecode.store('never', target, co, -1, None)
 
-def mkast(intention, target, origin, language, dialect, optimize, parameters=None):
+def mkast(target, origin, language, dialect, optimize, instrumentation, parameters=None):
 	from . import module
 	constants = []
 
@@ -40,7 +40,8 @@ def mkast(intention, target, origin, language, dialect, optimize, parameters=Non
 	check = parameters.pop('check', 'time')
 
 	encoding = parameters.pop('encoding', 'utf-8')
-	if intention == 'coverage':
+
+	if 'coverage' in instrumentation:
 		from . import instrumentation
 		compiler = instrumentation.compile
 		optimize = 0
@@ -79,7 +80,12 @@ def main(inv:process.Invocation) -> process.Exit:
 	params = dict()
 	params.update(zip(remainder[0::2], remainder[1::2]))
 
-	intent = params.pop('intention', 'error')
+	istr = params.pop('instrumentation', None)
+	if istr is not None:
+		instrumentation = set(istr.split(':'))
+	else:
+		instrumentation = set()
+
 	optimize = int(params.pop('cpython-optimize', 1))
 	language, dialect = params.pop('format', 'python.psf-v3').split('.', 1)
 	delineated = params.pop('delineated', None)
@@ -92,9 +98,9 @@ def main(inv:process.Invocation) -> process.Exit:
 			delineate(output, source, params)
 	else:
 		if dialect == 'ast':
-			mkbytecode(intent, output, source, language, dialect, optimize, params)
+			mkbytecode(output, source, language, dialect, optimize, params)
 		else:
-			mkast(intent, output, source, language, dialect, optimize, params)
+			mkast(output, source, language, dialect, optimize, instrumentation, params)
 
 	return inv.exit(0)
 

@@ -31,6 +31,8 @@ required = {
 command_index = {
 	# Process factors with respect to the product index.
 	'integrate': ('.process', 'options', 'integrate'),
+	'delineate': ('.process', 'options', 'delineate'),
+	'identify': ('.process', 'options', 'identify'),
 	'measure': ('.process', 'options', 'measure'),
 	'test': ('.analysis', 'options', 'test'),
 
@@ -50,6 +52,7 @@ def configure(restricted, required, argv):
 		'processing-lanes': '4',
 		'execution-context': context.query.platform(),
 		'construction-context': None,
+		'construction-context-mode': 'executable',
 		'persistent-cache': None,
 		'cache-type': 'persistent',
 		'product-directory': None,
@@ -68,9 +71,6 @@ def configure(restricted, required, argv):
 
 	oeg = recognition.legacy(restricted, required, argv)
 	remainder = recognition.merge(config, oeg)
-
-	if not config['features']:
-		config['features'].add('optimal')
 
 	return config, remainder
 

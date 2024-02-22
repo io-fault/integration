@@ -19,6 +19,8 @@ from . import filters
 
 options = (
 	{
+		'-m': ('set-add', 'metrics', 'features'),
+
 		'-O': ('set-add', 'optimal', 'features'),
 		'-o': ('set-add', 'portable', 'features'),
 		'-g': ('set-add', 'debug', 'features'),
@@ -44,13 +46,13 @@ options = (
 
 def plan(command,
 		cc:files.Path,
+		ccmode:str,
 		factors:lsf.Context,
 		features:Sequence[str],
 		cachetype:str,
 		cachepath:files.Path,
 		identifier,
 		executable=None,
-		link=None,
 	):
 	"""
 	# Create an invocation for processing &pj with &cc.
@@ -65,15 +67,10 @@ def plan(command,
 	else:
 		env, exepath, xargv = query.dispatch('factors-cc')
 
-	if link is not None:
-		metricslink = '@' + link
-	else:
-		metricslink = ''
-
 	pj_fp = str(project)
 	ki = KInvocation(xargv[0], xargv + [
-		str(cc), cachetype, str(cachepath),
-		':'.join(features) + metricslink,
+		str(cc), ccmode, cachetype, str(cachepath),
+		':'.join(features),
 		str(pj.product.route),
 		pj_fp,
 	])
@@ -92,11 +89,12 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	os.environ['F_PRODUCT'] = str(cc)
 	os.environ['F_EXECUTION'] = str(fx)
 	os.environ['FPI_REBUILD'] = str(config['relevel'])
-
-	xdelineate = config.get('disable-delineation', True) == False
-
 	lanes = int(config['processing-lanes'])
-	connections = []
+
+	projects = argv
+	features = sorted(list(config['features']))
+	if not features:
+		features = ['optimal']
 
 	idx_update = config.get('update-product-index', 'missing')
 	if idx_update != 'never':
@@ -128,15 +126,6 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	factors.load()
 	factors.configure()
 
-	projects = argv
-	features = sorted(list(config['features']))
-
-	# Signal factors.construct to create links to measurements.
-	if cachetype == 'persistent':
-		metricslink = 'metrics'
-	else:
-		metricslink = None
-
 	# Allocate and configure control and monitors.
 	control = terminal.setup()
 	control.configure(lanes+1)
@@ -150,9 +139,10 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 			q = filters.projectgraph(factors, projects)
 			local_plan = tools.partial(
 				plan, 'integrate',
-				cc, factors, features,
+				cc,
+				config['construction-context-mode'],
+				factors, features,
 				cachetype, cachepath,
-				link=metricslink
 			)
 			execution.dispatch(meta, log, local_plan, control, monitors, summary, "FPI", q, opened=True)
 		finally:
@@ -161,5 +151,20 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 		control.clear()
 		control.flush()
 
+def identify(*args):
+	config = args[3]
+	config['construction-context-mode'] = 'identity'
+	config['features'] = set()
+	return integrate(*args)
+
+def delineate(*args):
+	config = args[3]
+	config['construction-context-mode'] = 'delineation'
+	config['features'] = set()
+	return integrate(*args)
+
 def measure(*args):
+	config = args[3]
+	config['construction-context-mode'] = 'metrics'
+	config['features'] = set(['metrics']) # Reference telemetry path.
 	return integrate(*args)

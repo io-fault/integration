@@ -13,7 +13,7 @@ from ..host import construction as cc
 
 def text(context, factor='type', name='text.cc'):
 	text_cc_vectors = cc.getsource(cc.machines_project, name)
-	variants = cc.form_variants('void', 'json', forms=['delineated'])
+	variants = cc.form_variants('void', 'json', modes=['delineation'])
 	txtcc = cc.query.dispatched('text-cc')
 
 	return [

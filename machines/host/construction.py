@@ -136,12 +136,14 @@ def form_host_target(hlinker):
 
 	return target
 
-def form_variants(system, architecture, forms=()):
+def form_variants(system, architecture, modes=()):
 	variants = ""
+	if modes:
+		variants += constant('[modes]', *modes)
+
 	variants += constant('[systems]', system)
 	variants += constant('['+system+']', architecture)
-	if forms:
-		variants += constant('[forms]', *forms)
+
 	return variants
 
 def form_host_type():
@@ -179,7 +181,7 @@ def host(context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/u
 	cc_default = system(cc)
 
 	target = form_host_target(hlinker)
-	variants = form_variants(hsystem, harch)
+	variants = form_variants(hsystem, harch, modes=['executable', 'delineation'])
 	common = form_host_type()
 
 	return [
@@ -217,7 +219,7 @@ def form_python_type():
 
 def python(context, psystem, parch, factor='type', name='python.cc'):
 	python_cc = getsource(machines_project, name)
-	variants = form_variants(psystem, parch)
+	variants = form_variants(psystem, parch, modes=['executable', 'delineation'])
 	common = form_python_type()
 
 	pycc = query.dispatched('python-cc')
@@ -265,14 +267,14 @@ def form_meter_type():
 	) + '\n'
 
 	common += define('Translate',
-		('fv-form-metrics', '.measure-source -stdio .adapters'),
-		('fv-form-identity', '.identify-source -stdio .adapters'),
+		('cc-mode-metrics', '.measure-source -stdio .adapters'),
+		('cc-mode-identity', '.identify-source -stdio .adapters'),
 		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
 	common += define('Render',
-		('fv-form-metrics', '.aggregate-metrics -metrics-join .adapters'),
-		('fv-form-identity', '.form-identity -identity-join .adapters'),
+		('cc-mode-metrics', '.aggregate-metrics -metrics-join .adapters'),
+		('cc-mode-identity', '.form-identity -identity-join .adapters'),
 		('!', '.form-error -error-context .adapters'),
 	) + '\n'
 
@@ -287,17 +289,22 @@ def meter(context):
 		fx('form-identity', 'python', 'system.factors.identify', 'index'),
 
 		mksole('adapters', vtype,
+			define('-telemetry',
+				('if-metrics', '[telemetry-directory]'),
+				('!', '-'),
+			) + \
 			constant('-stdio',
 				'"measure-source-file" input output',
 			) + \
 			constant('-error-context',
 				'"unconditional-failure" - -',
 				'[factor]',
-				'[fv-form]',
+				'[cc-mode]',
 			) + \
 			constant('-metrics-join',
 				'"aggregate-metrics" - -',
 				'[factor-image] [work-directory]',
+				'[-telemetry]',
 				'[project-path] [factor-relative-path]',
 				'[units]',
 			) + \
@@ -308,11 +315,14 @@ def meter(context):
 			)
 		),
 		mksole('type', vtype, form_meter_type()),
+		mksole('variants', vtype, constant('[modes]',
+			'metrics', 'identity',
+		)),
 	]
 
 def text(context, factor='type', name='text.cc'):
 	text_cc_vectors = getsource(machines_project, name)
-	variants = form_variants('void', 'json', forms=['delineated'])
+	variants = form_variants('void', 'json', modes=['delineation'])
 	txtcc = query.dispatched('text-cc')
 
 	return [
@@ -331,11 +341,11 @@ def form_meta_type():
 	) + '\n'
 
 	common += define('Translate',
-		('fv-form-delineated', '.ft-text-cc -parse-text-1 .text-delineate-1'),
+		('cc-mode-delineation', '.ft-text-cc -parse-text-1 .text-delineate-1'),
 	) + '\n'
 
 	common += define('Render',
-		('fv-form-delineated', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
+		('cc-mode-delineation', '.ft-text-cc -store-chapter-1 .text-delineate-1'),
 	) + '\n'
 
 	return common
@@ -349,8 +359,9 @@ def meta(context):
 			constant('text', 'http://if.fault.io/factors/text')
 		),
 		mksole('intercepts', vtype,
-			constant('metrics', 'meter') + \
-			constant('identity', 'meter')
+			constant('metrics', 'meter', '.', 'executable') + \
+			constant('identity', 'meter', '.', 'executable') + \
+			constant('delineation', '.', 'delineated', '.')
 		),
 		mksole('type', vtype, form_meta_type()),
 	]

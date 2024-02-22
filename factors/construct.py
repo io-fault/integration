@@ -28,39 +28,29 @@ class Application(kcore.Context):
 
 	def __init__(self,
 			executor,
-			context, cache,
-			features, telemetry,
+			context, mode, cache,
+			features,
 			product, projects,
 			rebuild=0,
-			connect=None,
 		):
 		self.cxn_executor = executor
 		self.cxn_features = features
 		self.cxn_cache = cache
 		self.cxn_context = context
+		self.cxn_mode = mode
 		self.cxn_product = product
 		self.cxn_projects = projects
 		self.cxn_rebuild = rebuild
-		self.cxn_extension_map = None
 		self.cxn_log = transcripts.Log.stdout()
-		self.cxn_telemetry = telemetry
 
 	@classmethod
 	def from_command(Class, environ, arguments):
-		ctxdir, cache_type, cache_path, ifeatures, work, fpath = arguments
+		ctxdir, ccmode, cache_type, cache_path, ifeatures, work, fpath = arguments
 		ctxdir = files.Path.from_path(ctxdir)
 		work = files.Path.from_path(work)
 
 		# Optional system command intercept.
 		executor = environ.get('FPI_EXECUTOR', None)
-
-		i = ifeatures.find('@')
-		if i > -1:
-			telemetry = ifeatures[i+1:].split(':')
-			ifeatures = ifeatures[:i]
-		else:
-			telemetry = []
-
 		features = list(tools.unique(ifeatures.split(':'), None))
 
 		if cache_type == 'transient':
@@ -83,8 +73,8 @@ class Application(kcore.Context):
 		projects = list(projects)
 
 		return Class(
-			executor, ctx, cdi,
-			features, telemetry,
+			executor, ctx, ccmode, cdi,
+			features,
 			pd, projects,
 			rebuild=rebuild,
 		)
@@ -140,9 +130,9 @@ class Application(kcore.Context):
 				etime,
 				self.cxn_log,
 				self.cxn_features,
-				self.cxn_telemetry,
 				self.cxn_cache,
 				self.cxn_context,
+				self.cxn_mode,
 				pctx,
 				[pctx, rctx],
 				project,
