@@ -133,6 +133,7 @@ def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 		local_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors)
 		execution.dispatch(meta, log, local_plan, control, monitors, summary, "Fates", q, opened=True)
 	finally:
-		log.xact_close('coherency', summary.synopsis('Fates'), {})
+		close_msg = control.render_status_text(summary, 'Fates')
+		log.xact_close('coherency', close_msg, {})
 		control.clear()
 		control.flush()

@@ -146,7 +146,8 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 			)
 			execution.dispatch(meta, log, local_plan, control, monitors, summary, "FPI", q, opened=True)
 		finally:
-			log.xact_close('integration', summary.synopsis("FPI"), {})
+			close_msg = control.render_status_text(summary, 'FPI')
+			log.xact_close('integration', close_msg, {})
 	finally:
 		control.clear()
 		control.flush()
