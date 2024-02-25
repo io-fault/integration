@@ -8,6 +8,7 @@ class Directory(object):
 	"""
 	# A filesystem directory managing the build cache of a project set.
 	"""
+	retained = None
 	def __init__(self, route:files.Path):
 		self.route = route
 
@@ -23,6 +24,8 @@ class Persistent(Directory):
 
 	# Uses a hashed-key path directory to store and recall entries.
 	"""
+
+	retained = True
 
 	@tools.cachedproperty
 	def resource(self):
@@ -40,6 +43,8 @@ class Transient(Directory):
 
 	# Uses an in memory index to recall positioning and counters to allocate new entries.
 	"""
+
+	retained = False
 
 	@tools.cachedproperty
 	def counters(self):

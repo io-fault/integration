@@ -124,6 +124,7 @@ def rebuild(outputs, inputs, subfactor=True, cascade=False):
 	"""
 	# Unconditionally report the &outputs as outdated.
 	"""
+
 	if cascade is False and subfactor is False:
 		# If rebuild is selected, &cascade must be enabled in order
 		# for out-of-selection factors to be rebuilt.
@@ -315,7 +316,7 @@ class Construction(kcore.Context):
 			ctxpath,
 			project,
 			factors,
-			reconstruct=False,
+			reconstruct=0,
 			processors=4,
 		):
 		super().__init__()
@@ -473,9 +474,18 @@ class Construction(kcore.Context):
 		"""
 		tracks = self.tracking[factor]
 
-		# Subfactor of c_factor (selected path)
+		# Subfactor of project being processed.
 		subfactor = (factor.project.factor == self.c_project.factor)
 		xfilter = functools.partial(self._filter, subfactor=subfactor)
+		sfilter = xfilter
+
+		check_image = False
+		if not self.c_cache.retained:
+			if self.reconstruct < 1:
+				check_image = True
+
+			# Never filter sources if the cache is not retained.
+			sfilter = (lambda x, y: False)
 
 		# Execution override for supporting command tracing.
 		exe = self.c_executor
@@ -485,9 +495,15 @@ class Construction(kcore.Context):
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
 		for vtype in mechanism.vectortypes(features):
-			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
-			image = factor.image(vtype.variants)
 			iv = {}
+			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
+
+			image = factor.image(vtype.variants)
+			if check_image and xfilter((image,), (x[1] for x in sources)):
+				# Filtered when image is newer than sources.
+				# &sources is cleared here, rather than a continue statement,
+				# as the cached transactions need to be counted at the end of the loop.
+				sources = []
 
 			cdr = scache(work(vtype.features, vtype.variants, factor.name))
 			locations = {
@@ -531,7 +547,7 @@ class Construction(kcore.Context):
 				tlout = files.Path(units, src.points[:-1] + (unit_name,))
 				unitseq.append(str(tlout))
 
-				if xfilter((tlout,), (src,)):
+				if sfilter((tlout,), (src,)):
 					continue
 
 				tllog = files.Path(logs, src.points)
