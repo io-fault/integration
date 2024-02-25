@@ -1,5 +1,5 @@
 """
-# Host construction context initialization.
+# Text construction context initialization.
 """
 import itertools
 
@@ -101,5 +101,4 @@ def mkvectors(context, route, name='vectors'):
 
 def mkcc(route):
 	mkvectors('vectors', route)
-	cc.mktools('tools', route)
 	cc.iproduct(route, [x.route for x in factors.context.product_sequence])

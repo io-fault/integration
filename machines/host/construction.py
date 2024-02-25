@@ -244,11 +244,6 @@ def mkproject(info, product, context, project, soles):
 	route = (product/context/project).fs_alloc()
 	return (factory.Parameters.define(info, vformats, sets=[], soles=soles), route)
 
-def mktools(context, route, name='cc-tool-adapters'):
-	pi = mkinfo(context + '.context', name)
-	pj = mkctx(pi, formats, route, context, [])
-	factory.instantiate(*pj)
-
 def system_select_linker(system):
 	"""
 	# Select the linker command interface to use based on the system's name.
@@ -405,5 +400,4 @@ def mkvectors(context, route, name='vectors'):
 
 def mkcc(route):
 	mkvectors('vectors', route)
-	mktools('tools', route)
 	iproduct(route, [x.route for x in factors.context.product_sequence])

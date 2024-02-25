@@ -1,6 +1,5 @@
 """
-# Initialize an Execution Platform with a Construction Context on the local system
-# for the processing and execution of Factors.
+# Initialize the System Context for the integration processing and machine execution of Factors.
 """
 import os
 import sys
