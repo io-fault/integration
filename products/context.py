@@ -9,9 +9,8 @@ from ..root import query
 
 def select(
 		local:object,
-		environment:str='FCC',
-		home:str='HOME',
-		user:str='.cc'
+		product:files.Path=None,
+		environment:str='SYSTEMCONTEXT',
 	) -> tuple[str, files.Path]:
 	"""
 	# Generate the possible locations of construction contexts.
@@ -33,17 +32,19 @@ def select(
 	if os.environ.get(environment, None):
 		yield ('environment', files.Path.from_absolute(os.environ[environment]))
 
-	yield ('user', files.Path.from_absolute(os.environ[home]) / user) # No HOME?
-	yield ('fault', query.platform()/'cc')
+	if product is not None:
+		yield ('product', product/'.system')
 
-def resolve(override:str=None) -> tuple[str, files.Path]:
+	yield ('fault', query.system())
+
+def resolve(override:str=None, product=None) -> tuple[str, files.Path]:
 	"""
 	# Use &select to find the highest priority construction context whose directory
 	# exists on the filesystem. The identified path is not verified to conform
 	# to a protocol so subsequent checks may be required.
 	"""
 
-	for pair in select(local=override):
+	for pair in select(local=override, product=product):
 		if pair[1].fs_type() == 'directory':
 			return pair
 	else:

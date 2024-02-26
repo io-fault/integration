@@ -16,7 +16,7 @@ from ...machines import __name__ as machines_project
 
 def mkinfo(path, name):
 	return lsf.types.Information(
-		identifier = 'i-http://fault.io//construction/' + path,
+		identifier = 'i-http://fault.io/system/' + path,
 		name = name,
 		authority = 'fault.io',
 		contact = "http://fault.io/critical"
@@ -361,7 +361,7 @@ def meta(context):
 		mksole('type', vtype, form_meta_type()),
 	]
 
-def mkvectors(context, route, name='vectors'):
+def mkvectors(context, route, name='machines'):
 	soles = [
 		mksole('usr-cc', 'vector.system', system('/usr/bin/cc')),
 		mksole('usr-ar', 'vector.system', system('/usr/bin/ar')),
@@ -398,6 +398,6 @@ def mkvectors(context, route, name='vectors'):
 	pj = mkproject(pi, route, context, 'python', python(context, psys, parch))
 	factory.instantiate(*pj)
 
-def mkcc(route):
-	mkvectors('vectors', route)
+def mkcc(route, context_name='machines'):
+	mkvectors(context_name, route)
 	iproduct(route, [x.route for x in factors.context.product_sequence])

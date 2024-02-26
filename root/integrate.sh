@@ -14,17 +14,16 @@ python.sh
 ) >"$FAULT_LIBEXEC_PATH/fault-dispatch"
 chmod a+x "$FAULT_LIBEXEC_PATH/fault-dispatch"
 
-# Create product index.
+# Build project index; ./intregration twice for the generated machines context.
+f_fictl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT" # For machines/include.
 f_fictl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
-f_fictl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT"
-
-# Initialize execution platform and construction context for the host.
-f_pyx python system.machines.initialize "$FXC"
+f_pyx python system.machines.initialize "$SYSTEMCONTEXT"
+f_fictl -D "$SYSTEM_PRODUCT" delta -U
 
 # Integrate fault.io/python and fault.io/integration using host/cc.
-f_fictl -D "$(dirname "$FAULT_PYTHON_PATH")" -x "$FXC" -X "$FCC" \
+f_fictl -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
 	integrate "$FAULT_CONTEXT_NAME" "$@"
-f_fictl -D "$(dirname "$FAULT_SYSTEM_PATH")" -x "$FXC" -X "$FCC" \
+f_fictl -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
 	integrate system "$@"
 
 # Copy host executables.

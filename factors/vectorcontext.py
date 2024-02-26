@@ -398,13 +398,13 @@ class Context(object):
 		self.projects.configure()
 		return self
 
-	def configure(self, context=(lsf.types.factor@'vectors')):
+	def configure(self, context=(lsf.types.factor@'machines')):
 		"""
 		# Load the default factor semantics.
 		"""
 		self._idefault = self._map_factor_semantics(context)
 		self.intercepts.clear()
-		self.intercepts.update(self._load_intercepts(lsf.types.factor@'vectors'))
+		self.intercepts.update(self._load_intercepts(lsf.types.factor@'machines'))
 		return self
 
 	def _read_cell(self, factor):

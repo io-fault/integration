@@ -29,7 +29,7 @@ def stats(projects):
 
 	return rows
 
-def report(exits, meta, log, config, fx, cc, pdr, remainder):
+def report(exits, meta, log, config, cc, pdr, remainder):
 	"""
 	# Write human readable information about the product and the identified projects.
 	"""

@@ -66,8 +66,8 @@ def dispatched(name, *argv, **environ):
 	plan[2].extend(argv)
 	return ''.join(execution.serialize_sx_plan(plan))
 
-def platform():
+def system():
 	"""
-	# Get the path to the logical platform used by the fault installation.
+	# Get the path to the integration directory of the installation.
 	"""
-	return ipath/'host'
+	return ipath/'integration'

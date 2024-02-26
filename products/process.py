@@ -21,8 +21,8 @@ options = (
 	{
 		'-m': ('set-add', 'metrics', 'features'),
 
-		'-O': ('set-add', 'optimal', 'features'),
 		'-o': ('set-add', 'portable', 'features'),
+		'-O': ('set-add', 'optimal', 'features'),
 		'-g': ('set-add', 'debug', 'features'),
 
 		'-y': ('set-add', 'auxilary', 'features'),
@@ -78,7 +78,7 @@ def plan(command,
 	# Factor Processing Instructions
 	yield (pj_fp, (), pj_fp, ki)
 
-def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
+def integrate(exits, meta, log, config, cc, pdr:files.Path, argv):
 	"""
 	# Complete build connecting requirements and updating indexes.
 	"""
@@ -87,7 +87,6 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 	zero = Procedure.create()
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
-	os.environ['F_EXECUTION'] = str(fx)
 	os.environ['FPI_REBUILD'] = str(config['relevel'])
 	lanes = int(config['processing-lanes'])
 
@@ -140,7 +139,7 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 			local_plan = tools.partial(
 				plan, 'integrate',
 				cc,
-				config['construction-context-mode'],
+				config['construction-mode'],
 				factors, features,
 				cachetype, cachepath,
 			)
@@ -154,18 +153,18 @@ def integrate(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 
 def identify(*args):
 	config = args[3]
-	config['construction-context-mode'] = 'identity'
+	config['construction-mode'] = 'identity'
 	config['features'] = set()
 	return integrate(*args)
 
 def delineate(*args):
 	config = args[3]
-	config['construction-context-mode'] = 'delineation'
+	config['construction-mode'] = 'delineation'
 	config['features'] = set()
 	return integrate(*args)
 
 def measure(*args):
 	config = args[3]
-	config['construction-context-mode'] = 'metrics'
+	config['construction-mode'] = 'metrics'
 	config['features'] = set(['metrics']) # Reference telemetry path.
 	return integrate(*args)

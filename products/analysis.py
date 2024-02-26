@@ -97,7 +97,7 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 
 		yield (pj_fp, (test_fp,), xid, ki)
 
-def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
+def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	"""
 	# Analyze the software's coherency.
 	"""
@@ -107,7 +107,6 @@ def test(exits, meta, log, config, fx, cc, pdr:files.Path, argv):
 
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
-	os.environ['F_EXECUTION'] = str(fx)
 
 	test_prefixes = set([
 		test_type_map[x] for x in config['test-types'] or {'integration', 'unit'}

@@ -20,8 +20,8 @@ restricted = {
 }
 
 required = {
-	'-x': ('field-replace', 'execution-context'),
-	'-X': ('field-replace', 'construction-context'),
+	'-x': ('field-replace', 'machines-context-name'),
+	'-X': ('field-replace', 'system-context-directory'),
 
 	'-D': ('field-replace', 'product-directory'),
 	'-L': ('field-replace', 'processing-lanes'),
@@ -50,9 +50,9 @@ def configure(restricted, required, argv):
 	config = {
 		'features': set(),
 		'processing-lanes': '4',
-		'execution-context': context.query.platform(),
-		'construction-context': None,
-		'construction-context-mode': 'executable',
+		'machines-context-name': 'machines',
+		'system-context-directory': None,
+		'construction-mode': 'executable',
 		'persistent-cache': None,
 		'cache-type': 'persistent',
 		'product-directory': None,
@@ -89,12 +89,11 @@ def main(inv:process.Invocation) -> process.Exit:
 	if command_id == 'help':
 		sys.stderr.write(' '.join((
 			"fictl",
-				"[-x execution-context-directory]"
-				"[-X construction-context-directory]"
+				"[-X system-context-directory]"
+				"[-x machines-context-name]"
 				"[-D product-directory]",
 			"(status | delta | integrate)",
-			"project-selector",
-			"[system-symbols]\n"
+			"project-selector ...\n"
 		)))
 		return inv.exit(63)
 	elif command_id not in command_index:
@@ -109,15 +108,15 @@ def main(inv:process.Invocation) -> process.Exit:
 	cmd_oeg = recognition.legacy(oprestricted, oprequired, remainder[1:])
 	cmd_remainder = recognition.merge(config, cmd_oeg)
 
-	fx = config['execution-context']
-	origin, cc = context.resolve(config['construction-context'])
-
 	if config['product-directory']:
 		pdr = files.Path.from_path(config['product-directory'])
 		config['default-product'] = False
 	else:
 		pdr = pwd
 		config['default-product'] = True
+
+	# Identify the system context to use to process factors.
+	origin, cc = context.resolve(config['system-context-directory'], product=pdr)
 
 	if config['cache-directory'] is not None:
 		cache = (pwd@config['cache-directory'])
@@ -126,5 +125,5 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	fictl_operation = getattr(module, operation)
 	with contextlib.ExitStack() as ctx:
-		fictl_operation(ctx, Log.stderr(), Log.stdout(), config, fx, cc, pdr, cmd_remainder)
+		fictl_operation(ctx, Log.stderr(), Log.stdout(), config, cc, pdr, cmd_remainder)
 	return inv.exit(0)

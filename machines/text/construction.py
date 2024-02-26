@@ -83,7 +83,7 @@ def meta(context):
 		cc.mksole('type', cc.vtype, form_meta_type()),
 	]
 
-def mkvectors(context, route, name='vectors'):
+def mkvectors(context, route, name='machines'):
 	soles = [
 		cc.mksole('bin-cp', 'vector.system', cc.system('/bin/cp')),
 		cc.mksole('bin-ln', 'vector.system', cc.system('/bin/ln')),
@@ -99,6 +99,6 @@ def mkvectors(context, route, name='vectors'):
 	pj = cc.mkproject(pi, route, context, 'meta', meta(context))
 	cc.factory.instantiate(*pj)
 
-def mkcc(route):
-	mkvectors('vectors', route)
+def mkcc(route, context_name='machines'):
+	mkvectors(context_name, route)
 	cc.iproduct(route, [x.route for x in factors.context.product_sequence])
