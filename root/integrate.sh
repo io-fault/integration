@@ -25,11 +25,13 @@ f_fictl -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
 	integrate "$FAULT_CONTEXT_NAME" "$@"
 f_fictl -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
 	integrate system "$@"
+f_fictl -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
+	integrate machines "$@"
 
 # Copy host executables.
 # Overwrites the script calling factor-execute.py.
 (
-	tool="$(f_image 'system.machines.python.tool')"
+	tool="$(f_image 'machines.python.fault-tool')"
 	cp "$tool" "$FAULT_TOOL_PATH/fault-tool"
 	cp "$tool" "$FAULT_LIBEXEC_PATH/fault-dispatch"
 )

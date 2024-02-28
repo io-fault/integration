@@ -7,25 +7,8 @@ cd "$FAULT_PYTHON_PATH"
 fault_dir="$(pwd)"
 container_dir="$(dirname "$fault_dir")"
 
-# Prefer connecting with a symbolic link rather than -I so that
-# &(fictl integrate) can function without additional configuration.
-rm -f "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
-ln -sf "$PYTHON_INCLUDE" "$FAULT_SYSTEM_PATH/machines/include/fault/python/implementation"
-
-BINDH="$FAULT_SYSTEM_PATH/machines/include/fault/python/bind.h"
-echo >"$BINDH" '/* Python and fault locations for binding executable (factor) modules. */'
-echo >>"$BINDH" '#define PYTHON_EXECUTABLE_PATH "'"$PYTHON"'"'
-echo >>"$BINDH" '#define FAULT_PYTHON_IMPLEMENTATION 1'
-echo >>"$BINDH" '#define FAULT_PYTHON_PRODUCT "'"$container_dir"'"'
-echo >>"$BINDH" '#define FAULT_CONTEXT_NAME "'"$(basename "$fault_dir")"'"'
-
 prefix="$PYTHON_PREFIX"
 pylib="python$PYTHON_VERSION$PYTHON_ABI"
-
-# Configure library reference binding executable modules.
-PYMACHINESR="$FAULT_SYSTEM_PATH/machines/python/runtime.sr"
-echo >"$PYMACHINESR" "$prefix/lib"'//library'
-echo >>"$PYMACHINESR" "$pylib"
 
 compile ()
 {
@@ -80,7 +63,9 @@ bootstrap_extension ()
 	intdir="../../extensions/__f-int__/$defsys-$defarch/"
 	compile ${CC:-cc} -w \
 		-o "../../$sofile" \
+		"-I$PYTHON_INCLUDE" \
 		"-I$FAULT_SYSTEM_PATH/machines/include" \
+		"-I$PYTHON_MACHINE/include" \
 		"-I$fault_dir/system/include" \
 		"-I$prefix/include" \
 		\

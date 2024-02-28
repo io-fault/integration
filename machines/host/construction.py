@@ -36,6 +36,7 @@ formats = {
 	'http://if.fault.io/factors/system': [
 		('type', 'c', '2011', 'c'),
 		('type', 'h', '2011', 'c'),
+		('references', 'sr', 'lines', 'text'),
 	],
 	'http://if.fault.io/factors/python': [
 		('module', 'py', 'psf-v3', 'python'),
@@ -48,13 +49,26 @@ formats = {
 }
 
 vformats = {
+	'http://if.fault.io/factors/system': [
+		('type', 'c', '2011', 'c'),
+		('type', 'h', '2011', 'c'),
+		('references', 'sr', 'lines', 'text'),
+	],
+
 	'http://if.fault.io/factors/vector': [
 		('set', 'v', '', 'fault-vc'),
 		('system', 'sys', '', 'fault-vi'),
 	],
+	'http://if.fault.io/factors/meta': [
+		('references', 'fr', 'lines', 'text'),
+	],
 }
 
 vtype = 'vector.set'
+metasources = 'http://if.fault.io/factors/meta.sources'
+systemexecutable = 'http://if.fault.io/factors/system.executable'
+systemreferences = 'system.references'
+factorreferences = 'meta.references'
 clang_delineate = (query.bindir() / 'clang-delineate')
 
 def system(path, *args):
@@ -217,7 +231,59 @@ def form_python_type():
 	)
 	return common
 
-def python(context, psystem, parch, factor='type', name='python.cc'):
+def python_bind(system, architecture, host):
+	import fault as f
+	import fault.system as fsys
+	import sys
+	pyproduct = (files.root@fsys.__file__) ** 3
+
+	quoted = (lambda x: '"' + x + '"')
+	return '\n'.join([
+		"/* Python and fault locations for binding executable (factor) modules. */",
+		"#define PYTHON_EXECUTABLE_PATH " + quoted(sys.executable),
+		"#define FAULT_PYTHON_IMPLEMENTATION 0",
+		"#define FAULT_PYTHON_PRODUCT " + quoted(str(pyproduct)),
+		"#define FAULT_CONTEXT_NAME " + quoted(f.__name__),
+		"#define FACTOR_SYSTEM " + quoted(system),
+		"#define FACTOR_PYTHON " + quoted(architecture),
+		"#define FACTOR_ARCHITECTURE " + quoted(host),
+	])
+
+def python_runtime():
+	import sys
+	prefix = sys.prefix
+	v = '.'.join(map(str, sys.version_info[:2]))
+	abi = sys.abiflags
+
+	return '\n'.join([
+		prefix + '/lib' + '//library',
+		'python' + v,
+	])
+
+def python_interfaces():
+	import sys
+	prefix = sys.prefix
+	v = '.'.join(map(str, sys.version_info[:2]))
+	abi = sys.abiflags
+	include = prefix + '/include'
+
+	return '\n'.join([
+		include + '//interfaces',
+		'python' + v,
+	])
+
+def python_tool():
+	return '\n'.join([
+		"#include <fault/python/bind.h>",
+		"#define TARGET_MODULE \"fault.system.tool\"",
+		"#define FAULT_PYTHON_CONTROL_IMPORTS \\",
+		"\tIMPORT(\"fault.context.execute\") \\",
+		"\tIMPORT(\"system.context.execute\")",
+		"#include <fault/python/execute.h>",
+	])
+
+
+def python(context, psystem, parch, harch, factor='type', name='python'):
 	python_cc = getsource(machines_project, name)
 	variants = form_variants(psystem, parch, modes=['executable', 'delineation'])
 	common = form_python_type()
@@ -234,15 +300,26 @@ def python(context, psystem, parch, factor='type', name='python.cc'):
 		mksole('module', vtype, ''),
 		mksole('interface', vtype, ''),
 		mksole('source', vtype, ''),
+		mksole('runtime', systemreferences, python_runtime()),
+		mksole('c-interfaces', systemreferences, python_interfaces()),
+		mksole('c-fault', factorreferences, 'http://fault.io/integration/machines/include'),
+	], [
+		mkset('include', metasources, (), [
+			('fault/python/bind.h', python_bind(psystem, parch, harch))
+		]),
+		mkset('fault-tool', systemexecutable,
+			('.include', '.c-fault', '.c-interfaces', '.runtime'), [
+			('main.c', python_tool()),
+		]),
 	]
 
 def mkctx(info, formats, product, context, soles=[]):
 	route = (product/context/'context').fs_alloc()
 	return (factory.Parameters.define(info, formats, sets=[], soles=soles), route)
 
-def mkproject(info, product, context, project, soles):
+def mkproject(info, product, context, project, soles, sets=[]):
 	route = (product/context/project).fs_alloc()
-	return (factory.Parameters.define(info, vformats, sets=[], soles=soles), route)
+	return (factory.Parameters.define(info, vformats, sets=sets, soles=soles), route)
 
 def system_select_linker(system):
 	"""
@@ -392,10 +469,10 @@ def mkvectors(context, route, name='machines'):
 	pj = mkproject(pi, route, context, 'host', host(context, hlink, hsys, harch))
 	factory.instantiate(*pj)
 
-	# Python
+	# Python Machine
 	psys, parch = identity.python_execution_context()
 	pi = mkinfo(context + '.python', 'python')
-	pj = mkproject(pi, route, context, 'python', python(context, psys, parch))
+	pj = mkproject(pi, route, context, 'python', *python(context, psys, parch, harch))
 	factory.instantiate(*pj)
 
 def mkcc(route, context_name='machines'):

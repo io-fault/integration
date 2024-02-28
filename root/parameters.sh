@@ -23,6 +23,10 @@
 # /SYSTEMCONTEXT/
 	# System Context path to be used by `fictl`.
 	# Consistent with &FAULT_SYSTEM_PATH.
+# /PYTHON_MACHINE/
+	# The &SYSTEMCONTEXT relative path to the machine project describing
+	# the Python installation. Initialization is completed in
+	# integrate.
 # /PYTHON_PREFIX/
 	# The `sys.path` reported by Python.
 # /PYTHON_VERSION/
@@ -49,6 +53,7 @@ fi
 
 # Paths for host execution platform and construction context.
 SYSTEMCONTEXT="$FAULT_INSTALLATION_PATH/integration"
+PYTHON_MACHINE="$SYSTEMCONTEXT/machines/python"
 
 PYTHON="$1"; shift 1
 if ! test -x "$PYTHON"
@@ -99,7 +104,7 @@ PYTHON_ABI="$(epy 'import sys; print(sys.abiflags)')"
 PYTHON_INCLUDE="$PYTHON_PREFIX/include/python$PYTHON_VERSION$PYTHON_ABI"
 unset -f epy
 
-export FAULT_ROOT_PATH PYX SYSTEMCONTEXT
+export FAULT_ROOT_PATH PYX SYSTEMCONTEXT PYTHON_MACHINE
 export FAULT_TOOL_PATH FAULT_LIBEXEC_PATH
 export FAULT_INSTALLATION_PATH FAULT_PYTHON_PATH FAULT_SYSTEM_PATH
 export PYTHON_PRODUCT SYSTEM_PRODUCT
