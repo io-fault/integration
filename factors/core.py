@@ -18,7 +18,6 @@ class SystemFactor(object):
 
 	fields = {
 		'source-paths': {
-			'http://if.fault.io/factors/lambda.sources',
 			'http://if.fault.io/factors/meta.sources',
 		},
 		'factor-image': {

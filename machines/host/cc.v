@@ -80,7 +80,6 @@
 
 -includes:
 	: -I[http://if.fault.io/factors/meta.sources#source-paths]
-	: -I[http://if.fault.io/factors/lambda.sources#source-paths]
 	: -isystem [-system-includes]
 	: -F [http://if.fault.io/factors/system.framework-directory#factor-image]
 
