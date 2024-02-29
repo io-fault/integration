@@ -1,4 +1,4 @@
-# Prepare fault.io/system and fault.io/python for use on the host system.
+# Prepare fault.io/integration and fault.io/python for use on the host system.
 ##
 
 . "$FAULT_ROOT_PATH/tools.sh"
@@ -20,13 +20,13 @@ f_fictl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
 f_pyx python system.machines.initialize "$SYSTEMCONTEXT"
 f_fictl -D "$SYSTEM_PRODUCT" delta -U
 
-# Integrate fault.io/python and fault.io/integration using host/cc.
-f_fictl -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
-	integrate "$FAULT_CONTEXT_NAME" "$@"
-f_fictl -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
-	integrate system "$@"
 f_fictl -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
-	integrate machines "$@"
+	integrate machines
+
+f_fictl -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
+	integrate "$FAULT_CONTEXT_NAME"
+f_fictl -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
+	integrate system
 
 # Copy host executables.
 # Overwrites the script calling factor-execute.py.
