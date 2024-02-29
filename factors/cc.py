@@ -495,6 +495,7 @@ class Construction(kcore.Context):
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
 		for vtype in mechanism.vectortypes(features):
+			src = devnull
 			iv = {}
 			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
 
