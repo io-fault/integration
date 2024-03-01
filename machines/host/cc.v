@@ -6,7 +6,7 @@
 
 [unit-suffix]:
 	# No suffix for archived images.
-	fv-form-delineated: ""
+	cc-mode-delineation: ""
 	# Extension usually required by compiler drivers as
 	# -x only accepts PL names, not object file formats.
 	!: ".o"
@@ -108,23 +108,6 @@
 		fv-form-pie: -fPIE
 	!: -fPIC
 
--languages:
-	!: -x [language]
-
--dialects:
-	# clang and gcc want the prefix here.
-	language-c:
-		: -std=[dialect prefix.iso9899:]
-	language-c++:
-		dialect-2020: -std=c++20
-		dialect-2014: -std=c++14
-		dialect-2011: -std=c++11
-		dialect-2003: -std=c++03
-		dialect-1998: -std=c++98
-		!: -std=[dialect prefix.iso14882:]
-	# Unsupported dialect.
-	!: -std=[dialect]
-
 -library-directories:
 	: [http://if.fault.io/factors/system.directory#factor-image]
 
@@ -166,6 +149,23 @@
 	: -Xlinker [-macho-framework-directories]
 	: -Xlinker [-macho-framework-names]
 	: [-archive-factors]
+
+-languages:
+	!: -x [language]
+
+-dialects:
+	# clang and gcc want the prefix here.
+	language-c:
+		: -std=[dialect prefix.iso9899:]
+	language-c++:
+		dialect-2020: -std=c++20
+		dialect-2014: -std=c++14
+		dialect-2011: -std=c++11
+		dialect-2003: -std=c++03
+		dialect-1998: -std=c++98
+		!: -std=[dialect prefix.iso14882:]
+	# Unsupported dialect.
+	!: -std=[dialect]
 
 -compile-header:
 	: [-languages]
@@ -333,6 +333,6 @@
 
 -cc-link-1:
 	# Copy directory tree to image location.
-	fv-form-delineated: [-archive-delineated]
+	cc-mode-delineation: [-archive-delineated]
 	# Usually defined in .target
 	!: [-cc-select-ld-interface]
