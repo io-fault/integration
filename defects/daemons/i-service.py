@@ -1,5 +1,5 @@
 import sys
-from .. import service as module
+from ...daemons import service as module
 
 def test_service_routes(test):
 	tr = test.exits.enter_context(module.Path.fs_tmpdir())

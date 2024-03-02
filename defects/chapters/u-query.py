@@ -3,7 +3,7 @@
 # Currently, somewhat redundant with the route tests, but
 # check the functionality with respect to the configured &module.context.
 """
-from .. import query as module
+from ...chapters import query as module
 from fault.text.io import structure_chapter_text
 
 cursor = None

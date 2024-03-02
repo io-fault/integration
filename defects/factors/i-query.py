@@ -2,7 +2,7 @@
 # Check environment and probe classes.
 """
 import os
-from .. import query as module
+from ...factors import query as module
 
 from fault.system import files
 

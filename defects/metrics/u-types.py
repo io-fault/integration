@@ -2,4 +2,4 @@
 # Check &..types structures.
 """
 from fault.system import files
-from .. import types as module
+from ...metrics import types as module

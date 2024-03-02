@@ -2,4 +2,4 @@
 # Check &..calculations functions.
 """
 from fault.system import files
-from .. import calculations as module
+from ...metrics import calculations as module
