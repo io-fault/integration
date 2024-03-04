@@ -63,11 +63,9 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 	# Create an invocation for processing the project from &factors selected using &identifier.
 	"""
 
-	from fault.system.execution import KInvocation
 	pj = factors.project(identifier)
 	project = pj.factor
 
-	from system.root import query
 	exeenv, exepath, xargv = query.dispatch('python')
 	xargv.append('-d')
 
@@ -101,9 +99,6 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	"""
 	# Analyze the software's coherency.
 	"""
-
-	from fault.transcript import terminal
-	from fault.transcript import fatetheme
 
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
