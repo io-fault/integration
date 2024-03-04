@@ -14,8 +14,6 @@ from fault.system import execution
 from fault.project import system as lsf
 from fault.vector import formulation as vf
 
-from . import core
-
 @dataclass(eq=True, unsafe_hash=True)
 class Void(Exception):
 	"""

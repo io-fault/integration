@@ -23,7 +23,7 @@ from fault.transcript import metrics
 
 from . import graph
 from . import core
-from . import vectorcontext
+from ..machines import vectorcontext
 
 open_fs_context = vectorcontext.Context.from_directory
 devnull = files.Path.from_absolute(os.devnull)
