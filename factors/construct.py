@@ -6,7 +6,6 @@ import sys
 import itertools
 import collections
 
-from . import core
 from . import cc
 from . import cache
 
@@ -121,7 +120,7 @@ class Application(kcore.Context):
 
 			# Resolve relative references to absolute while maintaining set/sequence.
 			targets = [
-				core.Target.from_selection(project, r)
+				cc.Target.from_selection(project, r)
 				for r in project.select(constraint)
 			]
 

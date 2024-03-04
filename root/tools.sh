@@ -8,7 +8,7 @@ f_pyx ()
 
 f_fictl ()
 {
-	f_pyx products-cc "$@"
+	f_pyx fictl "$@"
 }
 
 f_image ()

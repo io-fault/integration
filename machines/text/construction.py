@@ -53,8 +53,8 @@ def meta(context):
 
 		cc.fx('measure-source', 'python', 'system.metrics.measure', 'source'),
 		cc.fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
-		cc.fx('identify-source', 'python', 'system.factors.identify', 'source', '-'),
-		cc.fx('form-identity', 'python', 'system.factors.identify', 'index'),
+		cc.fx('identify-source', 'python', 'system.tools.identify', 'source', '-'),
+		cc.fx('form-identity', 'python', 'system.tools.identify', 'index'),
 
 		cc.mksole('projections', cc.vtype,
 			cc.constant('meta', 'http://if.fault.io/factors/meta')

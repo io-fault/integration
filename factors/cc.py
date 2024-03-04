@@ -22,7 +22,7 @@ from fault.kernel import dispatch as kdispatch
 from fault.transcript import metrics
 
 from . import graph
-from . import core
+from .types import Target, SystemFactor, Integrand
 from ..machines import vectorcontext
 
 open_fs_context = vectorcontext.Context.from_directory
@@ -189,9 +189,9 @@ def construct_reference_target(pj, reqs, rsrc, method, record):
 		'http://if.fault.io/factors/system.references',
 	}
 	if reffactor:
-		return core.Target(pj, fp, ft, [], fs, method=method)
+		return Target(pj, fp, ft, [], fs, method=method)
 	else:
-		return core.Target(pj, fp, ft, reqs, rsrc, method=method)
+		return Target(pj, fp, ft, reqs, rsrc, method=method)
 
 def interpret_reference(cc, ctxpath, _factor, reference, *, rreqs={}, rsources=[]):
 	"""
@@ -247,7 +247,7 @@ def structure_system_references(source):
 
 def resolve_meta_references(ir, targets):
 	"""
-	# Construct &core.SystemFactor instances from the reference factors.
+	# Construct &SystemFactor instances from the reference factors.
 	"""
 
 	for t in targets:
@@ -269,28 +269,28 @@ def resolve_meta_references(ir, targets):
 					if not stype or stype == 'library':
 						if rcontext != '':
 							# Conditionally so that the path may be presumed.
-							yield core.SystemFactor.from_libdir(files.root@rcontext)
-						yield from map(core.SystemFactor.from_libname, rnames)
+							yield SystemFactor.from_libdir(files.root@rcontext)
+						yield from map(SystemFactor.from_libname, rnames)
 					elif stype == 'interfaces':
 						include = files.root@rcontext
-						yield core.SystemFactor.from_include(include)
-						yield from (core.SystemFactor.from_include(include@name) for name in rnames)
+						yield SystemFactor.from_include(include)
+						yield from (SystemFactor.from_include(include@name) for name in rnames)
 					elif stype == 'framework':
 						if rcontext != '':
 							# Conditionally so that the path may be presumed.
-							yield core.SystemFactor.from_framework_directory(files.root@rcontext)
-						yield from map(core.SystemFactor.from_framework_name, rnames)
+							yield SystemFactor.from_framework_directory(files.root@rcontext)
+						yield from map(SystemFactor.from_framework_name, rnames)
 		else:
 			# Factor
 			yield t
 
-def requirements(cc, ctxpath, factor:core.Target):
+def requirements(cc, ctxpath, factor:Target):
 	"""
 	# Return the set of factors that is required to build this Target, &factor.
 	"""
 
 	for ref in factor.requirements:
-		if isinstance(ref, (core.Target, core.SystemFactor)):
+		if isinstance(ref, (Target, SystemFactor)):
 			# Already recognized.
 			yield ref
 		else:
@@ -395,7 +395,7 @@ class Construction(kcore.Context):
 
 			work, reqs, deps = self.c_sequence.send(factors) # raises StopIteration
 			for target in work:
-				if isinstance(target, core.SystemFactor):
+				if isinstance(target, SystemFactor):
 					mechanism = None
 				else:
 					ftype = _ftype(target.type)
@@ -465,7 +465,7 @@ class Construction(kcore.Context):
 			# The abstraction to the Construction Context providing
 			# translation and rendering command constructors for the variant set.
 		# /factor/
-			# The &core.Target being built.
+			# The &Target being built.
 		# /requirements/
 			# The set of factors referred to by &factor. Often, the
 			# dependencies that need to be built in order to build the factor.
@@ -520,7 +520,7 @@ class Construction(kcore.Context):
 					scache(telemetry(vtype.variants.reform('metrics'), factor.name))
 				]
 
-			fint = core.Integrand((
+			fint = Integrand((
 				mechanism, factor,
 				requirements, dependents,
 				vtype.variants, locations, iv,

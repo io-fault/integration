@@ -6,15 +6,13 @@ from .. import __name__ as context_name
 from fault.system import process
 
 index = {
-	'archive-delineated': context_name + '.factors.delineated',
+	'archive-delineated': context_name + '.tools.delineated',
 	'text-cc': context_name + '.chapters.compile',
 	'python-cc': context_name + '.python.compile',
 	'factors-cc': context_name + '.factors.construct',
-	'products-cc': context_name + '.products.control',
-	'pdctl': context_name + '.products.control',
 	'fictl': context_name + '.products.control',
 	'man': context_name + '.context.read',
-	'error': context_name + '.factors.error',
+	'error': context_name + '.tools.error',
 }
 
 def activate(factor, element, interface=None):
