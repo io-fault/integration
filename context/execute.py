@@ -9,8 +9,8 @@ index = {
 	'archive-delineated': context_name + '.tools.delineated',
 	'text-cc': context_name + '.chapters.compile',
 	'python-cc': context_name + '.python.compile',
-	'factors-cc': context_name + '.factors.construct',
-	'fictl': context_name + '.products.control',
+	'factors-cc': context_name + '.images.render',
+	'fictl': context_name + '.factors.control',
 	'man': context_name + '.context.read',
 	'error': context_name + '.tools.error',
 }
