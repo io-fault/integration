@@ -2,22 +2,25 @@
 # Testing and static analysis support.
 """
 import os
+import contextlib
 from collections.abc import Iterable, Sequence
 
 from fault.context import tools
-from fault.system import files
-
-from fault.time import system as time
 
 from fault.transcript import terminal
 from fault.transcript import fatetheme
 from fault.transcript import execution
+from fault.transcript.io import Log
 
+from fault.vector import recognition
+from fault.system import files
+from fault.system import process
 from fault.system.execution import KInvocation
 from fault.project import system as lsf
 
 from ..root import query
 from . import filters
+from . import context
 
 ##
 # Test types associated with their identifying prefix.
@@ -30,7 +33,7 @@ test_type_map = {
 }
 
 # fault.vector restricted parameters dictionary.
-test_type_set_control = {
+restricted = {
 	'--integration': ('set-add', 'integration', 'test-types'),
 	'--unit': ('set-add', 'unit', 'test-types'),
 	'--performance': ('set-add', 'performance', 'test-types'),
@@ -51,12 +54,13 @@ test_type_set_control = {
 }
 
 required = {
-	'-f': ('sequence-append', 'test-filters')
-}
+	'-f': ('sequence-append', 'test-filters'),
+	'-x': ('field-replace', 'machines-context-name'),
+	'-X': ('field-replace', 'system-context-directory'),
 
-options = (
-	test_type_set_control, required
-)
+	'-D': ('field-replace', 'product-directory'),
+	'-L': ('field-replace', 'processing-lanes'),
+}
 
 def plan(prefixes, keywords, factors:lsf.Context, identifier):
 	"""
@@ -65,6 +69,9 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 
 	pj = factors.project(identifier)
 	project = pj.factor
+	test_pd, test_project, test_path = factors.split((project ** 1) / 'defects')
+	test_path = test_project.factor / project.identifier
+	test_pj_str = str(test_project.factor)
 
 	exeenv, exepath, xargv = query.dispatch('python')
 	xargv.append('-d')
@@ -74,7 +81,7 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 	else:
 		kwcheck = (lambda x: True) # Always true if unconstrainted
 
-	for (fp, ft), fd in pj.select(lsf.types.factor@'test'):
+	for (fp, ft), fd in test_project.select(lsf.types.factor@project.identifier):
 		if not fp.identifier[:2] in prefixes:
 			continue
 		if not kwcheck(fp):
@@ -82,11 +89,11 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 
 		pj_fp = str(project)
 		test_fp = str(fp)
-		xid = '/'.join((pj_fp, test_fp))
+		xid = '/'.join((test_pj_str, test_fp))
 
 		cmd = xargv + [
-			'fault.test.bin.coherence',
-			pj_fp, test_fp
+			'fault.test.analyze',
+			str(test_project.factor), test_fp
 		]
 		env = dict(os.environ)
 		env.update(exeenv)
@@ -97,7 +104,7 @@ def plan(prefixes, keywords, factors:lsf.Context, identifier):
 
 def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	"""
-	# Analyze the software's coherency.
+	# Perform runtime analysis using the selected factors.
 	"""
 
 	os.environ['PRODUCT'] = str(pdr)
@@ -131,3 +138,39 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 		log.xact_close('coherency', close_msg, {})
 		control.clear()
 		control.flush()
+
+def configure(restricted, required, argv):
+	"""
+	# Root option parser.
+	"""
+	config = {
+		'processing-lanes': '8',
+		'machines-context-name': 'machines',
+		'system-context-directory': None,
+		'product-directory': None,
+
+		'test-types': set(),
+		'test-filters': [],
+	}
+
+	oeg = recognition.legacy(restricted, required, argv)
+	remainder = recognition.merge(config, oeg)
+
+	return config, remainder
+
+def main(inv:process.Invocation) -> process.Exit:
+	pwd = process.fs_pwd()
+
+	config, remainder = configure(restricted, required, inv.argv)
+
+	if config['product-directory']:
+		pdr = files.Path.from_path(config['product-directory'])
+	else:
+		pdr = pwd
+
+	# Identify the system context to use to process factors.
+	origin, cc = context.resolve(config['system-context-directory'], product=pdr)
+
+	with contextlib.ExitStack() as ctx:
+		test(ctx, Log.stderr(), Log.stdout(), config, cc, pdr, remainder)
+	return inv.exit(0)

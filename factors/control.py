@@ -34,7 +34,6 @@ command_index = {
 	'delineate': ('.process', 'options', 'delineate'),
 	'identify': ('.process', 'options', 'identify'),
 	'measure': ('.process', 'options', 'measure'),
-	'test': ('.analysis', 'options', 'test'),
 
 	# Manipulate product index and connections.
 	'delta': ('.manipulate', 'options', 'delta'),
@@ -65,8 +64,6 @@ def configure(restricted, required, argv):
 
 		'relevel': 0,
 		'cache-directory': None,
-		'test-types': set(),
-		'test-filters': [],
 	}
 
 	oeg = recognition.legacy(restricted, required, argv)
