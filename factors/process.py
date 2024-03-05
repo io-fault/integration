@@ -52,7 +52,6 @@ def plan(command,
 		cachetype:str,
 		cachepath:files.Path,
 		identifier,
-		executable=None,
 	):
 	"""
 	# Create an invocation for processing &pj with &cc.
@@ -60,12 +59,7 @@ def plan(command,
 
 	pj = factors.project(identifier)
 	project = pj.factor
-	if executable is not None:
-		env = dict()
-		exepath = executable
-		xargv = [executable]
-	else:
-		env, exepath, xargv = query.dispatch('factors-cc')
+	env, exepath, xargv = query.dispatch('factors-cc')
 
 	pj_fp = str(project)
 	ki = KInvocation(xargv[0], xargv + [
