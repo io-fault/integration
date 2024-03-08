@@ -1,48 +1,62 @@
 """
-# Product builds and tests for system integration.
+# Factor integration execution for building images using a system context.
 """
 import os
+import contextlib
 from collections.abc import Iterable, Sequence
 
 from fault.context import tools
+from fault.vector import recognition
 from fault.system import files
+from fault.system import process
 
 from fault.transcript import terminal
 from fault.transcript import proctheme
 from fault.transcript import execution
+from fault.transcript.io import Log
 
 from fault.system.execution import KInvocation
 from fault.project import system as lsf
 
 from ..root import query
 from . import filters
+from . import context
 
-options = (
-	{
-		'-m': ('set-add', 'metrics', 'features'),
+# Added to &restricted when mode is 'executable'.
+executable_features = {
+	'-m': ('set-add', 'metrics', 'features'),
 
-		'-o': ('set-add', 'portable', 'features'),
-		'-O': ('set-add', 'optimal', 'features'),
-		'-g': ('set-add', 'debug', 'features'),
+	'-o': ('set-add', 'portable', 'features'),
+	'-O': ('set-add', 'optimal', 'features'),
+	'-g': ('set-add', 'debug', 'features'),
 
-		'-y': ('set-add', 'auxilary', 'features'),
-		'-Y': ('set-add', 'capture', 'features'),
+	'--profile': ('set-add', 'profile', 'features'),
+	'--coverage': ('set-add', 'coverage', 'features'),
+}
 
-		'--profile': ('set-add', 'profile', 'features'),
-		'--coverage': ('set-add', 'coverage', 'features'),
+restricted = {
+	# Reprocess levels.
+	'-N': ('field-replace', -1, 'relevel'),
+	'-n': ('field-replace', +0, 'relevel'),
+	'-r': ('field-replace', +1, 'relevel'),
+	'-R': ('field-replace', +2, 'relevel'),
 
-		# Reprocess levels.
-		'-N': ('field-replace', -1, 'relevel'),
-		'-n': ('field-replace', +0, 'relevel'),
-		'-r': ('field-replace', +1, 'relevel'),
-		'-R': ('field-replace', +2, 'relevel'),
+	# Defaults to update when missing.
+	'-u': ('field-replace', 'never', 'update-product-index'),
+	'-U': ('field-replace', 'always', 'update-product-index'),
 
-		# Defaults to update when missing.
-		'-u': ('field-replace', 'never', 'update-product-index'),
-		'-U': ('field-replace', 'always', 'update-product-index'),
-	},
-	{}
-)
+	'-c': ('field-replace', 'transient', 'cache-type'),
+	'-.': ('ignore', None, None),
+}
+
+required = {
+	'-x': ('field-replace', 'machines-context-name'),
+	'-X': ('field-replace', 'system-context-directory'),
+
+	'-D': ('field-replace', 'product-directory'),
+	'-L': ('field-replace', 'processing-lanes'),
+	'-C': ('field-replace', 'persistent-cache'),
+}
 
 def plan(command,
 		cc:files.Path,
@@ -72,7 +86,7 @@ def plan(command,
 	# Factor Processing Instructions
 	yield (pj_fp, (), pj_fp, ki)
 
-def integrate(exits, meta, log, config, cc, pdr:files.Path, argv):
+def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 	"""
 	# Complete build connecting requirements and updating indexes.
 	"""
@@ -145,20 +159,57 @@ def integrate(exits, meta, log, config, cc, pdr:files.Path, argv):
 		control.clear()
 		control.flush()
 
-def identify(*args):
-	config = args[3]
-	config['construction-mode'] = 'identity'
-	config['features'] = set()
-	return integrate(*args)
+def configure(restricted, required, argv):
+	config = {
+		'features': set(),
+		'processing-lanes': '4',
+		'machines-context-name': 'machines',
+		'system-context-directory': None,
+		'construction-mode': 'executable',
+		'persistent-cache': None,
+		'cache-type': 'persistent',
+		'product-directory': None,
 
-def delineate(*args):
-	config = args[3]
-	config['construction-mode'] = 'delineation'
-	config['features'] = set()
-	return integrate(*args)
+		'interpreted-connections': [],
+		'interpreted-disconnections': [],
+		'direct-connections': [],
+		'direct-disconnections': [],
 
-def measure(*args):
-	config = args[3]
-	config['construction-mode'] = 'metrics'
-	config['features'] = set(['metrics']) # Reference telemetry path.
-	return integrate(*args)
+		'relevel': 0,
+		'cache-directory': None,
+	}
+
+	oeg = recognition.legacy(restricted, required, argv)
+	remainder = recognition.merge(config, oeg)
+
+	return config, remainder
+
+def main(inv:process.Invocation, mode='executable', features=None) -> process.Exit:
+	pwd = process.fs_pwd()
+
+	if mode == 'executable':
+		res = restricted | executable_features
+	else:
+		res = restricted
+
+	config, remainder = configure(res, required, inv.argv)
+	config['mode'] = mode
+	if features is not None:
+		config['features'] = features
+
+	if config['product-directory']:
+		pdr = files.Path.from_path(config['product-directory'])
+	else:
+		pdr = pwd
+
+	# Identify the system context to use to process factors.
+	origin, cc = context.resolve(config['system-context-directory'], product=pdr)
+
+	if config['cache-directory'] is not None:
+		cache = (pwd@config['cache-directory'])
+	else:
+		cache = (pdr/'.cache')
+
+	with contextlib.ExitStack() as ctx:
+		dispatch(ctx, Log.stderr(), Log.stdout(), config, cc, pdr, remainder)
+	return inv.exit(0)

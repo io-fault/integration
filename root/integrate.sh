@@ -15,18 +15,18 @@ python.sh
 chmod a+x "$FAULT_LIBEXEC_PATH/fault-dispatch"
 
 # Build project index; ./intregration twice for the generated machines context.
-f_fictl -D "$PYTHON_PRODUCT" delta -U -I "$SYSTEM_PRODUCT" # For machines/include.
-f_fictl -D "$SYSTEM_PRODUCT" delta -U -I "$PYTHON_PRODUCT"
+f_fictl query -D "$PYTHON_PRODUCT" -U -I "$SYSTEM_PRODUCT" # For machines/include.
+f_fictl query -D "$SYSTEM_PRODUCT" -U -I "$PYTHON_PRODUCT"
 f_pyx python system.machines.initialize "$SYSTEMCONTEXT"
-f_fictl -D "$SYSTEM_PRODUCT" delta -U
+f_fictl query -D "$SYSTEM_PRODUCT" -U
 
-f_fictl -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
-	integrate machines
+f_fictl integrate -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
+	machines
 
-f_fictl -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
-	integrate "$FAULT_CONTEXT_NAME"
-f_fictl -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
-	integrate system
+f_fictl integrate -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
+	"$FAULT_CONTEXT_NAME"
+f_fictl integrate -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
+	system
 
 # Copy host executables.
 # Overwrites the script calling factor-execute.py.

@@ -17,6 +17,13 @@ required = {
 	'-C': ('field-replace', 'cc-dirpath'),
 }
 
+def perform(target_directory:files.Path):
+	from .host import construction as cci
+	from fault.system import factors
+	factors.context.load()
+	factors.context.configure()
+	cci.mkcc(target_directory)
+
 def main(inv:process.Invocation) -> process.Exit:
 	config = {
 		'machines': [],
@@ -32,11 +39,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	if target.fs_type() == 'void':
 		target.fs_mkdir()
 
-	from .host import construction as cci
-	from fault.system import factors
-	factors.context.load()
-	factors.context.configure()
-	cci.mkcc(target)
+	perform(target)
 
 	return inv.exit(0)
 
