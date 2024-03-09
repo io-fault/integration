@@ -6,21 +6,17 @@ import contextlib
 from collections.abc import Iterable, Sequence
 
 from fault.context import tools
-
-from fault.transcript import terminal
-from fault.transcript import fatetheme
-from fault.transcript import execution
-from fault.transcript.io import Log
-
 from fault.vector import recognition
 from fault.system import files
 from fault.system import process
+
 from fault.system.execution import KInvocation
 from fault.project import system as lsf
 
 from ..root import query
 from . import filters
 from . import context
+from . import map
 
 ##
 # Test types associated with their identifying prefix.
@@ -62,7 +58,7 @@ required = {
 	'-L': ('field-replace', 'processing-lanes'),
 }
 
-def plan(prefixes, keywords, factors:lsf.Context, identifier):
+def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
 	"""
 	# Create an invocation for processing the project from &factors selected using &identifier.
 	"""
@@ -115,29 +111,28 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	])
 	lanes = int(config['processing-lanes'])
 
-	# Project Context
+	# Configured Factor Context
 	factors = lsf.Context()
-	pd = factors.connect(pdr)
+	factors.connect(pdr)
 	factors.load()
 	factors.configure()
 
-	# Allocate and configure control and monitors.
-	control = terminal.setup()
-	control.configure(lanes+1)
+	ctl = map.Controls(
+		log, meta,
+		query.ipath / 'python',
+		'fault.test.analyze',
+		ctl_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors),
+		ctl_argv = [],
+		ctl_transcript_type = 'test-fates',
+		ctl_lanes = int(config['processing-lanes']),
+		ctl_opened_frames = False,
+		ctl_factor_types = None,
+		ctl_open_title = 'Revealing',
+		ctl_close_title = 'Fates',
+		ctl_operating_title = 'Testing',
+	)
 
-	monitors, summary = terminal.aggregate(control, fatetheme, lanes, width=160)
-
-	try:
-		log.xact_open('coherency', "Revealing fates.", {})
-
-		q = filters.projectgraph(factors, argv)
-		local_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors)
-		execution.dispatch(meta, log, local_plan, control, monitors, summary, "Fates", q, opened=True)
-	finally:
-		close_msg = control.render_status_text(summary, 'Fates')
-		log.xact_close('coherency', close_msg, {})
-		control.clear()
-		control.flush()
+	map.execute(exits, ctl, filters.projectgraph(factors, argv))
 
 def configure(restricted, required, argv):
 	"""
@@ -172,5 +167,5 @@ def main(inv:process.Invocation) -> process.Exit:
 	origin, cc = context.resolve(config['system-context-directory'], product=pdr)
 
 	with contextlib.ExitStack() as ctx:
-		test(ctx, Log.stderr(), Log.stdout(), config, cc, pdr, remainder)
+		test(ctx, map.Log.stderr(), map.Log.stdout(), config, cc, pdr, remainder)
 	return inv.exit(0)

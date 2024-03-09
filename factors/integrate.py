@@ -10,17 +10,13 @@ from fault.vector import recognition
 from fault.system import files
 from fault.system import process
 
-from fault.transcript import terminal
-from fault.transcript import proctheme
-from fault.transcript import execution
-from fault.transcript.io import Log
-
 from fault.system.execution import KInvocation
 from fault.project import system as lsf
 
 from ..root import query
 from . import filters
 from . import context
+from . import map
 
 # Added to &restricted when mode is 'executable'.
 executable_features = {
@@ -65,6 +61,7 @@ def plan(command,
 		features:Sequence[str],
 		cachetype:str,
 		cachepath:files.Path,
+		ctl:map.Controls,
 		identifier,
 	):
 	"""
@@ -127,37 +124,34 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 			cachetype = 'transient'
 			cachepath = exits.enter_context(files.Path.fs_tmpdir())
 
-	# Project Context
+	# Configured Factor Context
 	factors = lsf.Context()
-	pd = factors.connect(pdr)
+	factors.connect(pdr)
 	factors.load()
 	factors.configure()
 
-	# Allocate and configure control and monitors.
-	control = terminal.setup()
-	control.configure(lanes+1)
-	monitors, summary = terminal.aggregate(control, proctheme, lanes, width=160)
+	ctl = map.Controls(
+		log, meta,
+		query.ipath / 'integration',
+		'system.images.render',
+		ctl_plan = tools.partial(
+			plan, 'integrate',
+			cc,
+			config['construction-mode'],
+			factors, features,
+			cachetype, cachepath,
+		),
+		ctl_argv = [],
+		ctl_transcript_type = 'processing-units',
+		ctl_lanes = int(config['processing-lanes']),
+		ctl_opened_frames = True,
+		ctl_factor_types = None,
+		ctl_open_title = 'Factor Processing Instructions',
+		ctl_operating_title = 'FPI',
+		ctl_close_title = 'Factors',
+	)
 
-	try:
-		log.xact_open('integration', "Factor Processing Instructions", {})
-		try:
-			ctxid = cc.identifier
-
-			q = filters.projectgraph(factors, projects)
-			local_plan = tools.partial(
-				plan, 'integrate',
-				cc,
-				config['construction-mode'],
-				factors, features,
-				cachetype, cachepath,
-			)
-			execution.dispatch(meta, log, local_plan, control, monitors, summary, "FPI", q, opened=True)
-		finally:
-			close_msg = control.render_status_text(summary, 'FPI')
-			log.xact_close('integration', close_msg, {})
-	finally:
-		control.clear()
-		control.flush()
+	map.execute(exits, ctl, filters.projectgraph(factors, projects))
 
 def configure(restricted, required, argv):
 	config = {
@@ -211,5 +205,5 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 		cache = (pdr/'.cache')
 
 	with contextlib.ExitStack() as ctx:
-		dispatch(ctx, Log.stderr(), Log.stdout(), config, cc, pdr, remainder)
+		dispatch(ctx, map.Log.stderr(), map.Log.stdout(), config, cc, pdr, remainder)
 	return inv.exit(0)
