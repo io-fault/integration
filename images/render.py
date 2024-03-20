@@ -107,6 +107,7 @@ class Application(kcore.Context):
 		# Project Context
 		pctx = lsf.Context()
 		rctx = lsf.Context.from_product_connections(pctx.connect(work))
+		rctx.connect(ctx.route)
 		rctx.load() # Connection Project Index (requirements)
 		rctx.configure()
 		pctx.load() # Build Project Index (targets)
