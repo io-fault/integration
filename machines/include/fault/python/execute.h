@@ -266,7 +266,7 @@ fault_python_bootstrap(const char *bytecode, const char *source)
 static wchar_t **
 aalloc(int argc, char *argv[])
 {
-	int i, r;
+	int i, r = 0;
 	size_t nbytes;
 	wchar_t **wargv;
 

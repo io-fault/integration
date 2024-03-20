@@ -70,4 +70,4 @@ def system():
 	"""
 	# Get the path to the integration directory of the installation.
 	"""
-	return ipath/'integration'
+	return ipath/'sys'

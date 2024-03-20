@@ -52,7 +52,7 @@ then
 fi
 
 # Paths for host execution platform and construction context.
-SYSTEMCONTEXT="$FAULT_INSTALLATION_PATH/integration"
+SYSTEMCONTEXT="$FAULT_INSTALLATION_PATH/sys"
 PYTHON_MACHINE="$SYSTEMCONTEXT/machines/python"
 
 PYTHON="$1"; shift 1

@@ -212,7 +212,7 @@ def host(context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/u
 		mksole('extension', vtype, ''),
 		mksole('library', vtype, ''),
 		mksole('archive', vtype, ''),
-	]
+	], []
 
 def form_python_type():
 	common = ""
@@ -279,6 +279,19 @@ def python_tool():
 		"#define FAULT_PYTHON_CONTROL_IMPORTS \\",
 		"\tIMPORT(\"fault.context.execute\") \\",
 		"\tIMPORT(\"system.context.execute\")",
+		"#include <fault/python/execute.h>",
+	])
+
+
+def execute_python_image():
+	return '\n'.join([
+		"#include <fault/python/bind.h>",
+		"#ifndef EXECUTED_FACTOR",
+		"\t#define EXECUTED_FACTOR \"fault.system.execute\"",
+		"\t#define ARGUMENT_COUNT 1",
+		"\t#define ARGUMENTS ARGUMENT(\"-d\")",
+		"#endif",
+		"#define TARGET_MODULE EXECUTED_FACTOR",
 		"#include <fault/python/execute.h>",
 	])
 
@@ -438,6 +451,19 @@ def meta(context):
 		mksole('type', vtype, form_meta_type()),
 	]
 
+def execution_project(context, system, python):
+	"""
+	# Construct the execution project containing system.executable factors
+	# providing system access to the configured machines.
+	"""
+
+	return [], [
+		mkset(python, systemexecutable,
+			('..python.include', '..python.c-fault', '..python.c-interfaces', '..python.runtime'), [
+			('main.c', execute_python_image()),
+		]),
+	]
+
 def mkvectors(context, route, name='machines'):
 	soles = [
 		mksole('usr-cc', 'vector.system', system('/usr/bin/cc')),
@@ -466,13 +492,20 @@ def mkvectors(context, route, name='machines'):
 
 	# Host Machine
 	pi = mkinfo(context + '.host', 'host')
-	pj = mkproject(pi, route, context, 'host', host(context, hlink, hsys, harch))
+	pj = mkproject(pi, route, context, 'host', *host(context, hlink, hsys, harch))
 	factory.instantiate(*pj)
 
 	# Python Machine
 	psys, parch = identity.python_execution_context()
 	pi = mkinfo(context + '.python', 'python')
 	pj = mkproject(pi, route, context, 'python', *python(context, psys, parch, harch))
+	factory.instantiate(*pj)
+
+	# Machine execution factors
+	pi = mkinfo(context + '.execution', 'execution')
+	hid = hsys + '-' + harch
+	pid = psys + '-' + parch
+	pj = mkproject(pi, route, context, 'execution', *execution_project(context, hid, pid))
 	factory.instantiate(*pj)
 
 def mkcc(route, context_name='machines'):
