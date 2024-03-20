@@ -273,9 +273,14 @@ def python_interfaces():
 	])
 
 def python_tool():
+	from os.path import dirname as d
+	intpath = d(d(d(d(__file__)))).replace("\"", "\\\"")
+
 	return '\n'.join([
 		"#include <fault/python/bind.h>",
 		"#define TARGET_MODULE \"fault.system.tool\"",
+		"#define EXECUTION_FACTOR_PATH FACTOR_PATH_STRING(F_PRODUCT_PATH) \\",
+		"\tFACTOR_PATH_STRING(\"" + intpath + "\")",
 		"#define FAULT_PYTHON_CONTROL_IMPORTS \\",
 		"\tIMPORT(\"fault.context.execute\") \\",
 		"\tIMPORT(\"system.context.execute\")",
@@ -288,8 +293,8 @@ def execute_python_image():
 		"#include <fault/python/bind.h>",
 		"#ifndef EXECUTED_FACTOR",
 		"\t#define EXECUTED_FACTOR \"fault.system.execute\"",
-		"\t#define ARGUMENT_COUNT 1",
-		"\t#define ARGUMENTS ARGUMENT(\"-d\")",
+		"\t#define ARGUMENT_COUNT 2",
+		"\t#define ARGUMENTS ARGUMENT(\"-d\") ARGUMENT(\"--\")",
 		"#endif",
 		"#define TARGET_MODULE EXECUTED_FACTOR",
 		"#include <fault/python/execute.h>",
