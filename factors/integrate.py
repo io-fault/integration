@@ -187,7 +187,7 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 		res = restricted
 
 	config, remainder = configure(res, required, inv.argv)
-	config['mode'] = mode
+	config['construction-mode'] = mode
 	if features is not None:
 		config['features'] = features
 
