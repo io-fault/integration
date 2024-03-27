@@ -290,7 +290,6 @@ required = {
 	'--corpus-root': ('field-replace', 'corpus-root'),
 	'--corpus-title': ('field-replace', 'corpus-title'),
 	'-P': ('set-add', 'prefixes'),
-	'-I': ('set-add', 'variants'),
 }
 
 restricted = {
@@ -313,6 +312,7 @@ def extract_image_reference(svg):
 	# /&ValueError/
 		# No image tag with an href attribute.
 	"""
+
 	imgat = svg.find('<image')
 	prefix, href = svg[imgat+6:].split('href=', 1)
 	return href[1:href.find(href[:1], 1)]
@@ -321,6 +321,7 @@ def transfer(xfers):
 	"""
 	# Transfer the remote resources to their associated filesystem location.
 	"""
+
 	from system.root import query
 	from fault.system import execution
 	fd = str(query.libexec() / 'fault-dispatch')
@@ -335,6 +336,7 @@ def icons(out:files.Path, ctx:lsf.Context, types):
 	# The icons are placed stored in `.factor-type-icon/` relative to &out
 	# according to &html.icon_identity.
 	"""
+
 	for pj in ctx.iterprojects():
 		for ((fp, ft), (fr, fs)) in pj.select(lsf.types.factor):
 			types.add(ft)
@@ -367,6 +369,7 @@ def manual(argv, variants=lsf.types.Variants('void', 'json', 'delineated')):
 	"""
 	# Print system manuals from chapter elements.
 	"""
+
 	from .manual import transform, prepare
 
 	job = argv[0]
@@ -387,7 +390,6 @@ def manual(argv, variants=lsf.types.Variants('void', 'json', 'delineated')):
 	config = {
 		'encoding': 'utf-8',
 		'prefixes': set(),
-		'variants': set(['void/json']),
 	}
 	v = recognition.legacy(marg_restrict, marg_require, argv[1:])
 	remainder = recognition.merge(config, v)
@@ -440,6 +442,7 @@ def web(argv):
 	"""
 	# Print factor representations for web publication.
 	"""
+
 	job = argv[0]
 	if job == 'page':
 		src = process.fs_pwd() @ argv[1]
@@ -453,7 +456,6 @@ def web(argv):
 		'corpus-title': 'corpus',
 		'prefixes': set(),
 		'web-defaults': True,
-		'variants': set(['void/json']),
 	}
 	v = recognition.legacy(restricted, required, argv[1:])
 	remainder = recognition.merge(config, v)
@@ -471,8 +473,8 @@ def web(argv):
 
 	# Identify variants to scan for delineated sources.
 	variants = [
-		lsf.types.Variants(*x.split('/'))
-		for x in config['variants']
+		lsf.types.Variants(*x.identifier.split('-'), form='delineated')
+		for x in (ctxpath/'.delineated').fs_list()[0]
 	]
 
 	out.fs_mkdir()
