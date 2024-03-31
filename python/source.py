@@ -484,24 +484,16 @@ def parse(source:str, path:str, filter=bottom, encoding='utf-8'):
 	ast.fix_missing_locations(nodes)
 
 	sourcelines = source.encode(encoding).splitlines(True)
-	try:
-		# Use C tokenizer if available as it gives utf-8 offsets.
-		import _tokenize
-		tokens = [
-			tokenize.TokenInfo(t[1], t[0], (t[2], t[4]), (t[3], t[5]), t[-1])
-			for t in _tokenize.TokenizerIter(source)
-		]
-	except ImportError:
-		readline = iter(sourcelines).__next__
-		ulines = source.splitlines(True)
-		tokens = [
-			tokenize.TokenInfo(t.type, t.string,
-				shift_column(ulines, *t.start),
-				shift_column(ulines, *t.end),
-				t.line
-			)
-			for t in tokenize.tokenize(readline)
-		]
+	readline = iter(sourcelines).__next__
+	ulines = source.splitlines(True)
+	tokens = [
+		tokenize.TokenInfo(t.type, t.string,
+			shift_column(ulines, *t.start),
+			shift_column(ulines, *t.end),
+			t.line
+		)
+		for t in tokenize.tokenize(readline)
+	]
 
 	return sourcelines, nodes, _prepare(nodes, tokens, filter=filter)
 
