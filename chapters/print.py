@@ -418,25 +418,32 @@ def manual(argv, variants=lsf.types.Variants('void', 'json', 'delineated')):
 	for pj in iprojects:
 		for fi, fd in pj.select(lsf.types.factor):
 			fp, ft = fi
-			if str(ft) == 'http://if.fault.io/factors/meta.chapter':
-				fmt, file = fd[1][0]
-				i = pj.image(variants, fp) / file.identifier
+			if str(ft) != 'http://if.fault.io/factors/meta.chapter':
+				# Filter non-chapter factors.
+				continue
 
-				ctx = json.loads((i / 'context.json').fs_load().decode('utf-8'))
-				if ctx['protocol'] == 'http://if.fault.io/chapters/system.manual':
-					chapter_path = (i / 'elements.json')
-					chapter_json = chapter_path.fs_load().decode('utf-8')
+			# Get factor image.
+			fmt, file = fd[1][0]
+			i = pj.image(variants, fp) / file.identifier
 
-					chapter = prepare(json.loads(chapter_json)[1][0])
-					mansection = str(chapter[-1]['context']['section'].sole[1])
-					manpath = out/('man' + mansection)
-					manpath = manpath/(fp.identifier + '.' + mansection)
+			ctx = json.loads((i / 'context.json').fs_load().decode('utf-8'))
+			if ctx['protocol'] != 'http://if.fault.io/chapters/system.manual':
+				# Filter non-manual texts.
+				continue
 
-					with manpath.fs_alloc().fs_open('w', encoding=outenc) as f:
-						f.writelines(
-							x + '\n'
-							for x in transform('', chapter)
-						)
+			chapter_path = (i / 'elements.json')
+			chapter_json = chapter_path.fs_load().decode('utf-8')
+
+			chapter = prepare(json.loads(chapter_json)[1][0])
+			mansection = str(chapter[-1]['context']['section'].sole[1])
+			manpath = out/('man' + mansection)
+			manpath = manpath/(fp.identifier + '.' + mansection)
+
+			with manpath.fs_alloc().fs_open('w', encoding=outenc) as f:
+				f.writelines(
+					x + '\n'
+					for x in transform('', chapter)
+				)
 
 def web(argv):
 	"""
