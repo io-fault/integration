@@ -23,9 +23,10 @@ def mkbytecode(target, unit, language, dialect, optimize, parameters=None):
 	with open(unit, 'rb') as f:
 		origin, stored_ast = pickle.load(f)
 
-	module.inject(stored_ast, [
-		('__metrics_trap__', parameters.get('metrics-trap')),
-	])
+	injections = []
+	if 'metrics-trap' in parameters:
+		injections.append(('__metrics_trap__', parameters.get('metrics-trap')))
+	module.inject(stored_ast, injections)
 
 	co = builtins.compile(stored_ast, origin, 'exec', optimize=optimize)
 	bytecode.store('never', target, co, -1, None)
