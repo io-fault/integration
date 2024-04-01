@@ -96,7 +96,7 @@ if True:
 	_fi_counters__ = _fi_cl.Counter()
 	_fi_identity = _fi_os.environ.get('METRICS_IDENTITY') or ''
 
-	def _fi_record(counters=_fi_counters__, origin=_fi_identity):
+	def _fi_record(counters=_fi_counters__, origin=_fi_identity, Retry=32):
 		import sys, os, collections
 
 		if 'PROCESS_IDENTITY' in os.environ:
@@ -112,8 +112,14 @@ if True:
 			path += '/' + pid
 			path += '/' + __name__
 		else:
-			# /../metrics/coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
+			try:
+				if __metrics_trap__ is None:
+					# No destination.
+					return
+			except NameError:
+				return
 
+			# /../metrics/coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
 			# Resolve __metrics_trap__ global at exit in order to allow the runtime
 			# to designate it given compile time absence.
 			path = __metrics_trap__
@@ -121,18 +127,14 @@ if True:
 			path += '/' + pid
 
 		path += '/' + os.environ.get('METRICS_IDENTITY', '.fault-python')
-
-		# Retry in case of conflicting capture prefix.
-		for x in range(8):
+		path += '/.fault-syntax-counters'
+		for x in range(Retry):
 			try:
 				os.makedirs(path)
-			except:
+			except FileExistsError:
 				pass
 			else:
 				break
-
-		path += '/.fault-syntax-counters'
-		os.makedirs(path)
 
 		# Vectorize the counters.
 		events = collections.defaultdict(list)
