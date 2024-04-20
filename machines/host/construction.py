@@ -188,10 +188,13 @@ def form_host_type():
 	return common
 
 def host(route, context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/usr/bin/cc'):
+	sv = lsf.types.Variants(hsystem, harch)
+	fm = lsf.types.factor@'fault-metrics.llvm'
+	pd = lsf.Product(route)
+	ccdeline = pd.image(sv, fm, lsf.types.factor@'delineate')
+
 	machine_cc = getsource(machines_project, name)
-	deline = system(str(clang_delineate))
-	deline = query.dispatched(
-		'python', '-L' + str(route), '.system', 'fault-metrics.llvm.delineate')
+	deline = system(str(ccdeline))
 	adeline = query.dispatched('archive-delineated')
 	cc_default = system(cc)
 
