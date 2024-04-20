@@ -29,8 +29,8 @@ formats = {
 }
 
 info = lsf.types.Information(
-	identifier = 'http://fault.io/development/tools//llvm',
-	name = 'fault-llvm-adapters',
+	identifier = '://fault.metrics/llvm',
+	name = 'llvm',
 	authority = 'fault.io',
 	contact = "http://fault.io/critical"
 )

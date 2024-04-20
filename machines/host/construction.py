@@ -187,10 +187,11 @@ def form_host_type():
 	)
 	return common
 
-def host(context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/usr/bin/cc'):
+def host(route, context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/usr/bin/cc'):
 	machine_cc = getsource(machines_project, name)
 	deline = system(str(clang_delineate))
-	deline = query.dispatched('python', '-d', '.system', 'tools.fault-llvm.delineate')
+	deline = query.dispatched(
+		'python', '-L' + str(route), '.system', 'fault-metrics.llvm.delineate')
 	adeline = query.dispatched('archive-delineated')
 	cc_default = system(cc)
 
@@ -497,7 +498,7 @@ def mkvectors(context, route, name='machines'):
 
 	# Host Machine
 	pi = mkinfo(context + '.host', 'host')
-	pj = mkproject(pi, route, context, 'host', *host(context, hlink, hsys, harch))
+	pj = mkproject(pi, route, context, 'host', *host(route, context, hlink, hsys, harch))
 	factory.instantiate(*pj)
 
 	# Python Machine
