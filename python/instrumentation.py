@@ -240,7 +240,7 @@ def construct_initialization_nodes(path="/dev/null"):
 
 	return nodes
 
-def instrument(path, noded, address):
+def instrument(record, path, noded, address):
 	"""
 	# Adjust the AST so that &node will record its execution.
 	"""
@@ -251,6 +251,7 @@ def instrument(path, noded, address):
 	if isinstance(node, ast.Pass):
 		note, update = construct_call_increment(node, address)
 		getattr(parent, field)[index] = note
+		record.add(address)
 	elif isinstance(node, ast.expr):
 		note, update = construct_boolop_increment(node, address, path=path)
 		update(node)
@@ -258,6 +259,7 @@ def instrument(path, noded, address):
 			setattr(parent, field, note.value)
 		else:
 			getattr(parent, field)[index] = note.value
+		record.add(address)
 	elif isinstance(node, (ast.arguments, ast.arg)):
 		pass
 	else:
@@ -265,6 +267,7 @@ def instrument(path, noded, address):
 		if index is not None:
 			position=(0 if isinstance(node, source.InterruptNodes) else 1)
 			getattr(parent, field).insert(index+position, note)
+			record.add(address)
 		else:
 			assert False
 			pass # never
@@ -280,19 +283,20 @@ def delineate(noded):
 
 	return area
 
-def apply(path, noded):
+def apply(record, path, noded):
 	node = noded[0]
 	if hasattr(node, '_f_context'):
 		area = node._f_context[0][0:2] + node._f_area[2:]
 	else:
 		area = node._f_area
 
-	return instrument(path, noded, area)
+	return instrument(record, path, noded, area)
 
 def compile(factor, source, path, constants,
 		parse=source.parse,
 		hash=module.hash_syntax,
-		filter=visit
+		filter=visit,
+		record=None,
 	):
 	"""
 	# Compile Python source of a module into an instrumented &types.CodeObject
@@ -305,7 +309,7 @@ def compile(factor, source, path, constants,
 		if isinstance(noded[0], (ast.expr_context, ast.slice)):
 			continue
 
-		apply(path, noded)
+		apply(record, path, noded)
 
 	# Insert profiling or coverage header before constants.
 	tree.body[0:0] = construct_initialization_nodes().body

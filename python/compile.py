@@ -31,6 +31,19 @@ def mkbytecode(target, unit, language, dialect, optimize, parameters=None):
 	co = builtins.compile(stored_ast, origin, 'exec', optimize=optimize)
 	bytecode.store('never', target, co, -1, None)
 
+def write_coverage_mapping(path, cmd, areaset):
+	cmd /= path.identifier
+	cmd.fs_alloc().fs_mkdir() # Coverage mapping directory.
+	unique = list(areaset)
+	unique.sort()
+
+	with (cmd/'sources').fs_open('w') as f:
+		f.write(str(len(unique)) + ' ' + str(path))
+
+	with (cmd/'areas').fs_open('w') as f:
+		for area in unique:
+			f.write('%d %d %d %d\n' % area)
+
 def mkast(target, origin, language, dialect, optimize, instrumentation, parameters=None):
 	from . import module
 	constants = []
@@ -44,8 +57,18 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 
 	if 'coverage' in instrumentation:
 		from . import instrumentation
-		compiler = instrumentation.compile
 		optimize = 0
+
+		if parameters.get('metrics-trap') is not None:
+			def compiler(*args, **kw):
+				cs = kw['record'] = set()
+				ast = instrumentation.compile(*args, **kw)
+				mtarget = (files.root@parameters['metrics-trap'])/'maps'
+				write_coverage_mapping(origin, mtarget, cs)
+				return ast
+		else:
+			cset = None
+			compiler = instrumentation.compile
 	else:
 		compiler = module.compile
 
