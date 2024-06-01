@@ -908,12 +908,12 @@ def transform(resolution, datadir:files.Path, source:files.Path):
 	except:
 		keys = ()
 		strings = ()
-	docs = dict(zip(map(tuple,keys),strings))
+	docs = dict(zip(map(tuple, keys), strings))
 
 	try:
 		with rt.fs_open('r') as f:
 			keys, datas = load(f)
-			data = dict(zip(map(tuple,keys),datas))
+			data = dict(zip(map(tuple, keys), datas))
 	except:
 		data = dict()
 
