@@ -17,6 +17,7 @@ from fault.project import system as lsf
 from fault.text.io import structure_chapter_text, structure_paragraph_element
 from . import join
 from . import html
+from ..metrics import coverage
 
 web_resources = '.legacy-web'
 core_style = 'core.css'
@@ -43,6 +44,11 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	fsrc = froot + ['src']
 
 	meta = froot + ['.http-resource', 'meta.json']
+	fmeta = froot + ['meta.json']
+	fcoverage = froot + ['coverage.json']
+	fmetrics = froot + ['metrics.json']
+
+	# Identify whether the factor is a sole source and what that source (file) is.
 	if isinstance(sources, Cell):
 		sole = True
 		primary = sources[0][1].identifier
@@ -71,6 +77,18 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	srcindex = []
 	chapter = ""
 
+	# Load coverage data if available.
+	try:
+		careas, ccounts, ctypes = coverage.load_metrics_aggregates(metrics)
+	except OSError:
+		careas = {}
+		ccounts = {}
+		ctypes = {}
+
+	ctxcov = {}
+	cc = 0 # Total positive counters.
+	cz = 0 # Total zero counters.
+
 	# Populate source tree with delineation and metrics.
 	for fmt, x in sources:
 		# Calculate path to delineation image.
@@ -79,26 +97,47 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 			continue
 
 		rpath = x.points
+		rpathstr = '/'.join(rpath)
 		outsrc = fsrc + list(rpath)
 		depth = len(rpath) + ddepth
 
 		fmt = fmt.format
-		srcindex.append(('/'.join(x.points), fmt.language, fmt.dialect))
+		srcindex.append((rpathstr, fmt.language, fmt.dialect))
+
+		# Coverage Data
+		apath = str(x)
+		areas = careas.pop(apath, {})
+		types = ctypes.pop(apath, "")
+		counts = ccounts.pop(apath, {})
 
 		# Factor Images
 		di = img + rpath
-		mi = metrics + rpath
 
 		# project/factor/src/path.ext/source.txt
 		yield outsrc + ['source.txt'], (x.fs_load(),)
 
-		if mi.fs_type() == 'directory':
-			# Copy the contents of the metrics image.
-			for dirpath, mfiles in mi.fs_index():
-				for f in mfiles:
-					yield outsrc + ['metrics', f.identifier], (f.fs_load(),)
-
 		if di.fs_type() == 'directory':
+			# Emit coverage profile for the factor's source.
+			try:
+				with (di/'elements.json').fs_open('r') as f:
+					elements_data = json.load(f)
+			except:
+				cidx = {}
+				covp = None
+				raise
+			else:
+				covp = coverage.factor_source_profile(elements_data, areas, types, counts)
+				covzeros = set(covp['zeros'])
+				for eid, eareas in covp['elements'].items():
+					c = ctxcov[eid] = coverage.annotation(covzeros, eareas)
+					cc += c[0]
+					cz += c[1]
+				# Identify file with relative path.
+				ctxcov['/'+rpathstr] = ctxcov.pop("", [])
+
+				# Per-element counters.
+				yield outsrc + ['metrics', 'coverage.json'], (json.dumps(covp).encode('utf-8'),)
+
 			if (di/'context.json').fs_type() == 'data':
 				# If context extraction was performed, merge with meta.json.
 				with (di/'context.json').fs_open() as f:
@@ -116,7 +155,31 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 			chapter += "\n[]\n"
 			chapter += fet
 
+	# Has a metrics image?
+	if metrics.fs_type() == 'directory':
+		# Copy the contents of the metrics image.
+		syntax_metrics = json.loads((metrics/'syntax-profiles').fs_load())
+		line_count = 0
+		for syntax_file in syntax_metrics.values():
+			for sr in syntax_file:
+				line_count += sr['count']
+	else:
+		syntax_metrics = None
+		line_count = None
+
+	metrics_summary = {
+		'coverage': (cc - cz) / cc if cc > 0 else None,
+		'traversable': cc, # Total number of coverage counters.
+		'revealed': cz, # Total number of coverage counters that were zero.
+		'line-count': line_count,
+		'syntax': syntax_metrics,
+	}
+
+	yield fcoverage, (json.dumps(ctxcov).encode('utf-8'),)
+	yield fmetrics, (json.dumps(metrics_summary).encode('utf-8'),)
+	yield fmeta, (json.dumps(meta_json).encode('utf-8'),)
 	yield meta, (json.dumps(meta_json).encode('utf-8'),)
+
 	if 'icon' in meta_json:
 		icon_data = meta_json['icon']
 		if 'image/svg' in icon_data:
