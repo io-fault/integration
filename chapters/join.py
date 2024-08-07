@@ -27,6 +27,7 @@ def itruncate(lines:[str], indentation='\t', ilevel=string.ilevel):
 	"""
 	# Truncate the minimum common indentation in &lines.
 	"""
+
 	clines = []
 	excess = 0xFFFFFFFF
 	for l in lines:
@@ -52,6 +53,7 @@ def prefix(path, element):
 	"""
 	# Adjust the sections in &element to be relative to &path.
 	"""
+
 	depth = len(path) - 1
 	stack = [x for x in element[1] if x[0] == 'section']
 
@@ -77,6 +79,7 @@ def extract(sub, section):
 	"""
 	# Extract the mapping from the identified &section removing its element from the tree.
 	"""
+
 	r = sub.root[0]
 	items = sub.select('/section[%s]/directory/item' %(section,))
 
@@ -91,6 +94,7 @@ def section_items(chapter, section):
 	"""
 	# Get the first directory in &section and its interpreted items.
 	"""
+
 	d = chapter.fork('/section[%s]/directory#1' %(section,))
 	if d.root:
 		pd = d.root[0]
@@ -110,6 +114,7 @@ def control(**kw):
 	"""
 	# Construct a CONTROL admonition element.
 	"""
+
 	return (
 		'admonition', [
 			('directory', [
@@ -124,6 +129,7 @@ def type_property_fragments(resolve, element, titled=True):
 	"""
 	# Construct &Fragment instances for populating a property set to describe the type.
 	"""
+
 	typsyntax = element[2]['syntax'].replace('\n', '')
 	typref = element[2].get('reference')
 
@@ -143,6 +149,7 @@ def describe_type(resolve, element, titled=True):
 	# Produce tuples used to form `'item'` paragraphs describing the type
 	# element found within &element.
 	"""
+
 	if not element or not element[1]:
 		return ()
 
@@ -165,6 +172,7 @@ def documented_field_item(cast, resolve, context, element, identifier, documenta
 	"""
 	# Construct the directory item element for a documented field.
 	"""
+
 	v_content = [] # Content of the new parameter directory item.
 
 	# Build item element for rendering.
@@ -193,6 +201,7 @@ def undocumented_field_item(cast, resolve, context, element, identifier, documen
 	# Construct the directory item element for representing an undocumented field.
 	# The &documentation parameter is provided for type consistency with &documented_field_item.
 	"""
+
 	v_content = [] # Content of the new parameter directory item.
 
 	# Build item element for rendering.
@@ -398,6 +407,7 @@ class Text(comethod.object):
 		"""
 		# Unsupported element type.
 		"""
+
 		return ()
 
 	@comethod('chapter')
@@ -405,6 +415,7 @@ class Text(comethod.object):
 		"""
 		# Rewrite references in the text tree and render the changes.
 		"""
+
 		r = self.resolution.rewrite(path, element)
 		yield from render.chapter(r)
 
@@ -414,6 +425,7 @@ class Text(comethod.object):
 		"""
 		# Render a capture of the source after the documentation.
 		"""
+
 		doc = self.getdoc(path)
 
 		# Retrieve the type element.
@@ -439,6 +451,7 @@ class Text(comethod.object):
 
 		# The default switch target.
 		"""
+
 		yield self.newline
 		yield self.section(0, None, path)
 
@@ -535,6 +548,7 @@ def split_element(project, factor):
 	# the factor's element from the path and construct a triple containing
 	# the link, title, and target type describing the factor path.
 	"""
+
 	parts = project.split(factor)
 	pfactor = str(project.factor)
 
@@ -553,6 +567,7 @@ def relation(origin, target):
 	"""
 	# Identify the relation of the &target project to &origin project.
 	"""
+
 	if target.factor == origin.factor:
 		# Same factor project.
 		return 'project-local'
@@ -567,6 +582,7 @@ def dr_absolute_path(requirements, context, project, reference):
 	"""
 	# Resolve an absolute reference.
 	"""
+
 	fpath = lsf.types.factor@reference
 	try:
 		target = context.split(fpath)
@@ -600,6 +616,7 @@ def dr_context_path(context, project, reference):
 	"""
 	# Resolve a root-Context relative reference.
 	"""
+
 	local = 'context-local'
 	target_type = None
 	cpath = project.factor.container
@@ -628,6 +645,7 @@ def dr_project_path(project, reference):
 	"""
 	# Resolve a Project relative reference.
 	"""
+
 	path = lsf.types.factor@reference
 	parts = project.split(path)
 	title = ''
@@ -648,6 +666,7 @@ def index(factor, deque=collections.deque, none={}):
 	"""
 	# Construct an index of elements using the identifier paths.
 	"""
+
 	subids = set(x[2].get('identifier') for x in factor[1])
 	idx = {(): (factor, subids)}
 
@@ -683,6 +702,7 @@ def match(index, path, subpath):
 	# [ Returns ]
 	# Returns the number of leading &subpath items that matched at that position.
 	"""
+
 	sub = (None, ())
 	consistency = 0
 
@@ -756,6 +776,7 @@ class Resolution(comethod.object):
 		"""
 		# Trap for elements where descent should not occur.
 		"""
+
 		return element[1]
 
 	def switch(self, context, path, element, *suffix):
@@ -789,6 +810,7 @@ class Resolution(comethod.object):
 		# /root/
 			# The documentation's chapter.
 		"""
+
 		self.switch(context, context, root)
 		return root
 
