@@ -113,12 +113,26 @@ def integrate(index, types, element):
 				attr['flags'] = set(x[0][1] for x in ctl['flags'])
 			if 'element' in ctl:
 				# Language level type/syntax, type/reference, etc.
-				attr['element'] = dict(map(setdirectory.interpret_fragment, (
+				epl = attr['element'] = dict(map(setdirectory.interpret_fragment, (
 					x.sole for x in ctl['element']
 				)))
-				if ('source', 'area') in attr['element']:
-					attr['area'] = map(int, attr['element'][('source', 'area')].split())
+
+				if ('source', 'area') in epl:
+					attr['area'] = map(int, epl[('source', 'area')].split())
 				#XXX if ('source', 'path') in attr['element']:
+
+				# Convert coverage-counters and coverage-zeros to values
+				# more amicable to reporting.
+				cc = epl.get(('coverage-counters',))
+				if cc:
+					cc = int(cc, 10)
+					cz = int(epl.get(('coverage-zeros',)), 10)
+					if cc > 0:
+						attr['completion'] = (cc - cz) / cc
+					else:
+						attr['completion'] = None
+					attr['counters'] = cc
+					attr['misses'] = cz
 
 	for x in element[1]:
 		if x[0] == 'section':
@@ -165,7 +179,7 @@ class PageContext():
 	pc_identifier: str
 	pc_hyperlink: str
 
-def page_heading(tree, depth, subject, context):
+def page_heading(tree, depth, subject, context, *, progress=()):
 	"""
 	# Construct the elements of a page's initial heading.
 	"""
@@ -178,6 +192,7 @@ def page_heading(tree, depth, subject, context):
 					tree.escape(subject.ps_identifier),
 					('class', 'subject-identifier'),
 				),
+				progress,
 				tree.element('a',
 					tree.element('code',
 						tree.escape(subject.ps_type),
@@ -273,6 +288,52 @@ class Render(comethod.object):
 			('class', None if integrate == False else 'integrate')
 		)
 
+	def element_progress(self, attr):
+		"""
+		# Render misses and completion elements normally used to represent coverage.
+
+		# [ Returns ]
+		# A triple containing the misses, isolation, and completion elements
+		# to be inserted directly after an element's title.
+		"""
+
+		# Allow misses to exist independently of completion despite it
+		# potentially being absurd.
+		if attr.get('misses', None) is not None:
+			if attr['misses'] > 0:
+				misclass = 'misses'
+			else:
+				misclass = 'nothing-missed'
+
+			misses = self.element('span',
+				self.text(str(attr['misses'])),
+				('class', misclass),
+			)
+		else:
+			misses = None
+			misses = ()
+
+		# Coverage as a floating point value (0-1) provided by &integrate.
+		completion = ()
+		c_isolation = ()
+		if attr.get('completion', None) is not None:
+			# Exclude the percentage when not incomplete.
+			# The zero misses count intends to succintly imply the hundred percent.
+
+			covp = attr.get('completion', 0.0)
+			if (covp - 1.0) < 0.0:
+				c_isolation = self.element('span',
+					self.text(''),
+					('class', 'completion-isolation')
+				)
+				txt = "{0}%".format(int(covp * 100))
+				completion = self.element('span',
+					self.text(txt),
+					('class', 'completion'),
+				)
+
+		return misses, c_isolation, completion
+
 	def document(self, subject, context, head=(), header=(), footer=(), resolver=None):
 		"""
 		# Render the HTML document from the given chapter.
@@ -281,7 +342,13 @@ class Render(comethod.object):
 		resolver = resolver or self.default_resolver()
 		relement, = self.input.root
 
-		title = self.title(resolver, page_heading(self.output, 2, subject, context), False)
+		attr = relement[-1]
+		eprog = self.element('span',
+			itertools.chain(*self.element_progress(attr)),
+			('class', 'element-status'),
+		)
+		phead = page_heading(self.output, 2, subject, context, progress=eprog)
+		title = self.title(resolver, phead, False)
 		return self.element('html',
 			itertools.chain(
 				head,
@@ -291,7 +358,7 @@ class Render(comethod.object):
 						self.element('main',
 							itertools.chain(
 								title,
-								self.root(resolver, relement[1], relement[-1]),
+								self.root(resolver, relement[1], attr),
 								self.element('h1', self.text(''), ('class', 'footing')),
 							),
 						),
@@ -379,8 +446,18 @@ class Render(comethod.object):
 					href = href
 				),
 				self.element('span',
-					self.text(typ if typ not in ttypes else ''),
-					('class', 'abstract-type'),
+					itertools.chain(*self.element_progress(attr)),
+					('class', 'element-status'),
+				),
+
+				self.element('div',
+					itertools.chain(
+						self.element('span',
+							self.text(typ if typ not in ttypes else ''),
+							('class', 'abstract-type'),
+						),
+					),
+					('class', 'factor-element-meta'),
 				),
 				i_element_type,
 			),

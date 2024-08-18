@@ -246,7 +246,7 @@ class Text(comethod.object):
 			for k, v in tmap.items()
 		)
 
-	def r_control(self, factorelement, documented=True, element=(), **ctlkeys):
+	def r_control(self, path, factorelement, documented=True, element=(), **ctlkeys):
 		ctl = [
 			"! CONTROL:\n",
 			"\t/type/\n",
@@ -278,13 +278,19 @@ class Text(comethod.object):
 		else:
 			ctl.append("\t\t- (source/area)`{0[0]} {0[1]} {1[0]} {1[1]}`\n".format(*area))
 
+		# Add coverage if present in annotations.
+		coverage = self.annotations.get('.'.join(path), {}).get('coverage')
+		if coverage:
+			ctl.append("\t\t- (coverage-zeros)`{0}`\n".format(coverage[1]))
+			ctl.append("\t\t- (coverage-counters)`{0}`\n".format(coverage[0]))
+
 		if element:
 			ctl.extend(render.elements([('set', element, {})], adjustment=2))
 
 		return ctl
 
 	def r_root(self, factor):
-		yield from self.r_control(factor, syntax=factor[2].get('syntax', None))
+		yield from self.r_control((), factor, syntax=factor[2].get('syntax', None))
 
 		doc = self.getdoc(())
 		if doc is not None:
@@ -351,7 +357,7 @@ class Text(comethod.object):
 			pass
 
 		doc = self.getdoc(path)
-		yield from self.r_control(element, documented=bool(doc), element=typdata)
+		yield from self.r_control(path, element, documented=bool(doc), element=typdata)
 
 		# Collect inheritance if any is specified and increment offset for &switch.
 		try:
@@ -434,7 +440,7 @@ class Text(comethod.object):
 
 		yield self.newline
 		yield self.section(0, None, path)
-		yield from self.r_control(element, documented=bool(doc), element=typdata)
+		yield from self.r_control(path, element, documented=bool(doc), element=typdata)
 
 		if doc is not None:
 			if doc.root[0][1]:
@@ -460,7 +466,7 @@ class Text(comethod.object):
 		# Retrieve the type of the element.
 		resolve = self.resolution.partial(path)
 		typdata = list(map(property_item, describe_type(resolve, element)))
-		yield from self.r_control(element, documented=bool(doc), element=typdata)
+		yield from self.r_control(path, element, documented=bool(doc), element=typdata)
 
 		parameters = []
 		try:
@@ -534,7 +540,8 @@ class Text(comethod.object):
 		lines[-1] = lines[-1] + suffix
 		return lines
 
-	def __init__(self, resolution, elements, docs, data, source):
+	def __init__(self, annotations, resolution, elements, docs, data, source):
+		self.annotations = annotations
 		self.resolution = resolution
 		self.elements = elements
 		self.source_path = source
@@ -910,7 +917,7 @@ def load(f):
 		data = data.replace(',}', '}')
 		return json.loads(data)
 
-def transform(resolution, datadir:files.Path, source:files.Path):
+def transform(annotations, resolution, datadir:files.Path, source:files.Path):
 	re = (datadir/"elements.json")
 	dd = (datadir/"documented.json")
 	rd = (datadir/"documentation.json")
@@ -939,5 +946,5 @@ def transform(resolution, datadir:files.Path, source:files.Path):
 	except:
 		data = dict()
 
-	t = Text(resolution, factorelement, docs, data, source)
+	t = Text(annotations, resolution, factorelement, docs, data, source)
 	return t.r_root(factorelement)

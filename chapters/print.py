@@ -6,6 +6,7 @@ import os
 import traceback
 import contextlib
 import json
+import collections
 
 from fault.vector import recognition
 from fault.context import tools
@@ -91,6 +92,9 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 
 	# Populate source tree with delineation and metrics.
 	for fmt, x in sources:
+		# Per-source, implied, per-element dictionary used by join.
+		annotations = collections.defaultdict(dict)
+
 		# Calculate path to delineation image.
 		if str(fmt) == 'http://if.fault.io/factors/meta.unknown':
 			# Ignore unknown sources.
@@ -109,6 +113,8 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 		areas = careas.pop(apath, {})
 		types = ctypes.pop(apath, "")
 		counts = ccounts.pop(apath, {})
+		src_cc = 0
+		src_cz = 0
 
 		# Factor Images
 		di = img + rpath
@@ -130,10 +136,15 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 				covzeros = set(covp['zeros'])
 				for eid, eareas in covp['elements'].items():
 					c = ctxcov[eid] = coverage.annotation(covzeros, eareas)
+					annotations[eid]['coverage'] = c
 					cc += c[0]
+					src_cc += c[0]
 					cz += c[1]
+					src_cz += c[1]
 				# Identify file with relative path.
-				ctxcov['/'+rpathstr] = ctxcov.pop("", [])
+				ctxcov['/'+rpathstr] = ctxcov.pop('', [])
+				# Per-source totals.
+				annotations['']['coverage'] = [src_cc, src_cz]
 
 				# Per-element counters.
 				yield outsrc + ['metrics', 'coverage.json'], (json.dumps(covp).encode('utf-8'),)
@@ -149,7 +160,7 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 					yield outsrc + ['delineated', f.identifier], (f.fs_load(),)
 
 			rr = join.Resolution(req, ctx, pj, fpath)
-			fet = ''.join(join.transform(rr, di, x))
+			fet = ''.join(join.transform(annotations, rr, di, x))
 			yield outsrc + ['chapter.txt'], (fet.encode('utf-8'),)
 
 			chapter += "\n[]\n"
