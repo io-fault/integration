@@ -6,6 +6,12 @@
 #include <Python.h>
 #include <structmember.h>
 
+#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION < 14
+	/* Public API introduced in 3.14. */
+	Py_hash_t _Py_HashBytes(const void *, Py_ssize_t);
+	#define Py_HashBuffer _Py_HashBytes
+#endif
+
 #if __ALWAYS__()
 	/**
 		// Py_Is macros introduced in CPython 3.10.
