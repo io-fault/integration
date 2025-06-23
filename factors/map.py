@@ -40,6 +40,7 @@ required = {
 	'--status-type': ('field-replace', 'status-frame-type'),
 	'-T': ('sequence-append', 'factor-types'),
 	'-L': ('field-replace', 'processing-lanes'),
+	'-M': ('field-replace', 'status-monitors'),
 
 	'-A': ('field-replace', 'execution-factor'),
 
@@ -70,9 +71,27 @@ class Controls(object):
 	ctl_close_title: str = 'Operation Aggregate'
 	ctl_transcript_type: str = 'processing-units'
 	ctl_lanes: int = 4
-	ctl_display_limit: int = 4
+	ctl_monitors: int = 4
 	ctl_opened_frames: bool = True
 	ctl_factor_types: set[str] = None
+
+	@staticmethod
+	def identify_lanes(config):
+		"""
+		# Interpret lanes and monitors from configuration text fields.
+		"""
+
+		lanes = int(config['processing-lanes'])
+
+		sm = config['status-monitors']
+		if sm is None or sm == '.':
+			monitors = lanes
+		elif sm == '-':
+			monitors = -1
+		else:
+			monitors = int(sm)
+
+		return lanes, monitors
 
 def plan_select(factors:lsf.Context, ctl:Controls, selection):
 	"""
@@ -152,8 +171,20 @@ def execute(exits, op:Controls, queue):
 	"""
 
 	# Allocate and configure control and monitors.
-	control = terminal.setup()
-	control.configure(op.ctl_lanes+1) # +1 for the dedicated summary.
+	if op.ctl_monitors > -1:
+		# Lanes may exceed monitors.
+		try:
+			control = terminal.setup()
+		except OSError:
+			# No tty associated, disabled monitor updates.
+			control = terminal.setup('/dev/null')
+		else:
+			control.configure(op.ctl_monitors+1) # +1 for the dedicated summary.
+	else:
+		# Filtering should be performed by &execution.dispatch, but
+		# maintain the invariant and hold a file descriptor.
+		control = terminal.setup('/dev/null')
+
 	theme = frame_type(op.ctl_transcript_type) # Column labels and units.
 	monitors, summary = terminal.aggregate(control, theme, op.ctl_lanes, width=160)
 
@@ -165,7 +196,7 @@ def execute(exits, op:Controls, queue):
 			tools.partial(op.ctl_plan, op),
 			control, monitors, summary,
 			op.ctl_operating_title, queue,
-			opened=op.ctl_opened_frames
+			opened = op.ctl_opened_frames,
 		)
 	finally:
 		close_msg = control.render_status_text(summary, op.ctl_close_title)
@@ -176,6 +207,8 @@ def execute(exits, op:Controls, queue):
 def configure(restricted, required, argv):
 	config = {
 		'processing-lanes': '4',
+		'status-monitors': None,
+
 		'product-directory': None,
 		'system-context-directory': None,
 		'execution-directory': None,
@@ -205,6 +238,7 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	# Identify the system context to use to process factors.
 	origin, systemctx = resolve(config['system-context-directory'], product=xdr)
+	lanes, monitors = Controls.identify_lanes(config)
 
 	# Configured Factor Context
 	factors = lsf.Context()
@@ -218,7 +252,8 @@ def main(inv:process.Invocation) -> process.Exit:
 		ctl_plan = tools.partial(plan_select, factors),
 		ctl_argv = [],
 		ctl_transcript_type = config['status-frame-type'],
-		ctl_lanes = int(config['processing-lanes']),
+		ctl_lanes = lanes,
+		ctl_monitors = monitors,
 		ctl_opened_frames = config['opened-frames'],
 		ctl_factor_types = set(config['factor-types']) or None,
 	)

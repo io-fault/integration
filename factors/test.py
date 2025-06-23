@@ -56,6 +56,7 @@ required = {
 
 	'-D': ('field-replace', 'product-directory'),
 	'-L': ('field-replace', 'processing-lanes'),
+	'-M': ('field-replace', 'status-monitors'),
 }
 
 def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
@@ -109,7 +110,8 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	test_prefixes = set([
 		test_type_map[x] for x in config['test-types'] or {'integration', 'unit'}
 	])
-	lanes = int(config['processing-lanes'])
+
+	lanes, monitors = map.Controls.identify_lanes(config)
 
 	# Configured Factor Context
 	factors = lsf.Context()
@@ -124,7 +126,8 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 		ctl_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors),
 		ctl_argv = [],
 		ctl_transcript_type = 'test-fates',
-		ctl_lanes = int(config['processing-lanes']),
+		ctl_lanes = lanes,
+		ctl_monitors = monitors,
 		ctl_opened_frames = False,
 		ctl_factor_types = None,
 		ctl_open_title = 'Revealing',
@@ -140,6 +143,7 @@ def configure(restricted, required, argv):
 	"""
 	config = {
 		'processing-lanes': '8',
+		'status-monitors': None,
 		'machines-context-name': 'machines',
 		'system-context-directory': None,
 		'product-directory': None,

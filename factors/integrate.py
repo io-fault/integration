@@ -51,6 +51,7 @@ required = {
 
 	'-D': ('field-replace', 'product-directory'),
 	'-L': ('field-replace', 'processing-lanes'),
+	'-M': ('field-replace', 'status-monitors'),
 	'-C': ('field-replace', 'persistent-cache'),
 }
 
@@ -93,7 +94,6 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
 	os.environ['FPI_REBUILD'] = str(config['relevel'])
-	lanes = int(config['processing-lanes'])
 
 	projects = argv
 	features = sorted(list(config['features']))
@@ -124,6 +124,8 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 			cachetype = 'transient'
 			cachepath = exits.enter_context(files.Path.fs_tmpdir())
 
+	lanes, monitors = map.Controls.identify_lanes(config)
+
 	# Configured Factor Context
 	factors = lsf.Context()
 	factors.connect(pdr)
@@ -143,7 +145,8 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 		),
 		ctl_argv = [],
 		ctl_transcript_type = 'processing-units',
-		ctl_lanes = int(config['processing-lanes']),
+		ctl_lanes = lanes,
+		ctl_monitors = monitors,
 		ctl_opened_frames = True,
 		ctl_factor_types = None,
 		ctl_open_title = 'Factor Processing Instructions',
@@ -157,6 +160,7 @@ def configure(restricted, required, argv):
 	config = {
 		'features': set(),
 		'processing-lanes': '4',
+		'status-monitors': None,
 		'machines-context-name': 'machines',
 		'system-context-directory': None,
 		'construction-mode': 'executable',
