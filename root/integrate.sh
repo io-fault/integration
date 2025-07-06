@@ -19,6 +19,7 @@ f_fictl query -D "$PYTHON_PRODUCT" -U -I "$SYSTEM_PRODUCT"
 f_fictl query -D "$SYSTEM_PRODUCT" -U -I "$PYTHON_PRODUCT"
 f_pyx python system.machines.initialize "$SYSTEMCONTEXT"
 f_fictl query -D "$SYSTEMCONTEXT" -U -I "$SYSTEM_PRODUCT"
+f_fictl query -D "$INTERFACE_PRODUCT" -U -I "$SYSTEM_PRODUCT"
 
 f_fictl integrate -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
 	machines

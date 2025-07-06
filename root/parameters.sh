@@ -78,6 +78,14 @@ then
 	exit 4
 fi
 
+INTERFACE_PRODUCT="$FAULT_INSTALLATION_PATH/interface"
+FAULT_TERMINAL_PATH="$INTERFACE_PRODUCT/terminal"
+if ! test -d "$FAULT_TERMINAL_PATH"
+then
+	echo >&2 "[!# ERROR: integration product not found in '$FAULT_INSTALLATION_PATH']"
+	exit 4
+fi
+
 FAULT_LIBEXEC_PATH="$FAULT_INSTALLATION_PATH/libexec"
 test -d "$FAULT_LIBEXEC_PATH" || mkdir "$FAULT_LIBEXEC_PATH" || exit 4
 FAULT_TOOL_PATH="$FAULT_INSTALLATION_PATH/bin"
