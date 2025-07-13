@@ -495,17 +495,11 @@ class Construction(kcore.Context):
 		scache = functools.partial(self.c_cache.select, factor.project.factor, factor.route)
 
 		for vtype in mechanism.vectortypes(features):
-			src = devnull
-			iv = {}
-			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
+			if nsources < 1 or not mechanism.integrates(vtype, factor.type):
+				# Unrecognized type or no sources.
+				continue
 
 			image = factor.image(vtype.variants)
-			if check_image and xfilter((image,), (x[1] for x in sources)):
-				# Filtered when image is newer than sources.
-				# &sources is cleared here, rather than a continue statement,
-				# as the cached transactions need to be counted at the end of the loop.
-				sources = []
-
 			cdr = scache(work(vtype.features, vtype.variants, factor.name))
 			locations = {
 				'factor-image': image,
@@ -515,6 +509,7 @@ class Construction(kcore.Context):
 				'unit-directory': (cdr / 'units').delimit(),
 			}
 
+			iv = {}
 			if 'metrics' in features:
 				iv['telemetry-directory'] = [
 					scache(telemetry(vtype.variants.reform('metrics'), factor.name))
@@ -528,13 +523,19 @@ class Construction(kcore.Context):
 			))
 			del iv
 
-			if not mechanism.integrates(vtype, factor.type):
-				# Unrecognized type.
-				continue
+			# Identify if any requirements are newer than the target image.
+			ifpaths = [x for x in fint.required(vtype.variants) if not isinstance(x, str)]
+			new_requirements = not xfilter((image,), ifpaths)
 
-			if nsources < 1:
-				# No sources to process.
-				continue
+			if check_image and not new_requirements:
+				# Uncached build without rebuild flag and no newer requirements.
+
+				# Potentially, the target is up to date.
+				# If all sources are older than the target image and
+				# none of the requirement images are newer, clear the source
+				# list to avoid an unnecessary work.
+				if xfilter((image,), (x[1] for x in sources)):
+					sources = []
 
 			self._prepare_work_directory(locations, factor.sources())
 			logs = locations['log-directory']
@@ -543,6 +544,8 @@ class Construction(kcore.Context):
 			translations = []
 			unitseq = []
 
+			src = devnull
+			u_prefix, u_suffix = mechanism.unit_name_delta(vtype, factor.type)
 			for fmt, src in sources:
 				unit_name = u_prefix + src.identifier + u_suffix
 				tlout = files.Path(units, src.points[:-1] + (unit_name,))
@@ -566,11 +569,7 @@ class Construction(kcore.Context):
 
 			tracks.append(('translate', translations))
 
-			ifpaths = [x for x in fint.required(vtype.variants) if not isinstance(x, str)]
-			if translations or not xfilter((image,), ifpaths):
-				# Build is triggered unconditionally if any translations are performed
-				# or if the target image is older than any requirement image.
-
+			if translations or new_requirements:
 				cmd, ric = mechanism.render(vtype, factor.type)
 				local = {
 					'units': unitseq,
@@ -583,6 +582,7 @@ class Construction(kcore.Context):
 				rlog = files.Path(logs, ('Integration',))
 				ops = [prepare(cmd, render, rlog, image, src, executor=exe)]
 			else:
+				# No sources translated and no requirements newer than image.
 				ops = []
 
 			tracks.append(('render', ops))
