@@ -6,12 +6,15 @@
 #define TEST_SUITE_EXTENSION
 #include <fault/test.h>
 
+#define note_failed_exit() fprintf(stderr, "CRITICAL: test did not exit after contending absurdity\n")
+
 Test(failed_comparison_format_i8)
 {
 	int8_t m = INT8_MIN;
 	int8_t n = m - 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_i16)
@@ -20,6 +23,7 @@ Test(failed_comparison_format_i16)
 	int16_t n = m - 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_i32)
@@ -28,6 +32,7 @@ Test(failed_comparison_format_i32)
 	int32_t n = m - 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_i64)
@@ -36,6 +41,7 @@ Test(failed_comparison_format_i64)
 	int64_t n = m - 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_u8)
@@ -44,6 +50,7 @@ Test(failed_comparison_format_u8)
 	uint8_t n = m + 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_u16)
@@ -52,6 +59,7 @@ Test(failed_comparison_format_u16)
 	uint16_t n = m + 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_u32)
@@ -60,6 +68,7 @@ Test(failed_comparison_format_u32)
 	uint32_t n = m + 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
 
 Test(failed_comparison_format_u64)
@@ -68,4 +77,5 @@ Test(failed_comparison_format_u64)
 	uint64_t n = m + 1;
 
 	test->equality(m, n);
+	note_failed_exit();
 }
