@@ -11,10 +11,14 @@
 			if (feature_available == false)
 				test->skip("feature not available");
 
-			test->equality(10, 10);
-			test->truth(function() == 100);
+			test(function() == 100); // test->truth() shorthand.
+			test->equality(10, 10); // test(10 == 10), but with operand strings in errors.
+
 			test->strcmp("IdNameString", lookup_name(id));
 			test->strstr("haystack of needles", "needle");
+
+			if (thats_not_right)
+				test->fail("formatted message");
 		}
 
 	// If multiple sources are being compiled into the same target, the
@@ -22,24 +26,30 @@
 	// file that includes `test.h`:
 
 	// #!syntax/c
+		// Stop some globals from being defined here as it's being
+		// joined with the source object that defines them.
 		#define TEST_SUITE_EXTENSION
 		#include <fault/test.h>
 
 		Test(alternative)
 		{
-			test->fail()
+			test->fail(...)
 		}
 
 	// [ Test Control Methods ]
+
+	// Most of the methods are named directly after their corresponding libc function
+	// and intend to provide an identical interface including the return value in cases
+	// where absurdities did not cause the test to fail.
+
+	// /`test->truth(int)`/
+		// Fail when zero. Long form of `test(expr)`.
 
 	// /`test->equality(intmax_t, intmax_t)`/
 		// Fail when integers are not equal.
 
 	// /`test->inequality(intmax_t, intmax_t)`/
 		// Fail when integers are equal.
-
-	// /`test->truth(int)`/
-		// Fail when zero.
 
 	// /`test->strcmpf(const char *solution, const char *format, ...)`/
 		// Fail when the formatted string is not equal to the solution.
@@ -50,19 +60,19 @@
 	// /`test->strcasecmp(const char *, const char *)`/
 		// Fail when, case insensitive, strings are not equal.
 
-	// /`test->wcscmp(const wchar_t *, const wchar_t *)`/
-		// Fail when strings are not equal.
-
-	// /`test->wcscasecmp(const wchar_t *, const wchar_t *)`/
-		// Fail when, case insensitive, strings are not equal.
-
 	// /`test->strstr(const char *haystack, const char *needle)`/
 		// Fail when the needle string is not found in haystack.
 
 	// /`test->strcasestr(const char *haystack, const char *needle)`/
 		// Fail when the, case insensitive, needle is not found in haystack.
 
-	// /`test->wcsstr(const char *haystack, const char *needle)`/
+	// /`test->wcscmp(const wchar_t *, const wchar_t *)`/
+		// Fail when strings are not equal.
+
+	// /`test->wcscasecmp(const wchar_t *, const wchar_t *)`/
+		// Fail when, case insensitive, strings are not equal.
+
+	// /`test->wcsstr(const wchar_t *haystack, const wchar_t *needle)`/
 		// Fail when the, wide character, needle is not found in haystack.
 
 	// /`test->memcmp(void *, void *, size_t)`/
@@ -154,10 +164,10 @@
 		// One test at a time in a single process.
 		// &siglongjmp is used to exit concluded tests.
 	// /tdm_thread/
-		// Dispatch all tests concurrently in a single process.
+		// Dispatch the test in a thread.
 		// &pthread_exit is used to exit tests.
 	// /tdm_process/
-		// Dispatch all tests concurrenctly using fork.
+		// Dispatch the test in a forked process.
 		// &exit is used to exit tests.
 */
 enum TestDispatchMethod {
