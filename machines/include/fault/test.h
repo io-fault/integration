@@ -482,6 +482,8 @@ extern struct HarnessTestRecord *_h_function_index;
 	_TEST_MACRO_DIRECTION(S, CTL, inequality, #A, #B, _TEST_FORMATTING("==", A, B), A, B)
 #define _TEST_METHOD_TRUTH(S, CTL, A, ...) _TEST_MACRO_DIRECTION(S, CTL, truth, #A, "void", A, 0)
 
+#define test(...) (test->controls->truth)(_test_control_macro_arguments, #__VA_ARGS__, "void", __VA_ARGS__, 0)
+
 /**
 	// Namespace friendly test controls.
 */

@@ -7,6 +7,30 @@
 
 #define note_failed_exit() fprintf(stderr, "CRITICAL: test did not exit after contending absurdity\n")
 
+Test(passed_test)
+{
+	test(true);
+	test(!false);
+	test(1);
+	test(!0);
+	test(0 == 0);
+	test(1 != 0);
+	test(1 > 0);
+	test(0 < 1);
+	test(1 <= 1);
+	test(1 >= 1);
+}
+
+Test(failed_test_zero)
+{
+	test(!1);
+}
+
+Test(failed_test_bool)
+{
+	test(false);
+}
+
 Test(explicit_failure)
 {
 	test->fail("explicit failure %s message", "'substituted'");
