@@ -459,82 +459,65 @@ extern struct HarnessTestRecord *_h_function_index;
 #define _TEST_MACRO_DIRECTION(ISOLATION, TEST_CONTROLS, METHOD, ...) \
 	ISOLATION(TEST_CONTROLS->METHOD)(_test_control_macro_arguments, __VA_ARGS__)
 
-#define _TEST_METHOD_FAIL(S, CTL, ...) _TEST_MACRO_DIRECTION(S, CTL, fail, "void", "void", __VA_ARGS__)
-#define _TEST_METHOD_SKIP(S, CTL, ...) _TEST_MACRO_DIRECTION(S, CTL, skip, "void", "void", __VA_ARGS__)
-#define _TEST_METHOD_PASS(S, CTL, ...) _TEST_MACRO_DIRECTION(S, CTL, pass, "void", "void", __VA_ARGS__)
-
-#define _TEST_METHOD_MEMCMP(S, CTL, A, B, SZ) _TEST_MACRO_DIRECTION(S, CTL, memcmp, #A, #B, A, B, SZ)
-#define _TEST_METHOD_MEMCHR(S, CTL, A, B, SZ) _TEST_MACRO_DIRECTION(S, CTL, memchr, #A, #B, A, B, SZ)
-#define _TEST_METHOD_MEMRCHR(S, CTL, A, B, SZ) _TEST_MACRO_DIRECTION(S, CTL, memrchr, #A, #B, A, B, SZ)
-
-#define _TEST_METHOD_STRCMPF(S, CTL, A, B, ...) _TEST_MACRO_DIRECTION(S, CTL, strcmpf, #A, #B, A, B, __VA_ARGS__)
-#define _TEST_METHOD_STRCMP(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, strcmp, #A, #B, A, B)
-#define _TEST_METHOD_STRCASECMP(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, strcasecmp, #A, #B, A, B)
-#define _TEST_METHOD_WCSCMP(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, wcscmp, #A, #B, A, B)
-#define _TEST_METHOD_WCSCASECMP(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, wcscasecmp, #A, #B, A, B)
-#define _TEST_METHOD_WCSSTR(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, wcsstr, #A, #B, A, B)
-#define _TEST_METHOD_STRSTR(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, strstr, #A, #B, A, B)
-#define _TEST_METHOD_STRCASESTR(S, CTL, A, B) _TEST_MACRO_DIRECTION(S, CTL, strcasestr, #A, #B, A, B)
-
-#define _TEST_METHOD_EQUALITY(S, CTL, A, B) \
-	_TEST_MACRO_DIRECTION(S, CTL, equality, #A, #B, _TEST_FORMATTING("!=", A, B), A, B)
-#define _TEST_METHOD_INEQUALITY(S, CTL, A, B) \
-	_TEST_MACRO_DIRECTION(S, CTL, inequality, #A, #B, _TEST_FORMATTING("==", A, B), A, B)
-#define _TEST_METHOD_TRUTH(S, CTL, A, ...) _TEST_MACRO_DIRECTION(S, CTL, truth, #A, "void", A, 0)
+#define _TEST_METHOD_FORMAT(S, CTL, METHOD, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, "void", "void", __VA_ARGS__)
+#define _TEST_METHOD_UNARY(S, CTL, METHOD, A) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, "void", A, 0)
+#define _TEST_METHOD_BINARY(S, CTL, METHOD, A, B, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, A, B __VA_OPT__(,) __VA_ARGS__)
+#define _TEST_METHOD_BINARY_F(S, CTL, METHOD, OP, A, B, ...) \
+	_TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, _TEST_FORMATTING(OP, A, B), A, B)
 
 #define test(...) (test->controls->truth)(_test_control_macro_arguments, #__VA_ARGS__, "void", __VA_ARGS__, 0)
 
 /**
 	// Namespace friendly test controls.
 */
-#define fail_test(...) _TEST_METHOD_FAIL(_WRAP, test->controls, __VA_ARGS__)
-#define skip_test(...) _TEST_METHOD_SKIP(_WRAP, test->controls, __VA_ARGS__)
-#define pass_test(...) _TEST_METHOD_PASS(_WRAP, test->controls, __VA_ARGS__)
+#define fail_test(...) _TEST_METHOD_FAIL(_WRAP, test->controls, fail, __VA_ARGS__)
+#define skip_test(...) _TEST_METHOD_SKIP(_WRAP, test->controls, skip, __VA_ARGS__)
+#define pass_test(...) _TEST_METHOD_PASS(_WRAP, test->controls, pass, __VA_ARGS__)
 
-#define contend_truth(...) _TEST_METHOD_TRUTH(_WRAP, test->controls, __VA_ARGS__)
-#define contend_equality(...) _TEST_METHOD_EQUALITY(_WRAP, test->controls, __VA_ARGS__)
-#define contend_inequality(...) _TEST_METHOD_INEQUALITY(_WRAP, test->controls, __VA_ARGS__)
+#define contend_truth(...) _TEST_METHOD_UNARY(_WRAP, test->controls, truth, __VA_ARGS__)
+#define contend_equality(...) _TEST_METHOD_BINARY_F(_WRAP, test->controls, equality, "!=", __VA_ARGS__)
+#define contend_inequality(...) _TEST_METHOD_BINARY_F(_WRAP, test->controls, inequality, "==", __VA_ARGS__)
 
-#define contend_memcmp(...) _TEST_METHOD_MEMCMP(_WRAP, test->controls, __VA_ARGS__)
-#define contend_memchr(...) _TEST_METHOD_MEMCHR(_WRAP, test->controls, __VA_ARGS__)
-#define contend_memrchr(...) _TEST_METHOD_MEMRCHR(_WRAP, test->controls, __VA_ARGS__)
+#define contend_memcmp(...) _TEST_METHOD_BINARY(_WRAP, test->controls, memcmp, __VA_ARGS__)
+#define contend_memchr(...) _TEST_METHOD_BINARY(_WRAP, test->controls, memchr, __VA_ARGS__)
+#define contend_memrchr(...) _TEST_METHOD_BINARY(_WRAP, test->controls, memrchr, __VA_ARGS__)
 
-#define contend_strstr(...) _TEST_METHOD_STRSTR(_WRAP, test->controls, __VA_ARGS__)
-#define contend_strcasestr(...) _TEST_METHOD_STRCASESTR(_WRAP, test->controls, __VA_ARGS__)
-#define contend_strcmp(...) _TEST_METHOD_STRCMP(_WRAP, test->controls, __VA_ARGS__)
-#define contend_strcasecmp(...) _TEST_METHOD_STRCASECMP(_WRAP, test->controls, __VA_ARGS__)
-#define contend_strcmpf(...) _TEST_METHOD_STRCMPF(_WRAP, test->controls, __VA_ARGS__)
+#define contend_strstr(...) _TEST_METHOD_BINARY(_WRAP, test->controls, strstr, __VA_ARGS__)
+#define contend_strcasestr(...) _TEST_METHOD_BINARY(_WRAP, test->controls, strcasestr, __VA_ARGS__)
+#define contend_strcmp(...) _TEST_METHOD_BINARY(_WRAP, test->controls, strcmp, __VA_ARGS__)
+#define contend_strcasecmp(...) _TEST_METHOD_BINARY(_WRAP, test->controls, strcasecmp, __VA_ARGS__)
+#define contend_strcmpf(...) _TEST_METHOD_BINARY(_WRAP, test->controls, strcmpf, __VA_ARGS__)
 
-#define contend_wcscmp(...) _TEST_METHOD_WCSCMP(_WRAP, test->controls, __VA_ARGS__)
-#define contend_wcscasecmp(...) _TEST_METHOD_WCSCASECMP(_WRAP, test->controls, __VA_ARGS__)
-#define contend_wcsstr(...) _TEST_METHOD_WCSSTR(_WRAP, test->controls, __VA_ARGS__)
+#define contend_wcscmp(...) _TEST_METHOD_BINARY(_WRAP, test->controls, wcscmp, __VA_ARGS__)
+#define contend_wcscasecmp(...) _TEST_METHOD_BINARY(_WRAP, test->controls, wcscasecmp, __VA_ARGS__)
+#define contend_wcsstr(...) _TEST_METHOD_BINARY(_WRAP, test->controls, wcsstr, __VA_ARGS__)
 
 /**
 	// Invasive test controls that allow for a syntax that is compatible
 	// with simple structure abstractions.
 */
 #if !defined(TEST_DISABLE_INVASIVE_CONTROLS)
-	#define fail(...) _TEST_METHOD_FAIL(_ECHO, controls, __VA_ARGS__)
-	#define skip(...) _TEST_METHOD_SKIP(_ECHO, controls, __VA_ARGS__)
-	#define pass(...) _TEST_METHOD_FAIL(_ECHO, controls, __VA_ARGS__)
+	#define fail(...) _TEST_METHOD_FORMAT(_ECHO, controls, fail, __VA_ARGS__)
+	#define skip(...) _TEST_METHOD_FORMAT(_ECHO, controls, skip, __VA_ARGS__)
+	#define pass(...) _TEST_METHOD_FORMAT(_ECHO, controls, pass, __VA_ARGS__)
 
-	#define truth(...) _TEST_METHOD_TRUTH(_ECHO, controls, __VA_ARGS__)
-	#define equality(...) _TEST_METHOD_EQUALITY(_ECHO, controls, __VA_ARGS__)
-	#define inequality(...) _TEST_METHOD_INEQUALITY(_ECHO, controls, __VA_ARGS__)
+	#define truth(...) _TEST_METHOD_UNARY(_ECHO, controls, truth, __VA_ARGS__)
+	#define equality(...) _TEST_METHOD_BINARY_F(_ECHO, controls, equality, "!=", __VA_ARGS__)
+	#define inequality(...) _TEST_METHOD_BINARY_F(_ECHO, controls, inequality, "==", __VA_ARGS__)
 
-	#define memcmp(...) _TEST_METHOD_MEMCMP(_ECHO, controls, __VA_ARGS__)
-	#define memchr(...) _TEST_METHOD_MEMCHR(_ECHO, controls, __VA_ARGS__)
-	#define memrchr(...) _TEST_METHOD_MEMRCHR(_ECHO, controls, __VA_ARGS__)
+	#define memcmp(...) _TEST_METHOD_BINARY(_ECHO, controls, memcmp, __VA_ARGS__)
+	#define memchr(...) _TEST_METHOD_BINARY(_ECHO, controls, memchr, __VA_ARGS__)
+	#define memrchr(...) _TEST_METHOD_BINARY(_ECHO, controls, memrchr, __VA_ARGS__)
 
-	#define strstr(...) _TEST_METHOD_STRSTR(_ECHO, controls, __VA_ARGS__)
-	#define strcasestr(...) _TEST_METHOD_STRCASESTR(_ECHO, controls, __VA_ARGS__)
-	#define strcmp(...) _TEST_METHOD_STRCMP(_ECHO, controls, __VA_ARGS__)
-	#define strcasecmp(...) _TEST_METHOD_STRCASECMP(_ECHO, controls, __VA_ARGS__)
-	#define strcmpf(...) _TEST_METHOD_STRCMPF(_ECHO, controls, __VA_ARGS__)
+	#define strstr(...) _TEST_METHOD_BINARY(_ECHO, controls, strstr, __VA_ARGS__)
+	#define strcasestr(...) _TEST_METHOD_BINARY(_ECHO, controls, strcasestr, __VA_ARGS__)
+	#define strcmp(...) _TEST_METHOD_BINARY(_ECHO, controls, strcmp, __VA_ARGS__)
+	#define strcasecmp(...) _TEST_METHOD_BINARY(_ECHO, controls, strcasecmp, __VA_ARGS__)
+	#define strcmpf(...) _TEST_METHOD_BINARY(_ECHO, controls, strcmpf, __VA_ARGS__)
 
-	#define wcscmp(...) _TEST_METHOD_WCSCMP(_ECHO, controls, __VA_ARGS__)
-	#define wcscasecmp(...) _TEST_METHOD_WCSCASECMP(_ECHO, controls, __VA_ARGS__)
-	#define wcsstr(...) _TEST_METHOD_WCSSTR(_ECHO, controls, __VA_ARGS__)
+	#define wcscmp(...) _TEST_METHOD_BINARY(_ECHO, controls, wcscmp, __VA_ARGS__)
+	#define wcscasecmp(...) _TEST_METHOD_BINARY(_ECHO, controls, wcscasecmp, __VA_ARGS__)
+	#define wcsstr(...) _TEST_METHOD_BINARY(_ECHO, controls, wcsstr, __VA_ARGS__)
 #endif
 
 static inline void

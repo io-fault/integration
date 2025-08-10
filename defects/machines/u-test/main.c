@@ -24,11 +24,13 @@ Test(passed_test)
 Test(failed_test_zero)
 {
 	test(!1);
+	note_failed_exit();
 }
 
 Test(failed_test_bool)
 {
 	test(false);
+	note_failed_exit();
 }
 
 Test(explicit_failure)
