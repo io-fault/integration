@@ -79,12 +79,6 @@ Test(failed_strcasestr)
 	note_failed_exit();
 }
 
-Test(failed_inequality)
-{
-	test->inequality(0, 0);
-	note_failed_exit();
-}
-
 Test(failed_equality)
 {
 	test->equality(0, 1);

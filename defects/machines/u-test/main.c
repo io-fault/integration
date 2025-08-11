@@ -38,12 +38,6 @@ Test(truth)
 	contend_truth(1 == 1);
 }
 
-Test(inequality)
-{
-	test->inequality(1, 0);
-	contend_inequality(1, 0);
-}
-
 Test(equality)
 {
 	test->equality(0, 0);
