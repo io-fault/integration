@@ -115,7 +115,7 @@ Test(recode_surrogate_escapes)
 
 Test(recode_high)
 {
-	for (uint32_t i = 0xDE00; i < 0x110000; ++i)
+	for (uint32_t i = 0xDD00; i < 0x110000; ++i)
 	{
 		uint8_t etxt[5];
 		uint32_t cp;
