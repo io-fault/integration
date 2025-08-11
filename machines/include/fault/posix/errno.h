@@ -1,17 +1,14 @@
 /**
-	# A C-Preprocessor dataset providing access to POSIX errnos.
+	// A C-Preprocessor dataset providing access to POSIX errnos.
 
-	# Some systems do not include the full set of defines, so
-	# compensation is performed in order to allow proper
-	# X-macro expansion without too much difficulty.
+	// Some systems do not include the full set of defines, so
+	// compensation is performed in order to maintain the invariant
+	// when expanding the table.
 
-	# This file should only be included when building
-	# lookup table functions for better error descriptions.
-**/
-
-/*
-	# Compensation for missing errnos.
+	// This file should *only* be included when building
+	// lookup table functions for more informative error descriptions.
 */
+
 #define ENOTDEFINED -0x00F0C0DE
 
 #ifndef ENONE
@@ -19,9 +16,8 @@
 #endif
 
 /**
-	# If there isn't a definition, attempt to avoid colliding with a real error code.
-	# (ENOTDEFINED - C)
-**/
+	// If there isn't a definition, avoid colliding with a real error code.
+*/
 #ifndef E2BIG
 	#define E2BIG ENOTDEFINED - 1
 #endif
@@ -261,10 +257,10 @@
 #endif
 
 /**
-	# (system/manual)`strerror` is normally acceptable, but the macro
-	# table here can also be used to lookup the define
-	# name as well as the POSIX defined description string.
-**/
+	// (system/manual)`strerror` is normally acceptable, but the macro
+	// table here can also be used to lookup the define name
+	// as well as the POSIX defined description string.
+*/
 #define _FAULT_ERRNO_TABLE() \
 	XDEF(E2BIG, "Argument list too long.") \
 	XDEF(EACCES, "Permission denied.") \
@@ -349,8 +345,8 @@
 	XDEF(ENOTDEFINED, "Error number was not defined in \"sys/errno.h\".")
 
 /**
-	# Handle exceptional cases where the system defines these as the same errno.
-**/
+	// Handle exceptional cases where the system defines these as the same errno.
+*/
 
 #if EWOULDBLOCK != EAGAIN
 	#define _FAULT_ERRNO_WOULDBLOCK XDEF(EWOULDBLOCK, "Operation would block.")
