@@ -430,15 +430,15 @@ extern struct HarnessTestRecord *_h_function_index;
 #define _TEST_FUNCTION_DECLARATION(NAME) \
 	void NAME (struct Test *test)
 
-#ifdef __COUNTER__
-	#define _Test(NAME, INDEX, ...) \
-		_TEST_FUNCTION_DECLARATION(test_##NAME); \
-		_TEST_RECORD_CONSTRUCTOR(NAME, __FILE__, __LINE__, INDEX) \
-		_TEST_FUNCTION_DECLARATION(test_##NAME)
-	#define Test(NAME, ...) _Test(NAME, __COUNTER__, __VA_ARGS__)
-#else
-	#error "__COUNTER__ macro is required."
+#ifndef __COUNTER__
+	#define __COUNTER__ -1
 #endif
+
+#define _Test(NAME, INDEX, ...) \
+	_TEST_FUNCTION_DECLARATION(test_##NAME); \
+	_TEST_RECORD_CONSTRUCTOR(NAME, __FILE__, __LINE__, INDEX) \
+	_TEST_FUNCTION_DECLARATION(test_##NAME)
+#define Test(NAME, ...) _Test(NAME, __COUNTER__, __VA_ARGS__)
 
 #define _xtfmt(X) _Generic((X), \
 	uint64_t: PRIX64, \
