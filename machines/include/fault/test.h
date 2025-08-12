@@ -3,9 +3,16 @@
 
 	// [ Usage ]
 
+	// Aside from `equality`, `truth`, and a couple others, the default contentions are
+	// named after their corresponding libc function and maintain their interface.
+
 	// #!syntax/c
+		//// By default, everything needed to compile an executable is included and defined.
 		#include <fault/test.h>
 
+		//// Define a new test; the macro argument is appended to `test_` to
+		//// form the function's name. All symbols starting with `test_` should
+		//// be test functions. (`test_feature` function is being defined here.)
 		Test(feature)
 		{
 			if (feature_available == false)
@@ -13,9 +20,13 @@
 
 			test(function() == 100); // test->truth() shorthand.
 			test->equality(10, 10); // test(10 == 10), but with operand strings in errors.
-			test(!)->equality(10, 15); // Operands must not be equal.
 
+			// Inversion. Operands must not be equal.
+			test(!)->equality(10, 15);
+
+			// Returns what strcmp() returns when valid.
 			test->strcmp("IdNameString", lookup_name(id));
+			// Returns what strstr() returns when valid.
 			test->strstr("haystack of needles", "needle");
 
 			if (thats_not_right)
@@ -27,12 +38,12 @@
 	// file that includes `test.h`:
 
 	// #!syntax/c
-		// Stop some globals from being defined here as it's being
-		// joined with the source object that defines them.
+		//// Stop some globals from being defined here as it's being
+		//// joined with the source object that defines them.
 		#define TEST_SUITE_EXTENSION
 		#include <fault/test.h>
 
-		Test(alternative)
+		Test(feature)
 		{
 			test->fail(...)
 		}
@@ -40,11 +51,11 @@
 	// [ Test Control Methods ]
 
 	// Most of the methods are named directly after their corresponding libc function
-	// and intend to provide an identical interface including the return value in cases
-	// where absurdities did not cause the test to fail.
+	// and intend to provide an identical interface. Consistent return values
+	// are provided in cases where absurdities did not cause the test to conclude.
 
 	// /`test->truth(int)`/
-		// Fail when zero. Long form of `test(expr)`.
+		// Fail when zero. Method form of `test(expr)`.
 
 	// /`test->equality(intmax_t, intmax_t)`/
 		// Fail when integers are not equal.
@@ -82,6 +93,72 @@
 	// /`test->memrchr(void *memory, int byte, size_t memory_size)`/
 		// Fail when the byte could not be found in memory with the
 		// search starting at the end.
+
+	// [ Inverse Contentions ]
+
+	// Inversion of a contention can be performed with the not (!) test modifier:
+	// `test(!)`. When the &test macro is called this way, the test context is
+	// configured to invert the effect of the next contention.
+
+	// #!syntax/c
+		Test(feature)
+		{
+			test(!)->equality(10, 15); // 10 != 15
+			test(!)->strcmp("a", "b"); // "a" != "b"
+
+			//// The inversion may occur independently of the contention as well:
+			test(!);
+			test->memchr("sixty", 'z', 5); // 'z' not in "sixty"
+		}
+
+	// [ Tracing Contentions ]
+
+	// Tracing of contentions can be performed with the tilde (~) test modifier:
+	// `test(~)`. When the &test macro is called this way, the test context is
+	// configured to emit a trace message of the next contention displaying
+	// information similar to what would be found in a failure message.
+	// Trace messages are only emitted when called for and the test is not
+	// being concluded.
+
+	// #!syntax/c
+		Test(feature)
+		{
+			test(~)->strcmpf("expected 100", "expected %s", subject(...));
+		}
+
+	// Tracing may be combined with inversion by appending the tilde:
+
+	// #!syntax/c
+		Test(feature)
+		{
+			//// `!~` only. `~!` is not recognized.
+			test(!~)->equality(10, 20);
+		}
+
+	// [ Forcing and Ignoring Absurdities ]
+
+	// The negative (-) and positive (+) modifiers force and disable failure conclusions.
+	// With negative forcing failure and positive forcing success. Their utility is
+	// a minor niche that would usually be filled with merely commenting out the
+	// contentions or inserting explicit failure. However, they offer some convenience by
+	// performing those tasks without any restructuring.
+
+	// #!syntax/c
+		Test(feature)
+		{
+			//// Fails, but the following contentions needs to be seen.
+			test(+)->strcmp("expectation", function());
+
+			//// Force failure here to inspect its arguments and
+			//// to avoid running anything afterwards.
+			test(-)->equality(0, innerfunction());
+
+			//// ...
+		}
+
+	// Like inversion, tracing may be combined with forced success by appending the
+	// tilde: `test(+~)`. No modifier combination is provided for forced failure as
+	// the message is already being printed.
 
 	// [ Integration Control Defines ]
 
@@ -217,7 +294,7 @@ enum TestConclusion {
 
 	// [ Elements ]
 	// /ac_reflect/
-		// No change. Contended absurdities will conclude failure.
+		// No change. Contending absurdity will conclude failure.
 	// /ac_never/
 		// Never fail the test under this contention.
 	// /ac_invert/
@@ -347,6 +424,7 @@ struct Test {
 
 	// Exposed, but only used by control methods.
 	uint64_t contentions;
+	bool contention_trace;
 	enum AbsurdityControl contention_delta:4;
 	enum TestConclusion conclusion:4;
 	enum FailureType failure:4;
@@ -358,6 +436,16 @@ struct Test {
 	const char *function_name;
 	const char *operands[2];
 };
+
+/**
+	// Trace contention.
+*/
+static inline struct Test *
+_trace_contention(struct Test *t)
+{
+	t->contention_trace = true;
+	return(t);
+}
 
 /**
 	// Failure is success. Success is failure.
@@ -541,11 +629,17 @@ extern struct HarnessTestRecord *_h_function_index;
 #define _TEST_EXCLAMATION(Y) ((Y)[0] == '!' && (Y)[1] == 0)
 #define _TEST_NEGATIVE(Y) ((Y)[0] == '-' && (Y)[1] == 0)
 #define _TEST_POSITIVE(Y) ((Y)[0] == '+' && (Y)[1] == 0)
+#define _TEST_TILDE(Y) ((Y)[0] == '~' && (Y)[1] == 0)
+#define _TEST_XTILDE(Y) ((Y)[0] == '!' && (Y)[1] == '~' && (Y)[2] == 0)
+#define _TEST_PTILDE(Y) ((Y)[0] == '+' && (Y)[1] == '~' && (Y)[2] == 0)
 #define _TEST_COALESCE(...) __VA_ARGS__ + 0
 #define _TEST_TRUTH(...) \
 	(test->controls->truth)(_test_control_macro_arguments, #__VA_ARGS__, "void", _TEST_COALESCE(__VA_ARGS__), 0)
 #define test(...) ( \
 	_TEST_EXCLAMATION(#__VA_ARGS__) ? _invert_delta(test) : \
+	_TEST_TILDE(#__VA_ARGS__) ? _trace_contention(test) : \
+	_TEST_XTILDE(#__VA_ARGS__) ? _invert_delta(_trace_contention(test)) : \
+	_TEST_PTILDE(#__VA_ARGS__) ? _never_fail(_trace_contention(test)) : \
 	_TEST_NEGATIVE(#__VA_ARGS__) ? _always_fail(test) : \
 	_TEST_POSITIVE(#__VA_ARGS__) ? _never_fail(test) : \
 	(_TEST_TRUTH(__VA_ARGS__) ? (test) : (test)) \
@@ -617,13 +711,13 @@ h_conclude_test(enum TestConclusion tc, enum FailureType ft, _test_control_param
 static inline void
 h_print_location(struct Test *t)
 {
-	h_printf("\tLocation: line %d in \"%s\"\n", t->source_line_number, t->source_path);
+	h_printf("LOCATION: line %d in \"%s\"\n", t->source_line_number, t->source_path);
 }
 
 static inline void
 h_print_message(struct Test *t, char *message, va_list args)
 {
-	h_printf("\tMessage: ");
+	h_printf("\tMESSAGE: ");
 	h_vprintf(message, args);
 	h_printf("\n");
 }
@@ -632,15 +726,22 @@ static inline void
 h_print_failure(struct Test *t)
 {
 	struct TestIdentity *ti = t->identity;
-	h_printf("test_%s failed after %d contentions.\n", ti->ti_name, t->contentions);
+	h_printf("-> test_%s failed after %d contentions.\n", ti->ti_name, t->contentions);
 }
 
-#define h_message(label, fmt, ...) h_printf("\t%s: " fmt "\n", label, __VA_ARGS__)
-#define h_reality(fmt, ...) h_printf("\t" fmt "\n", __VA_ARGS__)
+static inline void
+h_print_trace(struct Test *t)
+{
+	struct TestIdentity *ti = t->identity;
+	h_printf("-> test_%s at contention %d:\n", ti->ti_name, t->contentions);
+}
+
+#define h_message(label, fmt, ...) h_printf("%s: " fmt "\n", label, __VA_ARGS__)
+#define h_reality(fmt, ...) h_printf("TRUTH: " fmt "\n", __VA_ARGS__)
 #define h_reality_variable(fmt, ...) h_printf(fmt, __VA_ARGS__)
 #define h_inhibit(fmt, ...) do { ; } while(0)
-#define h_note_failure(T, A, R) do { \
-	h_print_failure(T); A; R; h_print_location(T); \
+#define h_print_note(T, A, R) do { \
+	(T->failure ? h_print_failure : h_print_trace)(T); A; R; h_print_location(T); \
 } while(0)
 #define h_forward_va(format) { \
 	va_list args; \
@@ -699,12 +800,22 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 	return(0);
 }
 
+#define _TCI_EXIT() \
+	if (test->failure) \
+		test->controls->exit(test); \
+	return(rv);
+
 #define _TCI_RETURN_OR_FAIL(CONDITION, NOP, ...) \
 	do { \
 		bool absurdity = CONDITION; \
+		if (absurdity) op = NOP; \
 		switch (test->contention_delta) \
 		{ \
-			case ac_reflect: break; \
+			case ac_reflect: \
+			{ \
+				; \
+			} \
+			break; \
 			\
 			case ac_never: \
 			{ \
@@ -722,95 +833,119 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 			\
 			case ac_invert: \
 			{ \
-				op = NOP; \
 				testr = "test(!)"; \
 				absurdity = !absurdity; \
 			} \
 		} \
 		test->contention_delta = ac_reflect; \
-		if (!absurdity) \
+		if (absurdity) \
 		{ \
-			_tci_return: \
+			if (test->contention_trace) \
+				test->contention_trace = false; \
+			h_conclude_test(tc_failed, tf_absurdity, _test_control_arguments); \
+		} \
+		else \
+		{ \
+			if (test->contention_trace) \
+			{ \
+				label = "TRACE"; \
+				test->contention_trace = false; \
+			} \
+			else \
 			{ \
 				__VA_ARGS__; \
 				return(rv); \
 			} \
 		} \
-		h_conclude_test(tc_failed, tf_absurdity, _test_control_arguments); \
 	} while(0)
 
 static inline int
 _tci_contend_memcmp(_test_control_parameters, const void *solution, const void *candidate, size_t n)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
-	const char *op = "!=";
+	const char *op = "==";
 	int rv;
 
 	++test->contentions;
 
 	rv = (memcmp)(solution, candidate, n);
-	_TCI_RETURN_OR_FAIL((rv != 0), "==");
+	_TCI_RETURN_OR_FAIL((rv != 0), "!=");
 
-	h_note_failure(test,
+	h_print_note(test,
 		h_message(label, "%s->memcmp(%s, %s, %zd) (returned %d)", testr, former, latter, n, rv),
 		h_reality("\"%.*s\" %s \"%.*s\"", n, solution, op, n, candidate)
 	);
 
-	test->controls->exit(test);
-	return(rv);
+	_TCI_EXIT();
 }
 
 static inline void *
 _tci_contend_memchr(_test_control_parameters, const void *solution, int candidate, size_t n)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
-	const char *op = "not found in";
+	const char *op = "was found (offset %zu) in";
 	void *rv;
 
 	++test->contentions;
 
 	rv = (memchr)(solution, candidate, n);
-	_TCI_RETURN_OR_FAIL((rv == NULL), "was found in");
+	_TCI_RETURN_OR_FAIL((rv == NULL), "not found in");
 
-	h_note_failure(test,
-		h_message(label, "%s->memchr(%s, %s, %zd)", testr, former, latter, n),
-		h_reality("0x%X %s %p (%zu bytes)", candidate, op, solution, n)
-	);
+	{
+		char opbuf[64];
+		if (rv != NULL)
+			snprintf(opbuf, sizeof(opbuf), op, (size_t) (rv - solution));
+		else
+			snprintf(opbuf, sizeof(opbuf), op);
 
-	test->controls->exit(test);
-	return(rv);
+		h_print_note(test,
+			h_message(label, "%s->memchr(%s, %s, %zu)", testr, former, latter, n),
+			h_reality("'%c' (0x%X) %s %p (%zu bytes)",
+				(unsigned char) candidate, candidate, opbuf, solution, n)
+		);
+	}
+
+	_TCI_EXIT();
 }
 
 static inline void *
 _tci_contend_memrchr(_test_control_parameters, const void *solution, int candidate, size_t n)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
-	const char *op = "not found in";
+	const char *op = "was found (offset %zu) in";
 	void *rv;
 
 	++test->contentions;
 
 	rv = (memrchr)(solution, candidate, n);
-	_TCI_RETURN_OR_FAIL((rv == NULL), "was found in");
+	_TCI_RETURN_OR_FAIL((rv == NULL), "not found in");
 
-	h_note_failure(test,
-		h_message(label, "%s->memrchr(%s, %s, %zd)", testr, former, latter, n),
-		h_reality("0x%X %s %p (%zu bytes)", candidate, op, solution, n)
-	);
+	{
+		char opbuf[64];
+		if (rv != NULL)
+			snprintf(opbuf, sizeof(opbuf), op, (size_t) (rv - solution));
+		else
+			snprintf(opbuf, sizeof(opbuf), op);
 
-	test->controls->exit(test);
-	return(rv);
+		h_print_note(test,
+			h_message(label, "%s->memrchr(%s, %s, %zu)", testr, former, latter, n),
+			h_reality("'%c' (0x%X) %s %p (%zu bytes)",
+				(unsigned char) candidate, candidate, opbuf, solution, n)
+		);
+	}
+
+	_TCI_EXIT();
 }
 
 static inline int
 _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char *candidate, ...)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
-	const char *op = "!=";
+	const char *op = "==";
 	const char *formatted = NULL;
 	int rv, size;
 
@@ -824,23 +959,22 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 	}
 
 	rv = (strcmp)(solution, formatted);
-	_TCI_RETURN_OR_FAIL((rv != 0), "==", free(formatted));
+	_TCI_RETURN_OR_FAIL((rv != 0), "!=", free(formatted));
 
-	h_note_failure(test,
+	h_print_note(test,
 		h_message(label, "%s->strcmpf" "(%s, %s)", testr, former, latter),
 		h_reality("\"%s\" %s \"%s\"", solution, op, formatted)
 	);
 
 	free(formatted);
-	test->controls->exit(test);
-	return(rv);
+	_TCI_EXIT();
 }
 
 #define _TEST_CONTEND_STRINGS(TYPE, CHECK, CTYPE, CFORMAT, METHOD, OPSTR, NOPSTR) \
 	static inline TYPE \
 	_tci_contend_##METHOD(_test_control_parameters, CTYPE solution, CTYPE candidate) \
 	{ \
-		const char *label = "Absurdity"; \
+		const char *label = "ABSURDITY"; \
 		const char *testr = "test"; \
 		const char *op = OPSTR; \
 		TYPE rv; \
@@ -849,57 +983,55 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 		rv = (METHOD)(solution, candidate); \
 		_TCI_RETURN_OR_FAIL(!CHECK(rv), NOPSTR); \
 		\
-		h_note_failure(test, \
+		h_print_note(test, \
 			h_message(label, "%s->" #METHOD "(%s, %s)", testr, former, latter), \
 			h_reality("\"%" CFORMAT "\" %s \"%" CFORMAT "\"", solution, op, candidate) \
 		); \
 		\
-		test->controls->exit(test); \
-		return(rv); \
+		_TCI_EXIT(); \
 	}
 
 #define _TEST_CMP_CHECK(X) (X == 0)
 #define _TEST_SEARCH_CHECK(X) (X != NULL)
-	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const char *, "s", strcmp, "!=", "==")
-	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const char *, "s", strcasecmp, "!=", "==")
-	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const wchar_t *, "ls", wcscmp, "!=", "==")
-	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const wchar_t *, "ls", wcscasecmp, "!=", "==")
-	_TEST_CONTEND_STRINGS(char *, _TEST_SEARCH_CHECK, const char *, "s", strstr, "!~", "~")
-	_TEST_CONTEND_STRINGS(char *, _TEST_SEARCH_CHECK, const char *, "s", strcasestr, "!~", "~")
-	_TEST_CONTEND_STRINGS(wchar_t *, _TEST_SEARCH_CHECK, const wchar_t *, "ls", wcsstr, "!~", "~")
+	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const char *, "s", strcmp, "==", "!=")
+	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const char *, "s", strcasecmp, "==", "!=")
+	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const wchar_t *, "ls", wcscmp, "==", "!=")
+	_TEST_CONTEND_STRINGS(int, _TEST_CMP_CHECK, const wchar_t *, "ls", wcscasecmp, "==", "!=")
+	_TEST_CONTEND_STRINGS(char *, _TEST_SEARCH_CHECK, const char *, "s", strstr, "~", "!~")
+	_TEST_CONTEND_STRINGS(char *, _TEST_SEARCH_CHECK, const char *, "s", strcasestr, "~", "!~")
+	_TEST_CONTEND_STRINGS(wchar_t *, _TEST_SEARCH_CHECK, const wchar_t *, "ls", wcsstr, "~", "!~")
 #undef _TEST_CMP_CHECK
 #undef _TEST_SEARCH_CHECK
 
 static inline int
 _tci_contend_equality(_test_control_parameters, _test_format_parameters, intmax_t solution, intmax_t candidate)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
-	const char *op = "!=";
+	const char *op = "==";
 	int rv;
 	++test->contentions;
 
 	rv = (solution == candidate);
-	_TCI_RETURN_OR_FAIL((!rv), "==");
+	_TCI_RETURN_OR_FAIL((!rv), "!=");
 
 	{
-		char fmt[16] = {0,};
-		snprintf(fmt, sizeof(fmt), "\t%%%s %s %%%s\n", fofmt, op, lofmt);
+		char fmt[64] = {0,};
+		snprintf(fmt, sizeof(fmt), "TRUTH: %%%s %s %%%s\n", fofmt, op, lofmt);
 
-		h_note_failure(test,
+		h_print_note(test,
 			h_message(label, "%s->equality(%s, %s)", testr, former, latter),
 			h_reality_variable(fmt, solution, candidate)
 		);
 	}
 
-	test->controls->exit(test);
-	return(rv);
+	_TCI_EXIT();
 }
 
 static inline int
 _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candidate)
 {
-	const char *label = "Absurdity";
+	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "+";
 	int rv;
@@ -908,13 +1040,12 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	rv = solution;
 	_TCI_RETURN_OR_FAIL((!rv), "-");
 
-	h_note_failure(test,
+	h_print_note(test,
 		h_message(label, "%s->truth(%s)", testr, former),
-		h_inhibit()
+		h_reality("%s", rv ? "true" : "false")
 	);
 
-	test->controls->exit(test);
-	return(rv);
+	_TCI_EXIT();
 }
 
 #if defined(TEST_SUITE_EXTENSION)
@@ -953,6 +1084,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		t->identity = current->htr_identity;
 		t->conclusion = tc_skipped;
 		t->contention_delta = ac_reflect;
+		t->contention_trace = false;
 		t->failure = 0;
 		t->contentions = 0;
 
