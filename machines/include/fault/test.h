@@ -648,7 +648,7 @@ extern const char *_h_tmpdir_root;
 #define _TEST_METHOD_UNARY(S, CTL, METHOD, A) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, "void", A, 0)
 #define _TEST_METHOD_BINARY(S, CTL, METHOD, A, B, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, A, B __VA_OPT__(,) __VA_ARGS__)
 #define _TEST_METHOD_BINARY_F(S, CTL, METHOD, OP, A, B, ...) \
-	_TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, _TEST_FORMATTING(OP, A, B), A, B)
+	_TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, _TEST_FORMATTING(OP, A, B), (intmax_t)A, (intmax_t)B)
 
 #define _TEST_EXCLAMATION(Y) ((Y)[0] == '!' && (Y)[1] == 0)
 #define _TEST_NEGATIVE(Y) ((Y)[0] == '-' && (Y)[1] == 0)
@@ -1198,7 +1198,9 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	struct HarnessTestRecord *_h_function_index = &_h_function_zero;
 	const char *_h_tmpdir_restriction = NULL;
 	const char *_h_tmpdir_root = NULL;
+#endif
 
+#if !defined(TEST_SUITE_EXTENSION) || defined(_TEST_HARNESS_FUNCTIONS)
 	static int
 	h_sequential_exit(struct Test *t)
 	{
@@ -1245,8 +1247,10 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		// such that cleanup was not possible.
 	*/
 	static void
-	h_cleanup_tmpdir(struct Test *t)
+	h_cleanup_tmpdir(struct Test *t, bool wait)
 	{
+		pid_t rmp = 0;
+
 		if (_h_hash_string(t->tmpdir_path) != t->tmpdir_path_hash)
 		{
 			// Protecting against memory corruption. Testing C programs here,
@@ -1310,14 +1314,15 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 				case ENOENT:
 					// Already done?
 					h_printf(
-						"WARNING: temporary directory was removed prior to cleanup.");
+						"WARNING: temporary directory was removed prior to cleanup.\n");
 					h_printf("PATH: %s\n", t->tmpdir_path);
 					return;
 				break;
 			}
 		}
 
-		switch (fork())
+		rmp = fork();
+		switch (rmp)
 		{
 			case 0:
 			{
@@ -1351,6 +1356,11 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			default:
 			{
 				// Test Process, fork() successful.
+				if (wait)
+				{
+					int status = 0;
+					waitpid(rmp, &status, 0);
+				}
 			}
 			break;
 		}
@@ -1359,7 +1369,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	/**
 		// Execute a single test within the current process.
 	*/
-	enum TestConclusion
+	static enum TestConclusion
 	harness_test(int *contentions, struct TestControls *ctl, struct HarnessTestRecord *current)
 	{
 		struct Test ts;
@@ -1396,7 +1406,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 
 		if (t->tmpdir_path != NULL)
 		{
-			h_cleanup_tmpdir(t);
+			h_cleanup_tmpdir(t, false);
 
 			free(t->tmpdir_path);
 			t->tmpdir_path = NULL;
@@ -1410,7 +1420,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	/**
 		// Execute the tests.
 	*/
-	int
+	static int
 	harness_execute_tests(const char *suite, TestDispatch htest, TestExit hexit)
 	{
 		#define _TCM_INIT(CTX, METHOD, STYPE, FTYPE) STYPE(METHOD),
