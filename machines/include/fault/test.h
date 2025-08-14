@@ -210,10 +210,21 @@
 	#include <unistd.h>
 	#include <inttypes.h>
 	#include <wchar.h>
+	#include <fcntl.h>
+	#include <errno.h>
+	#include <sys/stat.h>
+#endif
+
+#ifndef FS_TMPDIR
+	#define FS_TMPDIR "/tmp/"
+#endif
+
+#ifndef FS_RM_PATH
+	#define FS_RM_PATH "/bin/rm"
 #endif
 
 #if defined(__APPLE__) && !defined(TEST_DISABLE_LOCAL_MEMRCHR)
-	// Not found in recent macOS versions.
+	// Not found in recent (2025) macOS versions.
 	static inline void *
 	memrchr(const void *memory, int c, size_t s)
 	{
@@ -272,7 +283,7 @@ struct TestIdentity {
 };
 
 /**
-	// Test conclusions.
+	// Test conclusions. Isolated from failure types to simplify counts.
 
 	// [ Elements ]
 	// /tc_failed/
@@ -343,6 +354,7 @@ enum FailureType {
 /**
 	// Argument lists providing access to parameter names.
 */
+#define _FTA_UNARY_PATH(ARGS) ARGS(path)
 #define _FTA_BINARY(ARGS) ARGS(solution, candidate)
 #define _FTA_BINARY_1L(ARGS) ARGS(solution, candidate, length)
 #define _FTA_BINARY_FMT(ARGS) ARGS(_test_format_arguments, solution, candidate)
@@ -369,6 +381,7 @@ enum FailureType {
 
 #define _ECHO(...) __VA_ARGS__
 #define _WRAP(...) (__VA_ARGS__)
+#define _FIRST(N, ...) N
 
 #define TEST_CONTROL_METHODS(CONTEXT, TM) \
 	TM(CONTEXT, fail, _LOG_SF, _LOG_T) \
@@ -397,8 +410,10 @@ enum FailureType {
 
 #define _test_control_macro_arguments test, _test_control_location
 #define _test_control_arguments test, path, ln, fn, _test_control_operands
+#define _test_context_parameters \
+	struct Test * __attribute__((nonnull)) test, _location_parameters
 #define _test_control_parameters \
-	struct Test * __attribute__((nonnull)) test, _location_parameters, _test_control_operand_parameters
+	_test_context_parameters, _test_control_operand_parameters
 #define _test_format_arguments opstr, fofmt, lofmt
 #define _test_format_parameters const char *opstr, const char *fofmt, const char *lofmt
 
@@ -410,6 +425,7 @@ struct TestControls {
 		TEST_CONTROL_METHODS(void, TEST_METHOD_DECLARATIONS)
 	#undef TEST_METHOD_DECLARATIONS
 
+	const char * (*fs_tmp)(_test_context_parameters, const char *);
 	int (*exit)(struct Test *);
 };
 
@@ -421,6 +437,9 @@ struct Test {
 
 	// Provided by the HarnessTestRecord
 	struct TestIdentity *identity;
+
+	uint64_t tmpdir_path_hash;
+	const char *tmpdir_path;
 
 	// Exposed, but only used by control methods.
 	uint64_t contentions;
@@ -555,6 +574,9 @@ extern sigjmp_buf _h_exit_root;
 extern struct HarnessTestRecord _h_function_zero;
 extern struct HarnessTestRecord *_h_function_index;
 
+extern const char *_h_tmpdir_restriction;
+extern const char *_h_tmpdir_root;
+
 #define _TEST_RECORD_CONSTRUCTOR(NAME, FILE, LINE, INDEX) \
 	static void __attribute__((constructor)) _h_##NAME##_add(void) { \
 		struct HarnessTestRecord *tfr; \
@@ -618,9 +640,11 @@ extern struct HarnessTestRecord *_h_function_index;
 	// Each form needs different isolation as `test->MACRO()` has conflicts (memcmp and others).
 */
 #define _TEST_MACRO_DIRECTION(ISOLATION, TEST_CONTROLS, METHOD, ...) \
-	ISOLATION(TEST_CONTROLS->METHOD)(_test_control_macro_arguments, __VA_ARGS__)
+	ISOLATION(TEST_CONTROLS->METHOD)(_test_control_macro_arguments __VA_OPT__(,) __VA_ARGS__)
 
 #define _TEST_METHOD_FORMAT(S, CTL, METHOD, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, "void", "void", __VA_ARGS__)
+#define _TEST_METHOD_NONE(S, CTL, METHOD) _TEST_MACRO_DIRECTION(S, CTL, METHOD)
+#define _TEST_METHOD_OPTION(S, CTL, METHOD, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, _FIRST(__VA_ARGS__ __VA_OPT__(,) NULL))
 #define _TEST_METHOD_UNARY(S, CTL, METHOD, A) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, "void", A, 0)
 #define _TEST_METHOD_BINARY(S, CTL, METHOD, A, B, ...) _TEST_MACRO_DIRECTION(S, CTL, METHOD, #A, #B, A, B __VA_OPT__(,) __VA_ARGS__)
 #define _TEST_METHOD_BINARY_F(S, CTL, METHOD, OP, A, B, ...) \
@@ -648,6 +672,8 @@ extern struct HarnessTestRecord *_h_function_index;
 /**
 	// Namespace friendly test controls.
 */
+#define allocate_fs_tmp(...) _TEST_METHOD_OPTION(_WRAP, test->controls, fs_tmp, __VA_ARGS__)
+
 #define fail_test(...) _TEST_METHOD_FAIL(_WRAP, test->controls, fail, __VA_ARGS__)
 #define skip_test(...) _TEST_METHOD_SKIP(_WRAP, test->controls, skip, __VA_ARGS__)
 #define pass_test(...) _TEST_METHOD_PASS(_WRAP, test->controls, pass, __VA_ARGS__)
@@ -674,6 +700,7 @@ extern struct HarnessTestRecord *_h_function_index;
 	// with simple structure abstractions.
 */
 #if !defined(TEST_DISABLE_INVASIVE_CONTROLS)
+	#define fs_tmp(...) _TEST_METHOD_OPTION(_ECHO, controls, fs_tmp, __VA_ARGS__)
 	#define fail(...) _TEST_METHOD_FORMAT(_ECHO, controls, fail, __VA_ARGS__)
 	#define skip(...) _TEST_METHOD_FORMAT(_ECHO, controls, skip, __VA_ARGS__)
 	#define pass(...) _TEST_METHOD_FORMAT(_ECHO, controls, pass, __VA_ARGS__)
@@ -695,6 +722,47 @@ extern struct HarnessTestRecord *_h_function_index;
 	#define wcscasecmp(...) _TEST_METHOD_BINARY(_ECHO, controls, wcscasecmp, __VA_ARGS__)
 	#define wcsstr(...) _TEST_METHOD_BINARY(_ECHO, controls, wcsstr, __VA_ARGS__)
 #endif
+
+static inline uint64_t
+_h_hash_string(const char *string)
+{
+	static const uint64_t init = 0xf1fade1f << 32 | 0xf1fade1f;
+	size_t length = strlen(string);
+	uint8_t r = length % sizeof(uint64_t);
+	uint64_t h = init;
+	uint64_t final = 0;
+	uint64_t *uv = (uint64_t *) string;
+	uint64_t s = 0;
+
+	for (int i = 0; i < length / sizeof(uint64_t); ++i)
+	{
+		if (uv[i] == 0)
+		{
+			++s;
+			h ^= (s * 0x0102030405060708);
+		}
+		else
+			h ^= (uv[i] * 0x0102030405060708);
+	}
+
+	string += length - r;
+	while (*string)
+	{
+		final |= (uint8_t) *string;
+		final <<= 8;
+		++string;
+	}
+
+	if (final == 0)
+	{
+		++s;
+		h ^= (s * 0x0102030405060708);
+	}
+	else
+		h ^= (final * 0x0102030405060708);
+
+	return(h);
+};
 
 static inline void
 h_conclude_test(enum TestConclusion tc, enum FailureType ft, _test_control_parameters)
@@ -748,6 +816,80 @@ h_print_trace(struct Test *t)
 	va_start(args, format); \
 	h_print_message(test, format, args); \
 	va_end(args); \
+}
+
+static inline const char *
+_tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
+{
+	const char *former = tmpdir_root;
+	const char *latter = "";
+	const char *slash = "";
+	int length;
+
+	// Already initialized.
+	// Don't bother re-creating if the test chose to delete it.
+	if (test->tmpdir_path != NULL)
+		return(test->tmpdir_path);
+
+	// TMPDIR configuration issue.
+	if (tmpdir_root == NULL)
+	{
+		if (_h_tmpdir_restriction != NULL)
+		{
+			h_conclude_test(tc_failed, tf_limit, _test_control_arguments);
+
+			h_print_failure(test);
+			if (tmpdir_root != NULL)
+				h_printf("ERROR: test->fs_tmp(\"%s\")\n", tmpdir_root);
+			else
+				h_printf("ERROR: test->fs_tmp()\n");
+			h_printf("MESSAGE: %s\n", _h_tmpdir_restriction);
+			h_printf("TMPDIR: %s\n", _h_tmpdir_root);
+			h_print_location(test);
+
+			errno = 0;
+			test->controls->exit(test);
+			return(NULL);
+		}
+
+		tmpdir_root = _h_tmpdir_root;
+	}
+
+	// Insert slash if missing.
+	if (tmpdir_root[0] != 0 && tmpdir_root[strlen(tmpdir_root)-1] != '/')
+		slash = "/";
+
+	length = asprintf(&test->tmpdir_path, "%s%stest_%s.XXXXXXXX",
+		tmpdir_root, slash, test->identity->ti_name);
+	if (length >= 0)
+	{
+		if (mkdtemp(test->tmpdir_path) == NULL)
+		{
+			free(test->tmpdir_path);
+			test->tmpdir_path = NULL;
+		}
+		else
+		{
+			// Some protection against memory corruption scribbling on the tmpdir_path.
+			test->tmpdir_path_hash = _h_hash_string(test->tmpdir_path);
+		}
+	}
+	else if (errno == 0)
+		errno = ENOMEM;
+
+	if (test->tmpdir_path == NULL)
+	{
+		h_conclude_test(tc_failed, tf_fault, _test_control_arguments);
+
+		h_print_failure(test);
+		h_printf("ERROR: could not create temporary directory for test.\n");
+		h_printf("SYSTEM: %s\n", strerror(errno));
+		h_print_location(test);
+		errno = 0;
+		test->controls->exit(test);
+	}
+
+	return(test->tmpdir_path);
 }
 
 static inline int
@@ -1054,6 +1196,8 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	sigjmp_buf _h_exit_root;
 	struct HarnessTestRecord _h_function_zero = {0,};
 	struct HarnessTestRecord *_h_function_index = &_h_function_zero;
+	const char *_h_tmpdir_restriction = NULL;
+	const char *_h_tmpdir_root = NULL;
 
 	static int
 	h_sequential_exit(struct Test *t)
@@ -1067,6 +1211,149 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	{
 		exit((t->conclusion + 1) << 2 | t->failure);
 		return(-1);
+	}
+
+	static int
+	h_configure_tmpdir(const char *fs_tmpdir_default)
+	{
+		setenv("TMPDIR", fs_tmpdir_default, 0);
+
+		_h_tmpdir_root = getenv("TMPDIR");
+		if (_h_tmpdir_root == NULL)
+		{
+			h_printf("ERROR: could not configure and get TMPDIR environment.\n");
+			h_printf("getenv: %s\n", strerror(errno));
+			errno = 0;
+			return(-1);
+		}
+
+		// Absolute restriction.
+		if (_h_tmpdir_root[0] != '/')
+		{
+			_h_tmpdir_restriction = "TMPDIR is not an absolute path";
+
+			h_printf("WARNING: temporary directory root (TMPDIR) must be absolute; "
+				"fs_tmp() invocations will conclude failure.\n");
+		}
+
+		return(0);
+	}
+
+	/**
+		// It is, arguably, inappropriate to clean up the temporary directory within
+		// the same process as the test may have corrupted the path string or faulted
+		// such that cleanup was not possible.
+	*/
+	static void
+	h_cleanup_tmpdir(struct Test *t)
+	{
+		if (_h_hash_string(t->tmpdir_path) != t->tmpdir_path_hash)
+		{
+			// Protecting against memory corruption. Testing C programs here,
+			// so try to make sure the rm -rf is (very) likely to be deleting the
+			// temporary directory that was originally created.
+
+			h_printf(
+				"WARNING: temporary directory path string hash does not match "
+				"and will not be removed due to likely memory corruption.\n");
+			h_printf("PATH: %s\n", t->tmpdir_path);
+			return;
+		}
+
+		if (strncmp(_h_tmpdir_root, t->tmpdir_path, strlen(_h_tmpdir_root)) != 0)
+		{
+			// Branch for intentional tmpdir leaks.
+			// In cases where analysis of some (temporary) filesystem data
+			// is desired, allow the test to configure the directory outside
+			// of TMPDIR and ignore cleanup when the case is seen.
+
+			h_printf(
+				"WARNING: the allocated temporary directory is outside of "
+				"the designated prefix and will not be removed.\n");
+			h_printf("PATH: %s\n", t->tmpdir_path);
+			return;
+		}
+
+		if (rmdir(t->tmpdir_path) == 0)
+		{
+			// Don't bother with the spawn if it's just a directory.
+			return;
+		}
+		else
+		{
+			// Leverage the error case to perform additional safeties.
+			int err = errno;
+			errno = 0;
+
+			switch (err)
+			{
+				case EACCES:
+				{
+					h_printf(
+						"WARNING: temporary directory is not seen as writable "
+						"and will not be removed.\n");
+					h_printf("PATH: %s\n", t->tmpdir_path);
+					return;
+				}
+				break;
+
+				case ENOTDIR:
+				{
+					// Was not created by fs_tmp().
+					h_printf(
+						"WARNING: temporary directory path does not refer to a directory "
+						"and will not be removed.\n");
+					h_printf("PATH: %s\n", t->tmpdir_path);
+					return;
+				}
+
+				case ENOENT:
+					// Already done?
+					h_printf(
+						"WARNING: temporary directory was removed prior to cleanup.");
+					h_printf("PATH: %s\n", t->tmpdir_path);
+					return;
+				break;
+			}
+		}
+
+		switch (fork())
+		{
+			case 0:
+			{
+				// Utility fork process reaped by init.
+				char *const argv[] = {FS_RM_PATH, "-rf", t->tmpdir_path, NULL};
+
+				execve(FS_RM_PATH, argv, NULL);
+				h_printf(
+					"WARNING: could not execute cleanup procedure "
+					"for \"%s\"\n", t->tmpdir_path);
+				h_printf("execve: %s\n", strerror(errno));
+
+				// Avoid normal exit procedures under a failed execve.
+				_exit(256);
+			}
+			break;
+
+			case -1:
+			{
+				// Test process. Could not fork.
+				if (errno != 0)
+				{
+					h_printf(
+						"WARNING: could not execute cleanup procedure "
+						"for \"%s\"\n", t->tmpdir_path);
+					h_printf("fork: %s\n", strerror(errno));
+				}
+			}
+			break;
+
+			default:
+			{
+				// Test Process, fork() successful.
+			}
+			break;
+		}
 	}
 
 	/**
@@ -1088,6 +1375,9 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		t->failure = 0;
 		t->contentions = 0;
 
+		t->tmpdir_path = NULL;
+		t->tmpdir_path_hash = 0;
+
 		t->source_line_number = t->identity->ti_line;
 		t->source_path = t->identity->ti_source;
 		t->function_name = t->identity->ti_name;
@@ -1104,6 +1394,15 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			t->conclusion = tc_passed;
 		}
 
+		if (t->tmpdir_path != NULL)
+		{
+			h_cleanup_tmpdir(t);
+
+			free(t->tmpdir_path);
+			t->tmpdir_path = NULL;
+			t->tmpdir_path_hash = 0;
+		}
+
 		*contentions += t->contentions;
 		return(t->conclusion);
 	}
@@ -1117,6 +1416,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		#define _TCM_INIT(CTX, METHOD, STYPE, FTYPE) STYPE(METHOD),
 		const struct TestControls default_controls = {
 			TEST_CONTROL_METHODS(void, _TCM_INIT)
+			_tci_fs_tmp,
 			hexit
 		};
 		#undef _TCM_INIT
@@ -1181,6 +1481,9 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		#else
 			const char *suite = argv[0];
 		#endif
+
+		if (h_configure_tmpdir(FS_TMPDIR) < 0)
+			return(1);
 
 		switch (tdm)
 		{
