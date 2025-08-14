@@ -1291,6 +1291,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 
 			switch (err)
 			{
+				case EPERM:
 				case EACCES:
 				{
 					h_printf(
