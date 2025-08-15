@@ -189,6 +189,11 @@
 		// conflicts without tangible resolutions as there are no standard forms to adapt to.
 	// /`TEST_DISABLE_DEFAULT_INCLUDES`/
 		// Presume availability of the necessary C environment.
+	// /`TEST_FS_TMPDIR_ROOT`/
+		// Default root directory for temporary file storage. `/tmp/` by default, and
+		// only used when (system/environ)`TMPDIR` is unset.
+	// /`TEST_FS_RM_PATH`/
+		// Path to `rm` binary for temporary directory cleanup.
 */
 #ifndef _FAULT_TEST_H_
 #define _FAULT_TEST_H_
@@ -231,12 +236,12 @@
 	#define _TEST_SYMBOL_QUALIFIER
 #endif
 
-#ifndef FS_TMPDIR
-	#define FS_TMPDIR "/tmp/"
+#ifndef TEST_FS_TMPDIR_ROOT
+	#define TEST_FS_TMPDIR_ROOT "/tmp/"
 #endif
 
-#ifndef FS_RM_PATH
-	#define FS_RM_PATH "/bin/rm"
+#ifndef TEST_FS_RM_PATH
+	#define TEST_FS_RM_PATH "/bin/rm"
 #endif
 
 #if defined(__APPLE__) && !defined(TEST_DISABLE_LOCAL_MEMRCHR)
@@ -1350,9 +1355,9 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			case 0:
 			{
 				// Utility fork process reaped by init.
-				char *const argv[] = {FS_RM_PATH, "-rf", t->tmpdir_path, NULL};
+				char *const argv[] = {TEST_FS_RM_PATH, "-rf", t->tmpdir_path, NULL};
 
-				execve(FS_RM_PATH, argv, NULL);
+				execve(argv[0], argv, NULL);
 				h_printf(
 					"WARNING: could not execute cleanup procedure "
 					"for \"%s\"\n", t->tmpdir_path);
@@ -1515,7 +1520,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			const char *suite = argv[0];
 		#endif
 
-		if (h_configure_tmpdir(FS_TMPDIR) < 0)
+		if (h_configure_tmpdir(TEST_FS_TMPDIR_ROOT) < 0)
 			return(1);
 
 		switch (tdm)
