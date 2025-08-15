@@ -146,8 +146,9 @@
 	// #!syntax/c
 		Test(feature)
 		{
-			//// Fails, but the following contentions needs to be seen.
-			test(+)->strcmp("expectation", function());
+			//// Fails, but the following contention
+			//// is of interest, so disable the conclusion.
+			test(+)->strcmp("expectation", missed());
 
 			//// Force failure here to inspect its arguments and
 			//// to avoid running anything afterwards.
@@ -168,11 +169,14 @@
 		// Definition used to signal the (test.h) header that the source should not
 		// define global storage variables or the main function.
 
-		// When compiling multiple sources, all but one source file should define this.
-		// Given a common enough pattern, giving `-DTEST_SUITE_EXTENSION` to all sources
-		// and using `#undef` in the main source file would be reasonable.
+		// When compiling multiple sources, all but one source file should define this
+		// before including `test.h`. The default presumption of the primary is to allow
+		// for minimum information usage of the test framework.
 
-		// Alternatively, the main source file could include the extensions instead.
+		// Given heavy usage of multiples sources, conditionally defaulting the definition of
+		// `TEST_SUITE_EXTENSION` in a header that then includes `test.h` or
+		// including the extensions directly in the primary source file can eliminate
+		// the redundancy.
 
 		// Implies `TEST_DISABLE_MAIN`.
 	// /`TEST_DISABLE_MAIN`/
