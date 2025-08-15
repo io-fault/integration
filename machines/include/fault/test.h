@@ -215,6 +215,21 @@
 	#include <sys/stat.h>
 #endif
 
+/**
+	// C++ compatibility.
+*/
+#ifdef __cplusplus
+	#ifndef _TEST_SYMBOL_QUALIFIER
+		// Avoid any name mangling of test functions to guarantee "test_*" symbols.
+		#define _TEST_SYMBOL_QUALIFIER extern "C"
+	#endif
+#endif
+
+#ifndef _TEST_SYMBOL_QUALIFIER
+	// No qualification needed for C.
+	#define _TEST_SYMBOL_QUALIFIER
+#endif
+
 #ifndef FS_TMPDIR
 	#define FS_TMPDIR "/tmp/"
 #endif
@@ -226,10 +241,11 @@
 #if defined(__APPLE__) && !defined(TEST_DISABLE_LOCAL_MEMRCHR)
 	// Not found in recent (2025) macOS versions.
 	static inline void *
-	memrchr(const void *memory, int c, size_t s)
+	memrchr(void *memory, int c, size_t s)
 	{
-		const char *bytes = memory + s;
+		const char *bytes = (const char *) memory;
 		const char b = c;
+		bytes += s;
 
 		while (bytes != memory)
 		{
@@ -371,8 +387,8 @@ enum FailureType {
 #define _STRCMP_T(FT) FT(_FTA_BINARY, int, const char *solution, const char *candidate)
 #define _STRCMPF_T(FT) FT(_FTA_BINARY, int, const char *solution, const char *candidate, _FT_VA_DOTS)
 #define _STRSTR_T(FT) FT(_FTA_BINARY, char *, const char *solution, const char *candidate)
-#define _MEMCMP_T(FT) FT(_FTA_BINARY_1L, int, const void *solution, const void *candidate, size_t length)
-#define _MEMCHR_T(FT) FT(_FTA_BINARY_1L, void *, const void *solution, int candidate, size_t length)
+#define _MEMCMP_T(FT) FT(_FTA_BINARY_1L, int, void *solution, void *candidate, size_t length)
+#define _MEMCHR_T(FT) FT(_FTA_BINARY_1L, void *, void *solution, int candidate, size_t length)
 #define _LSTRSTR_T(FT) FT(_FTA_BINARY, wchar_t *, const wchar_t *solution, const wchar_t *candidate)
 #define _LSTRCMP_T(FT) FT(_FTA_BINARY, int, const wchar_t *solution, const wchar_t *candidate)
 
@@ -439,7 +455,7 @@ struct Test {
 	struct TestIdentity *identity;
 
 	uint64_t tmpdir_path_hash;
-	const char *tmpdir_path;
+	char *tmpdir_path;
 
 	// Exposed, but only used by control methods.
 	uint64_t contentions;
@@ -538,7 +554,7 @@ _never_fail(struct Test *t)
 #define DEFINE_PROXY(FNAME, FTYPE) \
 	static inline FTYPE(_FT_RETURN) \
 	_##FNAME##_proxy(_test_control_parameters, FTYPE(_FT_PARAMETERS)) \
-	{ return((FNAME)(FTYPE(_FT_ARGUMENTS))); }
+	{ return((FTYPE(_FT_RETURN)) (FNAME)(FTYPE(_FT_ARGUMENTS))); }
 
 TEST_CONTROL_PROXIES(DEFINE_PROXY)
 #undef DEFINE_PROXY
@@ -548,7 +564,7 @@ const static struct TestControls _tif_ctlgad = {
 		TEST_CONTROL_PROXIES(PINIT)
 	#undef PINIT
 };
-const static struct Test _tif_tgad = {&_tif_ctlgad,};
+const static struct Test _tif_tgad = {.controls = (struct TestControls *) &_tif_ctlgad, 0,};
 
 // The globals that catch the invasive macros and route them through the proxies.
 const static struct TestControls * const controls = &_tif_ctlgad;
@@ -578,13 +594,14 @@ extern const char *_h_tmpdir_restriction;
 extern const char *_h_tmpdir_root;
 
 #define _TEST_RECORD_CONSTRUCTOR(NAME, FILE, LINE, INDEX) \
-	static void __attribute__((constructor)) _h_##NAME##_add(void) { \
+	static void __attribute__((constructor)) \
+	_h_##NAME##_add(void) { \
 		struct HarnessTestRecord *tfr; \
 		struct TestIdentity *ti; \
 		\
-		tfr = malloc(sizeof(struct HarnessTestRecord)); \
+		tfr = (struct HarnessTestRecord *) malloc(sizeof(struct HarnessTestRecord)); \
 		if (tfr == NULL) abort(); \
-		ti = malloc(sizeof(struct TestIdentity)); \
+		ti = (struct TestIdentity *) malloc(sizeof(struct TestIdentity)); \
 		if (ti == NULL) abort(); \
 		\
 		ti->ti_name = #NAME; \
@@ -601,7 +618,7 @@ extern const char *_h_tmpdir_root;
 	}
 
 #define _TEST_FUNCTION_DECLARATION(NAME) \
-	void NAME (struct Test *test)
+	_TEST_SYMBOL_QUALIFIER void NAME (struct Test *test)
 
 #ifndef __COUNTER__
 	#define __COUNTER__ -1
@@ -814,7 +831,7 @@ h_print_trace(struct Test *t)
 #define h_forward_va(format) { \
 	va_list args; \
 	va_start(args, format); \
-	h_print_message(test, format, args); \
+	h_print_message(test, (char *) format, args); \
 	va_end(args); \
 }
 
@@ -865,7 +882,7 @@ _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
 	{
 		if (mkdtemp(test->tmpdir_path) == NULL)
 		{
-			free(test->tmpdir_path);
+			free((void *) test->tmpdir_path);
 			test->tmpdir_path = NULL;
 		}
 		else
@@ -1002,7 +1019,7 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 	} while(0)
 
 static inline int
-_tci_contend_memcmp(_test_control_parameters, const void *solution, const void *candidate, size_t n)
+_tci_contend_memcmp(_test_control_parameters, void *solution, void *candidate, size_t n)
 {
 	const char *label = "ABSURDITY";
 	const char *testr = "test";
@@ -1023,22 +1040,24 @@ _tci_contend_memcmp(_test_control_parameters, const void *solution, const void *
 }
 
 static inline void *
-_tci_contend_memchr(_test_control_parameters, const void *solution, int candidate, size_t n)
+_tci_contend_memchr(_test_control_parameters, void *solution, int candidate, size_t n)
 {
 	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "was found (offset %zu) in";
 	void *rv;
+	intptr_t ri;
 
 	++test->contentions;
 
 	rv = (memchr)(solution, candidate, n);
+	ri = (intptr_t) rv;
 	_TCI_RETURN_OR_FAIL((rv == NULL), "not found in");
 
 	{
 		char opbuf[64];
 		if (rv != NULL)
-			snprintf(opbuf, sizeof(opbuf), op, (size_t) (rv - solution));
+			snprintf(opbuf, sizeof(opbuf), op, (size_t) (ri - (intptr_t) solution));
 		else
 			snprintf(opbuf, sizeof(opbuf), op);
 
@@ -1053,22 +1072,24 @@ _tci_contend_memchr(_test_control_parameters, const void *solution, int candidat
 }
 
 static inline void *
-_tci_contend_memrchr(_test_control_parameters, const void *solution, int candidate, size_t n)
+_tci_contend_memrchr(_test_control_parameters, void *solution, int candidate, size_t n)
 {
 	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "was found (offset %zu) in";
 	void *rv;
+	intptr_t ri;
 
 	++test->contentions;
 
 	rv = (memrchr)(solution, candidate, n);
+	ri = (intptr_t) rv;
 	_TCI_RETURN_OR_FAIL((rv == NULL), "not found in");
 
 	{
 		char opbuf[64];
 		if (rv != NULL)
-			snprintf(opbuf, sizeof(opbuf), op, (size_t) (rv - solution));
+			snprintf(opbuf, sizeof(opbuf), op, (size_t) (ri - (intptr_t) solution));
 		else
 			snprintf(opbuf, sizeof(opbuf), op);
 
@@ -1088,7 +1109,7 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "==";
-	const char *formatted = NULL;
+	char *formatted = NULL;
 	int rv, size;
 
 	++test->contentions;
@@ -1101,14 +1122,14 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 	}
 
 	rv = (strcmp)(solution, formatted);
-	_TCI_RETURN_OR_FAIL((rv != 0), "!=", free(formatted));
+	_TCI_RETURN_OR_FAIL((rv != 0), "!=", free((void *) formatted));
 
 	h_print_note(test,
 		h_message(label, "%s->strcmpf" "(%s, %s)", testr, former, latter),
 		h_reality("\"%s\" %s \"%s\"", solution, op, formatted)
 	);
 
-	free(formatted);
+	free((void *) formatted);
 	_TCI_EXIT();
 }
 
@@ -1122,7 +1143,7 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 		TYPE rv; \
 		++test->contentions; \
 		\
-		rv = (METHOD)(solution, candidate); \
+		rv = (TYPE) (METHOD)(solution, candidate); \
 		_TCI_RETURN_OR_FAIL(!CHECK(rv), NOPSTR); \
 		\
 		h_print_note(test, \
@@ -1383,7 +1404,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		t->conclusion = tc_skipped;
 		t->contention_delta = ac_reflect;
 		t->contention_trace = false;
-		t->failure = 0;
+		t->failure = tf_none;
 		t->contentions = 0;
 
 		t->tmpdir_path = NULL;
@@ -1409,7 +1430,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		{
 			h_cleanup_tmpdir(t, false);
 
-			free(t->tmpdir_path);
+			free((void *) t->tmpdir_path);
 			t->tmpdir_path = NULL;
 			t->tmpdir_path_hash = 0;
 		}
@@ -1449,7 +1470,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		current = root->next;
 		while (current != NULL)
 		{
-			enum TestConclusion tc = htest(&contentions, &default_controls, current);
+			enum TestConclusion tc = htest(&contentions, (struct TestControls *) &default_controls, current);
 
 			test_count += 1;
 
