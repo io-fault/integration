@@ -5,15 +5,15 @@
 /**
 	// Visibility and linkage control define for the primary interfaces.
 */
-#ifndef utf8_api_q
-	#define utf8_api_q static inline
+#ifndef UTF8_API
+	#define UTF8_API(TYPE) static inline TYPE
 #endif
 
 /**
 	// Visibility and linkage control define for a few internal functions.
 */
-#ifndef utf8_ii_q
-	#define utf8_ii_q static inline
+#ifndef UTF8_ISI
+	#define UTF8_ISI(TYPE) static inline TYPE
 #endif
 
 /**
@@ -92,7 +92,7 @@ typedef struct {
 /**
 	// Look up the name of an error type.
 */
-utf8_api_q const char *
+UTF8_API(const char *)
 utf8_error_identifier(enum UTF8Error errid)
 {
 	switch (errid)
@@ -112,7 +112,7 @@ utf8_error_identifier(enum UTF8Error errid)
 /**
 	// Look up the error message describing the type.
 */
-utf8_api_q const char *
+UTF8_API(const char *)
 utf8_error_message(enum UTF8Error errid)
 {
 	switch (errid)
@@ -132,7 +132,7 @@ utf8_error_message(enum UTF8Error errid)
 /**
 	// Whether the UTF-8 sequence fragment integer is a continuation byte.
 */
-utf8_api_q bool
+UTF8_API(bool)
 utf8_continuation(uint8_t c)
 {
 	// Validate leading 0b10.
@@ -142,7 +142,7 @@ utf8_continuation(uint8_t c)
 /**
 	// The value of a UTF-8 sequence continuation.
 */
-utf8_api_q uint8_t
+UTF8_API(uint8_t)
 utf8_continuation_value(uint8_t c)
 {
 	// Zero leading 0b10; no validation.
@@ -152,7 +152,7 @@ utf8_continuation_value(uint8_t c)
 /**
 	// The value of the UTF-8 sequence initializor.
 */
-utf8_api_q uint8_t
+UTF8_API(uint8_t)
 utf8_sequence_value(uint8_t c, size_t seq_length)
 {
 	// Zero leading 0b110, 0b1110, or 0b11110. No validation.
@@ -162,7 +162,7 @@ utf8_sequence_value(uint8_t c, size_t seq_length)
 /**
 	// Identify the length of the UTF-8 sequence using its initializor.
 */
-utf8_api_q size_t
+UTF8_API(size_t)
 utf8_identify_sequence_length(uint8_t c)
 {
 	// 0b110
@@ -192,7 +192,7 @@ utf8_identify_sequence_length(uint8_t c)
 	// /&true/
 		// THe &value is within the UTF-8 range identified by &length.
 */
-utf8_api_q bool
+UTF8_API(bool)
 utf8_range_valid(size_t length, uint32_t value)
 {
 	switch (length)
@@ -240,7 +240,7 @@ utf8_range_valid(size_t length, uint32_t value)
 	// /cp/
 		// The storage location to place the identified codepoint.
 */
-utf8_api_q size_t
+UTF8_API(size_t)
 utf8_identify_codepoint(uint32_t *cp, uint8_t *cv, size_t limit)
 {
 	size_t length = 1;
@@ -363,7 +363,7 @@ utf8_identify_codepoint(uint32_t *cp, uint8_t *cv, size_t limit)
 	// Construct a &utf8_error_t using the given parameters and copying the sequence
 	// codepoints from &cv into the &errsequence field.
 */
-utf8_api_q utf8_error_t
+UTF8_API(utf8_error_t)
 utf8_error_construct(enum UTF8Error code, uint8_t index, uint8_t *cv, size_t length, size_t limit)
 {
 	utf8_error_t err = {code, index};
@@ -381,7 +381,7 @@ utf8_error_construct(enum UTF8Error code, uint8_t index, uint8_t *cv, size_t len
 	// This function only reports errors regarding the interpreted data and leaves
 	// all range checking to &utf8_error.
 */
-utf8_api_q utf8_error_t
+UTF8_API(utf8_error_t)
 utf8_identify_error(uint8_t *cv, size_t limit)
 {
 	assert(limit >= 1);
@@ -476,7 +476,7 @@ utf8_identify_error(uint8_t *cv, size_t limit)
 	// /utf8_error_missing_continuation/
 		// The &errindex identifies the sequence relative byte that was not a continuation.
 */
-utf8_api_q utf8_error_t
+UTF8_API(utf8_error_t)
 utf8_error(uint8_t *cv, size_t limit, size_t length, uint32_t cp)
 {
 	switch (length)
@@ -532,7 +532,7 @@ utf8_error(uint8_t *cv, size_t limit, size_t length, uint32_t cp)
 	// `0` when &cp is greater than or equal to `0x110000`, otherwise
 	// the number of bytes needed to represent the UTF-8 sequence.
 */
-utf8_api_q size_t
+UTF8_API(size_t)
 utf8_sequence_length(uint32_t cp)
 {
 	if (cp < 0x80)
@@ -550,7 +550,7 @@ utf8_sequence_length(uint32_t cp)
 	return(0);
 }
 
-utf8_ii_q size_t
+UTF8_ISI(size_t)
 utf8_sequence_codepoint_1(uint8_t *cv, uint32_t cp)
 {
 	// 0b0
@@ -558,7 +558,7 @@ utf8_sequence_codepoint_1(uint8_t *cv, uint32_t cp)
 	return(1);
 }
 
-utf8_ii_q size_t
+UTF8_ISI(size_t)
 utf8_sequence_codepoint_2(uint8_t *cv, uint32_t cp)
 {
 	cv[1] = UTF8_CONTINUATION | (cp & (0xFF >> 2));
@@ -569,7 +569,7 @@ utf8_sequence_codepoint_2(uint8_t *cv, uint32_t cp)
 	return(2);
 }
 
-utf8_ii_q size_t
+UTF8_ISI(size_t)
 utf8_sequence_codepoint_3(uint8_t *cv, uint32_t cp)
 {
 	cv[2] = UTF8_CONTINUATION | (cp & (0xFF >> 2));
@@ -582,7 +582,7 @@ utf8_sequence_codepoint_3(uint8_t *cv, uint32_t cp)
 	return(3);
 }
 
-utf8_ii_q size_t
+UTF8_ISI(size_t)
 utf8_sequence_codepoint_4(uint8_t *cv, uint32_t cp)
 {
 	cv[3] = UTF8_CONTINUATION | (cp & (0xFF >> 2));
@@ -611,7 +611,7 @@ utf8_sequence_codepoint_4(uint8_t *cv, uint32_t cp)
 		// The buffer to write the sequence into.
 		// It is presumed that 4-bytes are available for writing.
 */
-utf8_api_q size_t
+UTF8_API(size_t)
 utf8_sequence_codepoint(uint8_t *cv, uint32_t cp)
 {
 	switch (utf8_sequence_length(cp))

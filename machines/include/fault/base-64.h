@@ -14,12 +14,12 @@
 
 // API (can be static inline or exported)
 #ifndef BASE64_API
-	#define BASE64_API static inline
+	#define BASE64_API(TYPE) static inline TYPE
 #endif
 
 // Internal Interfaces (should be static inline)
-#ifndef BASE64_II
-	#define BASE64_II static inline
+#ifndef BASE64_ISI
+	#define BASE64_ISI(TYPE) static inline TYPE
 #endif
 
 #ifndef BASE64_MALLOC
@@ -95,7 +95,7 @@ const static uint8_t base64_value_index[128] = {
 /**
 	// Lookup a base-64 6-bit value using the &base64_value_index.
 */
-BASE64_II uint8_t
+BASE64_ISI(uint8_t)
 base64_value(int8_t digit)
 {
 	uint8_t v = base64_value_index[digit];
@@ -105,7 +105,7 @@ base64_value(int8_t digit)
 /**
 	// Lookup a base-64 digit using the &base64_digit_index.
 */
-BASE64_II uint8_t
+BASE64_ISI(uint8_t)
 base64_digit(int8_t value)
 {
 	uint8_t d = (uint8_t) base64_digit_index[value];
@@ -121,7 +121,7 @@ base64_digit(int8_t value)
 	// a NUL-terminated maximum and append pad characters
 	// when not a fully aligned on a multiple of three.
 */
-BASE64_II size_t
+BASE64_ISI(size_t)
 base64_encoded_size(size_t decoded_size)
 {
 	size_t w = (decoded_size + 2) / 3;
@@ -138,7 +138,7 @@ base64_encoded_size(size_t decoded_size)
 	// The decoding interfaces here will normally allocate
 	// a NUL-terminated maximum and return the usage size.
 */
-BASE64_II size_t
+BASE64_ISI(size_t)
 base64_decoded_size(size_t encoded_size)
 {
 	size_t w = (encoded_size + 3) / 4;
@@ -151,7 +151,7 @@ base64_decoded_size(size_t encoded_size)
 	// 11111122 22223333 33444444
 	// 87654321 87654321 87654321
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_encode_unit(uint8_t encoded[4], uint8_t decoded[3])
 {
 	register uint8_t iv;
@@ -172,7 +172,7 @@ base64_encode_unit(uint8_t encoded[4], uint8_t decoded[3])
 /**
 	// Translate four base-64 digits into their three byte form.
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_decode_unit(uint8_t decoded[3], uint8_t encoded[4])
 {
 	register uint8_t iv;
@@ -208,7 +208,7 @@ base64_decode_unit(uint8_t decoded[3], uint8_t encoded[4])
 	// [ Returns ]
 	// Number of padding characters inserted at the end of &encoded.
 */
-BASE64_API uint8_t
+BASE64_API(uint8_t)
 base64_encode_memory(char *encoded, const char *source, size_t length)
 {
 	size_t i, limit = length > 3 ? length - 3 : 0;
@@ -270,7 +270,7 @@ base64_encode_memory(char *encoded, const char *source, size_t length)
 	// Subtract this number from `base64_decoded_size(encoded_length)`
 	// to get the exact byte count of data.
 */
-BASE64_API uint8_t
+BASE64_API(uint8_t)
 base64_decode_memory(char *decoded, const char *source, size_t length)
 {
 	size_t i, limit = length >= 4 ? length - 4 : 0;
@@ -355,7 +355,7 @@ base64_decode_memory(char *decoded, const char *source, size_t length)
 	// Pointer to the new allocation with &digitcount holding the number
 	// of base-64 digits written into it.
 */
-BASE64_API char *
+BASE64_API(char *)
 base64_encode(size_t *digitcount, const char *source, size_t length)
 {
 	size_t el = base64_encoded_size(length);
@@ -387,7 +387,7 @@ base64_encode(size_t *digitcount, const char *source, size_t length)
 	// Pointer to the new allocation with &bytecount holding the number
 	// of bytes written into it.
 */
-BASE64_API char *
+BASE64_API(char *)
 base64_decode(size_t *bytecount, const char *source, size_t length)
 {
 	size_t dl = base64_decoded_size(length);
@@ -408,7 +408,7 @@ base64_decode(size_t *bytecount, const char *source, size_t length)
 	// [ Returns ]
 	// NUL-terminated string allocated with &BASE64_MALLOC
 */
-BASE64_API char *
+BASE64_API(char *)
 base64_encode_string(const char *string)
 {
 	size_t i;
@@ -421,7 +421,7 @@ base64_encode_string(const char *string)
 	// [ Returns ]
 	// NUL-terminated string allocated with &BASE64_MALLOC
 */
-BASE64_API char *
+BASE64_API(char *)
 base64_decode_string(const char *string)
 {
 	size_t i;
@@ -442,7 +442,7 @@ base64_decode_string(const char *string)
 	// [ Returns ]
 	// The offset of the next valid digit from &offset or &length if none were found.
 */
-BASE64_II size_t
+BASE64_ISI(size_t)
 base64_seek_digit(const char *message, size_t offset, size_t length)
 {
 	for (size_t i = offset; i < length; ++i)
@@ -480,7 +480,7 @@ base64_seek_digit(const char *message, size_t offset, size_t length)
 	// [ Returns ]
 	// The offset of the next invalid digit byte from &offset or &length if none were found.
 */
-BASE64_II size_t
+BASE64_ISI(size_t)
 base64_seek_exception(const char *message, size_t offset, size_t length)
 {
 	for (size_t i = offset; i < length; ++i)
@@ -549,7 +549,7 @@ struct Base64_DigitBuffer {
 	// Initialize a &Base64_DigitBuffer structure allocating
 	// &dbuf.d_buffer with four times the given &seqlimit.
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_digitbuffer_initialize(struct Base64_DigitBuffer *dbuf, size_t seqlimit)
 {
 	dbuf->d_buffer_length = 4 * seqlimit;
@@ -566,7 +566,7 @@ base64_digitbuffer_initialize(struct Base64_DigitBuffer *dbuf, size_t seqlimit)
 	// Used after the buffer's digits have been processed, decoded, and
 	// is ready for re-use with &base64_buffer_digits.
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_digitbuffer_cycle(struct Base64_DigitBuffer *dbuf)
 {
 	dbuf->d_buffer_offset = 0;
@@ -577,7 +577,7 @@ base64_digitbuffer_cycle(struct Base64_DigitBuffer *dbuf)
 	// &message and &length after initialization or in response to
 	// &base64_buffer_digits returns &false.
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_digitbuffer_set_message(struct Base64_DigitBuffer *dbuf, const char *message, size_t length)
 {
 	dbuf->d_message = message;
@@ -589,7 +589,7 @@ base64_digitbuffer_set_message(struct Base64_DigitBuffer *dbuf, const char *mess
 	// Release the &dbuf.d_buffer memory allocation and zero its related
 	// offset and length fields.
 */
-BASE64_II void
+BASE64_ISI(void)
 base64_digitbuffer_release(struct Base64_DigitBuffer *dbuf)
 {
 	dbuf->d_buffer_length = 0;
@@ -615,7 +615,7 @@ base64_digitbuffer_release(struct Base64_DigitBuffer *dbuf)
 	// either buffering is complete or &base64_digitbuffer_set_message should
 	// be used to continue buffering digits.
 */
-BASE64_API bool
+BASE64_API(bool)
 base64_buffer_digits(struct Base64_DigitBuffer *dbuf)
 {
 	char *rbuf;
@@ -688,7 +688,7 @@ base64_buffer_digits(struct Base64_DigitBuffer *dbuf)
 	// [ Returns ]
 	// The new usage length of the &decoded data.
 */
-BASE64_API size_t
+BASE64_API(size_t)
 base64_decode_fragments(char **decoded, size_t length, ...)
 {
 	const char *msg;
@@ -758,7 +758,7 @@ base64_decode_fragments(char **decoded, size_t length, ...)
 	// [ Returns ]
 	// New allocation (&BASE64_MALLOC) containing the constructed URI.
 */
-BASE64_API char *
+BASE64_API(char *)
 base64_data_uri(const char *media_type, const char *data, size_t length)
 {
 	char *uri;
