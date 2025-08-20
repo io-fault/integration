@@ -321,9 +321,39 @@ struct TestIdentity {
 		// The test passed.
 */
 enum TestConclusion {
-	tc_failed = -1,
-	tc_skipped = 0,
-	tc_passed = +1,
+	tc_failed  = -1,
+	tc_skipped =  0,
+	tc_passed  = +1,
+};
+
+/**
+	// Failure classification; none when tc_skipped or tc_passed.
+
+	// [ Elements ]
+	// /tf_none/
+		// Failure was not concluded.
+	// /tf_absurdity/
+		// Failure was concluded by a contended absurdity.
+	// /tf_limit/
+		// Harness enforced resource limitation.
+	// /tf_interrupt/
+		// Test process received a signal requesting termination.
+		// Normally, this will be POSIX signals, but the harness may support
+		// other sources.
+	// /tf_explicit/
+		// Failure was directly concluded, `test->fail(msg)`.
+	// /tf_fault/
+		// Fault detected or trapped during testing.
+		// Critical process signal(SIGSEGV), language exception,
+		// or a promoted application error.
+*/
+enum FailureType {
+	tf_limit     = -3,
+	tf_interrupt = -2,
+	tf_explicit  = -1,
+	tf_none      =  0,
+	tf_absurdity = +1,
+	tf_fault     = +2,
 };
 
 /**
@@ -345,36 +375,6 @@ enum AbsurdityControl {
 	ac_always = -1,
 	ac_reflect = 0,
 	ac_invert
-};
-
-/**
-	// Failure classification; none when tc_skipped or tc_passed.
-
-	// [ Elements ]
-	// /tf_none/
-		// Failure was not concluded.
-	// /tf_absurdity/
-		// Failure was concluded by a contended absurdity.
-	// /tf_limit/
-		// Harness enforced resource limitation.
-	// /tf_interrupt/
-		// Test process received a signal requesting termination.
-		// Normally, this will be POSIX signals, but the harness may support
-		// other sources.
-	// /tf_explicit/
-		// Failure was directly concluded, `test->fail(msg)`.
-	// /tf_fault/
-		// Failure was due to a system or application fault.
-		// Language exceptions, segmentation violations, or anything that
-		// may cause a test process to exit.
-*/
-enum FailureType {
-	tf_limit = -3,
-	tf_interrupt = -2,
-	tf_explicit = -1,
-	tf_none = 0,
-	tf_absurdity = 1,
-	tf_fault,
 };
 
 /**
