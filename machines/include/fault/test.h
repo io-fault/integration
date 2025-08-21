@@ -272,20 +272,20 @@
 /**
 	// The methods used to run test functions.
 
-	// /tdm_sequential/
+	// /td_sequential/
 		// One test at a time in a single process.
 		// &siglongjmp is used to exit concluded tests.
-	// /tdm_thread/
+	// /td_thread/
 		// Dispatch the test in a thread.
 		// &pthread_exit is used to exit tests.
-	// /tdm_process/
+	// /td_process/
 		// Dispatch the test in a forked process.
 		// &exit is used to exit tests.
 */
-enum TestDispatchMethod {
-	tdm_sequential,
-	tdm_thread,
-	tdm_process
+enum TestDispatchStrategy {
+	td_sequential,
+	td_thread,
+	td_process
 };
 
 /**
@@ -1512,7 +1512,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	int
 	main(int argc, char *argv[])
 	{
-		enum TestDispatchMethod tdm = tdm_sequential;
+		enum TestDispatchStrategy tdm = td_sequential;
 		TestDispatch hdispatch = NULL;
 		TestExit hexit = NULL;
 
@@ -1529,7 +1529,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 
 		switch (tdm)
 		{
-			case tdm_sequential:
+			case td_sequential:
 				hdispatch = harness_test;
 				hexit = h_sequential_exit;
 			break;
