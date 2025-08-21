@@ -1,6 +1,8 @@
 /**
 	// UTF-8 decoding and encoding tools.
 */
+#ifndef _FAULT_UTF_8_H_
+#define _FAULT_UTF_8_H_
 
 /**
 	// Visibility and linkage control define for the primary interfaces.
@@ -637,3 +639,4 @@ utf8_sequence_codepoint(uint8_t *cv, uint32_t cp)
 
 	return(0);
 }
+#endif
