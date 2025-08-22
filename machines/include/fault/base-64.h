@@ -39,7 +39,7 @@
 	// a 6-bit value. The pad characters are considered
 	// out of bounds, but are generally unused.
 */
-const static char * const base64_digit_index =
+const static uint8_t * const base64_digit_index = (const uint8_t *)
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	"abcdefghijklmnopqrstuvwxyz"
 	"0123456789+/=============="
@@ -152,7 +152,7 @@ base64_decoded_size(size_t encoded_size)
 	// 87654321 87654321 87654321
 */
 BASE64_ISI(void)
-base64_encode_unit(uint8_t encoded[4], uint8_t decoded[3])
+base64_encode_unit(uint8_t encoded[4], const uint8_t decoded[3])
 {
 	register uint8_t iv;
 
@@ -173,7 +173,7 @@ base64_encode_unit(uint8_t encoded[4], uint8_t decoded[3])
 	// Translate four base-64 digits into their three byte form.
 */
 BASE64_ISI(void)
-base64_decode_unit(uint8_t decoded[3], uint8_t encoded[4])
+base64_decode_unit(uint8_t decoded[3], const uint8_t encoded[4])
 {
 	register uint8_t iv;
 
@@ -209,7 +209,7 @@ base64_decode_unit(uint8_t decoded[3], uint8_t encoded[4])
 	// Number of padding characters inserted at the end of &encoded.
 */
 BASE64_API(uint8_t)
-base64_encode_memory(char *encoded, const char *source, size_t length)
+base64_encode_memory(uint8_t *encoded, const uint8_t *source, size_t length)
 {
 	size_t i, limit = length > 3 ? length - 3 : 0;
 	uint8_t r = 0, *c;
@@ -271,7 +271,7 @@ base64_encode_memory(char *encoded, const char *source, size_t length)
 	// to get the exact byte count of data.
 */
 BASE64_API(uint8_t)
-base64_decode_memory(char *decoded, const char *source, size_t length)
+base64_decode_memory(uint8_t *decoded, const uint8_t *source, size_t length)
 {
 	size_t i, limit = length >= 4 ? length - 4 : 0;
 	uint8_t r = 0, *c = decoded;
@@ -355,13 +355,13 @@ base64_decode_memory(char *decoded, const char *source, size_t length)
 	// Pointer to the new allocation with &digitcount holding the number
 	// of base-64 digits written into it.
 */
-BASE64_API(char *)
-base64_encode(size_t *digitcount, const char *source, size_t length)
+BASE64_API(uint8_t *)
+base64_encode(size_t *digitcount, const uint8_t *source, size_t length)
 {
 	size_t el = base64_encoded_size(length);
-	char *em;
+	uint8_t *em;
 
-	em = BASE64_MALLOC(el + 1);
+	em = (uint8_t *) BASE64_MALLOC(el + 1);
 	if (em == NULL)
 		return(NULL);
 	em[el] = '\0'; // Safety.
@@ -387,13 +387,13 @@ base64_encode(size_t *digitcount, const char *source, size_t length)
 	// Pointer to the new allocation with &bytecount holding the number
 	// of bytes written into it.
 */
-BASE64_API(char *)
-base64_decode(size_t *bytecount, const char *source, size_t length)
+BASE64_API(uint8_t *)
+base64_decode(size_t *bytecount, const uint8_t *source, size_t length)
 {
 	size_t dl = base64_decoded_size(length);
-	char *dm;
+	uint8_t *dm;
 
-	dm = BASE64_MALLOC(dl + 1);
+	dm = (uint8_t *) BASE64_MALLOC(dl + 1);
 	if (dm == NULL)
 		return(NULL);
 	dm[dl] = '\0'; // Safety.
@@ -412,7 +412,7 @@ BASE64_API(char *)
 base64_encode_string(const char *string)
 {
 	size_t i;
-	return(base64_encode(&i, string, strlen(string)));
+	return((char *) base64_encode(&i, (const uint8_t *) string, strlen(string)));
 }
 
 /**
@@ -425,7 +425,7 @@ BASE64_API(char *)
 base64_decode_string(const char *string)
 {
 	size_t i;
-	return(base64_decode(&i, string, strlen(string)));
+	return((char *) base64_decode(&i, (const uint8_t *) string, strlen(string)));
 }
 
 /**
@@ -443,7 +443,7 @@ base64_decode_string(const char *string)
 	// The offset of the next valid digit from &offset or &length if none were found.
 */
 BASE64_ISI(size_t)
-base64_seek_digit(const char *message, size_t offset, size_t length)
+base64_seek_digit(const uint8_t *message, size_t offset, size_t length)
 {
 	for (size_t i = offset; i < length; ++i)
 	{
@@ -481,7 +481,7 @@ base64_seek_digit(const char *message, size_t offset, size_t length)
 	// The offset of the next invalid digit byte from &offset or &length if none were found.
 */
 BASE64_ISI(size_t)
-base64_seek_exception(const char *message, size_t offset, size_t length)
+base64_seek_exception(const uint8_t *message, size_t offset, size_t length)
 {
 	for (size_t i = offset; i < length; ++i)
 	{
@@ -541,8 +541,8 @@ struct Base64_DigitBuffer {
 	size_t d_message_length;
 	size_t d_message_offset;
 
-	char *d_buffer;
-	const char *d_message;
+	uint8_t *d_buffer;
+	const uint8_t *d_message;
 };
 
 /**
@@ -554,7 +554,7 @@ base64_digitbuffer_initialize(struct Base64_DigitBuffer *dbuf, size_t seqlimit)
 {
 	dbuf->d_buffer_length = 4 * seqlimit;
 	dbuf->d_buffer_offset = 0;
-	dbuf->d_buffer = BASE64_MALLOC(dbuf->d_buffer_length);
+	dbuf->d_buffer = (uint8_t *) BASE64_MALLOC(dbuf->d_buffer_length);
 
 	dbuf->d_message = NULL;
 	dbuf->d_message_length = 0;
@@ -578,7 +578,7 @@ base64_digitbuffer_cycle(struct Base64_DigitBuffer *dbuf)
 	// &base64_buffer_digits returns &false.
 */
 BASE64_ISI(void)
-base64_digitbuffer_set_message(struct Base64_DigitBuffer *dbuf, const char *message, size_t length)
+base64_digitbuffer_set_message(struct Base64_DigitBuffer *dbuf, const uint8_t *message, size_t length)
 {
 	dbuf->d_message = message;
 	dbuf->d_message_offset = 0;
@@ -618,7 +618,7 @@ base64_digitbuffer_release(struct Base64_DigitBuffer *dbuf)
 BASE64_API(bool)
 base64_buffer_digits(struct Base64_DigitBuffer *dbuf)
 {
-	char *rbuf;
+	uint8_t *rbuf;
 	size_t start, stop, q, max;
 
 	max = dbuf->d_buffer_length - dbuf->d_buffer_offset;
@@ -689,9 +689,9 @@ base64_buffer_digits(struct Base64_DigitBuffer *dbuf)
 	// The new usage length of the &decoded data.
 */
 BASE64_API(size_t)
-base64_decode_fragments(char **decoded, size_t length, ...)
+base64_decode_fragments(uint8_t **decoded, size_t length, ...)
 {
-	const char *msg;
+	const uint8_t *msg;
 	size_t decoded_size = length;
 	struct Base64_DigitBuffer dbuf;
 	va_list args;
@@ -700,7 +700,7 @@ base64_decode_fragments(char **decoded, size_t length, ...)
 
 	if (length == 0 && *decoded == NULL)
 	{
-		*decoded = BASE64_MALLOC(4);
+		*decoded = (uint8_t *) BASE64_MALLOC(4);
 		(*decoded)[0] = 0;
 		(*decoded)[1] = 0;
 		(*decoded)[2] = 0;
@@ -708,25 +708,25 @@ base64_decode_fragments(char **decoded, size_t length, ...)
 	}
 
 	va_start(args, length);
-	msg = va_arg(args, const char *);
+	msg = va_arg(args, const uint8_t *);
 
 	while (msg != NULL)
 	{
-		base64_digitbuffer_set_message(&dbuf, msg, strlen(msg));
+		base64_digitbuffer_set_message(&dbuf, msg, strlen((const char *) msg));
 
 		while (base64_buffer_digits(&dbuf))
 		{
 			size_t dsize = base64_decoded_size(dbuf.d_buffer_offset);
 
 			decoded_size += dsize;
-			*decoded = BASE64_REALLOC(*decoded, decoded_size);
+			*decoded = (uint8_t *) BASE64_REALLOC(*decoded, decoded_size);
 
 			decoded_size -= base64_decode_memory((*decoded) + length, dbuf.d_buffer, dbuf.d_buffer_offset);
 			length = decoded_size;
 			base64_digitbuffer_cycle(&dbuf);
 		}
 
-		msg = va_arg(args, const char *);
+		msg = va_arg(args, const uint8_t *);
 	}
 
 	va_end(args);
@@ -735,7 +735,7 @@ base64_decode_fragments(char **decoded, size_t length, ...)
 	{
 		size_t dsize = base64_decoded_size(dbuf.d_buffer_offset);
 		decoded_size += dsize;
-		*decoded = BASE64_REALLOC(*decoded, decoded_size);
+		*decoded = (uint8_t *) BASE64_REALLOC(*decoded, decoded_size);
 
 		decoded_size -= base64_decode_memory((*decoded) + length, dbuf.d_buffer, dbuf.d_buffer_offset);
 	}
@@ -758,15 +758,15 @@ base64_decode_fragments(char **decoded, size_t length, ...)
 	// [ Returns ]
 	// New allocation (&BASE64_MALLOC) containing the constructed URI.
 */
-BASE64_API(char *)
-base64_data_uri(const char *media_type, const char *data, size_t length)
+BASE64_API(uint8_t *)
+base64_data_uri(const uint8_t *media_type, const uint8_t *data, size_t length)
 {
-	char *uri;
-	size_t ul = sizeof("data:;base64,") + strlen(media_type);
+	uint8_t *uri;
+	size_t ul = sizeof("data:;base64,") + strlen((const char *) media_type);
 	size_t el = base64_encoded_size(length);
 
-	uri = BASE64_MALLOC(ul + el);
-	ul = snprintf(uri, ul, "data:%s;base64,", media_type);
+	uri = (uint8_t *) BASE64_MALLOC(ul + el);
+	ul = snprintf((char *) uri, ul, "data:%s;base64,", media_type);
 	base64_encode_memory(uri + ul, data, length);
 
 	return(uri);
