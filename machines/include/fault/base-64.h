@@ -774,4 +774,193 @@ base64_data_uri(const uint8_t *media_type, const uint8_t *data, size_t length)
 
 #define base64_data_uri_string(MT, D) base64_data_uri(MT, D, strlen(D))
 #define base64_data_uri_constant(MT, D) base64_data_uri(MT, D, sizeof(D)-1)
+
+typedef void (*base64_transfer_t)(void *context, uint8_t *digits, size_t count);
+
+/**
+	// Continuously transfer encoded source data to a target function and context.
+
+	// [ Parameters ]
+	// /state/
+		// Four byte memory allocation holding the partial writes to be
+		// completed by the next call.
+	// /tf/
+		// Tranfer function taking &context, the (base64) digit count, byte length,
+		// and the digits buffer containing the last set of encoded digits.
+
+		// Called whenever there is one or more encoded units to be transferred
+		// or when the flush signal is received with non-zero &state.
+	// /context/
+		// The context pointer given as &tf' first argument.
+	// /vl/
+		// Terminated by a `NULL, 0` pair or the &state pointer and zero size.
+		// When terminated by the latter, &state will be flushed and padding bytes
+		// will be added to the transfer.
+
+	// [ Returns ]
+	// The total number of *encoded* bytes transferred to &tf.
+*/
+BASE64_API(size_t)
+base64_transfer_encoded_v(uint8_t state[4], base64_transfer_t tf, void *context, struct iovec *vl)
+{
+	const uint8_t eunit = 4;
+	const uint8_t dunit = 3;
+
+	uint8_t write_buffer[eunit * 40]; // Alignment required.
+	uint8_t *rbp, *wbp = write_buffer;
+	size_t total = 0, available = 0, capacity = sizeof(write_buffer);
+
+	// Buffer needs non-zero capacity and be base-64 digit unit aligned.
+	assert(sizeof(write_buffer) > 0);
+	assert(sizeof(write_buffer) % eunit == 0);
+
+	not_terminated:
+	while (available = vl->iov_len)
+	{
+		rbp = (uint8_t *) vl->iov_base;
+		++vl;
+
+		if (state[0] > 0)
+		{
+			// Finish partial.
+			size_t cp, rb = dunit;
+
+			// Partial.
+			assert(state[0] < dunit);
+
+			// Identify the amount to copy. (Available may be smaller than remaining)
+			rb -= state[0];
+			cp = available > rb ? rb : available;
+
+			// Integrate into state.
+			memcpy(state + 1 + state[0], rbp, cp);
+			state[0] += cp;
+			rbp += cp;
+			available -= cp;
+
+			// Not enough data for a unit? Continue or exit for more.
+			if (state[0] < dunit)
+				continue;
+
+			// Transfer unit and update write position.
+			base64_encode_unit(wbp, state+1);
+			wbp += eunit;
+			capacity -= eunit;
+
+			// Reset state.
+			state[0] = 0; // Partial count.
+			state[1] = 0;
+			state[2] = 0;
+			state[3] = 0;
+		}
+		else
+		{
+			// Partial or aligned.
+			assert(state[0] == 0);
+		}
+
+		// Prepare remainder of data.
+		state[0] = available % dunit;
+		if (state[0] > 0)
+		{
+			// Carry last partial sequence in state for next iteration.
+			memcpy(state+1, rbp + available - state[0], state[0]);
+			available -= state[0]; // Aligned length.
+		}
+
+		// available is aligned(*dunit); transfer until done.
+		while (available > 0)
+		{
+			size_t xfer;
+
+			if (base64_encoded_size(available) > capacity)
+				xfer = (capacity / eunit) * dunit; // Remaining space.
+			else
+				xfer = available; // Enough room for the encoded data.
+
+			// Encode at write position and advance state.
+			base64_encode_memory(wbp, rbp, xfer);
+			available -= xfer;
+			rbp += xfer;
+
+			// Encoded size in the write buffer.
+			xfer = base64_encoded_size(xfer);
+			capacity -= xfer;
+			wbp += xfer;
+
+			// Flush write buffer if full.
+			if (capacity == 0)
+			{
+				tf(context, write_buffer, sizeof(write_buffer));
+				total += sizeof(write_buffer);
+
+				// Reset write buffer.
+				wbp = write_buffer;
+				capacity = sizeof(write_buffer);
+			}
+			else
+			{
+				assert(capacity > 0);
+				assert(capacity <= sizeof(write_buffer));
+			}
+		}
+	}
+
+	rbp = (uint8_t *) vl->iov_base;
+
+	// Flush signal.
+	if (state == rbp && state[0] > 0)
+	{
+		// Room for this should always be available given
+		// an aligned write buffer as it's flushed when
+		// the capacity is zero and the capacity is only
+		// decremented by multiples of &eunit.
+		assert(capacity >= eunit);
+
+		base64_encode_memory(wbp, state+1, state[0]);
+		state[0] = 0;
+		wbp += eunit;
+		capacity -= eunit;
+	}
+	else if (rbp != NULL)
+	{
+		// Zero length string. Continue processing at the next record.
+		++vl;
+		goto not_terminated;
+	}
+
+	// Flush any buffered writes and leave state to carry partials to the next call.
+	if (capacity < sizeof(write_buffer))
+	{
+		size_t xfer = sizeof(write_buffer) - capacity;
+
+		tf(context, write_buffer, xfer);
+		total += xfer;
+	}
+	else
+	{
+		assert(capacity == sizeof(write_buffer));
+	}
+
+	return(total);
+}
+
+BASE64_API(size_t)
+base64_transfer_encoded(uint8_t state[4], base64_transfer_t tf, void *context, ...)
+{
+	size_t r = 0;
+	va_list vl;
+
+	va_start(vl, context);
+	do
+	{
+		struct iovec *iov = va_arg(vl, struct iovec *);
+		if (iov == NULL)
+			break;
+		r += base64_transfer_encoded_v(state, tf, context, iov);
+	} while(1);
+	va_end(vl);
+
+	return(r);
+}
 #endif

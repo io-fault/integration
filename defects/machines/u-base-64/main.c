@@ -247,3 +247,41 @@ Test(base64_data_uri)
 	uri = base64_data_uri_string("text/plain", message);
 	test->strcmp("data:type;base64,AA==", base64_data_uri_constant("type", "\0"));
 }
+
+static void
+_extend_buf(void *context, uint8_t *data, size_t length)
+{
+	uint8_t **handle = context;
+	memcpy(*handle, data, length);
+	*handle += length;
+}
+#define bte(S, C, ...) base64_transfer_encoded(S, _extend_buf, C, __VA_ARGS__, NULL)
+
+Test(base64_transmit_encoded)
+{
+	const uint8_t *expect =
+		"a2FrZQp0ZXN0YmFzZTY0"
+		"a2FrZQp0ZXN0YmFzZTY0"
+		"a2FrZQp0ZXN0YmFzZTY0";
+	uint8_t hold[512];
+	uint8_t *handle = hold;
+	uint8_t state[4] = {0,};
+	uint32_t r = 0;
+
+	#define S(X) (struct iovec[2]){(struct iovec){X, sizeof(X)-1}, (struct iovec){NULL, 0}}
+	r += bte(state, &handle, S(""), S("kake\n"), S("test"), S("base64"));
+	r += bte(state, &handle, S("kake\n"), S("test"), S("base64"));
+	r += bte(state, &handle, S("k"), S("a"));
+	r += bte(state, &handle, S("k"));
+	r += bte(state, &handle, S("e"));
+	r += bte(state, &handle, S("\n"));
+	r += bte(state, &handle, S("t"));
+	r += bte(state, &handle, S("e"));
+	r += bte(state, &handle, S("st"));
+	r += bte(state, &handle, S("base64"), S(""));
+	r += bte(state, &handle, (struct iovec[2]){(struct iovec){(char *)state, 0}, (struct iovec){NULL, 0}});
+	#undef sstr
+
+	test->memcmp(expect, hold, sizeof(expect) - 1);
+	test->equality(strlen(expect), r);
+}
