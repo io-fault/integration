@@ -18,6 +18,9 @@ from . import filters
 from . import context
 from . import map
 
+from fault.system.identity import root_execution_context
+host_execution_v = lsf.types.Variants(*root_execution_context())
+
 ##
 # Test types associated with their identifying prefix.
 test_type_map = {
@@ -26,6 +29,7 @@ test_type_map = {
 	'performance': 'p-',
 	'explicit': 'x-',
 	'static': 's-',
+	'failure': 'f-',
 }
 
 # fault.vector restricted parameters dictionary.
@@ -35,22 +39,25 @@ restricted = {
 	'--performance': ('set-add', 'performance', 'test-types'),
 	'--explicit': ('set-add', 'explicit', 'test-types'),
 	'--static': ('set-add', 'static', 'test-types'),
+	'--failure': ('set-add', 'failure', 'test-types'),
 
 	'-i': ('set-add', 'integration', 'test-types'),
 	'-u': ('set-add', 'unit', 'test-types'),
 	'-p': ('set-add', 'performance', 'test-types'),
 	'-x': ('set-add', 'explicit', 'test-types'),
 	'-s': ('set-add', 'static', 'test-types'),
+	'-f': ('set-add', 'failure', 'test-types'),
 
 	'-I': ('set-discard', 'integration', 'test-types'),
 	'-U': ('set-discard', 'unit', 'test-types'),
 	'-P': ('set-discard', 'performance', 'test-types'),
 	'-X': ('set-discard', 'explicit', 'test-types'),
 	'-S': ('set-discard', 'static', 'test-types'),
+	'-F': ('set-discard', 'failure', 'test-types'),
 }
 
 required = {
-	'-f': ('sequence-append', 'test-filters'),
+	'-q': ('sequence-append', 'test-filters'),
 	'-x': ('field-replace', 'machines-context-name'),
 	'-X': ('field-replace', 'system-context-directory'),
 
@@ -88,15 +95,20 @@ def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
 		test_fp = str(fp)
 		xid = '/'.join((test_pj_str, test_fp))
 
-		cmd = xargv + [
-			'fault.test.analyze',
-			str(test_project.factor), test_fp
-		]
 		env = dict(os.environ)
 		env.update(exeenv)
 		env['F_PROJECT'] = str(project)
-		ki = KInvocation(cmd[0], cmd, environ=env)
 
+		system = test_pd.image(host_execution_v, test_project.factor, fp)
+		if system.fs_type() == 'void':
+			cmd = xargv + [
+				'fault.test.analyze',
+				str(test_project.factor), test_fp
+			]
+		else:
+			cmd = [str(system), str(system)]
+
+		ki = KInvocation(cmd[0], cmd, environ=env)
 		yield (pj_fp, (test_fp,), xid, ki)
 
 def test(exits, meta, log, config, cc, pdr:files.Path, argv):
@@ -107,9 +119,24 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
 
-	test_prefixes = set([
-		test_type_map[x] for x in config['test-types'] or {'integration', 'unit'}
-	])
+	test_projects = argv
+	test_types = list(config['test-types'] or {'integration', 'unit'})
+	test_types.sort()
+	test_prefixes = set([test_type_map[x] for x in test_types])
+
+	if len(test_types) > 1:
+		test_types_list = ', '.join(test_types[:-1]) + ', and ' + test_types[-1]
+	else:
+		test_types_list = str(test_types[0])
+
+	project_factors = sorted([str(x) for x in test_projects])
+	if len(project_factors) > 1:
+		project_list = ', '.join(project_factors[:-1]) + ', and ' + project_factors[-1]
+	else:
+		if project_factors:
+			project_list = project_factors[0]
+		else:
+			project_list = 'no selected factors'
 
 	lanes, monitors = map.Controls.identify_lanes(config)
 
@@ -125,17 +152,17 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 		'fault.test.analyze',
 		ctl_plan = tools.partial(plan, test_prefixes, config['test-filters'], factors),
 		ctl_argv = [],
-		ctl_transcript_type = 'test-fates',
+		ctl_transcript_type = 'test-conclusion-report',
 		ctl_lanes = lanes,
 		ctl_monitors = monitors,
 		ctl_opened_frames = False,
 		ctl_factor_types = None,
-		ctl_open_title = 'Revealing',
-		ctl_close_title = 'Fates',
-		ctl_operating_title = 'Testing',
+		ctl_open_title = 'Testing ' + test_types_list + ' for ' + project_list + '.',
+		ctl_close_title = 'Test report summary',
+		ctl_operating_title = 'Testing ' + project_list,
 	)
 
-	map.execute(exits, ctl, filters.projectgraph(factors, argv))
+	map.execute(exits, ctl, filters.projectgraph(factors, test_projects))
 
 def configure(restricted, required, argv):
 	"""

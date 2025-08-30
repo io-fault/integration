@@ -25,8 +25,8 @@ from . import filters
 def frame_type(sft):
 	if sft == 'processing-units':
 		from fault.transcript import proctheme as theme
-	elif sft == 'test-fates':
-		from fault.transcript import fatetheme as theme
+	elif sft in {'test-fates', 'test-conclusion-report'}:
+		from fault.transcript import testtheme as theme
 	else:
 		from fault.transcript import proctheme as theme
 	return theme
@@ -190,6 +190,7 @@ def execute(exits, op:Controls, queue):
 
 	try:
 		op.ctl_log.xact_open(op.ctl_operation_identifier, op.ctl_open_title, {})
+		op.ctl_log.flush()
 
 		execution.dispatch(
 			op.ctl_meta, op.ctl_log,
