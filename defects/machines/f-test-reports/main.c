@@ -7,6 +7,12 @@
 
 #define note_failed_exit() fprintf(stderr, "CRITICAL: test did not exit after contending absurdity\n")
 
+Test(skipped)
+{
+	test->skip("not applicable to platform: %s", "zag");
+	note_failed_exit();
+}
+
 Test(failed_strcmpf)
 {
 	test->strcmpf("test 10 'sub' string", "test %d '%s' string", -1, "sub");

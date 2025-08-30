@@ -21,12 +21,6 @@ Test(test)
 	test(1 >= 1);
 }
 
-Test(skipped)
-{
-	test->skip("not applicable to platform: %s", "zag");
-	note_failed_exit();
-}
-
 Test(strcmpf)
 {
 	test->strcmpf("test 10 'sub' string", "test %d '%s' string", 10, "sub");
