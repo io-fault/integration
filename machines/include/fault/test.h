@@ -26,7 +26,7 @@
 
 			// Returns what strcmp() returns when valid.
 			test->strcmp("IdNameString", lookup_name(id));
-			// Returns what strstr() returns when valid.
+			// Returns what strstr() returns when needle is found.
 			test->strstr("haystack of needles", "needle");
 
 			if (thats_not_right)
@@ -193,6 +193,8 @@
 		// conflicts without tangible resolutions as there are no standard forms to adapt to.
 	// /`TEST_DISABLE_DEFAULT_INCLUDES`/
 		// Presume availability of the necessary C environment.
+	// /`TEST_STATUS_FRAME_RECEIVER`/
+		// The file descriptor to write status frames to. Defaults to `STDOUT_FILENO`.
 	// /`TEST_FS_TMPDIR_ROOT`/
 		// Default root directory for temporary file storage. `/tmp/` by default, and
 		// only used when (system/environ)`TMPDIR` is unset.
@@ -202,14 +204,12 @@
 #ifndef _FAULT_TEST_H_
 #define _FAULT_TEST_H_
 
-#ifndef h_printf
-	#define h_printf(...) fprintf(stderr, __VA_ARGS__)
-#endif
-#ifndef h_vprintf
-	#define h_vprintf(...) vfprintf(stderr, __VA_ARGS__)
+#if !defined(TEST_STATUS_FRAME_RECEIVER)
+	#define TEST_STATUS_FRAME_RECEIVER STDOUT_FILENO
 #endif
 
 #if !defined(TEST_DISABLE_DEFAULT_INCLUDES)
+	#include <assert.h>
 	#include <stdio.h>
 	#include <stdarg.h>
 	#include <string.h>
@@ -223,6 +223,12 @@
 	#include <errno.h>
 	#include <sys/stat.h>
 	#include <sys/wait.h>
+	#include <sys/uio.h>
+
+	#include "utf-8.h"
+	#include "clock.h"
+	#include "base-64.h"
+	#include "status.h"
 #endif
 
 /**
@@ -294,8 +300,12 @@ enum TestDispatchStrategy {
 	// [ Elements ]
 	// /ti_name/
 		// The base name of the test.
+	// /ti_symbol/
+		// The name of the test function's symbol; &ti_name with `test_` prefix.
 	// /ti_source/
 		// The file that the test was defined in.
+	// /ti_line_string/
+		// The line number of the test's declaration as a string.
 	// /ti_line/
 		// The line number of the test's declaration.
 	// /ti_index/
@@ -303,7 +313,9 @@ enum TestDispatchStrategy {
 */
 struct TestIdentity {
 	const char *ti_name;
+	const char *ti_symbol;
 	const char *ti_source;
+	const char *ti_line_string;
 	int ti_line;
 	int ti_index;
 };
@@ -376,6 +388,38 @@ enum AbsurdityControl {
 	ac_reflect = 0,
 	ac_invert
 };
+
+static inline bool
+_test_absurdity_control(enum AbsurdityControl delta, bool absurdity)
+{
+	switch (delta)
+	{
+		case ac_reflect:
+			return(absurdity);
+		case ac_never:
+			return(false);
+		case ac_always:
+			return(true);
+		case ac_invert:
+			return(!absurdity);
+	}
+}
+
+static inline const char *
+_test_representation(enum AbsurdityControl delta)
+{
+	switch (delta)
+	{
+		case ac_reflect:
+			return("test");
+		case ac_never:
+			return("test(+)");
+		case ac_always:
+			return("test(-)");
+		case ac_invert:
+			return("test(!)");
+	}
+}
 
 /**
 	// Argument lists providing access to parameter names.
@@ -476,27 +520,32 @@ struct Test {
 
 	// As recognized by the control macros.
 	// Filled when a test is concluded.
+	int stf_receiver;
 	const char *source_path;
 	uint32_t source_line_number;
 	const char *function_name;
 	const char *operands[2];
+
+	const char *cause;
+	const char *report;
 };
 
 /**
 	// Trace contention.
 */
 static inline struct Test *
-_trace_contention(struct Test *t)
+_test_trace_contention(struct Test *t)
 {
 	t->contention_trace = true;
 	return(t);
 }
 
 /**
+	// Reconfigure the &Test.contention_delta.
 	// Failure is success. Success is failure.
 */
 static inline struct Test *
-_invert_delta(struct Test *t)
+_test_invert_delta(struct Test *t)
 {
 	switch (t->contention_delta)
 	{
@@ -520,7 +569,7 @@ _invert_delta(struct Test *t)
 	// Force absurdity.
 */
 static inline struct Test *
-_always_fail(struct Test *t)
+_test_always_fail(struct Test *t)
 {
 	t->contention_delta = ac_always;
 	return(t);
@@ -530,7 +579,7 @@ _always_fail(struct Test *t)
 	// Force true contention.
 */
 static inline struct Test *
-_never_fail(struct Test *t)
+_test_never_fail(struct Test *t)
 {
 	t->contention_delta = ac_never;
 	return(t);
@@ -592,7 +641,7 @@ struct HarnessTestRecord {
 };
 
 typedef enum TestConclusion (*TestDispatch)
-	(int *, struct TestControls *, struct HarnessTestRecord *);
+	(int, const char *, int *, struct TestControls *, struct HarnessTestRecord *);
 typedef int (*TestExit)(struct Test *);
 
 // Sequential single process dispatch uses this to exit tests upon concluding.
@@ -615,8 +664,10 @@ extern const char *_h_tmpdir_root;
 		if (ti == NULL) abort(); \
 		\
 		ti->ti_name = #NAME; \
+		ti->ti_symbol = "test_" #NAME; \
 		ti->ti_source = FILE; \
 		ti->ti_line = LINE; \
+		ti->ti_line_string = #LINE; \
 		ti->ti_index = INDEX; \
 		tfr->htr_identity = ti; \
 		tfr->htr_pointer = (TestFunction) test_##NAME; \
@@ -687,12 +738,12 @@ extern const char *_h_tmpdir_root;
 #define _TEST_TRUTH(...) \
 	(test->controls->truth)(_test_control_macro_arguments, #__VA_ARGS__, "void", _TEST_COALESCE(__VA_ARGS__), 0)
 #define test(...) ( \
-	_TEST_EXCLAMATION(#__VA_ARGS__) ? _invert_delta(test) : \
-	_TEST_TILDE(#__VA_ARGS__) ? _trace_contention(test) : \
-	_TEST_XTILDE(#__VA_ARGS__) ? _invert_delta(_trace_contention(test)) : \
-	_TEST_PTILDE(#__VA_ARGS__) ? _never_fail(_trace_contention(test)) : \
-	_TEST_NEGATIVE(#__VA_ARGS__) ? _always_fail(test) : \
-	_TEST_POSITIVE(#__VA_ARGS__) ? _never_fail(test) : \
+	_TEST_EXCLAMATION(#__VA_ARGS__) ? _test_invert_delta(test) : \
+	_TEST_TILDE(#__VA_ARGS__) ? _test_trace_contention(test) : \
+	_TEST_XTILDE(#__VA_ARGS__) ? _test_invert_delta(_test_trace_contention(test)) : \
+	_TEST_PTILDE(#__VA_ARGS__) ? _test_never_fail(_test_trace_contention(test)) : \
+	_TEST_NEGATIVE(#__VA_ARGS__) ? _test_always_fail(test) : \
+	_TEST_POSITIVE(#__VA_ARGS__) ? _test_never_fail(test) : \
 	(_TEST_TRUTH(__VA_ARGS__) ? (test) : (test)) \
 )
 
@@ -803,47 +854,67 @@ h_conclude_test(enum TestConclusion tc, enum FailureType ft, _test_control_param
 	test->operands[1] = latter;
 }
 
-static inline void
-h_print_location(struct Test *t)
+
+static inline const char *
+_h_allocatef(const char *fmt, ...)
 {
-	h_printf("LOCATION: line %d in \"%s\"\n", t->source_line_number, t->source_path);
+	char *s = NULL;
+	int r;
+	va_list vl;
+
+	va_start(vl, fmt);
+	r = vasprintf(&s, fmt, vl);
+	va_end(vl);
+
+	return(s);
 }
 
-static inline void
-h_print_message(struct Test *t, char *message, va_list args)
-{
-	h_printf("\tMESSAGE: ");
-	h_vprintf(message, args);
-	h_printf("\n");
-}
+#define _h_cause(fmt, ...) (fmt, __VA_ARGS__)
+#define _h_report(fmt, ...) (fmt, __VA_ARGS__)
+#define _h_insert_location(srcpath, srcln) \
+	TTYN_INSERT_CONSTANT("\tLOCATION: line "), \
+	TTYN_INSERT_DECIMAL(srcln), \
+	TTYN_INSERT_CONSTANT(" in \""), \
+	TTYN_INSERT_STRING(srcpath), \
+	TTYN_INSERT_CONSTANT("\"")
 
-static inline void
-h_print_failure(struct Test *t)
-{
-	struct TestIdentity *ti = t->identity;
-	h_printf("-> test_%s failed after %d contentions.\n", ti->ti_name, t->contentions);
-}
-
-static inline void
-h_print_trace(struct Test *t)
-{
-	struct TestIdentity *ti = t->identity;
-	h_printf("-> test_%s at contention %d:\n", ti->ti_name, t->contentions);
-}
-
-#define h_message(label, fmt, ...) h_printf("%s: " fmt "\n", label, __VA_ARGS__)
-#define h_reality(fmt, ...) h_printf("TRUTH: " fmt "\n", __VA_ARGS__)
-#define h_reality_variable(fmt, ...) h_printf(fmt, __VA_ARGS__)
-#define h_inhibit(fmt, ...) do { ; } while(0)
-#define h_print_note(T, A, R) do { \
-	(T->failure ? h_print_failure : h_print_trace)(T); A; R; h_print_location(T); \
+#define _h_print_note(T, A, R) do { \
+	if (T->failure) \
+	{ \
+		T->cause = _h_allocatef A; \
+		T->report = _h_allocatef R; \
+	} \
+	else \
+	{ \
+		char *icause = NULL, *ireport = NULL; \
+		size_t cause_len, report_len; \
+		const char *cause = _h_allocatef A; \
+		const char *report = _h_allocatef R; \
+		\
+		cause_len = stf_indent_text((uint8_t **) &icause, (stf_string_t) cause, strlen(cause) + 1, 8, 1); \
+		report_len = stf_indent_text((uint8_t **) &ireport, (stf_string_t) report, strlen(report) + 1, 8, 1); \
+		free((void *) cause); \
+		free((void *) report); \
+		\
+		ttyn1_log_trace( \
+			T->stf_receiver, NULL, \
+			T->identity->ti_symbol, T->identity->ti_symbol, \
+			TTYN_SYNOPSIS A, TTYN_EXTENSION( \
+				TTYN_INSERT_SECTION("@operation", "test-contention"), \
+				TTYN_INSERT(cause_len-1, icause), \
+				TTYN_INSERT_NEWLINE, \
+				_h_insert_location(T->source_path, T->source_line_number), \
+				TTYN_INSERT_NEWLINE, \
+				TTYN_INSERT_SECTION("@report", "test-trace"), \
+				TTYN_INSERT(report_len-1, ireport), \
+				TTYN_INSERT_NEWLINE \
+			) \
+		); \
+		\
+		free(icause); \
+		free(ireport); \
+	} \
 } while(0)
-#define h_forward_va(format) { \
-	va_list args; \
-	va_start(args, format); \
-	h_print_message(test, (char *) format, args); \
-	va_end(args); \
-}
 
 static inline const char *
 _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
@@ -864,15 +935,11 @@ _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
 		if (_h_tmpdir_restriction != NULL)
 		{
 			h_conclude_test(tc_failed, tf_limit, _test_control_arguments);
-
-			h_print_failure(test);
 			if (tmpdir_root != NULL)
-				h_printf("ERROR: test->fs_tmp(\"%s\")\n", tmpdir_root);
+				test->cause = _h_allocatef("%s: test->fs_tmp(\"%s\")", tmpdir_root);
 			else
-				h_printf("ERROR: test->fs_tmp()\n");
-			h_printf("MESSAGE: %s\n", _h_tmpdir_restriction);
-			h_printf("TMPDIR: %s\n", _h_tmpdir_root);
-			h_print_location(test);
+				test->cause = _h_allocatef("%s: test->fs_tmp()", _h_tmpdir_restriction);
+			test->report = _h_allocatef("TMPDIR: %s", _h_tmpdir_root);
 
 			errno = 0;
 			test->controls->exit(test);
@@ -886,8 +953,8 @@ _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
 	if (tmpdir_root[0] != 0 && tmpdir_root[strlen(tmpdir_root)-1] != '/')
 		slash = "/";
 
-	length = asprintf(&test->tmpdir_path, "%s%stest_%s.XXXXXXXX",
-		tmpdir_root, slash, test->identity->ti_name);
+	length = asprintf(&test->tmpdir_path, "%s%s%s.XXXXXXXX",
+		tmpdir_root, slash, test->identity->ti_symbol);
 	if (length >= 0)
 	{
 		if (mkdtemp(test->tmpdir_path) == NULL)
@@ -907,11 +974,9 @@ _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
 	if (test->tmpdir_path == NULL)
 	{
 		h_conclude_test(tc_failed, tf_fault, _test_control_arguments);
+		test->cause = _h_allocatef("could not create temporary directory for test.");
+		test->report = _h_allocatef("SYSTEM: %s", strerror(errno));
 
-		h_print_failure(test);
-		h_printf("ERROR: could not create temporary directory for test.\n");
-		h_printf("SYSTEM: %s\n", strerror(errno));
-		h_print_location(test);
 		errno = 0;
 		test->controls->exit(test);
 	}
@@ -922,6 +987,8 @@ _tci_fs_tmp(_test_context_parameters, const char *tmpdir_root)
 static inline int
 _tci_fail_test(_test_control_parameters, const char *format, ...)
 {
+	va_list vl;
+
 	test->conclusion = tc_failed;
 	test->failure = tf_explicit;
 	test->source_path = path;
@@ -930,11 +997,11 @@ _tci_fail_test(_test_control_parameters, const char *format, ...)
 	test->operands[0] = 0;
 	test->operands[1] = 0;
 
-	h_print_failure(test);
+	va_start(vl, format);
+	vasprintf((char **) &test->report, format, vl);
+	va_end(vl);
+	asprintf((char **) &test->cause, "test->fail()");
 
-	h_forward_va(format);
-
-	h_print_location(test);
 	test->controls->exit(test);
 	return(0);
 }
@@ -942,6 +1009,8 @@ _tci_fail_test(_test_control_parameters, const char *format, ...)
 static inline int
 _tci_skip_test(_test_control_parameters, const char *format, ...)
 {
+	va_list vl;
+
 	test->conclusion = tc_skipped;
 	test->failure = tf_none;
 	test->source_path = path;
@@ -950,6 +1019,11 @@ _tci_skip_test(_test_control_parameters, const char *format, ...)
 	test->operands[0] = 0;
 	test->operands[1] = 0;
 
+	va_start(vl, format);
+	vasprintf((char **) &test->report, format, vl);
+	va_end(vl);
+	asprintf((char **) &test->cause, "test->skip()");
+
 	test->controls->exit(test);
 	return(0);
 }
@@ -957,6 +1031,8 @@ _tci_skip_test(_test_control_parameters, const char *format, ...)
 static inline int
 _tci_pass_test(_test_control_parameters, const char *format, ...)
 {
+	va_list vl;
+
 	test->conclusion = tc_passed;
 	test->failure = tf_none;
 	test->source_path = path;
@@ -964,6 +1040,11 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 	test->function_name = fn;
 	test->operands[0] = 0;
 	test->operands[1] = 0;
+
+	va_start(vl, format);
+	vasprintf((char **) &test->report, format, vl);
+	va_end(vl);
+	asprintf((char **) &test->cause, "test->pass()");
 
 	test->controls->exit(test);
 	return(0);
@@ -978,34 +1059,8 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 	do { \
 		bool absurdity = CONDITION; \
 		if (absurdity) op = NOP; \
-		switch (test->contention_delta) \
-		{ \
-			case ac_reflect: \
-			{ \
-				; \
-			} \
-			break; \
-			\
-			case ac_never: \
-			{ \
-				absurdity = false; \
-				testr = "test(+)"; \
-			} \
-			break; \
-			\
-			case ac_always: \
-			{ \
-				absurdity = true; \
-				testr = "test(-)"; \
-			} \
-			break; \
-			\
-			case ac_invert: \
-			{ \
-				testr = "test(!)"; \
-				absurdity = !absurdity; \
-			} \
-		} \
+		testr = _test_representation(test->contention_delta); \
+		absurdity = _test_absurdity_control(test->contention_delta, absurdity); \
 		test->contention_delta = ac_reflect; \
 		if (absurdity) \
 		{ \
@@ -1016,10 +1071,7 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 		else \
 		{ \
 			if (test->contention_trace) \
-			{ \
-				label = "TRACE"; \
 				test->contention_trace = false; \
-			} \
 			else \
 			{ \
 				__VA_ARGS__; \
@@ -1031,7 +1083,6 @@ _tci_pass_test(_test_control_parameters, const char *format, ...)
 static inline int
 _tci_contend_memcmp(_test_control_parameters, void *solution, void *candidate, size_t n)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "==";
 	int rv;
@@ -1041,9 +1092,9 @@ _tci_contend_memcmp(_test_control_parameters, void *solution, void *candidate, s
 	rv = (memcmp)(solution, candidate, n);
 	_TCI_RETURN_OR_FAIL((rv != 0), "!=");
 
-	h_print_note(test,
-		h_message(label, "%s->memcmp(%s, %s, %zd) (returned %d)", testr, former, latter, n, rv),
-		h_reality("\"%.*s\" %s \"%.*s\"", n, solution, op, n, candidate)
+	_h_print_note(test,
+		_h_cause("%s->memcmp(%s, %s, %zd) (returned %d)", testr, former, latter, n, rv),
+		_h_report("\"%.*s\" %s \"%.*s\"", n, solution, op, n, candidate)
 	);
 
 	_TCI_EXIT();
@@ -1052,7 +1103,6 @@ _tci_contend_memcmp(_test_control_parameters, void *solution, void *candidate, s
 static inline void *
 _tci_contend_memchr(_test_control_parameters, void *solution, int candidate, size_t n)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "was found (offset %zu) in";
 	void *rv;
@@ -1071,9 +1121,9 @@ _tci_contend_memchr(_test_control_parameters, void *solution, int candidate, siz
 		else
 			snprintf(opbuf, sizeof(opbuf), op);
 
-		h_print_note(test,
-			h_message(label, "%s->memchr(%s, %s, %zu)", testr, former, latter, n),
-			h_reality("'%c' (0x%X) %s %p (%zu bytes)",
+		_h_print_note(test,
+			_h_cause("%s->memchr(%s, %s, %zu)", testr, former, latter, n),
+			_h_report("'%c' (0x%X) %s %p (%zu bytes)",
 				(unsigned char) candidate, candidate, opbuf, solution, n)
 		);
 	}
@@ -1084,7 +1134,6 @@ _tci_contend_memchr(_test_control_parameters, void *solution, int candidate, siz
 static inline void *
 _tci_contend_memrchr(_test_control_parameters, void *solution, int candidate, size_t n)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "was found (offset %zu) in";
 	void *rv;
@@ -1103,9 +1152,9 @@ _tci_contend_memrchr(_test_control_parameters, void *solution, int candidate, si
 		else
 			snprintf(opbuf, sizeof(opbuf), op);
 
-		h_print_note(test,
-			h_message(label, "%s->memrchr(%s, %s, %zu)", testr, former, latter, n),
-			h_reality("'%c' (0x%X) %s %p (%zu bytes)",
+		_h_print_note(test,
+			_h_cause("%s->memrchr(%s, %s, %zu)", testr, former, latter, n),
+			_h_report("'%c' (0x%X) %s %p (%zu bytes)",
 				(unsigned char) candidate, candidate, opbuf, solution, n)
 		);
 	}
@@ -1116,7 +1165,6 @@ _tci_contend_memrchr(_test_control_parameters, void *solution, int candidate, si
 static inline int
 _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char *candidate, ...)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "==";
 	char *formatted = NULL;
@@ -1134,9 +1182,9 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 	rv = (strcmp)(solution, formatted);
 	_TCI_RETURN_OR_FAIL((rv != 0), "!=", free((void *) formatted));
 
-	h_print_note(test,
-		h_message(label, "%s->strcmpf" "(%s, %s)", testr, former, latter),
-		h_reality("\"%s\" %s \"%s\"", solution, op, formatted)
+	_h_print_note(test,
+		_h_cause("%s->strcmpf" "(%s, %s)", testr, former, latter),
+		_h_report("\"%s\" %s \"%s\"", solution, op, formatted)
 	);
 
 	free((void *) formatted);
@@ -1147,7 +1195,6 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 	static inline TYPE \
 	_tci_contend_##METHOD(_test_control_parameters, CTYPE solution, CTYPE candidate) \
 	{ \
-		const char *label = "ABSURDITY"; \
 		const char *testr = "test"; \
 		const char *op = OPSTR; \
 		TYPE rv; \
@@ -1156,9 +1203,9 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 		rv = (TYPE) (METHOD)(solution, candidate); \
 		_TCI_RETURN_OR_FAIL(!CHECK(rv), NOPSTR); \
 		\
-		h_print_note(test, \
-			h_message(label, "%s->" #METHOD "(%s, %s)", testr, former, latter), \
-			h_reality("\"%" CFORMAT "\" %s \"%" CFORMAT "\"", solution, op, candidate) \
+		_h_print_note(test, \
+			_h_cause("%s->" #METHOD "(%s, %s)", testr, former, latter), \
+			_h_report("\"%" CFORMAT "\" %s \"%" CFORMAT "\"", solution, op, candidate) \
 		); \
 		\
 		_TCI_EXIT(); \
@@ -1179,7 +1226,6 @@ _tci_contend_strcmpf(_test_control_parameters, const char *solution, const char 
 static inline int
 _tci_contend_equality(_test_control_parameters, _test_format_parameters, intmax_t solution, intmax_t candidate)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "==";
 	int rv;
@@ -1190,11 +1236,11 @@ _tci_contend_equality(_test_control_parameters, _test_format_parameters, intmax_
 
 	{
 		char fmt[64] = {0,};
-		snprintf(fmt, sizeof(fmt), "TRUTH: %%%s %s %%%s\n", fofmt, op, lofmt);
+		snprintf(fmt, sizeof(fmt), "%%%s %s %%%s", fofmt, op, lofmt);
 
-		h_print_note(test,
-			h_message(label, "%s->equality(%s, %s)", testr, former, latter),
-			h_reality_variable(fmt, solution, candidate)
+		_h_print_note(test,
+			_h_cause("%s->equality(%s, %s)", testr, former, latter),
+			_h_report(fmt, solution, candidate)
 		);
 	}
 
@@ -1204,7 +1250,6 @@ _tci_contend_equality(_test_control_parameters, _test_format_parameters, intmax_
 static inline int
 _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candidate)
 {
-	const char *label = "ABSURDITY";
 	const char *testr = "test";
 	const char *op = "+";
 	int rv;
@@ -1213,9 +1258,9 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	rv = solution;
 	_TCI_RETURN_OR_FAIL((!rv), "-");
 
-	h_print_note(test,
-		h_message(label, "%s->truth(%s)", testr, former),
-		h_reality("%s", rv ? "true" : "false")
+	_h_print_note(test,
+		_h_cause("%s->truth(%s)", testr, former),
+		_h_report("%s", rv ? "true" : "false")
 	);
 
 	_TCI_EXIT();
@@ -1247,17 +1292,25 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	}
 
 	static int
-	h_configure_tmpdir(const char *fs_tmpdir_default)
+	h_configure_tmpdir(int stf_receiver, stf_string_t suite, const char *fs_tmpdir_default)
 	{
 		setenv("TMPDIR", fs_tmpdir_default, 0);
 
 		_h_tmpdir_root = getenv("TMPDIR");
 		if (_h_tmpdir_root == NULL)
 		{
-			h_printf("ERROR: could not configure and get TMPDIR environment.\n");
-			h_printf("getenv: %s\n", strerror(errno));
+			_h_tmpdir_restriction =
+				"TMPDIR environment was not set after default configuration.";
+
+			ttyn1_log_warning(stf_receiver, NULL, suite,
+				TTYN_SYNOPSIS(
+					"the TMPDIR environment variable was not available; "
+					"`test->fs_tmp()` calls will conclude failure."),
+				TTYN_EXTENSION()
+			);
+
 			errno = 0;
-			return(-1);
+			return(0);
 		}
 
 		// Absolute restriction.
@@ -1265,8 +1318,12 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		{
 			_h_tmpdir_restriction = "TMPDIR is not an absolute path";
 
-			h_printf("WARNING: temporary directory root (TMPDIR) must be absolute; "
-				"fs_tmp() invocations will conclude failure.\n");
+			ttyn1_log_warning(stf_receiver, NULL, suite,
+				TTYN_SYNOPSIS(
+					"temporary directory root (TMPDIR) must be absolute; "
+					"`test->fs_tmp()` calls will conclude failure."),
+				TTYN_EXTENSION(TTYN_INSERT_OPTION("path", (stf_string_t) _h_tmpdir_root))
+			);
 		}
 
 		return(0);
@@ -1280,36 +1337,42 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 	static void
 	h_cleanup_tmpdir(struct Test *t, bool wait)
 	{
+		const char *const xid = t->identity->ti_symbol;
+		const char *const tmp = t->tmpdir_path;
 		pid_t rmp = 0;
 
-		if (_h_hash_string(t->tmpdir_path) != t->tmpdir_path_hash)
+		#define warn(...) \
+			ttyn1_log_warning(t->stf_receiver, NULL, xid, \
+				TTYN_SYNOPSIS(__VA_ARGS__), \
+				TTYN_EXTENSION( \
+					TTYN_INSERT_OPTION("path", (stf_string_t) tmp) \
+				) \
+			)
+
+		if (_h_hash_string(tmp) != t->tmpdir_path_hash)
 		{
 			// Protecting against memory corruption. Testing C programs here,
 			// so try to make sure the rm -rf is (very) likely to be deleting the
 			// temporary directory that was originally created.
 
-			h_printf(
-				"WARNING: temporary directory path string hash does not match "
-				"and will not be removed due to likely memory corruption.\n");
-			h_printf("PATH: %s\n", t->tmpdir_path);
+			warn("temporary directory path string hash does not match "
+				"and will not be removed due to likely memory corruption.");
 			return;
 		}
 
-		if (strncmp(_h_tmpdir_root, t->tmpdir_path, strlen(_h_tmpdir_root)) != 0)
+		if (strncmp(_h_tmpdir_root, tmp, strlen(_h_tmpdir_root)) != 0)
 		{
 			// Branch for intentional tmpdir leaks.
 			// In cases where analysis of some (temporary) filesystem data
 			// is desired, allow the test to configure the directory outside
 			// of TMPDIR and ignore cleanup when the case is seen.
 
-			h_printf(
-				"WARNING: the allocated temporary directory is outside of "
-				"the designated prefix and will not be removed.\n");
-			h_printf("PATH: %s\n", t->tmpdir_path);
+			warn("the allocated temporary directory is outside of "
+				"the designated prefix (TMPDIR) and will not be removed.");
 			return;
 		}
 
-		if (rmdir(t->tmpdir_path) == 0)
+		if (rmdir(tmp) == 0)
 		{
 			// Don't bother with the spawn if it's just a directory.
 			return;
@@ -1325,10 +1388,8 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 				case EPERM:
 				case EACCES:
 				{
-					h_printf(
-						"WARNING: temporary directory is not seen as writable "
-						"and will not be removed.\n");
-					h_printf("PATH: %s\n", t->tmpdir_path);
+					warn("temporary directory is not seen as writable "
+						"and will not be removed.");
 					return;
 				}
 				break;
@@ -1336,36 +1397,33 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 				case ENOTDIR:
 				{
 					// Was not created by fs_tmp().
-					h_printf(
-						"WARNING: temporary directory path does not refer to a directory "
-						"and will not be removed.\n");
-					h_printf("PATH: %s\n", t->tmpdir_path);
+					warn("temporary directory path does not refer to a directory "
+						"and will not be removed.");
 					return;
 				}
 
 				case ENOENT:
-					// Already done?
-					h_printf(
-						"WARNING: temporary directory was removed prior to cleanup.\n");
-					h_printf("PATH: %s\n", t->tmpdir_path);
+					// Already removed?
+					warn("temporary directory was removed prior to cleanup.");
 					return;
 				break;
 			}
 		}
 
+		errno = 0;
 		rmp = fork();
 		switch (rmp)
 		{
+			#define cleanup_w(F) \
+				"could not execute cleanup procedure; " \
+				F " returned error (%d) status: %s"
 			case 0:
 			{
 				// Utility fork process reaped by init.
 				char *const argv[] = {TEST_FS_RM_PATH, "-rf", t->tmpdir_path, NULL};
 
 				execve(argv[0], argv, NULL);
-				h_printf(
-					"WARNING: could not execute cleanup procedure "
-					"for \"%s\"\n", t->tmpdir_path);
-				h_printf("execve: %s\n", strerror(errno));
+				warn(cleanup_w("execve"), (int) errno, strerror(errno));
 
 				// Avoid normal exit procedures under a failed execve.
 				_exit(256);
@@ -1376,12 +1434,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			{
 				// Test process. Could not fork.
 				if (errno != 0)
-				{
-					h_printf(
-						"WARNING: could not execute cleanup procedure "
-						"for \"%s\"\n", t->tmpdir_path);
-					h_printf("fork: %s\n", strerror(errno));
-				}
+					warn(cleanup_w("fork"), (int) errno, strerror(errno));
 			}
 			break;
 
@@ -1395,17 +1448,42 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 				}
 			}
 			break;
+
+			#undef cleanup_w
 		}
+
+		#undef warn
+	}
+
+	static inline size_t
+	_harness_indent(const char **ref)
+	{
+		const char *txt = *ref;
+		size_t len;
+		if (txt == NULL)
+			return(0);
+
+		len = stf_indent_text((uint8_t **) ref,
+			(stf_string_t) txt, strlen(txt), 8, 1);
+		free((void *) txt);
+
+		return(len);
 	}
 
 	/**
 		// Execute a single test within the current process.
 	*/
 	static enum TestConclusion
-	harness_test(int *contentions, struct TestControls *ctl, struct HarnessTestRecord *current)
+	harness_test(int stf_receiver, const char *suite, int *contentions, struct TestControls *ctl, struct HarnessTestRecord *current)
 	{
 		struct Test ts;
 		struct Test *t = &ts;
+		struct rusage tu_before, tu_after;
+		uint64_t start, stop;
+		char duration[21];
+		size_t report_len = 0, cause_len = 0;
+		const char *tcstr;
+		stf_metrics_t psm = {{0,0,0,0,.w_prepared=1},{0,},{0,}};
 
 		t->controls = &(t->_controls);
 		memcpy(t->controls, ctl, sizeof(struct TestControls));
@@ -1420,20 +1498,129 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		t->tmpdir_path = NULL;
 		t->tmpdir_path_hash = 0;
 
+		t->stf_receiver = stf_receiver;
 		t->source_line_number = t->identity->ti_line;
 		t->source_path = t->identity->ti_source;
-		t->function_name = t->identity->ti_name;
+		t->function_name = t->identity->ti_symbol;
 		t->operands[0] = "<>";
 		t->operands[1] = "<>";
 
+		t->cause = NULL;
+		t->report = NULL;
+
+		ttyn1_log_open_transaction(t->stf_receiver, NULL,
+			(stf_string_t) t->identity->ti_symbol, &psm,
+			TTYN_SYNOPSIS("%s/%s: dispatched", suite, t->identity->ti_symbol),
+			TTYN_EXTENSION()
+		);
+		psm.ps_work.w_prepared = 0;
+
+		getrusage(RUSAGE_SELF, &tu_before);
+		start = STF_CLOCK_ELAPSED();
+
 		if (sigsetjmp(_h_exit_root, 1))
 		{
+			stop = STF_CLOCK_ELAPSED();
+			getrusage(RUSAGE_SELF, &tu_after);
+			snprintf(duration, sizeof(duration), "%" PRIu64, stop - start);
+
 			// Test exited; control method should have filled in conclusion.
+			switch (t->conclusion)
+			{
+				case tc_skipped:
+					tcstr = "skipped";
+					psm.ps_work.w_granted = 1;
+				break;
+
+				case tc_failed:
+					tcstr = "failed";
+					psm.ps_work.w_failed = 1;
+				break;
+
+				case tc_passed:
+					tcstr = "passed";
+					psm.ps_work.w_executed = 1;
+				break;
+			}
 		}
 		else
 		{
 			current->htr_pointer(t);
+
+			stop = STF_CLOCK_ELAPSED();
+			getrusage(RUSAGE_SELF, &tu_after);
+			snprintf(duration, sizeof(duration), "%" PRIu64, stop - start);
+
+			// Only passed from returns.
 			t->conclusion = tc_passed;
+			tcstr = "passed";
+			psm.ps_work.w_executed = 1;
+		}
+
+		cause_len = _harness_indent(&t->cause);
+		report_len = _harness_indent(&t->report);
+
+		psm.ps_usage.r_divisions = 1;
+		psm.ps_usage.r_process = 1000000000 * (
+			(tu_after.ru_utime.tv_sec + tu_after.ru_stime.tv_sec) -
+			(tu_before.ru_utime.tv_sec + tu_before.ru_stime.tv_sec));
+		psm.ps_usage.r_process += 1000 * (
+			(tu_after.ru_utime.tv_usec + tu_after.ru_stime.tv_usec) -
+			(tu_before.ru_utime.tv_usec + tu_before.ru_stime.tv_usec));
+		psm.ps_usage.r_time = 0;
+
+		// Useless with sequential dispatch.
+		psm.ps_usage.r_memory = tu_after.ru_maxrss - tu_before.ru_maxrss;
+
+		switch (t->failure)
+		{
+			case tf_none:
+				if (t->report)
+					ttyn1_log_close_transaction(t->stf_receiver, NULL,
+						(stf_string_t) t->identity->ti_symbol, &psm,
+						TTYN_SYNOPSIS("%s/%s: %s", suite, t->identity->ti_symbol, tcstr),
+						TTYN_EXTENSION(
+							TTYN_INSERT_OPTION("@duration", (uint8_t *) duration),
+
+							TTYN_INSERT_SECTION("@operation", "test-contention"),
+							_h_insert_location(t->source_path, t->source_line_number),
+							TTYN_INSERT_NEWLINE,
+
+							TTYN_INSERT_SECTION("@report", "test-summary"),
+							TTYN_INSERT(report_len, t->report),
+							TTYN_INSERT_NEWLINE
+						)
+					);
+				else
+					ttyn1_log_close_transaction(t->stf_receiver, NULL,
+						(stf_string_t) t->identity->ti_symbol, &psm,
+						TTYN_SYNOPSIS("%s/%s: %s", suite, t->identity->ti_symbol, tcstr),
+						TTYN_EXTENSION(
+							TTYN_INSERT_OPTION("@duration", (uint8_t *) duration)
+						)
+					);
+			break;
+
+			default:
+				ttyn1_log_close_transaction(t->stf_receiver, NULL,
+					(stf_string_t) t->identity->ti_symbol, &psm,
+					TTYN_SYNOPSIS("%s/%s: %s", suite, t->identity->ti_symbol, tcstr),
+					TTYN_EXTENSION(
+						TTYN_INSERT_OPTION("@duration", (uint8_t *) duration),
+
+						TTYN_INSERT_SECTION("@operation", "test-contention"),
+						TTYN_INSERT(cause_len, t->cause),
+						TTYN_INSERT_NEWLINE,
+
+						_h_insert_location(t->source_path, t->source_line_number),
+						TTYN_INSERT_NEWLINE,
+
+						TTYN_INSERT_SECTION("@failure-image", "absurdity"),
+						TTYN_INSERT(report_len, t->report),
+						TTYN_INSERT_NEWLINE
+					)
+				);
+			break;
 		}
 
 		if (t->tmpdir_path != NULL)
@@ -1445,6 +1632,11 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			t->tmpdir_path_hash = 0;
 		}
 
+		if (t->cause)
+			free((void *) t->cause);
+		if (t->report)
+			free((void *) t->report);
+
 		*contentions += t->contentions;
 		return(t->conclusion);
 	}
@@ -1453,7 +1645,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		// Execute the tests.
 	*/
 	static int
-	harness_execute_tests(const char *suite, TestDispatch htest, TestExit hexit)
+	harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, TestExit hexit)
 	{
 		#define _TCM_INIT(CTX, METHOD, STYPE, FTYPE) STYPE(METHOD),
 		const struct TestControls default_controls = {
@@ -1475,12 +1667,21 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			current = current->next;
 		}
 
-		h_printf("%s: %d test records.\n", suite, total);
+		ttyn1_log_declaration(stf_receiver, NULL, suite);
+		ttyn1_log_open_transaction(stf_receiver, NULL, suite,
+			NULL,
+			TTYN_SYNOPSIS("%s: harness selected %d tests for analysis.", suite, total),
+			TTYN_EXTENSION()
+		);
+
+		h_configure_tmpdir(stf_receiver, (stf_string_t) suite, TEST_FS_TMPDIR_ROOT);
 
 		current = root->next;
 		while (current != NULL)
 		{
-			enum TestConclusion tc = htest(&contentions, (struct TestControls *) &default_controls, current);
+			enum TestConclusion tc;
+			tc = htest(stf_receiver, suite, &contentions,
+				(struct TestControls *) &default_controls, current);
 
 			test_count += 1;
 
@@ -1502,8 +1703,13 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			current = current->next;
 		}
 
-		h_printf("%d contentions across %d tests, %d passed, %d failed, %d skipped.\n",
-			contentions, test_count, passed, failed, skipped);
+		ttyn1_log_close_transaction(stf_receiver, NULL, suite, NULL,
+			TTYN_SYNOPSIS(
+				"%s: %u contentions across %u tests; "
+				"%u failed, %u skipped, %u passed",
+				suite, contentions, test_count, failed, skipped, passed),
+			TTYN_EXTENSION()
+		);
 		return(0);
 	}
 #endif
@@ -1519,13 +1725,10 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 		#if defined(TEST_SUITE_IDENTITY)
 			const char *suite = TEST_SUITE_IDENTITY;
 		#elif defined(FACTOR_PATH_STR)
-			const char *suite = FACTOR_PATH_STR;
+			const char *suite = F_PROJECT_PATH_STR "/" F_FACTOR_STR;
 		#else
 			const char *suite = argv[0];
 		#endif
-
-		if (h_configure_tmpdir(TEST_FS_TMPDIR_ROOT) < 0)
-			return(1);
 
 		switch (tdm)
 		{
@@ -1535,7 +1738,7 @@ _tci_contend_truth(_test_control_parameters, intmax_t solution, intmax_t candida
 			break;
 		}
 
-		return(harness_execute_tests(suite, hdispatch, hexit));
+		return(harness_execute_tests(TEST_STATUS_FRAME_RECEIVER, suite, hdispatch, hexit));
 	}
 #endif
 #endif

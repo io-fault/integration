@@ -9,7 +9,13 @@
 
 Test(skipped)
 {
-	test->skip("not applicable to platform: %s", "zag");
+	test->skip("formatted messaged: %s", "skip");
+	note_failed_exit();
+}
+
+Test(fail)
+{
+	test->fail("explicit failure %s", "message");
 	note_failed_exit();
 }
 

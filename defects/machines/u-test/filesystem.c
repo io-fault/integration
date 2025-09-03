@@ -48,7 +48,7 @@ Test(fs_tmpdir_restriction)
 	const char *tde = getenv("TMPDIR");
 
 	unsetenv("TMPDIR");
-	test->truth(!h_configure_tmpdir("./"));
+	test->truth(!h_configure_tmpdir(test->stf_receiver, test->identity->ti_name, "./"));
 	test(!)->equality(_h_tmpdir_restriction, NULL);
 
 	// Put things back for single process sequential.
