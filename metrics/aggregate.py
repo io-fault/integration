@@ -27,7 +27,7 @@ def integrate_test_reports(output, cache, telemetry):
 	except FileExistsError:
 		pass
 
-	testd.fs_replace(records/'.fault-test-fates')
+	testd.fs_replace(records/'.fault-test-reports')
 
 def integrate_syntax_profiles(path, sources, rpath=files.root):
 	src = {x.rsplit('/units/', 1)[1]: json.loads((rpath@x).fs_load()) for x in sources}
