@@ -13,13 +13,13 @@ static inline int
 _memcnt(char *buf, size_t len, int c)
 {
 	char *p = buf;
-	size_t r = 0, count = 0;
+	size_t r = len, count = 0;
 
-	while (p = memchr(p, c, len - r))
+	while (p = memchr(p, c, r))
 	{
 		r = len - ((intptr_t) p - (intptr_t) buf);
 
-		// Count while being tracking remaining length.
+		// Count while tracking remaining length.
 		while (r > 0 && *p == c)
 		{
 			++count;
