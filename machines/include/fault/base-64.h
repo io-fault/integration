@@ -642,7 +642,7 @@ base64_buffer_digits(struct Base64_DigitBuffer *dbuf)
 			max -= q;
 
 			// Terminate if base64_seek_exception detected a boundary.
-			if (dbuf->d_buffer[dbuf->d_buffer_offset-1] == '=')
+			if (dbuf->d_buffer[dbuf->d_buffer_offset-(dbuf->d_buffer_offset > 0 ? 1 : 0)] == '=')
 			{
 				if (dbuf->d_buffer[0] != '=')
 					return(true);
