@@ -273,7 +273,7 @@ def python_interfaces():
 
 	return '\n'.join([
 		include + '//interfaces',
-		'python' + v,
+		'python' + v + abi,
 	])
 
 def python_tool():
