@@ -12,20 +12,21 @@ import types
 import importlib
 import marshal
 
-try:
-	from _imp import source_hash
-	from importlib._bootstrap_external import _RAW_MAGIC_NUMBER, _code_to_timestamp_pyc, _code_to_hash_pyc
-	import functools
-	local_source_hash = functools.partial(source_hash, _RAW_MAGIC_NUMBER)
-except (NameError, ImportError):
-	# Signals to force modification time based checks as cpython<=3.6
-	local_source_hash = None
-	from importlib._bootstrap_external import _code_to_bytecode as _code_to_timestamp_pyc
-else:
-	# Python 3.7 or greater.
-	from importlib._bootstrap_external import _code_to_timestamp_pyc
+if 0:
+	try:
+		from _imp import source_hash
+		from importlib._bootstrap_external import _RAW_MAGIC_NUMBER, _code_to_timestamp_pyc, _code_to_hash_pyc
+		import functools
+		local_source_hash = functools.partial(source_hash, _RAW_MAGIC_NUMBER)
+	except (NameError, ImportError):
+		# Signals to force modification time based checks as cpython<=3.6
+		local_source_hash = None
+		from importlib._bootstrap_external import _code_to_bytecode as _code_to_timestamp_pyc
+	else:
+		# Python 3.7 or greater.
+		from importlib._bootstrap_external import _code_to_timestamp_pyc
 
-serialize_timestamp_checked = _code_to_timestamp_pyc # Present regardless of version.
+	serialize_timestamp_checked = _code_to_timestamp_pyc # Present regardless of version.
 
 def store(check:str, target:str, code:types.CodeType, fileno:int, source:bytes) -> types.CodeType:
 	"""

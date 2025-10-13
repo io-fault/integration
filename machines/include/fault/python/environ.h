@@ -6,8 +6,48 @@
 #include <Python.h>
 #include <structmember.h>
 
-#if PY_MAJOR_VERSION >= 3 && PY_MINOR_VERSION < 14
-	/* Public API introduced in 3.14. */
+#define PY_VBEFORE(MAJOR, MINOR) \
+	(PY_MAJOR_VERSION < MAJOR || (PY_MAJOR_VERSION == MAJOR && PY_MINOR_VERSION < MINOR))
+#define PY_VAFTER(MAJOR, MINOR) \
+	(PY_MAJOR_VERSION > MAJOR || (PY_MAJOR_VERSION == MAJOR && PY_MINOR_VERSION >= MINOR))
+#define PY_VRANGE(MAJOR, MINOR_START, MINOR_STOP) \
+	(PY_MAJOR_VERSION == MAJOR && PY_MINOR_VERSION >= MINOR_START && PY_MINOR_VERSION < MINOR_STOP)
+
+/**
+	// Python implementation is purely free threaded.
+*/
+#define _PYTHON_FT_REQUIRED 2
+
+/**
+	// Python free threading is enabled, GIL is not (normally) used for synchronization.
+*/
+#define _PYTHON_FT_ENABLED 1
+
+/**
+	// Python GIL is used for synchronization; free threading is disabled.
+*/
+#define _PYTHON_FT_DISABLED 0
+
+/**
+	// Python implementation does not support free threading at all.
+*/
+#define _PYTHON_FT_IMPOSSIBLE -1
+
+#if PY_VAFTER(3, 13)
+	#if defined(Py_GIL_DISABLED)
+		// Free threading is enabled.
+		#define _PY_FREE_THREADING _PYTHON_FT_ENABLED
+	#else
+		// Free threading is possible, but disabled.
+		#define _PY_FREE_THREADING _PYTHON_FT_DISABLED
+	#endif
+#else
+	// Free threading is not possible.
+	#define _PY_FREE_THREADING _PYTHON_FT_IMPOSSIBLE
+#endif
+
+#if PY_VBEFORE(3, 14)
+	/* Public API introduced in 3.13. */
 	Py_hash_t _Py_HashBytes(const void *, Py_ssize_t);
 	#define Py_HashBuffer _Py_HashBytes
 #endif

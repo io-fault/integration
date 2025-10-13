@@ -3,6 +3,33 @@
 */
 #include <fault/symbols.h>
 
+/**
+	// Construct the module's Py_mod_gil slot.
+
+	// Defaults to `Py_MOD_GIL_NOT_USED` when compiling against a free threaded
+	// enabled build and `Py_MOD_GIL_USED` when enabled.
+*/
+#if defined(MODULE_GIL_REQUIRED) && !defined(_py_module_gil_slot)
+	#if _PY_FREE_THREADING >= _PYTHON_FT_DISABLED
+		// Module signalled gil requirement.
+		#define _py_module_gil_slot {Py_mod_gil, Py_MOD_GIL_USED},
+	#else
+		// GIL required by module under a version that does not recognize Py_mod_gil slot.
+		#define _py_module_gil_slot
+	#endif
+#else
+	#if _PY_FREE_THREADING >= _PYTHON_FT_ENABLED
+		#define _py_module_gil_slot {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+	#else
+		#if defined(Py_MOD_GIL_USED)
+			#define _py_module_gil_slot {Py_mod_gil, Py_MOD_GIL_USED},
+		#else
+			// Free threading is not possible with this version of Python.
+			#define _py_module_gil_slot
+		#endif
+	#endif
+#endif
+
 #define FAULT_MODULE_FUNCTIONS() \
 	FAULT_METRICS_FUNCTIONS()
 
@@ -87,6 +114,7 @@
 /*
 	// Python 3.x without mod_exec
 */
+
 #define INIT(MODPARAM, STATE_SIZE, DOCUMENTATION) \
 	DEFINE_MODULE_GLOBALS \
 	static PyMethodDef methods[] = { \
@@ -95,14 +123,19 @@
 		{NULL,} \
 	}; \
 	\
+	static PyModuleDef_Slots slots[] = { \
+		_py_module_gil_slot \
+		{0, NULL}, \
+	}; \
+	\
 	static struct PyModuleDef \
 	module_definition = { \
 		PyModuleDef_HEAD_INIT, \
-		PYTHON_MODULE_PATH_STR, \
-		DOCUMENTATION, \
-		STATE_SIZE, \
-		methods, \
-		NULL, \
+		.m_name = PYTHON_MODULE_PATH_STR, \
+		.m_doc = DOCUMENTATION, \
+		.m_size = STATE_SIZE, \
+		.m_methods = methods, \
+		.m_slots = slots, \
 	}; \
 	\
 	static int _module_exec(PyObj MODPARAM); \
@@ -162,6 +195,7 @@ do { \
 	} \
 	static PyModuleDef_Slot module_slots[] = { \
 		{Py_mod_exec, module_exec}, \
+		_py_module_gil_slot \
 		{0, NULL} \
 	}; \
 	\
