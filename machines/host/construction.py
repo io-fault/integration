@@ -261,7 +261,7 @@ def python_runtime():
 
 	return '\n'.join([
 		prefix + '/lib' + '//library',
-		'python' + v,
+		'python' + v + abi,
 	])
 
 def python_interfaces():
