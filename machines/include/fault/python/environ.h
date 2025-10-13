@@ -14,6 +14,28 @@
 	(PY_MAJOR_VERSION == MAJOR && PY_MINOR_VERSION >= MINOR_START && PY_MINOR_VERSION < MINOR_STOP)
 
 /**
+	// --disable-gil introduced in 3.13.
+*/
+#if !defined(_PYTHON_FEATURE_FT_POSSIBLE)
+	#if PY_VAFTER(3, 13)
+		#define _PYTHON_FEATURE_FT_POSSIBLE 1
+	#else
+		#define _PYTHON_FEATURE_FT_POSSIBLE 0
+	#endif
+#endif
+
+/**
+	// _Py_HashBytes made public in 3.14 as Py_HashBuffer.
+*/
+#if !defined(_PYTHON_FEATURE_PUBLIC_HASHBUFFER)
+	#if PY_VAFTER(3, 14)
+		#define _PYTHON_FEATURE_PUBLIC_HASHBUFFER 1
+	#else
+		#define _PYTHON_FEATURE_PUBLIC_HASHBUFFER 0
+	#endif
+#endif
+
+/**
 	// Python implementation is purely free threaded.
 */
 #define _PYTHON_FT_REQUIRED 2
@@ -33,7 +55,7 @@
 */
 #define _PYTHON_FT_IMPOSSIBLE -1
 
-#if PY_VAFTER(3, 13)
+#if _PYTHON_FEATURE_FT_POSSIBLE
 	#if defined(Py_GIL_DISABLED)
 		// Free threading is enabled.
 		#define _PY_FREE_THREADING _PYTHON_FT_ENABLED
@@ -42,12 +64,12 @@
 		#define _PY_FREE_THREADING _PYTHON_FT_DISABLED
 	#endif
 #else
-	// Free threading is not possible.
+	// Free threading is not possible; before 3.13.
 	#define _PY_FREE_THREADING _PYTHON_FT_IMPOSSIBLE
 #endif
 
-#if PY_VBEFORE(3, 14)
-	/* Public API introduced in 3.13. */
+#if !_PYTHON_FEATURE_PUBLIC_HASHBUFFER
+	/* Public API introduced in 3.14 as Py_HashBuffer. */
 	Py_hash_t _Py_HashBytes(const void *, Py_ssize_t);
 	#define Py_HashBuffer _Py_HashBytes
 #endif
