@@ -66,6 +66,14 @@
 #else
 	// Free threading is not possible; before 3.13.
 	#define _PY_FREE_THREADING _PYTHON_FT_IMPOSSIBLE
+
+	#ifndef Py_BEGIN_CRITICAL_SECTION
+		#define Py_BEGIN_CRITICAL_SECTION(...) {
+	#endif
+
+	#ifndef Py_END_CRITICAL_SECTION
+		#define Py_END_CRITICAL_SECTION(...) }
+	#endif
 #endif
 
 #if !_PYTHON_FEATURE_PUBLIC_HASHBUFFER
