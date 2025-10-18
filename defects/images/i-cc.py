@@ -2,7 +2,7 @@
 # Construction Context tests.
 """
 from fault.system import files
-from ...factors import cc as module
+from ...images import cc as module
 
 def test_updated(test):
 	tr = test.exits.enter_context(files.Path.fs_tmpdir())

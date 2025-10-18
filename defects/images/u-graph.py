@@ -2,7 +2,7 @@
 # Factor dependency graph checks.
 """
 from fault.system import files
-from ...factors import graph as module
+from ...images import graph as module
 
 def test_sequence(test):
 	"""
