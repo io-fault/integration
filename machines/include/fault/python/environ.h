@@ -76,6 +76,16 @@
 	#endif
 #endif
 
+#if _PYTHON_FREE_THREADING > 0
+	// GIL is disabled.
+	#define _PY_THREAD_SUSPEND_ {
+	#define _PY_THREAD_RESUME_ }
+#else
+	// GIL is enabled or mandatory.
+	#define _PY_THREAD_SUSPEND_ Py_BEGIN_ALLOW_THREADS
+	#define _PY_THREAD_RESUME_ Py_END_ALLOW_THREADS
+#endif
+
 #if !_PYTHON_FEATURE_PUBLIC_HASHBUFFER
 	/* Public API introduced in 3.14 as Py_HashBuffer. */
 	Py_hash_t _Py_HashBytes(const void *, Py_ssize_t);
