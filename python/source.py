@@ -79,6 +79,32 @@ def node_set_address(node, address):
 	node.lineno, node.col_offset = address
 	node.end_lineno, node.end_col_offset = address
 
+def node_inherit_address(tree, node):
+	"""
+	# Walk the &tree and set all addresses to that of &node.
+	"""
+
+	ln = (getattr(node, 'lineno', None), getattr(node, 'end_lineno', None))
+	co = (getattr(node, 'col_offset', None), getattr(node, 'end_col_offset', None))
+
+	for x in ast.walk(tree):
+		x.lineno, x.end_lineno = ln
+		x.col_offset, x.end_col_offset = co
+
+def node_shift_line(tree, ln_count):
+	"""
+	# Add &ln_count to the line numbers assigned to the nodes in &tree.
+	"""
+
+	for x in ast.walk(tree):
+		ln_start = getattr(x, 'lineno', None)
+		ln_stop = getattr(x, 'end_lineno', None)
+
+		if ln_start is not None:
+			x.lineno += ln_count
+		if ln_stop is not None:
+			x.end_lineno += ln_count
+
 def node_remove_docstring(container):
 	"""
 	# Remove the initial &ast.Expr node in the body of &container given

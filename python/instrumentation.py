@@ -203,9 +203,8 @@ def construct_call_increment(node, area, path='/dev/null', lineno=1):
 	s = count_call_expression % (area,)
 	p = ast.parse(s, path)
 	k = p.body[0]
-	for x in ast.walk(k):
-		source.node_set_address(x, (-lineno, -1))
 
+	source.node_inherit_address(k, node)
 	update = functools.partial(k.value.args.__setitem__, -1)
 	return k, update
 
@@ -213,9 +212,8 @@ def construct_boolop_increment(node, area, path='/dev/null', lineno=1):
 	s = count_boolop_expression % (area,)
 	p = ast.parse(s, path)
 	expr = p.body[0]
-	for x in ast.walk(expr):
-		source.node_set_address(x, (-lineno, -1))
 
+	source.node_inherit_address(expr, node)
 	update = functools.partial(expr.value.values.__setitem__, 1)
 	return expr, update
 
@@ -230,14 +228,13 @@ def construct_profile_trap(identifier, container, nodes, path='/dev/null', linen
 
 	return trap
 
-def construct_initialization_nodes(path="/dev/null"):
+def construct_initialization_nodes(ln_offset, path="/dev/null"):
 	"""
 	# Construct instrumentation initialization nodes for injection into an &ast.Module body.
 	"""
-	nodes = ast.parse(coverage_module_context, path)
-	for x in ast.walk(nodes):
-		source.node_set_address(x, (-1, -1))
 
+	nodes = ast.parse(coverage_module_context, path)
+	source.node_shift_line(nodes, ln_offset)
 	return nodes
 
 def instrument(record, path, noded, address):
@@ -312,7 +309,7 @@ def compile(factor, source, path, constants,
 		apply(record, path, noded)
 
 	# Insert profiling or coverage header before constants.
-	tree.body[0:0] = construct_initialization_nodes().body
+	tree.body[0:0] = construct_initialization_nodes(len(srclines)).body
 
 	# Add hash and canonical factor path.
 	constants.extend([
