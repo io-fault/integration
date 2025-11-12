@@ -511,9 +511,8 @@ class Construction(kcore.Context):
 
 			iv = {}
 			if 'metrics' in features:
-				iv['telemetry-directory'] = [
-					scache(telemetry(vtype.variants.reform('metrics'), factor.name))
-				]
+				metrics = vtype.variants.reform('metrics')
+				iv['telemetry-directory'] = [factor.image(metrics)]
 
 			fint = Integrand((
 				mechanism, factor,
