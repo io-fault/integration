@@ -71,10 +71,8 @@ def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
 	# Create an invocation for processing the project from &factors selected using &identifier.
 	"""
 
-	pj = factors.project(identifier)
-	project = pj.factor
-	test_pd, test_project, test_path = factors.split((project ** 1) / 'defects')
-	test_path = test_project.factor / project.identifier
+	fp = lsf.types.factor@identifier
+	test_pd, test_project, test_path = factors.split(fp)
 	test_pj_str = str(test_project.factor)
 
 	exeenv, exepath, xargv = query.dispatch('python')
@@ -85,19 +83,20 @@ def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
 	else:
 		kwcheck = (lambda x: True) # Always true if unconstrainted
 
-	for (fp, ft), fd in test_project.select(lsf.types.factor@project.identifier):
+	project = str(test_project.factor)
+	for (fp, ft), fd in test_project.select(lsf.types.factor + test_path):
 		if not fp.identifier[:2] in prefixes:
 			continue
 		if not kwcheck(fp):
 			continue
 
-		pj_fp = str(project)
+		pj_fp = project
 		test_fp = str(fp)
 		xid = '/'.join((test_pj_str, test_fp))
 
 		env = dict(os.environ)
 		env.update(exeenv)
-		env['F_PROJECT'] = str(project)
+		env['F_PROJECT'] = project
 
 		system = test_pd.image(host_execution_v, test_project.factor, fp)
 		if system.fs_type() == 'void':
@@ -131,12 +130,12 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 
 	project_factors = sorted([str(x) for x in test_projects])
 	if len(project_factors) > 1:
-		project_list = ', '.join(project_factors[:-1]) + ', and ' + project_factors[-1]
+		factor_sels = ', '.join(project_factors[:-1]) + ', and ' + project_factors[-1]
 	else:
 		if project_factors:
-			project_list = project_factors[0]
+			factor_sels = project_factors[0]
 		else:
-			project_list = 'no selected factors'
+			factor_sels = 'no selected factors'
 
 	lanes, monitors = map.Controls.identify_lanes(config)
 
@@ -157,12 +156,12 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 		ctl_monitors = monitors,
 		ctl_opened_frames = False,
 		ctl_factor_types = None,
-		ctl_open_title = 'Testing ' + test_types_list + ' for ' + project_list + '.',
+		ctl_open_title = 'Testing ' + test_types_list + ' in ' + factor_sels + '.',
 		ctl_close_title = 'Test report summary',
-		ctl_operating_title = 'Testing ' + project_list,
+		ctl_operating_title = 'Testing ' + factor_sels,
 	)
 
-	map.execute(exits, ctl, filters.projectgraph(factors, test_projects))
+	map.execute(exits, ctl, filters.SQueue(argv))
 
 def configure(restricted, required, argv):
 	"""
