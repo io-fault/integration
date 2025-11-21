@@ -190,7 +190,7 @@ int
 print_text(FILE *fp, char *str, bool skip_last)
 {
 	intptr_t ip = (intptr_t) str;
-	intptr_t eol = NULL;
+	intptr_t eol = 0;
 	unsigned long x = 0, y = 0;
 	unsigned long il = 0;
 	bool single = true;
