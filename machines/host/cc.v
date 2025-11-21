@@ -158,7 +158,9 @@
 	language-c:
 		: -std=[dialect prefix.iso9899:]
 	language-c++:
+		dialect-2023: -std=c++23
 		dialect-2020: -std=c++20
+		dialect-2017: -std=c++17
 		dialect-2014: -std=c++14
 		dialect-2011: -std=c++11
 		dialect-2003: -std=c++03
