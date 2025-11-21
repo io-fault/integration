@@ -8,12 +8,19 @@
 #define __STDC_CONSTANT_MACROS 1
 #define __STDC_FORMAT_MACROS 1
 
-#include <TargetConditionals.h>
+#if __APPLE__
+	#include <TargetConditionals.h>
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 
 #include <llvm/ADT/DenseMap.h>
-#include <llvm/ADT/Optional.h>
+
+#if (LLVM_VERSION_MAJOR < 16)
+	#include <llvm/ADT/Optional.h>
+#endif
+
 #include <llvm/ADT/SmallBitVector.h>
 
 /*
@@ -27,7 +34,15 @@
 	#include <llvm/ProfileData/Coverage/CoverageMappingReader.h>
 #endif
 
-#if (LLVM_VERSION_MAJOR >= 5)
+#if (LLVM_VERSION_MAJOR >= 17)
+	#include <llvm/Support/VirtualFileSystem.h>
+	#define CM_LOAD(object, data, arch) coverage::CoverageMapping::load( \
+		ArrayRef(StringRef(object)), \
+		StringRef(data), \
+		*vfs::getRealFileSystem().get(), \
+		ArrayRef(StringRef(arch)) \
+	)
+#elif (LLVM_VERSION_MAJOR >= 5)
 	#define CM_LOAD(object, data, arch) coverage::CoverageMapping::load( \
 		makeArrayRef(StringRef(object)), \
 		StringRef(data), \
