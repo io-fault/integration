@@ -16,7 +16,7 @@
 		// Assign the target profdata file.
 		// Performed atexit, registered by _fault_llvm_telemetry_register.
 	*/
-	static void __attribute__((destructor))
+	static void __attribute__((constructor))
 	_fault_llvm_telemetry_dispatch(void)
 	{
 		static char ifbuf[4096];
