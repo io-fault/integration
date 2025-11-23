@@ -69,23 +69,27 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	for v in variants:
 		img = pj.image(v.reform('delineated'), fpath)
 		if img.fs_type() == 'directory':
-			metrics = pj.image(v.reform('metrics'), fpath)
 			break
 	else:
 		img = files.root/'var'/'empty'/'nothing'
+
+	for v in variants:
+		metrics = pj.image(v.reform('metrics'), fpath)
+		if metrics.fs_type() == 'directory':
+			try:
+				careas, ccounts, ctypes = coverage.load_metrics_aggregates(metrics)
+			except FileNotFoundError:
+				continue
+			else:
+				break
+	else:
 		metrics = files.root/'var'/'empty'/'nothing'
-
-	srcindex = []
-	chapter = ""
-
-	# Load coverage data if available.
-	try:
-		careas, ccounts, ctypes = coverage.load_metrics_aggregates(metrics)
-	except OSError:
 		careas = {}
 		ccounts = {}
 		ctypes = {}
 
+	srcindex = []
+	chapter = ""
 	ctxcov = {}
 	cc = 0 # Total positive counters.
 	cz = 0 # Total zero counters.
