@@ -24,6 +24,7 @@
 		const char *mcp = getenv("METRICS_CAPTURE");
 		const char *pid = getenv("PROCESS_IDENTITY");
 		const char *mid = getenv("METRICS_IDENTITY");
+		const char *mi = getenv("METRICS_ISOLATION");
 
 		/* METRICS_CAPTURE or the compile time default. */
 		if (mcp == NULL)
@@ -48,9 +49,13 @@
 		if (mid == NULL)
 			mid = ".fault-llvm";
 
+		/* METRICS_ISOLATION */
+		if (mi == NULL)
+			mi = "unspecified";
+
 		snprintf(ifbuf, sizeof(ifbuf),
-			"%s/%s/%s/.llvm.profraw",
-			mcp, pid, mid
+			"%s/%s/%s/%s",
+			mcp, pid, mid, mi
 		);
 
 		fs_alloc(0, ifbuf, S_IRWXU|S_IRWXG|S_IRWXO);

@@ -10,11 +10,19 @@ from fault.range.types import Mapping
 from fault.syntax.types import Area, Address
 
 # "{record-count} {source-file-path}\n"
-def _parse_sources(lines):
+def _parse_map_sources(lines):
 	i = 0
 	for line in lines:
 		rcount, src = line.split(maxsplit=1)
 		yield i, int(rcount), src
+		i += 1
+
+# "{metrics-isolation} {record-count} {source-file-path}\n"
+def _parse_sources(lines):
+	i = 0
+	for line in lines:
+		isolation, rcount, src = line.split(maxsplit=2)
+		yield isolation, i, int(rcount), src
 		i += 1
 
 def _parse_areas(lines):
@@ -84,7 +92,7 @@ def load_fault_syntax_areas(sources, areas, types):
 			typ = None
 			typiter = repeat('+')
 
-		srciter = _parse_sources(map(str.strip, src.readlines()))
+		srciter = _parse_map_sources(map(str.strip, src.readlines()))
 		aiter = _parse_areas(map(str.strip, sas.readlines()))
 
 		return join_fault_syntax_areas(srciter, aiter, typiter)
@@ -92,7 +100,7 @@ def load_fault_syntax_areas(sources, areas, types):
 def join_fault_syntax_counters(sources, areas, counts, *, Type=Counter):
 	counters = defaultdict(Type)
 
-	for lineno, rcount, src in sources:
+	for isolation, lineno, rcount, src in sources:
 		c = counters[src]
 		for k, d in zip(islice(areas, 0, rcount), islice(counts, 0, rcount)):
 			c[k] += d

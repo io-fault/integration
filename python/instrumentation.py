@@ -99,6 +99,11 @@ if True:
 	def _fi_record(counters=_fi_counters__, origin=_fi_identity, Retry=32):
 		import sys, os, collections
 
+		if 'METRICS_ISOLATION' in os.environ:
+			mid = os.environ['METRICS_ISOLATION']
+		else:
+			mid = 'unspecified'
+
 		if 'PROCESS_IDENTITY' in os.environ:
 			pid = os.environ['PROCESS_IDENTITY']
 		else:
@@ -106,7 +111,7 @@ if True:
 
 		if 'METRICS_CAPTURE' in os.environ:
 			# If capture is defined, qualify with the module name.
-			# /../metrics/{pid}/{module}/{project}/{factor}/{test}/.fault-syntax-counters
+			# .metrics/../{pid}/{module}/{project}/{factor}/{test}/.fault-syntax-counters
 			path = os.environ['METRICS_CAPTURE']
 			path += '/coverage'
 			path += '/' + pid
@@ -119,7 +124,7 @@ if True:
 			except NameError:
 				return
 
-			# /../metrics/coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
+			# .metrics/../coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
 			# Resolve __metrics_trap__ global at exit in order to allow the runtime
 			# to designate it given compile time absence.
 			path = __metrics_trap__
@@ -152,7 +157,7 @@ if True:
 		# For Python, this will normally (always) be a single line.
 		# Append as PROCESS_IDENTITY may be intentionally redundant.
 		with open(path + '/sources', 'a') as f:
-			f.writelines(['%d %s\\n' %(len(events[x]), x) for x in sources])
+			f.writelines(['%s %d %s\\n' %(mid, len(events[x]), x) for x in sources])
 
 		with open(path + '/areas', 'a') as f:
 			for x in sources:
