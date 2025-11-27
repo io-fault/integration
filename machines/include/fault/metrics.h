@@ -19,6 +19,7 @@
 	static void __attribute__((constructor))
 	_fault_llvm_telemetry_dispatch(void)
 	{
+		#define _f_empty_string(X) (X == NULL || strlen(X) == 0)
 		static char ifbuf[4096];
 		char pibuf[32];
 		const char *mcp = getenv("METRICS_CAPTURE");
@@ -27,7 +28,7 @@
 		const char *mi = getenv("METRICS_ISOLATION");
 
 		/* METRICS_CAPTURE or the compile time default. */
-		if (mcp == NULL)
+		if (_f_empty_string(mcp))
 		{
 			#if defined(IF_coverage)
 				mcp = F_TELEMETRY "/coverage";
@@ -39,18 +40,18 @@
 		}
 
 		/* PROCESS_IDENTITY or the string representation of getpid() */
-		if (pid == NULL)
+		if (_f_empty_string(pid))
 		{
 			pid = pibuf;
 			snprintf(pibuf, sizeof(pibuf), "%ld", (long) getpid());
 		}
 
 		/* METRICS_IDENTITY or the constant. */
-		if (mid == NULL)
+		if (_f_empty_string(mid))
 			mid = ".fault-llvm";
 
 		/* METRICS_ISOLATION */
-		if (mi == NULL)
+		if (_f_empty_string(mi))
 			mi = "unspecified";
 
 		snprintf(ifbuf, sizeof(ifbuf),
@@ -60,6 +61,7 @@
 
 		fs_alloc(0, ifbuf, S_IRWXU|S_IRWXG|S_IRWXO);
 		__llvm_profile_set_filename(ifbuf);
+		#undef _f_empty_string
 	}
 
 	#if 0
