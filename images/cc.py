@@ -502,6 +502,7 @@ class Construction(kcore.Context):
 			image = factor.image(vtype.variants)
 			cdr = scache(work(vtype.features, vtype.variants, factor.name))
 			locations = {
+				'construction-context-path': mechanism.context.route,
 				'factor-image': image,
 				'image-directory': image.container,
 				'work-directory': cdr,
