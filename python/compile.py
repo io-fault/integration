@@ -117,9 +117,10 @@ def main(inv:process.Invocation) -> process.Exit:
 	if delineated is not None:
 		if delineated == 'archive':
 			archive(output, source)
-		else:
-			assert delineated == 'json'
+		elif delineated == 'json':
 			delineate(output, source, params)
+		else:
+			raise ValueError("unrecognized delineation format")
 	else:
 		if dialect == 'ast':
 			mkbytecode(output, source, language, dialect, optimize, params)
