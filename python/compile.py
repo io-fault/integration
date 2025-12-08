@@ -84,6 +84,9 @@ def delineate(output, origin, params):
 	instrumentation.compile(factor_name, src, origin, [], record=aset, **params)
 	write_coverage_mapping(origin, output, aset)
 
+	with open(output/'system-path', 'w') as f:
+		f.write(str(origin))
+
 def replicate(target, origin):
 	(target).fs_alloc().fs_mkdir()
 	(target).fs_replace(origin)
