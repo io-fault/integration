@@ -54,9 +54,10 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 	encoding = parameters.pop('encoding', 'utf-8')
 
 	if 'coverage' in instrumentation:
+		from functools import partial
 		from . import instrumentation
 		optimize = 0
-		compiler = instrumentation.compile
+		compiler = partial(instrumentation.compile, record=set())
 	else:
 		compiler = module.compile
 
