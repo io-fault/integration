@@ -193,10 +193,10 @@ print_regions(FILE *fp, char *arch, char *object)
 			const char *kind;
 			int ksz = 1;
 			auto fi = region.FileID;
-			auto fn = record.Filenames[fi];
 
 			if (fi != last)
 			{
+				auto fn = record.Filenames[fi];
 				fprintf(fp, "%lu:%.*s\n", fi, (int) fn.size(), fn.data());
 				last = fi;
 			}
@@ -204,24 +204,24 @@ print_regions(FILE *fp, char *arch, char *object)
 			switch (region.Kind)
 			{
 				case coverage::CounterMappingRegion::CodeRegion:
-					ksz = 1;
 					kind = "+";
 				break;
+
 				case coverage::CounterMappingRegion::SkippedRegion:
-					ksz = 1;
 					kind = "-";
 				break;
+
 				case coverage::CounterMappingRegion::ExpansionRegion:
 					kind = "X";
 					kind = record.Filenames[region.ExpandedFileID].data();
 					ksz = record.Filenames[region.ExpandedFileID].size();
 				break;
+
 				case coverage::CounterMappingRegion::GapRegion:
-					ksz = 1;
 					kind = ".";
 				break;
+
 				default:
-					ksz = 1;
 					kind = "U";
 				break;
 			}
