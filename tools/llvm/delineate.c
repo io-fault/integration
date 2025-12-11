@@ -56,7 +56,7 @@ struct Image {
 		// Closes expression series when changed.
 	*/
 	struct Position curs;
-	CXString file;
+	CXString filepath;
 	unsigned int line, column;
 
 	/**
@@ -80,7 +80,7 @@ image_initialize(struct Image *ctx, CXCursor root, CXTranslationUnit *tu)
 	ctx->curs.xrange = clang_getNullRange();
 	ctx->include_depth = 0;
 
-	clang_getPresumedLocation(start, &ctx->file, &ctx->line, &ctx->column);
+	clang_getPresumedLocation(start, &ctx->filepath, &ctx->line, &ctx->column);
 }
 
 static enum CXChildVisitResult visitor(CXCursor cursor, CXCursor parent, CXClientData cd);
@@ -829,7 +829,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			clang_getPresumedLocation(start, &start_file, &start_line, &start_column);
 			clang_getPresumedLocation(stop, &stop_file, &stop_line, &stop_column);
 
-			if (clang_getCString(start_file) == clang_getCString(ctx->file))
+			if (strcmp(clang_getCString(start_file), clang_getCString(ctx->filepath)) == 0)
 			{
 				/* Hold final range to use as expansion node. */
 				ctx->curs.xrange = range;
@@ -1227,6 +1227,13 @@ main(int argc, const char *argv[])
 
 	image_initialize(&ctx, rc, &u);
 
+	// Write primary source path.
+	{
+		FILE *sp = fopen("system-path", "w");
+		fprintf(sp, "%s", clang_getCString(ctx.filepath));
+		fclose(sp);
+	}
+
 	print_open(ctx.elements, "unit"); /* Translation Unit */
 	print_enter(ctx.data);
 	print_enter(ctx.docs);
@@ -1272,6 +1279,10 @@ main(int argc, const char *argv[])
 			print_attribute(ctx.elements, "target", (char *) clang_getCString(ts));
 			clang_TargetInfo_dispose(ti);
 		}
+
+		print_attribute(ctx.elements, "identifier", (char *) clang_getCString(ctx.filepath));
+		print_attribute_start(ctx.elements, "area");
+		print_source_location(ctx.elements, clang_getCursorExtent(rc));
 	}
 	print_attributes_close(ctx.elements);
 
