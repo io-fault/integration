@@ -186,6 +186,7 @@ print_regions(FILE *fp, char *arch, char *object)
 		auto fname = record.FunctionName;
 
 		fprintf(fp, "@%.*s\n", (int) fname.size(), fname.data());
+		last = -1;
 
 		for (auto region : record.MappingRegions)
 		{
