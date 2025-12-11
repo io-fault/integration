@@ -164,12 +164,12 @@ def form_host_type():
 	common = comment("Alternatively, ..context.usr-cc.")
 
 	common += define('-cc-compile-tool',
-		('fv-form-delineated', '.cc-delineate'),
+		('cc-mode-delineation', '.cc-delineate'),
 		('!', '.cc'),
 	) + '\n'
 
 	common += define('-cc-link-tool',
-		('fv-form-delineated', '.archive-delineated'),
+		('cc-mode-delineation', '.archive-delineated'),
 		('!', '.cc'),
 	) + '\n'
 
