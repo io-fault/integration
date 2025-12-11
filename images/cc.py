@@ -505,6 +505,8 @@ class Construction(kcore.Context):
 				'construction-context-path': mechanism.context.route,
 				'factor-image': image,
 				'image-directory': image.container,
+				'executable-image': factor.image(vtype.variants.reform('executable')),
+				'delineated-image': factor.image(vtype.variants.reform('delineated')),
 				'work-directory': cdr,
 				'log-directory': (cdr / 'log').delimit(),
 				'unit-directory': (cdr / 'units').delimit(),
