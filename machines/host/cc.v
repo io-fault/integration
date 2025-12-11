@@ -176,7 +176,9 @@
 -compile-header:
 	: [-languages]
 	: -D[-system-defines]
-	: [null]
+	:
+		cc-mode-delineation: [source File]
+		!: [null]
 
 -compile-source:
 	# Sources
