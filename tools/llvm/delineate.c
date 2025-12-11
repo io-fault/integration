@@ -860,7 +860,9 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 			print_enter(ctx->elements);
 			{
+				print_open(ctx->elements, "type");
 				print_type(ctx->elements, cursor, real_type);
+				print_close(ctx->elements, "type");
 			}
 			print_exit(ctx->elements);
 
