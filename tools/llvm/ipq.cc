@@ -132,13 +132,22 @@ print_counters(FILE *fp, char *arch, char *object, char *datafile)
 		if (data.empty())
 			continue;
 
-		fprintf(fp, "@%.*s\n", (int) file.size(), file.data());
-
-		for (auto seg : data)
+		// Split iteration, make sure there are non-zero counts before emitting path switch.
+		auto seg = data.begin();
+		for (; seg != data.end(); ++seg)
 		{
-			if (seg.HasCount && seg.IsRegionEntry && seg.Count > 0)
+			if (seg->HasCount && seg->Count > 0)
 			{
-				fprintf(fp, "%u %u %llu\n", seg.Line, seg.Col, seg.Count);
+				fprintf(fp, "@%.*s\n", (int) file.size(), file.data());
+				break;
+			}
+		}
+
+		for (; seg != data.end(); ++seg)
+		{
+			if (seg->HasCount && seg->Count > 0)
+			{
+				fprintf(fp, "%u %u %llu\n", seg->Line, seg->Col, seg->Count);
 			}
 		}
 	}
