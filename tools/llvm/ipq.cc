@@ -81,6 +81,8 @@ static int kind_map[] = {
 	1, -1, 0,
 };
 
+#define _llvm_error_object(X) (X).getError()
+#define _llvm_error_string(X) (X).message().c_str()
 
 #define CRE_GET_ERROR(X) ((X).takeError())
 #define CMR_GET_ERROR(X) ((X).takeError())
@@ -96,9 +98,10 @@ print_counters(FILE *fp, char *arch, char *object, char *datafile)
 {
 	auto mapping = CM_LOAD(object, datafile, arch);
 
-	if (auto E = CRE_GET_ERROR(mapping))
+	if (auto err = CRE_GET_ERROR(mapping))
 	{
-		fprintf(stderr, "%s\n", ERR_STRING(E));
+		fprintf(stderr, "ERROR: could not load coverage mapping counters.\n");
+		fprintf(stderr, "LLVM: %s\n", ERR_STRING(err));
 		return(1);
 	}
 
@@ -143,10 +146,10 @@ print_regions(FILE *fp, char *arch, char *object)
 	int last = -1;
 	auto CounterMappingBuff = MemoryBuffer::getFile(object);
 
-	if (std::error_code EC = CounterMappingBuff.getError())
+	if (auto err = CounterMappingBuff.getError())
 	{
-		char *err = (char *) EC.message().c_str();
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "ERROR: could not load image file buffer.\n");
+		fprintf(stderr, "LLVM: %s\n", _llvm_error_string(err));
 		return(1);
 	}
 
@@ -155,19 +158,16 @@ print_regions(FILE *fp, char *arch, char *object)
 	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
-		{
-			fprintf(stderr, "%s\n", ERR_STRING(E));
-			return(1);
-		}
+		fprintf(stderr, "ERROR: could not load counter mapping reader.\n");
+		if (auto err = CRE_GET_ERROR(CoverageReaderOrErr))
+			fprintf(stderr, "LLVM: %s\n", ERR_STRING(err));
 
-		fprintf(stderr, "failed to load counter mapping reader from object\n");
 		return(1);
 	}
 
 	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
-		if (auto E = CMR_GET_ERROR(R))
+		if (CMR_GET_ERROR(R))
 			continue;
 
 		const auto &record = RECORD(R);
@@ -234,11 +234,10 @@ print_sources(FILE *fp, char *arch, char *object)
 {
 	auto CounterMappingBuff = MemoryBuffer::getFile(object);
 
-	if (std::error_code EC = CounterMappingBuff.getError())
+	if (auto err = CounterMappingBuff.getError())
 	{
-		char *err;
-		err = (char *) EC.message().c_str();
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "ERROR: could not loader image file buffer.\n");
+		fprintf(stderr, "LLVM: %s\n", _llvm_error_string(err));
 		return(1);
 	}
 
@@ -247,8 +246,8 @@ print_sources(FILE *fp, char *arch, char *object)
 	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
-			fprintf(stderr, "%s\n", ERR_STRING(E));
+		if (auto err = CRE_GET_ERROR(CoverageReaderOrErr))
+			fprintf(stderr, "%s\n", ERR_STRING(err));
 		else
 			fprintf(stderr, "unknown error\n");
 
@@ -264,7 +263,7 @@ print_sources(FILE *fp, char *arch, char *object)
 
 	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
-		if (auto E = CMR_GET_ERROR(R))
+		if (CMR_GET_ERROR(R))
 			continue;
 
 		const auto &record = RECORD(R);
