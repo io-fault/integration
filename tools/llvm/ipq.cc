@@ -22,17 +22,8 @@
 #endif
 
 #include <llvm/ADT/SmallBitVector.h>
-
-/*
-	// CounterMappingRegion (mapping stored in binaries)
-*/
-#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
-	#include <llvm/ProfileData/CoverageMapping.h>
-	#include <llvm/ProfileData/CoverageMappingReader.h>
-#else
-	#include <llvm/ProfileData/Coverage/CoverageMapping.h>
-	#include <llvm/ProfileData/Coverage/CoverageMappingReader.h>
-#endif
+#include <llvm/ProfileData/Coverage/CoverageMapping.h>
+#include <llvm/ProfileData/Coverage/CoverageMappingReader.h>
 
 #if (LLVM_VERSION_MAJOR >= 17)
 	#include <llvm/Support/VirtualFileSystem.h>
@@ -90,24 +81,12 @@ static int kind_map[] = {
 	1, -1, 0,
 };
 
-#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
-	#define CRE_GET_ERROR(X) X.getError()
-	#define CMR_GET_ERROR(X) NULL
-	#define ERR_STRING(X) X.message().c_str()
-	#define RECORD(X) (X)
-#else
-	#define CRE_GET_ERROR(X) (X.takeError())
-	#define CMR_GET_ERROR(X) (X.takeError())
-	#define ERR_STRING(X) toString(std::move(X)).c_str()
-	#define RECORD(X) (*X)
-#endif
 
-#if (LLVM_VERSION_MAJOR == 4)
-	#undef CMR_GET_ERROR
-	#define CMR_GET_ERROR(X) NULL
-	#undef RECORD
-	#define RECORD(X) (X)
-#endif
+#define CRE_GET_ERROR(X) ((X).takeError())
+#define CMR_GET_ERROR(X) ((X).takeError())
+#define ERR_STRING(X) toString(std::move(X)).c_str()
+#define RECORD(X) (*X)
+
 
 /**
 	// Identify the counts associated with the syntax areas.
