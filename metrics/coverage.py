@@ -180,9 +180,9 @@ def index_elements(dsrc):
 	if 'area' not in d:
 		return sam
 	area = Area(map(Address, d['area']))
-	sam[area] = tuple()
-	descend(sam, (), elements)
 
+	descend(sam, (), elements)
+	sam[area] = tuple()
 	return sam
 
 def total(index, areas, types, counts):
