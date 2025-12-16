@@ -11,9 +11,11 @@ from fault.system import process
 from fault.system import files
 
 from . import calculations
+from . import coverage
+
 first = operator.itemgetter(0)
 
-def integrate_test_reports(output, cache, telemetry):
+def integrate_test_reports(output, cache, telemetry, delineated):
 	records = telemetry/'test'
 
 	if records.fs_type() == 'void':
@@ -66,13 +68,11 @@ def structure_coverage(consolidated):
 			r[producer] = [areas, counts, {}]
 	return fc
 
-def integrate_coverage_areas(output, cache, telemetry, pfp, sfp):
-	maps = telemetry / 'maps'
+def integrate_coverage_maps(output, cache, telemetry, delineated, pfp, sfp):
+	maps = delineated
 	if maps.fs_type() != 'directory':
 		# No coverage data.
 		return
-
-	from . import coverage
 
 	areas = {}
 	types = {}
@@ -86,13 +86,13 @@ def integrate_coverage_areas(output, cache, telemetry, pfp, sfp):
 	with (output/'area-types').fs_open('w') as f:
 		json.dump(types, f)
 
-def integrate_coverage_capture(output, cache, telemetry, pfp, sfp):
+	return areas
+
+def integrate_coverage_capture(regions, output, cache, telemetry, delineated, pfp, sfp):
 	ct = telemetry / 'coverage'
 	if ct.fs_type() != 'directory':
 		# No coverage data.
 		return
-
-	from . import coverage
 
 	# Usually, there is one process (pid) per test.
 	# However, tests may execute subprocesses,
@@ -107,11 +107,23 @@ def integrate_coverage_capture(output, cache, telemetry, pfp, sfp):
 
 		producer = tuple(segment.container)
 		fsc = leading // segment
-		data = coverage.load_fault_syntax_counters(fsc/'sources', fsc/'areas', fsc/'counts')
 
-		for filepath, counters in data.items():
-			cid = (filepath,) + producer
-			consolidated[cid].update(counters)
+		# Split l-counters into standard form using an index built from regions.
+		lcounters = (fsc/'l-counters')
+		if lcounters.fs_type() == 'data':
+			idx = coverage.index_regions(regions or {})
+			with lcounters.fs_open('r') as dc:
+				coverage.integrate_lcounters(idx, fsc, dc.readlines())
+
+		try:
+			data = coverage.load_fault_syntax_counters(fsc/'sources', fsc/'areas', fsc/'counts')
+		except FileNotFoundError:
+			# Need all three files to contribute coverage data.
+			pass
+		else:
+			for filepath, counters in data.items():
+				cid = (filepath,) + producer
+				consolidated[cid].update(counters)
 
 	# Per-test data.
 	consolidated = regroup_coverage(consolidated)
@@ -119,17 +131,18 @@ def integrate_coverage_capture(output, cache, telemetry, pfp, sfp):
 		json.dump(structure_coverage(consolidated), f)
 
 def main(inv:process.Invocation) -> process.Exit:
-	output, cache, telemetry, project, factor, *src = inv.argv # Factor Image and the Compilation Cache directory.
+	output, cache, telemetry, dimage, project, factor, *src = inv.argv # Factor Image and the Compilation Cache directory.
 	od = inv.fs_pwd@output
 	cd = inv.fs_pwd@cache
 	td = inv.fs_pwd@telemetry
+	dd = inv.fs_pwd@dimage
 
 	# Create image directory.
 	od.fs_alloc().fs_mkdir()
 
 	integrate_syntax_profiles(od/'syntax-profiles', src, rpath=inv.fs_pwd)
-	integrate_test_reports(od, cd, td)
-	integrate_coverage_capture(od, cd, td, project, factor)
-	integrate_coverage_areas(od, cd, td, project, factor)
+	integrate_test_reports(od, cd, td, dd)
+	regions = integrate_coverage_maps(od, cd, td, dd, project, factor)
+	integrate_coverage_capture(regions, od, cd, td, dd, project, factor)
 
 	return inv.exit(0)

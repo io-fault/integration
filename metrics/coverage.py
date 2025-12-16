@@ -31,6 +31,71 @@ def _parse_areas(lines):
 		#startl, startc, stopl, stopc = map(int, line.split(maxsplit=4))
 		#yield Area((Address((startl, startc)), Address((stopl, stopc))))
 
+def index_regions(regions):
+	"""
+	# Construct an index from source regions for use with &integrate_lcounters.
+
+	# [ Parameters ]
+	# /regions/
+		# A mapping of source file identifiers, paths, associated
+		# with a list of syntax areas.
+
+	# [ Returns ]
+	# An index for converting L-counters to fault syntax counters.
+	"""
+
+	idx = {}
+	for src, areas in regions.items():
+		for a in areas:
+			ln, co, eln, eco = map(int, a)
+			idx[(src, ln, co)] = f"{ln} {co} {eln} {eco}\n"
+
+	return idx
+
+def integrate_lcounters(index, fsc, lcounters):
+	"""
+	# Convert the counters in &lcounters into fault syntax counters, &fsc, using
+	# the given &index to identify the full region.
+	"""
+
+	isolation = None
+	srcfile = None
+	counters = 0
+
+	with contextlib.ExitStack() as stack:
+		src = stack.enter_context((fsc/'sources').fs_open('a'))
+		counts = stack.enter_context((fsc/'counts').fs_open('a'))
+		areas = stack.enter_context((fsc/'areas').fs_open('a'))
+
+		for line in lcounters:
+			if line[:1] == '@':
+				# Change file.
+				if isolation and srcfile and counters:
+					src.write(f"{isolation} {counters} {srcfile}\n")
+				srcfile = line[1:].strip()
+			elif line[:1] == '&':
+				# Change isolation
+				if isolation and srcfile and counters:
+					src.write(f"{isolation} {counters} {srcfile}\n")
+				isolation = line[1:].strip()
+			else:
+				ln, co, count = map(int, line.split())
+				try:
+					sa = index[(srcfile, ln, co)]
+				except KeyError:
+					continue
+
+				counters += 1
+				areas.write(sa)
+				counts.write(str(count) + '\n')
+				continue
+
+			# Increments reset when isolation or file is changed.
+			counters = 0
+
+		if isolation and srcfile and counters:
+			src.write(f"{isolation} {counters} {srcfile}\n")
+
 def factor_records(root):
 	"""
 	# Scan the tree for data files and select the segment
@@ -51,9 +116,10 @@ def identify_source_areas(path):
 	# Scan the directory for nodes containing regular files.
 	"""
 
-	for d, df in path.fs_index():
-		if df:
-			yield d
+	for subdir in path.fs_iterfiles('directory'):
+		for d, df in subdir.fs_index():
+			if df:
+				yield d
 
 def identify_captured_metrics(path):
 	"""
@@ -146,6 +212,7 @@ def load_metrics_aggregates(path):
 		for k in areas:
 			areas[k] = list(map(structure_area, areas[k]))
 
+	# Load and restructure the covered areas as an Area of Address pairs.
 	with acounts.fs_open('r') as f:
 		gcounts = json.load(f)
 		for fn in gcounts:
@@ -161,11 +228,26 @@ def load_metrics_aggregates(path):
 def descend(mapping, current, elements):
 	for er in elements:
 		typ, sub, d = er
-		eid = d.get('identifier') or None
+		if 'area' not in d:
+			# Nothing to index.
+			continue
 
-		if eid is not None and sub and not typ == 'parameter':
-			area = Area(map(Address, d['area']))
-			path = mapping[area] = current + (eid,)
+		eid = d.get('identifier') or None
+		if eid is None:
+			# Not identified.
+			continue
+
+		if typ == 'parameter':
+			# Parameters have areas and identities, but it is not
+			# desired to associate coverage with them even if a language
+			# can associate expressions. Prefer to keep it with the function.
+			continue
+
+		area = Area(map(Address, d['area']))
+		path = current + (eid,)
+		mapping[area] = path
+
+		if len(sub) > 0:
 			descend(mapping, path, sub)
 
 def index_elements(dsrc):

@@ -395,7 +395,7 @@ def meter(context):
 			constant('-metrics-join',
 				'"aggregate-metrics" - -',
 				'[factor-image] [work-directory]',
-				'[-telemetry]',
+				'[-telemetry]', '[delineated-image]',
 				'[project-path] [factor-relative-path]',
 				'[units]',
 			) + \

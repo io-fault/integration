@@ -3,6 +3,7 @@
 */
 #include <stddef.h>
 #include <limits.h>
+#include <string.h>
 
 #define __STDC_LIMIT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
@@ -69,6 +70,8 @@
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Object/ObjectFile.h>
 
 #include <system_error>
 #include <tuple>
@@ -89,6 +92,22 @@ static int kind_map[] = {
 #define ERR_STRING(X) toString(std::move(X)).c_str()
 #define RECORD(X) (*X)
 
+int
+identify_architecture(char *buf, size_t len, char *image_path)
+{
+	Triple t;
+	int r;
+	auto bufref = MemoryBuffer::getFile(image_path);
+
+	if (bufref.getError())
+		return(-2);
+
+	auto ob = object::ObjectFile::createObjectFile(bufref.get()->getMemBufferRef());
+	t.setArch(ob->get()->getArch());
+
+	r = snprintf(buf, len, "%.*s", t.getArchName().size(), t.getArchName().data());
+	return(r);
+}
 
 /**
 	// Identify the counts associated with the syntax areas.
@@ -287,41 +306,91 @@ print_sources(FILE *fp, char *arch, char *object)
 }
 
 int
+print_architectures(FILE *fp, char *image_path)
+{
+	Triple t;
+	auto bufref = MemoryBuffer::getFile(image_path);
+
+	if (auto err = bufref.getError())
+	{
+		fprintf(stderr, "%s\n", _llvm_error_string(err));
+		return(1);
+	}
+
+	auto ob = object::ObjectFile::createObjectFile(bufref.get()->getMemBufferRef());
+	t.setArch(ob->get()->getArch());
+	fprintf(fp, "%.*s\n", t.getArchName().size(), t.getArchName().data());
+
+	return(0);
+}
+
+int
 main(int argc, char *argv[])
 {
-	if (argc < 2)
+	char archbuf[128];
+	char *arch;
+
+	if (argc < 2 || strcmp(argv[1], "-h") == 0)
 	{
-		fprintf(stderr, "ipq regions|sources|counters architecture image [merged-profile-data]\n");
-		fprintf(stderr, "Merged profile data is only required by counters.\n");
+		fprintf(stderr, "ipq architectures image-path\n");
+		fprintf(stderr, "ipq regions image-path\n");
+		fprintf(stderr, "ipq sources image-path\n");
+		fprintf(stderr, "ipq counters image-path merged-profile-data\n");
 		return(248);
+	}
+
+	if (strcmp(argv[1], "architectures") == 0)
+	{
+		if (argc != 3)
+		{
+			fprintf(stderr, "ERROR: architectures requires exactly one arguments.\n");
+			return(1);
+		}
+		else
+			return(print_architectures(stdout, argv[2]));
+	}
+
+	// Discover architecture from image if not defined via the environment.
+	arch = getenv("IPQ_ARCHITECTURE");
+	if (arch == NULL || strlen(arch) == 0)
+	{
+		identify_architecture(archbuf, sizeof(archbuf), argv[2]);
+		arch = archbuf;
 	}
 
 	if (strcmp(argv[1], "regions") == 0)
 	{
-		if (argc != 4)
-			fprintf(stderr, "ERROR: regions requires exactly two arguments.\n", argv[1]);
-		else
-			return(print_regions(stdout, argv[2], argv[3]));
-	}
-	else if (strcmp(argv[1], "sources") == 0)
-	{
-		if (argc != 4)
-			fprintf(stderr, "ERROR: sources requires exactly two arguments.\n", argv[1]);
-		else
-			return(print_sources(stdout, argv[2], argv[3]));
-	}
-	else
-	{
-		if (strcmp(argv[1], "counters") == 0)
+		if (argc != 3)
 		{
-			if (argc != 5)
-				fprintf(stderr, "ERROR: counters requires exactly three arguments.\n", argv[1]);
-			else
-				return(print_counters(stdout, argv[2], argv[3], argv[4]));
+			fprintf(stderr, "ERROR: regions requires two arguments.\n");
+			return(1);
 		}
 		else
-			fprintf(stderr, "unknown query '%s'\n", argv[1]);
+			return(print_regions(stdout, arch, argv[2]));
 	}
 
-	return(1);
+	if (strcmp(argv[1], "sources") == 0)
+	{
+		if (argc != 3)
+		{
+			fprintf(stderr, "ERROR: sources requires one argument.\n");
+			return(1);
+		}
+		else
+			return(print_sources(stdout, arch, argv[2]));
+	}
+
+	if (strcmp(argv[1], "counters") == 0)
+	{
+		if (argc != 4)
+		{
+			fprintf(stderr, "ERROR: counters requires two arguments.\n");
+			return(1);
+		}
+		else
+			return(print_counters(stdout, arch, argv[2], argv[3]));
+	}
+
+	fprintf(stderr, "unrecognized command: '%s'\n", argv[1]);
+	return(2);
 }

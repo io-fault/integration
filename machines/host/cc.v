@@ -102,6 +102,7 @@
 	: -DF_PROJECT_PATH=[project-path]
 	: -DF_PROJECT_ID=[project-id quoted]
 	: -DF_PRODUCT_PATH=[product-path quoted]
+	: -DF_FACTOR_IMAGE=[factor-image quoted]
 
 -positioning-format:
 	# Position formatting.
@@ -337,6 +338,8 @@
 
 -archive-delineated:
 	: "archive-tree" - -
+	: [construction-context-path File]
+	: [executable-image File]
 	: [factor-image File]
 	: [unit-directory File]
 
