@@ -5,6 +5,7 @@ import contextlib
 import json
 from itertools import islice, repeat
 from collections import Counter, defaultdict
+from collections.abc import Sequence, Iterable
 
 from fault.range.types import Mapping
 from fault.syntax.types import Area, Address
@@ -31,6 +32,138 @@ def _parse_areas(lines):
 		#startl, startc, stopl, stopc = map(int, line.split(maxsplit=4))
 		#yield Area((Address((startl, startc)), Address((stopl, stopc))))
 
+def organize_ipquery_syntax_areas(sources:Iterable[str], lines:Iterable[str]):
+	"""
+	# Process the source path qualified &lines into source path
+	# indexed sequences.
+
+	# First stage used to convert `ipquery regions` output into fault syntax counters.
+
+	# [ Parameters ]
+	# /sources/
+		# The sources of interest.
+	# /lines/
+		# The split text output of `ipquery regions`.
+	"""
+
+	areas = {srcpath: set() for srcpath in sources}
+	fi = fn = fp = None
+	for line in lines:
+		if not line or line[:1] == '@':
+			fn = line[1:]
+		elif line.lstrip('0123456789')[:1] == ':':
+			# Switch path.
+			fi, fp = line.split(':', 1)
+			fp = fp.strip()
+		else:
+			try:
+				ln, co, eln, eco, typ = line.split(maxsplit=5)
+			except ValueError:
+				pass
+			else:
+				last_area = (int(ln), int(co), int(eln), int(eco))
+				if typ[:1] in {'+', '/'} and fp in areas:
+					areas[fp].add(last_area)
+
+	return areas
+
+def sequence_syntax_areas(paths, areas, sources_name='sources', areas_name='areas'):
+	"""
+	# Write out the (system/file)`areas` and (system/file)`sources` files for each
+	# file and area set in &areas. The &paths argument provides the index of
+	# source paths to the directory that the pair of files should be written to.
+
+	# [ Parameters ]
+	# /paths/
+		# Mapping of strings to &files.Path instances. Usually,
+		# the key being the system path to the source file, and
+		# the value being the directory to write files into.
+	# /areas/
+		# Mapping of strings to syntax area sequences. The key
+		# being the system path to the source file, and the
+		# areas being a set.
+
+	# [ Effects ]
+	# The filesystem directories referenced by &paths will be written to.
+	"""
+
+	for fp, area_set in areas.items():
+		rpath = paths[fp]
+		# Ordered.
+		src_areas = list(area_set)
+		src_areas.sort()
+		area_count = len(src_areas)
+
+		with (rpath/areas_name).fs_open('w') as f:
+			f.writelines(" ".join(map(str, x)) + '\n' for x in src_areas)
+		with (rpath/sources_name).fs_open('w') as f:
+			f.write(str(area_count) + " " + fp + '\n')
+
+def index_regions(regions):
+	"""
+	# Construct an index from source regions for use with &integrate_lcounters.
+
+	# [ Parameters ]
+	# /regions/
+		# A mapping of source file identifiers, paths, associated
+		# with a list of syntax areas.
+
+	# [ Returns ]
+	# An index for converting L-counters to fault syntax counters.
+	"""
+
+	idx = {}
+	for src, areas in regions.items():
+		for a in areas:
+			ln, co, eln, eco = map(int, a)
+			idx[(src, ln, co)] = f"{ln} {co} {eln} {eco}\n"
+
+	return idx
+
+def integrate_lcounters(index, fsc, lcounters):
+	"""
+	# Convert the counters in &lcounters into fault syntax counters, &fsc, using
+	# the given &index to identify the full region.
+	"""
+
+	isolation = None
+	srcfile = None
+	counters = 0
+
+	with contextlib.ExitStack() as stack:
+		src = stack.enter_context((fsc/'sources').fs_open('a'))
+		counts = stack.enter_context((fsc/'counts').fs_open('a'))
+		areas = stack.enter_context((fsc/'areas').fs_open('a'))
+
+		for line in lcounters:
+			if line[:1] == '@':
+				# Change file.
+				if isolation and srcfile and counters:
+					src.write(f"{isolation} {counters} {srcfile}\n")
+				srcfile = line[1:].strip()
+			elif line[:1] == '&':
+				# Change isolation
+				if isolation and srcfile and counters:
+					src.write(f"{isolation} {counters} {srcfile}\n")
+				isolation = line[1:].strip()
+			else:
+				ln, co, count = map(int, line.split())
+				try:
+					sa = index[(srcfile, ln, co)]
+				except KeyError:
+					continue
+
+				counters += 1
+				areas.write(sa)
+				counts.write(str(count) + '\n')
+				continue
+
+			# Increments reset when isolation or file is changed.
+			counters = 0
+
+		if isolation and srcfile and counters:
+			src.write(f"{isolation} {counters} {srcfile}\n")
+
 def factor_records(root):
 	"""
 	# Scan the tree for data files and select the segment
@@ -51,9 +184,10 @@ def identify_source_areas(path):
 	# Scan the directory for nodes containing regular files.
 	"""
 
-	for d, df in path.fs_index():
-		if df:
-			yield d
+	for subdir in path.fs_iterfiles('directory'):
+		for d, df in subdir.fs_index():
+			if df:
+				yield d
 
 def identify_captured_metrics(path):
 	"""
@@ -146,6 +280,7 @@ def load_metrics_aggregates(path):
 		for k in areas:
 			areas[k] = list(map(structure_area, areas[k]))
 
+	# Load and restructure the covered areas as an Area of Address pairs.
 	with acounts.fs_open('r') as f:
 		gcounts = json.load(f)
 		for fn in gcounts:
@@ -161,11 +296,26 @@ def load_metrics_aggregates(path):
 def descend(mapping, current, elements):
 	for er in elements:
 		typ, sub, d = er
-		eid = d.get('identifier') or None
+		if 'area' not in d:
+			# Nothing to index.
+			continue
 
-		if eid is not None and sub and not typ == 'parameter':
-			area = Area(map(Address, d['area']))
-			path = mapping[area] = current + (eid,)
+		eid = d.get('identifier') or None
+		if eid is None:
+			# Not identified.
+			continue
+
+		if typ == 'parameter':
+			# Parameters have areas and identities, but it is not
+			# desired to associate coverage with them even if a language
+			# can associate expressions. Prefer to keep it with the function.
+			continue
+
+		area = Area(map(Address, d['area']))
+		path = current + (eid,)
+		mapping[area] = path
+
+		if len(sub) > 0:
 			descend(mapping, path, sub)
 
 def index_elements(dsrc):
@@ -180,9 +330,9 @@ def index_elements(dsrc):
 	if 'area' not in d:
 		return sam
 	area = Area(map(Address, d['area']))
-	sam[area] = tuple()
-	descend(sam, (), elements)
 
+	descend(sam, (), elements)
+	sam[area] = tuple()
 	return sam
 
 def total(index, areas, types, counts):

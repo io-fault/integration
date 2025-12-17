@@ -32,7 +32,6 @@ def mkbytecode(target, unit, language, dialect, optimize, parameters=None):
 	bytecode.store('never', target, co, -1, None)
 
 def write_coverage_mapping(path, cmd, areaset):
-	cmd /= path.identifier
 	cmd.fs_alloc().fs_mkdir() # Coverage mapping directory.
 	unique = list(areaset)
 	unique.sort()
@@ -52,23 +51,13 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 		parameters = {}
 
 	check = parameters.pop('check', 'time')
-
 	encoding = parameters.pop('encoding', 'utf-8')
 
 	if 'coverage' in instrumentation:
+		from functools import partial
 		from . import instrumentation
 		optimize = 0
-
-		if parameters.get('metrics-trap') is not None:
-			def compiler(*args, **kw):
-				cs = kw['record'] = set()
-				ast = instrumentation.compile(*args, **kw)
-				mtarget = (files.root@parameters['metrics-trap'])/'maps'
-				write_coverage_mapping(origin, mtarget, cs)
-				return ast
-		else:
-			cset = None
-			compiler = instrumentation.compile
+		compiler = partial(instrumentation.compile, record=set())
 	else:
 		compiler = module.compile
 
@@ -82,9 +71,22 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 		pickle.dump((str(origin), ast), out)
 
 def delineate(output, origin, params):
+	from . import instrumentation
 	from . import delineate
 	fpath = params['factor'].split('.')
 	delineate.process_source(str(output), str(origin), fpath)
+
+	factor_name = params.pop('factor', None)
+	encoding = params.pop('encoding', 'utf-8')
+
+	aset = set()
+	with open(origin, 'r', encoding=encoding) as f:
+		src = f.read()
+	instrumentation.compile(factor_name, src, origin, [], record=aset, **params)
+	write_coverage_mapping(origin, output, aset)
+
+	with open(output/'system-path', 'w') as f:
+		f.write(str(origin))
 
 def replicate(target, origin):
 	(target).fs_alloc().fs_mkdir()
@@ -117,9 +119,10 @@ def main(inv:process.Invocation) -> process.Exit:
 	if delineated is not None:
 		if delineated == 'archive':
 			archive(output, source)
-		else:
-			assert delineated == 'json'
+		elif delineated == 'json':
 			delineate(output, source, params)
+		else:
+			raise ValueError("unrecognized delineation format")
 	else:
 		if dialect == 'ast':
 			mkbytecode(output, source, language, dialect, optimize, params)

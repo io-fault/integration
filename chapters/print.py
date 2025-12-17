@@ -190,6 +190,19 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 		'syntax': syntax_metrics,
 	}
 
+	# Prefix the chapter with the coverage totals.
+	factor_context = "[]\n"
+	factor_context += "! CONTROL:\n"
+	factor_context += "\t/type/\n"
+	factor_context += "\t\t" + meta_json['type'] + "\n"
+	factor_context += "\t/element/\n"
+	factor_context += "\t\t- (control)`property-set`\n"
+	factor_context += "\t\t- (coverage-zeros)`" + str(metrics_summary['revealed']) + "`\n"
+	factor_context += "\t\t- (coverage-counters)`" + str(cc) + "`\n"
+	factor_context += "\n"
+	chapter = factor_context + chapter
+	del factor_context
+
 	yield fcoverage, (json.dumps(ctxcov).encode('utf-8'),)
 	yield fmetrics, (json.dumps(metrics_summary).encode('utf-8'),)
 	yield fmeta, (json.dumps(meta_json).encode('utf-8'),)

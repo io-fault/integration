@@ -3,6 +3,7 @@
 */
 #include <stddef.h>
 #include <limits.h>
+#include <string.h>
 
 #define __STDC_LIMIT_MACROS 1
 #define __STDC_CONSTANT_MACROS 1
@@ -22,17 +23,8 @@
 #endif
 
 #include <llvm/ADT/SmallBitVector.h>
-
-/*
-	// CounterMappingRegion (mapping stored in binaries)
-*/
-#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
-	#include <llvm/ProfileData/CoverageMapping.h>
-	#include <llvm/ProfileData/CoverageMappingReader.h>
-#else
-	#include <llvm/ProfileData/Coverage/CoverageMapping.h>
-	#include <llvm/ProfileData/Coverage/CoverageMappingReader.h>
-#endif
+#include <llvm/ProfileData/Coverage/CoverageMapping.h>
+#include <llvm/ProfileData/Coverage/CoverageMappingReader.h>
 
 #if (LLVM_VERSION_MAJOR >= 17)
 	#include <llvm/Support/VirtualFileSystem.h>
@@ -78,6 +70,8 @@
 #include <llvm/Support/ManagedStatic.h>
 #include <llvm/Support/Path.h>
 #include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/Object/ObjectFile.h>
 
 #include <system_error>
 #include <tuple>
@@ -90,24 +84,30 @@ static int kind_map[] = {
 	1, -1, 0,
 };
 
-#if (LLVM_VERSION_MAJOR == 3) && (LLVM_VERSION_MINOR < 9)
-	#define CRE_GET_ERROR(X) X.getError()
-	#define CMR_GET_ERROR(X) NULL
-	#define ERR_STRING(X) X.message().c_str()
-	#define RECORD(X) (X)
-#else
-	#define CRE_GET_ERROR(X) (X.takeError())
-	#define CMR_GET_ERROR(X) (X.takeError())
-	#define ERR_STRING(X) toString(std::move(X)).c_str()
-	#define RECORD(X) (*X)
-#endif
+#define _llvm_error_object(X) (X).getError()
+#define _llvm_error_string(X) (X).message().c_str()
 
-#if (LLVM_VERSION_MAJOR == 4)
-	#undef CMR_GET_ERROR
-	#define CMR_GET_ERROR(X) NULL
-	#undef RECORD
-	#define RECORD(X) (X)
-#endif
+#define CRE_GET_ERROR(X) ((X).takeError())
+#define CMR_GET_ERROR(X) ((X).takeError())
+#define ERR_STRING(X) toString(std::move(X)).c_str()
+#define RECORD(X) (*X)
+
+int
+identify_architecture(char *buf, size_t len, char *image_path)
+{
+	Triple t;
+	int r;
+	auto bufref = MemoryBuffer::getFile(image_path);
+
+	if (bufref.getError())
+		return(-2);
+
+	auto ob = object::ObjectFile::createObjectFile(bufref.get()->getMemBufferRef());
+	t.setArch(ob->get()->getArch());
+
+	r = snprintf(buf, len, "%.*s", t.getArchName().size(), t.getArchName().data());
+	return(r);
+}
 
 /**
 	// Identify the counts associated with the syntax areas.
@@ -117,9 +117,10 @@ print_counters(FILE *fp, char *arch, char *object, char *datafile)
 {
 	auto mapping = CM_LOAD(object, datafile, arch);
 
-	if (auto E = CRE_GET_ERROR(mapping))
+	if (auto err = CRE_GET_ERROR(mapping))
 	{
-		fprintf(stderr, "%s\n", ERR_STRING(E));
+		fprintf(stderr, "ERROR: could not load coverage mapping counters.\n");
+		fprintf(stderr, "LLVM: %s\n", ERR_STRING(err));
 		return(1);
 	}
 
@@ -132,13 +133,22 @@ print_counters(FILE *fp, char *arch, char *object, char *datafile)
 		if (data.empty())
 			continue;
 
-		fprintf(fp, "@%.*s\n", (int) file.size(), file.data());
-
-		for (auto seg : data)
+		// Split iteration, make sure there are non-zero counts before emitting path switch.
+		auto seg = data.begin();
+		for (; seg != data.end(); ++seg)
 		{
-			if (seg.HasCount && seg.IsRegionEntry && seg.Count > 0)
+			if (seg->HasCount && seg->Count > 0)
 			{
-				fprintf(fp, "%u %u %llu\n", seg.Line, seg.Col, seg.Count);
+				fprintf(fp, "@%.*s\n", (int) file.size(), file.data());
+				break;
+			}
+		}
+
+		for (; seg != data.end(); ++seg)
+		{
+			if (seg->HasCount && seg->Count > 0)
+			{
+				fprintf(fp, "%u %u %llu\n", seg->Line, seg->Col, seg->Count);
 			}
 		}
 	}
@@ -155,10 +165,10 @@ print_regions(FILE *fp, char *arch, char *object)
 	int last = -1;
 	auto CounterMappingBuff = MemoryBuffer::getFile(object);
 
-	if (std::error_code EC = CounterMappingBuff.getError())
+	if (auto err = CounterMappingBuff.getError())
 	{
-		char *err = (char *) EC.message().c_str();
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "ERROR: could not load image file buffer.\n");
+		fprintf(stderr, "LLVM: %s\n", _llvm_error_string(err));
 		return(1);
 	}
 
@@ -167,35 +177,33 @@ print_regions(FILE *fp, char *arch, char *object)
 	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
-		{
-			fprintf(stderr, "%s\n", ERR_STRING(E));
-			return(1);
-		}
+		fprintf(stderr, "ERROR: could not load counter mapping reader.\n");
+		if (auto err = CRE_GET_ERROR(CoverageReaderOrErr))
+			fprintf(stderr, "LLVM: %s\n", ERR_STRING(err));
 
-		fprintf(stderr, "failed to load counter mapping reader from object\n");
 		return(1);
 	}
 
 	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
-		if (auto E = CMR_GET_ERROR(R))
+		if (CMR_GET_ERROR(R))
 			continue;
 
 		const auto &record = RECORD(R);
 		auto fname = record.FunctionName;
 
 		fprintf(fp, "@%.*s\n", (int) fname.size(), fname.data());
+		last = -1;
 
 		for (auto region : record.MappingRegions)
 		{
 			const char *kind;
 			int ksz = 1;
 			auto fi = region.FileID;
-			auto fn = record.Filenames[fi];
 
 			if (fi != last)
 			{
+				auto fn = record.Filenames[fi];
 				fprintf(fp, "%lu:%.*s\n", fi, (int) fn.size(), fn.data());
 				last = fi;
 			}
@@ -203,24 +211,24 @@ print_regions(FILE *fp, char *arch, char *object)
 			switch (region.Kind)
 			{
 				case coverage::CounterMappingRegion::CodeRegion:
-					ksz = 1;
 					kind = "+";
 				break;
+
 				case coverage::CounterMappingRegion::SkippedRegion:
-					ksz = 1;
 					kind = "-";
 				break;
+
 				case coverage::CounterMappingRegion::ExpansionRegion:
 					kind = "X";
 					kind = record.Filenames[region.ExpandedFileID].data();
 					ksz = record.Filenames[region.ExpandedFileID].size();
 				break;
+
 				case coverage::CounterMappingRegion::GapRegion:
-					ksz = 1;
 					kind = ".";
 				break;
+
 				default:
-					ksz = 1;
 					kind = "U";
 				break;
 			}
@@ -245,11 +253,10 @@ print_sources(FILE *fp, char *arch, char *object)
 {
 	auto CounterMappingBuff = MemoryBuffer::getFile(object);
 
-	if (std::error_code EC = CounterMappingBuff.getError())
+	if (auto err = CounterMappingBuff.getError())
 	{
-		char *err;
-		err = (char *) EC.message().c_str();
-		fprintf(stderr, "%s\n", err);
+		fprintf(stderr, "ERROR: could not loader image file buffer.\n");
+		fprintf(stderr, "LLVM: %s\n", _llvm_error_string(err));
 		return(1);
 	}
 
@@ -258,8 +265,8 @@ print_sources(FILE *fp, char *arch, char *object)
 	auto CoverageReaderOrErr = CREATE_READER(CounterMappingBuff.get(), arch, bufs);
 	if (!CoverageReaderOrErr)
 	{
-		if (auto E = CRE_GET_ERROR(CoverageReaderOrErr))
-			fprintf(stderr, "%s\n", ERR_STRING(E));
+		if (auto err = CRE_GET_ERROR(CoverageReaderOrErr))
+			fprintf(stderr, "%s\n", ERR_STRING(err));
 		else
 			fprintf(stderr, "unknown error\n");
 
@@ -275,7 +282,7 @@ print_sources(FILE *fp, char *arch, char *object)
 
 	ITER_CR_RECORDS(R, CoverageReaderOrErr.get())
 	{
-		if (auto E = CMR_GET_ERROR(R))
+		if (CMR_GET_ERROR(R))
 			continue;
 
 		const auto &record = RECORD(R);
@@ -299,41 +306,91 @@ print_sources(FILE *fp, char *arch, char *object)
 }
 
 int
+print_architectures(FILE *fp, char *image_path)
+{
+	Triple t;
+	auto bufref = MemoryBuffer::getFile(image_path);
+
+	if (auto err = bufref.getError())
+	{
+		fprintf(stderr, "%s\n", _llvm_error_string(err));
+		return(1);
+	}
+
+	auto ob = object::ObjectFile::createObjectFile(bufref.get()->getMemBufferRef());
+	t.setArch(ob->get()->getArch());
+	fprintf(fp, "%.*s\n", t.getArchName().size(), t.getArchName().data());
+
+	return(0);
+}
+
+int
 main(int argc, char *argv[])
 {
-	if (argc < 2)
+	char archbuf[128];
+	char *arch;
+
+	if (argc < 2 || strcmp(argv[1], "-h") == 0)
 	{
-		fprintf(stderr, "ipq regions|sources|counters architecture image [merged-profile-data]\n");
-		fprintf(stderr, "Merged profile data is only required by counters.\n");
+		fprintf(stderr, "ipq architectures image-path\n");
+		fprintf(stderr, "ipq regions image-path\n");
+		fprintf(stderr, "ipq sources image-path\n");
+		fprintf(stderr, "ipq counters image-path merged-profile-data\n");
 		return(248);
+	}
+
+	if (strcmp(argv[1], "architectures") == 0)
+	{
+		if (argc != 3)
+		{
+			fprintf(stderr, "ERROR: architectures requires exactly one arguments.\n");
+			return(1);
+		}
+		else
+			return(print_architectures(stdout, argv[2]));
+	}
+
+	// Discover architecture from image if not defined via the environment.
+	arch = getenv("IPQ_ARCHITECTURE");
+	if (arch == NULL || strlen(arch) == 0)
+	{
+		identify_architecture(archbuf, sizeof(archbuf), argv[2]);
+		arch = archbuf;
 	}
 
 	if (strcmp(argv[1], "regions") == 0)
 	{
-		if (argc != 4)
-			fprintf(stderr, "ERROR: regions requires exactly two arguments.\n", argv[1]);
-		else
-			return(print_regions(stdout, argv[2], argv[3]));
-	}
-	else if (strcmp(argv[1], "sources") == 0)
-	{
-		if (argc != 4)
-			fprintf(stderr, "ERROR: sources requires exactly two arguments.\n", argv[1]);
-		else
-			return(print_sources(stdout, argv[2], argv[3]));
-	}
-	else
-	{
-		if (strcmp(argv[1], "counters") == 0)
+		if (argc != 3)
 		{
-			if (argc != 5)
-				fprintf(stderr, "ERROR: counters requires exactly three arguments.\n", argv[1]);
-			else
-				return(print_counters(stdout, argv[2], argv[3], argv[4]));
+			fprintf(stderr, "ERROR: regions requires two arguments.\n");
+			return(1);
 		}
 		else
-			fprintf(stderr, "unknown query '%s'\n", argv[1]);
+			return(print_regions(stdout, arch, argv[2]));
 	}
 
-	return(1);
+	if (strcmp(argv[1], "sources") == 0)
+	{
+		if (argc != 3)
+		{
+			fprintf(stderr, "ERROR: sources requires one argument.\n");
+			return(1);
+		}
+		else
+			return(print_sources(stdout, arch, argv[2]));
+	}
+
+	if (strcmp(argv[1], "counters") == 0)
+	{
+		if (argc != 4)
+		{
+			fprintf(stderr, "ERROR: counters requires two arguments.\n");
+			return(1);
+		}
+		else
+			return(print_counters(stdout, arch, argv[2], argv[3]));
+	}
+
+	fprintf(stderr, "unrecognized command: '%s'\n", argv[1]);
+	return(2);
 }

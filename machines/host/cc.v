@@ -23,6 +23,10 @@
 	: executable
 	: archive
 
+-context-identity:
+	: CC_TYPE=fault
+	: CC_PATH=[construction-context-path quoted]
+
 -gcc-diagnostics:
 	: -fmax-errors=[error-limit env.ERRLIMIT]
 	: -fdiagnostics-color=always
@@ -98,6 +102,7 @@
 	: -DF_PROJECT_PATH=[project-path]
 	: -DF_PROJECT_ID=[project-id quoted]
 	: -DF_PRODUCT_PATH=[product-path quoted]
+	: -DF_FACTOR_IMAGE=[factor-image quoted]
 
 -positioning-format:
 	# Position formatting.
@@ -172,7 +177,9 @@
 -compile-header:
 	: [-languages]
 	: -D[-system-defines]
-	: [null]
+	:
+		cc-mode-delineation: [source File]
+		!: [null]
 
 -compile-source:
 	# Sources
@@ -220,6 +227,7 @@
 	: [-positioning-format]
 
 	# Defines.
+	: -D[-context-identity]
 	: -DIF_[if-set]
 	: [-factor-identity]
 	: [-variants]
@@ -330,6 +338,8 @@
 
 -archive-delineated:
 	: "archive-tree" - -
+	: [construction-context-path File]
+	: [executable-image File]
 	: [factor-image File]
 	: [unit-directory File]
 
