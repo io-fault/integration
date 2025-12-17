@@ -5,6 +5,7 @@ import contextlib
 import json
 from itertools import islice, repeat
 from collections import Counter, defaultdict
+from collections.abc import Sequence, Iterable
 
 from fault.range.types import Mapping
 from fault.syntax.types import Area, Address
@@ -30,6 +31,73 @@ def _parse_areas(lines):
 		yield tuple(map(int, line.split(maxsplit=4)))
 		#startl, startc, stopl, stopc = map(int, line.split(maxsplit=4))
 		#yield Area((Address((startl, startc)), Address((stopl, stopc))))
+
+def organize_ipquery_syntax_areas(sources:Iterable[str], lines:Iterable[str]):
+	"""
+	# Process the source path qualified &lines into source path
+	# indexed sequences.
+
+	# First stage used to convert `ipquery regions` output into fault syntax counters.
+
+	# [ Parameters ]
+	# /sources/
+		# The sources of interest.
+	# /lines/
+		# The split text output of `ipquery regions`.
+	"""
+
+	areas = {srcpath: set() for srcpath in sources}
+	fi = fn = fp = None
+	for line in lines:
+		if not line or line[:1] == '@':
+			fn = line[1:]
+		elif line.lstrip('0123456789')[:1] == ':':
+			# Switch path.
+			fi, fp = line.split(':', 1)
+			fp = fp.strip()
+		else:
+			try:
+				ln, co, eln, eco, typ = line.split(maxsplit=5)
+			except ValueError:
+				pass
+			else:
+				last_area = (int(ln), int(co), int(eln), int(eco))
+				if typ[:1] in {'+', '/'} and fp in areas:
+					areas[fp].add(last_area)
+
+	return areas
+
+def sequence_syntax_areas(paths, areas, sources_name='sources', areas_name='areas'):
+	"""
+	# Write out the (system/file)`areas` and (system/file)`sources` files for each
+	# file and area set in &areas. The &paths argument provides the index of
+	# source paths to the directory that the pair of files should be written to.
+
+	# [ Parameters ]
+	# /paths/
+		# Mapping of strings to &files.Path instances. Usually,
+		# the key being the system path to the source file, and
+		# the value being the directory to write files into.
+	# /areas/
+		# Mapping of strings to syntax area sequences. The key
+		# being the system path to the source file, and the
+		# areas being a set.
+
+	# [ Effects ]
+	# The filesystem directories referenced by &paths will be written to.
+	"""
+
+	for fp, area_set in areas.items():
+		rpath = paths[fp]
+		# Ordered.
+		src_areas = list(area_set)
+		src_areas.sort()
+		area_count = len(src_areas)
+
+		with (rpath/areas_name).fs_open('w') as f:
+			f.writelines(" ".join(map(str, x)) + '\n' for x in src_areas)
+		with (rpath/sources_name).fs_open('w') as f:
+			f.write(str(area_count) + " " + fp + '\n')
 
 def index_regions(regions):
 	"""

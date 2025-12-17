@@ -11,6 +11,7 @@ import os
 from fault.system import files
 from fault.system import process
 from fault.system import execution
+from ..metrics import coverage
 
 def main(inv:process.Invocation) -> process.Exit:
 	cc, executable, target, root = map(files.Path.from_path, inv.argv)
@@ -61,36 +62,10 @@ def main(inv:process.Invocation) -> process.Exit:
 	# Split region data into areas and sources.
 	areas = {fp: set() for fp in spm}
 	with open(target/'.regions', 'r') as f:
-		fi = fn = fp = None
-		for line in f.readlines():
-			if not line or line[:1] == '@':
-				fn = line[1:]
-			elif line.lstrip('0123456789')[:1] == ':':
-				# Switch path.
-				fi, fp = line.split(':', 1)
-				fp = fp.strip()
-			else:
-				try:
-					ln, co, eln, eco, typ = line.split(maxsplit=5)
-				except ValueError:
-					pass
-				else:
-					last_area = (int(ln), int(co), int(eln), int(eco))
-					if typ[:1] in {'+', '/'} and fp in areas:
-						areas[fp].add(last_area)
+		areas = coverage.organize_ipquery_syntax_areas(spm, f.readlines())
 
 	# Write areas and sources for all the source files.
-	for fp, area_set in areas.items():
-		rpath = spm[fp]
-		# Ordered.
-		src_areas = list(area_set)
-		src_areas.sort()
-		area_count = len(src_areas)
-
-		with (rpath/'areas').fs_open('w') as f:
-			f.writelines(" ".join(map(str, x)) + '\n' for x in src_areas)
-		with (rpath/'sources').fs_open('w') as f:
-			f.write(str(area_count) + " " + fp + '\n')
+	coverage.sequence_syntax_areas(spm, areas)
 
 	return inv.exit(0)
 
