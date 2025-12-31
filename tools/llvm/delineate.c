@@ -7,33 +7,7 @@
 #include <stdbool.h>
 #include <fault/libc.h>
 #include <fault/fs.h>
-
-int print_attribute(FILE *, char *, char *);
-int print_attribute_after(FILE *, char *);
-int print_attribute_start(FILE *, char *);
-int print_attributes_open(FILE *);
-int print_attributes_close(FILE *);
-
-int print_number_attribute(FILE *, char *, unsigned long);
-int print_number(FILE *, char *, unsigned long);
-int print_expression_open(FILE *, unsigned long, unsigned long);
-int print_expression_node(FILE *, const char *, unsigned long, unsigned long);
-int print_expression_close(FILE *);
-int print_string_attribute(FILE *, char *, CXString);
-int print_string(FILE *, char *, int pcount);
-int print_string_before(FILE *, char *);
-int print_identifier(FILE *, char *);
-int print_open(FILE *, char *);
-int print_open_empty(FILE *, char *);
-int print_enter(FILE *);
-int print_exit(FILE *);
-int print_exit_final(FILE *);
-int print_close_empty(FILE *, char *);
-int print_close(FILE *, char *);
-int print_close_final(FILE *, char *);
-int print_close_no_attributes(FILE *, char *);
-int print_text(FILE *, char *, bool skip_last);
-int print_area(FILE *, unsigned long, unsigned long, unsigned long, unsigned long);
+#include <fault/_json.h>
 
 struct Position {
 	unsigned long ln, cn;
