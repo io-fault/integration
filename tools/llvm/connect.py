@@ -77,7 +77,7 @@ def declare(ccv, ipq, deline):
 		('ipquery',
 			'http://if.fault.io/factors/system.executable',
 			['.fault', '.libllvm-is', '.libllvm-if'], [
-				('ipq.cc', ipq['source']),
+				('ipquery.cc', ipq['source']),
 			]),
 	]
 
@@ -147,7 +147,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	target, llvmconfig = inv.args
 	route = process.fs_pwd()@target
 
-	# Identify ipq.cc, delineate.c
+	# Identify ipquery.cc, delineate.c
 	factors.load()
 	factors.configure()
 	pd, pj, fp = factors.split(__name__)
@@ -160,7 +160,7 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	# Get the libraries and interfaces needed out of &query
 	v, src, merge, export, ipqd = query.instrumentation(files.root@llvmconfig)
-	ipqd['source'] = llvm_factors[llvm_d/'ipq'][0][1]
+	ipqd['source'] = llvm_factors[llvm_d/'ipquery'][0][1]
 	ccv = ipqd['cc-version'].strip("c+")
 	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
 
