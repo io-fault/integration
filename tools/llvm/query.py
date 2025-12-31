@@ -186,6 +186,7 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 	incs_pipe = ['--includedir']
 	libdir_pipe = ['--libdir']
 	rtti_pipe = ['--has-rtti']
+	cxx_pipe = ['--cxxflags']
 
 	po = lambda x: execution.dereference(execution.KInvocation(*execution.prepare(type, srcpath, x)))
 	outs = [
@@ -197,9 +198,10 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 		po(libdir_pipe),
 		po(incs_pipe),
 		po(rtti_pipe),
+		po(cxx_pipe),
 	]
 
-	prefix, v, libs, syslibs, covlibs, libdirs, incdirs, rtti = [x[-1].decode('utf-8') for x in outs]
+	prefix, v, libs, syslibs, covlibs, libdirs, incdirs, rtti, cxx = [x[-1].decode('utf-8') for x in outs]
 
 	libs = split_config_output('-l', libs)
 	libs.discard('')
@@ -224,6 +226,8 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 	else:
 		rtti = False
 
+	ccv = cxx[cxx.find('-std='):].split(maxsplit=1)[0].split('=')[1]
+
 	if not merge_path:
 		merge_path = llvm_config_path.container/'llvm-profdata'
 	if not export_path:
@@ -235,6 +239,8 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 		'library-directories': libdirs,
 		'coverage-libraries': covlibs,
 		'system-libraries': syslibs,
+		'cc-version': ccv,
+		'cc-flags': cxx
 	}
 
 	return v.strip(), srcpath, str(merge_path), str(export_path), fp

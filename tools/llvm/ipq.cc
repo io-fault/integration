@@ -1,20 +1,7 @@
 /**
 	// Extract sources, regions, and counters from LLVM instrumented binaries and profile data files.
 */
-#include <stddef.h>
-#include <limits.h>
-#include <string.h>
-
-#define __STDC_LIMIT_MACROS 1
-#define __STDC_CONSTANT_MACROS 1
-#define __STDC_FORMAT_MACROS 1
-
-#if __APPLE__
-	#include <TargetConditionals.h>
-#endif
-
-#include <ctype.h>
-#include <stdio.h>
+#include <llvm/Config/llvm-config.h>
 
 #include <llvm/ADT/DenseMap.h>
 
@@ -77,6 +64,12 @@
 #include <tuple>
 #include <iostream>
 #include <set>
+
+#include <stddef.h>
+#include <limits.h>
+#include <string.h>
+#include <ctype.h>
+#include <stdio.h>
 
 using namespace llvm;
 
