@@ -3,14 +3,35 @@
 """
 import os.path
 
+from fault.vector import recognition
+
 from fault.system import files
 from fault.system import process
+from fault.system import execution
 from fault.system.factors import context as factors
+from fault.system.query import executables
 
 from fault.project import system as lsf
 from fault.project import factory
 
 from . import query
+
+restricted = {
+	'-l': ('field-replace', True, 'link-only'),
+	'-L': ('field-replace', False, 'link-only'),
+	'-i': ('field-replace', True, 'instantiate-only'),
+	'-I': ('field-replace', False, 'instantiate-only'),
+	'-f': ('field-replace', True, 'instantiate-factors'),
+	'-F': ('field-replace', False, 'instantiate-factors'),
+}
+
+required = {
+	'-x': ('field-replace', 'target-directory'),
+	'-X': ('field-replace', 'construction-context'),
+
+	'-C': ('field-replace', 'cmake-path'),
+	'-M': ('field-replace', 'gmake-path'),
+}
 
 def formats(ccv):
 	return {
@@ -130,22 +151,59 @@ def icmake(route, ccv, ccf, include, delineate, ipquery):
 		f.write("set(CMAKE_CXX_STANDARD " + ccv + ")\n")
 		f.write(cmake_source)
 
-def ifactors(route, ccv, ipqd, llvm_d, llvm_factors):
+def ifactors(route, ccv, delineate_src, ipqd):
 	"""
 	# Instantiate as factors.
 	"""
 
-	# Sources of the image factors.
-	deline = (
-		llvm_factors[llvm_d/'delineate'][0][1],
-	)
-
-	p = declare(ccv, ipqd, deline)
+	p = declare(ccv, ipqd, (delineate_src,))
 	factory.instantiate(p, route)
 
+def link_tools(ctx, llvm_bindir, itools):
+	ctxtools = (ctx/'.llvm')
+	ctxtools.fs_mkdir()
+	(ctxtools/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery')
+	(ctxtools/'clang-delineate').fs_link_absolute(itools/'clang-delineate')
+	(ctxtools/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata')
+
+def system(exe, *argv):
+	if exe[:1] in './':
+		xpath = pwd@exe
+	else:
+		xpath, = executables(exe)
+
+	xpath = str(xpath)
+	args = [xpath] + list(argv)
+	print('-> ' + ' '.join(args), flush=True)
+	ki = execution.KInvocation(xpath, args)
+	return execution.perform(ki)
+
+def configure(restricted, required, argv):
+	config = {
+		'target-directory': None,
+		'instantiate-factors': False, # cmake project by default.
+		'instantiate-only': False, # Build by default.
+		'link-only': False,
+		'cmake-path': 'cmake',
+		'gmake-path': 'make',
+		'construction-context': None,
+	}
+	oeg = recognition.legacy(restricted, required, argv)
+	remainder = recognition.merge(config, oeg)
+
+	return config, remainder
+
 def main(inv:process.Invocation) -> process.Exit:
-	target, llvmconfig = inv.args
-	route = process.fs_pwd()@target
+	pwd = process.fs_pwd()
+	config, remainder = configure(restricted, required, inv.argv)
+
+	target = config['target-directory']
+	llvmconfig, = remainder
+	if target is None:
+		# Default to PREFIX/fault.
+		route = (pwd@llvmconfig) ** 2 / 'fault'
+	else:
+		route = pwd@target
 
 	# Identify ipquery.cc, delineate.c
 	factors.load()
@@ -159,15 +217,45 @@ def main(inv:process.Invocation) -> process.Exit:
 	inc = mpd.route // mpj.factor // ifp
 
 	# Get the libraries and interfaces needed out of &query
-	v, src, merge, export, ipqd = query.instrumentation(files.root@llvmconfig)
-	ipqd['source'] = llvm_factors[llvm_d/'ipquery'][0][1]
+	v, src, merge, export, bindir, ipqd = query.instrumentation(files.root@llvmconfig)
 	ccv = ipqd['cc-version'].strip("c+")
 	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
 
-	# Currently, unconditional. Factors requires adjustments to the
-	# Construction Context in order for successful compilation.
-	if 'cmake':
-		icmake(route, ccv, ccf, inc, llvm_factors[llvm_d/'delineate'][0][1], ipqd['source'])
+	ipquery_src = ipqd['source'] = llvm_factors[llvm_d/'ipquery'][0][1]
+	delineate_src = llvm_factors[llvm_d/'delineate'][0][1]
+
+	# Link tools to construction context.
+	cctx = config['construction-context']
+	if cctx:
+		print('Linking LLVM tools to construction context: ' + str(cctx))
+		link_tools(pwd@cctx, files.root@(bindir.strip()), route)
+
+		if config['link-only']:
+			return inv.exit(0)
 	else:
-		ifactors(route, ccv, ipqd, llvm_d, llvm_factors)
-	return inv.exit(0)
+		if config['link-only']:
+			print('ERROR: no construction context referenced for link only setup.')
+			return inv.exit(1)
+		else:
+			print('NOTE: no construction context referenced, no links will be created.')
+
+	if not config['instantiate-factors']:
+		icmake(route, ccv, ccf, inc, delineate_src, ipqd['source'])
+	else:
+		ifactors(route, ccv, delineate_src, ipqd)
+
+	if config['instantiate-only']:
+		return inv.exit(0)
+
+	os.chdir(str(route))
+	os.environ['PWD'] = str(route)
+	userpwd = pwd
+	pwd = route
+
+	# Perform build.
+	status = system(config['cmake-path'], '.')
+	if status != 0:
+		inv.exit(status)
+	status = system(config['gmake-path'])
+	if status != 0:
+		inv.exit(status)

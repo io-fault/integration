@@ -187,6 +187,7 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 	libdir_pipe = ['--libdir']
 	rtti_pipe = ['--has-rtti']
 	cxx_pipe = ['--cxxflags']
+	bin_pipe = ['--bindir']
 
 	po = lambda x: execution.dereference(execution.KInvocation(*execution.prepare(type, srcpath, x)))
 	outs = [
@@ -199,9 +200,10 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 		po(incs_pipe),
 		po(rtti_pipe),
 		po(cxx_pipe),
+		po(bin_pipe),
 	]
 
-	prefix, v, libs, syslibs, covlibs, libdirs, incdirs, rtti, cxx = [x[-1].decode('utf-8') for x in outs]
+	prefix, v, libs, syslibs, covlibs, libdirs, incdirs, rtti, cxx, bindir = [x[-1].decode('utf-8') for x in outs]
 
 	libs = split_config_output('-l', libs)
 	libs.discard('')
@@ -243,7 +245,7 @@ def instrumentation(llvm_config_path, merge_path=None, export_path=None, type='e
 		'cc-flags': cxx
 	}
 
-	return v.strip(), srcpath, str(merge_path), str(export_path), fp
+	return v.strip(), srcpath, str(merge_path), str(export_path), bindir, fp
 
 if __name__ == '__main__':
 	import pprint
