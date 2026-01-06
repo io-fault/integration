@@ -300,7 +300,7 @@ info = lsf.types.Information(
 fr = lsf.types.factor@'meta.references'
 sr = lsf.types.factor@'system.references'
 
-def declare(ccv, ipq, deline):
+def declare(ccv, ipq):
 	includes, = ipq['include']
 	includes = files.root@includes
 	libdirs = sorted(list(ipq['library-directories']))
@@ -333,12 +333,12 @@ def declare(ccv, ipq, deline):
 		('delineate',
 			'http://if.fault.io/factors/system.executable',
 			['.fault', '.libclang-is', '.libclang-if'], [
-				(x.identifier, x) for x in deline
+				('delineate.c', "#include <fault/llvm/delineate.c>\n")
 			]),
 		('ipquery',
 			'http://if.fault.io/factors/system.executable',
 			['.fault', '.libllvm-is', '.libllvm-if'], [
-				('ipquery.cc', ipq['source']),
+				('ipquery.cc', "#include <fault/llvm/ipquery.cc>\n"),
 			]),
 	]
 
@@ -372,7 +372,13 @@ cmake_source = \
 	target_link_libraries(clang-delineate PRIVATE ${CLANG_LIB})
 	"""
 
-def icmake(route, ccv, ccf, include, delineate, ipquery):
+def mksources(directory):
+	with (directory/'delineate.c').fs_open('w') as f:
+		f.write("#include <fault/llvm/delineate.c>")
+	with (directory/'ipquery.cc').fs_open('w') as f:
+		f.write("#include <fault/llvm/ipquery.cc>")
+
+def icmake(route, ccv, ccf, include):
 	"""
 	# Instantiate as a cmake project.
 
@@ -383,20 +389,19 @@ def icmake(route, ccv, ccf, include, delineate, ipquery):
 
 	route.fs_alloc().fs_mkdir()
 	(route/'include').fs_link_absolute(include)
-	(route/'delineate.c').fs_link_absolute(delineate)
-	(route/'ipquery.cc').fs_link_absolute(ipquery)
+	mksources(route)
 
 	with (route/'CMakeLists.txt').fs_open('w') as f:
 		f.write('set(LLVM_CXX_FLAGS "' + ccf + '")\n')
 		f.write("set(CMAKE_CXX_STANDARD " + ccv + ")\n")
 		f.write(cmake_source)
 
-def ifactors(route, ccv, delineate_src, ipqd):
+def ifactors(route, ccv, ipqd):
 	"""
 	# Instantiate as factors.
 	"""
 
-	p = declare(ccv, ipqd, (delineate_src,))
+	p = declare(ccv, ipqd)
 	factory.instantiate(p, route)
 
 def link_tools(ctx, llvm_bindir, itools):
@@ -461,9 +466,6 @@ def main(inv:process.Invocation) -> process.Exit:
 	ccv = ipqd['cc-version'].strip("c+")
 	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
 
-	ipquery_src = ipqd['source'] = llvm_factors[llvm_d/'ipquery'][0][1]
-	delineate_src = llvm_factors[llvm_d/'delineate'][0][1]
-
 	# Link tools to construction context.
 	cctx = config['construction-context']
 	if cctx:
@@ -480,9 +482,9 @@ def main(inv:process.Invocation) -> process.Exit:
 			print('NOTE: no construction context referenced, no links will be created.')
 
 	if not config['instantiate-factors']:
-		icmake(route, ccv, ccf, inc, delineate_src, ipqd['source'])
+		icmake(route, ccv, ccf, inc)
 	else:
-		ifactors(route, ccv, delineate_src, ipqd)
+		ifactors(route, ccv, ipqd)
 
 	if config['instantiate-only']:
 		return inv.exit(0)
