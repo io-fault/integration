@@ -376,8 +376,8 @@ def meter(context):
 		fx('form-error', 'python', '.string', 'exit(1)'),
 		fx('measure-source', 'python', 'system.metrics.measure', 'source'),
 		fx('aggregate-metrics', 'python', 'system.metrics.aggregate'),
-		fx('identify-source', 'python', 'system.tools.identify', 'source', '-'),
-		fx('form-identity', 'python', 'system.tools.identify', 'index'),
+		fx('identify-source', 'python', 'system.metrics.identify', 'source', '-'),
+		fx('form-identity', 'python', 'system.metrics.identify', 'index'),
 
 		mksole('adapters', vtype,
 			define('-telemetry',
