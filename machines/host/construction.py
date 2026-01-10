@@ -192,7 +192,6 @@ def host(route, context, hlinker, hsystem, harch, factor='type', name='host.cc',
 	pd = lsf.Product(route)
 
 	machine_cc = getsource(machines_project, name)
-	adeline = query.dispatched('archive-delineated')
 	cc_default = system(cc)
 
 	target = form_host_target(hlinker)
@@ -205,7 +204,7 @@ def host(route, context, hlinker, hsystem, harch, factor='type', name='host.cc',
 		mksole('unix-cc-1', vtype, machine_cc.fs_load()),
 
 		mksole('cc-delineate', 'vector.system', str(route/'.llvm'/'clang-delineate')),
-		mksole('archive-delineated', 'vector.system', adeline),
+		fx('archive-delineated', 'python', 'system.metrics.delineated'),
 		mksole('cc', 'vector.system', cc_default),
 
 		mksole('type', vtype, common),
