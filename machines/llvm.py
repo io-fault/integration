@@ -405,11 +405,14 @@ def ifactors(route, ccv, ipqd):
 	factory.instantiate(p, route)
 
 def link_tools(ctx, llvm_bindir, itools):
-	ctxtools = (ctx/'.llvm')
-	ctxtools.fs_mkdir()
-	(ctxtools/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery')
-	(ctxtools/'clang-delineate').fs_link_absolute(itools/'clang-delineate')
-	(ctxtools/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata')
+	ctxllvm = (ctx/'.llvm').fs_mkdir()
+	(ctxllvm/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery')
+	(ctxllvm/'clang-delineate').fs_link_absolute(itools/'clang-delineate')
+	(ctxllvm/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata')
+
+	# Used by delineate to collect any coverable syntax areas.
+	ctxtools = (ctx/'.coverage-tools').fs_mkdir()
+	(ctxtools/'llvm').fs_link_relative(ctxllvm/'clang-ipquery')
 
 def system(exe, *argv):
 	if exe[:1] in './':
