@@ -31,6 +31,7 @@ required = {
 
 	'-C': ('field-replace', 'cmake-path'),
 	'-M': ('field-replace', 'gmake-path'),
+	'--llvm-config': ('field-replace', 'llvm-path'),
 }
 
 def split_config_output(flag, output):
@@ -426,7 +427,19 @@ def system(exe, *argv):
 	ki = execution.KInvocation(xpath, args)
 	return execution.perform(ki)
 
-def configure(restricted, required, argv):
+def select_target_route(config, llvm):
+	# Default to LLVM_PREFIX/fault or cc/.llvm-build is not writable.
+	llvm_prefix = ((llvm ** 2)/'fault')
+
+	try:
+		llvm_prefix.container.fs_require('/w')
+	except files.RequirementViolation:
+		# Fallback to construction context; presume writable.
+		return (config['pwd']@config['construction-context'])/'.llvm-build'
+	else:
+		return llvm_prefix
+
+def configure(pwd, restricted, required, argv):
 	config = {
 		'target-directory': None,
 		'instantiate-factors': False, # cmake project by default.
@@ -435,23 +448,61 @@ def configure(restricted, required, argv):
 		'cmake-path': 'cmake',
 		'gmake-path': 'make',
 		'construction-context': None,
+		'llvm-path': 'llvm-config',
+		'target-route': None,
+		'pwd': pwd,
 	}
-	oeg = recognition.legacy(restricted, required, argv)
-	remainder = recognition.merge(config, oeg)
 
-	return config, remainder
+	oeg = recognition.legacy(restricted, required, argv)
+
+	# llvm-config
+	remainder = recognition.merge(config, oeg)
+	if remainder:
+		llvm_path = config['llvm-path'] = remainder[0]
+	else:
+		llvm_path = config['llvm-path']
+
+	# Default option; the llvm-config path.
+	if llvm_path[:1] in './':
+		# If absolute or dot-leading relative, use pwd.
+		config['llvm-config'] = pwd@llvm_path
+	else:
+		# Otherwise, scan PATH for the executable.
+		for exe in executables(llvm_path):
+			config['llvm-config'] = exe
+			break
+		else:
+			print('ERROR: ' + repr(llvm_path) + " not found in path.")
+			raise SystemExit(1)
+
+	# -x option.
+	if config['target-directory'] is not None:
+		config['target-route'] = pwd@config['target-directory']
+
+	return config
 
 def main(inv:process.Invocation) -> process.Exit:
 	pwd = process.fs_pwd()
-	config, remainder = configure(restricted, required, inv.argv)
+	config = configure(pwd, restricted, required, inv.argv)
 
-	target = config['target-directory']
-	llvmconfig, = remainder
-	if target is None:
-		# Default to PREFIX/fault.
-		route = (pwd@llvmconfig) ** 2 / 'fault'
-	else:
-		route = pwd@target
+	# Get the libraries and interfaces needed out of &query
+	config['llvm-config'].fs_require('x') # --llvm-config
+	v, src, merge, export, bindir, ipqd = instrumentation(config['llvm-config'])
+
+	bindir = files.root@bindir.strip()
+	if (bindir/'llvm-config').fs_type() != 'void':
+		# Prefer a more canonical path if it is present.
+		config['llvm-config'] = bindir/'llvm-config'
+
+	ccv = ipqd['cc-version'].strip("c+")
+	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
+
+	if config['target-route'] is None:
+		config['target-route'] = select_target_route(config, config['llvm-config'])
+
+	route = config['target-route']
+	llvm = config['llvm-config']
+	print('Selected LLVM installation(--llvm-config): ' + str(llvm))
 
 	# Identify ipquery.cc, delineate.c
 	factors.load()
@@ -464,22 +515,17 @@ def main(inv:process.Invocation) -> process.Exit:
 	mpd, mpj, ifp = factors.split(pj.factor.container + ['machines', 'include'])
 	inc = mpd.route // mpj.factor // ifp
 
-	# Get the libraries and interfaces needed out of &query
-	v, src, merge, export, bindir, ipqd = instrumentation(files.root@llvmconfig)
-	ccv = ipqd['cc-version'].strip("c+")
-	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
-
 	# Link tools to construction context.
 	cctx = config['construction-context']
 	if cctx:
-		print('Linking LLVM tools to construction context: ' + str(cctx))
-		link_tools(pwd@cctx, files.root@(bindir.strip()), route)
+		print('Linking LLVM tools to construction context(-X): ' + str(cctx))
+		link_tools(pwd@cctx, bindir, route)
 
 		if config['link-only']:
 			return inv.exit(0)
 	else:
 		if config['link-only']:
-			print('ERROR: no construction context referenced for link only setup.')
+			print('ERROR: no construction context (-X) referenced for link only setup.')
 			return inv.exit(1)
 		else:
 			print('NOTE: no construction context referenced, no links will be created.')
@@ -492,6 +538,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	if config['instantiate-only']:
 		return inv.exit(0)
 
+	print('Selected target directory(-x): ' + str(route))
 	os.chdir(str(route))
 	os.environ['PWD'] = str(route)
 	userpwd = pwd
