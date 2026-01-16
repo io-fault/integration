@@ -447,7 +447,7 @@ def configure(pwd, restricted, required, argv):
 		'link-only': False,
 		'cmake-path': 'cmake',
 		'gmake-path': 'make',
-		'construction-context': None,
+		'construction-context': os.environ.get('FCC') or None,
 		'llvm-path': 'llvm-config',
 		'target-route': None,
 		'pwd': pwd,

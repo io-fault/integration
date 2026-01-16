@@ -684,6 +684,9 @@ SYSTEM_ENTRY_POINT(int argc, char *argv[])
 	int r = 255;
 	PyObject *rob;
 
+	// Construction context path.
+	setenv("FCC", CC_PATH, 1);
+
 	r = fault_python_initialize(argc, argv);
 	if (r != 0)
 		return(r);
