@@ -37,5 +37,5 @@ f_fictl integrate -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
 	cp "$tool" "$FAULT_LIBEXEC_PATH/fault-dispatch"
 )
 
-# Integrate LLVM tooling for instrumentation support.
-"$FAULT_TOOL_PATH/fault-tool" python system.machines.llvm
+# Integrate LLVM tooling for instrumentation support; only build when it's not already present.
+"$FAULT_TOOL_PATH/fault-tool" python system.machines.llvm -u

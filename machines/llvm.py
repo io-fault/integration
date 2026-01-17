@@ -23,6 +23,8 @@ restricted = {
 	'-I': ('field-replace', False, 'instantiate-only'),
 	'-f': ('field-replace', True, 'instantiate-factors'),
 	'-F': ('field-replace', False, 'instantiate-factors'),
+	'-U': ('field-replace', True, 'update-build'),
+	'-u': ('field-replace', False, 'update-build'),
 }
 
 required = {
@@ -407,13 +409,15 @@ def ifactors(route, ccv, ipqd):
 
 def link_tools(ctx, llvm_bindir, itools):
 	ctxllvm = (ctx/'.llvm').fs_mkdir()
-	(ctxllvm/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery')
-	(ctxllvm/'clang-delineate').fs_link_absolute(itools/'clang-delineate')
-	(ctxllvm/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata')
+	cipq = (ctxllvm/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery').fs_type()
+	cdel = (ctxllvm/'clang-delineate').fs_link_absolute(itools/'clang-delineate').fs_type()
+	pdt = (ctxllvm/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata').fs_type()
 
 	# Used by delineate to collect any coverable syntax areas.
 	ctxtools = (ctx/'.coverage-tools').fs_mkdir()
 	(ctxtools/'llvm').fs_link_relative(ctxllvm/'clang-ipquery')
+
+	return 'void' not in set([cipq, cdel]), pdt != 'void'
 
 def system(exe, *argv):
 	if exe[:1] in './':
@@ -442,6 +446,7 @@ def select_target_route(config, llvm):
 def configure(pwd, restricted, required, argv):
 	config = {
 		'target-directory': None,
+		'update-build': True, # build and replace by default.
 		'instantiate-factors': False, # cmake project by default.
 		'instantiate-only': False, # Build by default.
 		'link-only': False,
@@ -484,6 +489,7 @@ def configure(pwd, restricted, required, argv):
 def main(inv:process.Invocation) -> process.Exit:
 	pwd = process.fs_pwd()
 	config = configure(pwd, restricted, required, inv.argv)
+	update_build = config['update-build']
 
 	# Get the libraries and interfaces needed out of &query
 	config['llvm-config'].fs_require('x') # --llvm-config
@@ -516,10 +522,14 @@ def main(inv:process.Invocation) -> process.Exit:
 	inc = mpd.route // mpj.factor // ifp
 
 	# Link tools to construction context.
+	links_exist = None
+	pd_tool_exists = None
 	cctx = config['construction-context']
 	if cctx:
 		print('Linking LLVM tools to construction context(-X): ' + str(cctx))
-		link_tools(pwd@cctx, bindir, route)
+		links_exist, pd_tool_exists = link_tools(pwd@cctx, bindir, route)
+		if not pd_tool_exists:
+			print('WARNING: llvm-profdata tool does not exist; coverage data will not be processed.')
 
 		if config['link-only']:
 			return inv.exit(0)
@@ -529,6 +539,17 @@ def main(inv:process.Invocation) -> process.Exit:
 			return inv.exit(1)
 		else:
 			print('NOTE: no construction context referenced, no links will be created.')
+
+	if update_build:
+		# Default is to update whatever is instantiated.
+		pass
+	else:
+		# If the configured links exist, a build is already present.
+		if links_exist:
+			print('NOTE: Using existing build.')
+			return inv.exit(0)
+		else:
+			print('NOTE: Links do not exist, updating build.')
 
 	if not config['instantiate-factors']:
 		icmake(route, ccv, ccf, inc)
