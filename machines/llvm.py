@@ -431,18 +431,6 @@ def system(exe, *argv):
 	ki = execution.KInvocation(xpath, args)
 	return execution.perform(ki)
 
-def select_target_route(config, llvm):
-	# Default to LLVM_PREFIX/fault or cc/.llvm-build is not writable.
-	llvm_prefix = ((llvm ** 2)/'fault')
-
-	try:
-		llvm_prefix.container.fs_require('/w')
-	except files.RequirementViolation:
-		# Fallback to construction context; presume writable.
-		return (config['pwd']@config['construction-context'])/'.llvm-build'
-	else:
-		return llvm_prefix
-
 def configure(pwd, restricted, required, argv):
 	config = {
 		'target-directory': None,
@@ -483,6 +471,8 @@ def configure(pwd, restricted, required, argv):
 	# -x option.
 	if config['target-directory'] is not None:
 		config['target-route'] = pwd@config['target-directory']
+	else:
+		config['target-route'] = (pwd@config['construction-context'])@'.llvm/build'
 
 	return config
 
@@ -502,9 +492,6 @@ def main(inv:process.Invocation) -> process.Exit:
 
 	ccv = ipqd['cc-version'].strip("c+")
 	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
-
-	if config['target-route'] is None:
-		config['target-route'] = select_target_route(config, config['llvm-config'])
 
 	route = config['target-route']
 	llvm = config['llvm-config']
