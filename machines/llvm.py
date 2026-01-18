@@ -419,13 +419,16 @@ def link_tools(ctx, llvm_bindir, itools):
 
 	return 'void' not in set([cipq, cdel]), pdt != 'void'
 
-def system(exe, *argv):
-	if exe[:1] in './':
-		xpath = pwd@exe
-	else:
-		xpath, = executables(exe)
+def find(pwd, *names):
+	for exe in names:
+		if exe[:1] in './':
+			return pwd@exe
+		else:
+			for fullpath in executables(exe):
+				return fullpath
 
-	xpath = str(xpath)
+def system(exe, *argv):
+	xpath = str(exe)
 	args = [xpath] + list(argv)
 	print('-> ' + ' '.join(args), flush=True)
 	ki = execution.KInvocation(xpath, args)
@@ -439,7 +442,7 @@ def configure(pwd, restricted, required, argv):
 		'instantiate-only': False, # Build by default.
 		'link-only': False,
 		'cmake-path': 'cmake',
-		'gmake-path': 'make',
+		'gmake-path': 'gmake',
 		'construction-context': os.environ.get('FCC') or None,
 		'llvm-path': 'llvm-config',
 		'target-route': None,
@@ -552,10 +555,16 @@ def main(inv:process.Invocation) -> process.Exit:
 	userpwd = pwd
 	pwd = route
 
+	# Find make tools.
+	cmake = find(pwd, config['cmake-path'])
+	print('Using cmake: ' + str(cmake))
+	gmake = find(pwd, config['gmake-path'], 'make')
+	print('Using gmake: ' + str(gmake))
+
 	# Perform build.
-	status = system(config['cmake-path'], '.')
+	status = system(cmake, '.')
 	if status != 0:
 		inv.exit(status)
-	status = system(config['gmake-path'])
+	status = system(gmake)
 	if status != 0:
 		inv.exit(status)
