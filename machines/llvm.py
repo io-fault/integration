@@ -568,3 +568,5 @@ def main(inv:process.Invocation) -> process.Exit:
 	status = system(gmake)
 	if status != 0:
 		inv.exit(status)
+
+	return inv.exit(0)
