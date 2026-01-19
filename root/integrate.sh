@@ -38,5 +38,7 @@ f_fictl integrate -L8 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
 )
 
 # Integrate LLVM tooling for instrumentation support; only build when it's not already present.
-"$FAULT_TOOL_PATH/fault-tool" python system.machines.llvm -x "$FAULT_INSTALLATION_PATH/llvm" -u || \
+"$FAULT_TOOL_PATH/fault-tool" python system.machines.llvm -u \
+	-X "$SYSTEMCONTEXT" \
+	-x "$FAULT_INSTALLATION_PATH/llvm" || \
 	echo "NOTE: LLVM integration failed; coverage and delineation tooling (C/C++) will not be available."
