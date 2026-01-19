@@ -23,6 +23,8 @@ restricted = {
 	'-I': ('field-replace', False, 'instantiate-only'),
 	'-f': ('field-replace', True, 'instantiate-factors'),
 	'-F': ('field-replace', False, 'instantiate-factors'),
+	'-U': ('field-replace', True, 'update-build'),
+	'-u': ('field-replace', False, 'update-build'),
 }
 
 required = {
@@ -31,6 +33,7 @@ required = {
 
 	'-C': ('field-replace', 'cmake-path'),
 	'-M': ('field-replace', 'gmake-path'),
+	'--llvm-config': ('field-replace', 'llvm-path'),
 }
 
 def split_config_output(flag, output):
@@ -405,50 +408,97 @@ def ifactors(route, ccv, ipqd):
 	factory.instantiate(p, route)
 
 def link_tools(ctx, llvm_bindir, itools):
-	ctxtools = (ctx/'.llvm')
-	ctxtools.fs_mkdir()
-	(ctxtools/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery')
-	(ctxtools/'clang-delineate').fs_link_absolute(itools/'clang-delineate')
-	(ctxtools/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata')
+	ctxllvm = (ctx/'.llvm').fs_mkdir()
+	cipq = (ctxllvm/'clang-ipquery').fs_link_absolute(itools/'clang-ipquery').fs_type()
+	cdel = (ctxllvm/'clang-delineate').fs_link_absolute(itools/'clang-delineate').fs_type()
+	pdt = (ctxllvm/'pd-tool').fs_link_absolute(llvm_bindir/'llvm-profdata').fs_type()
+
+	# Used by delineate to collect any coverable syntax areas.
+	ctxtools = (ctx/'.coverage-tools').fs_mkdir()
+	(ctxtools/'llvm').fs_link_relative(ctxllvm/'clang-ipquery')
+
+	return 'void' not in set([cipq, cdel]), pdt != 'void'
+
+def find(pwd, *names):
+	for exe in names:
+		if exe[:1] in './':
+			return pwd@exe
+		else:
+			for fullpath in executables(exe):
+				return fullpath
 
 def system(exe, *argv):
-	if exe[:1] in './':
-		xpath = pwd@exe
-	else:
-		xpath, = executables(exe)
-
-	xpath = str(xpath)
+	xpath = str(exe)
 	args = [xpath] + list(argv)
 	print('-> ' + ' '.join(args), flush=True)
 	ki = execution.KInvocation(xpath, args)
 	return execution.perform(ki)
 
-def configure(restricted, required, argv):
+def configure(pwd, restricted, required, argv):
 	config = {
 		'target-directory': None,
+		'update-build': True, # build and replace by default.
 		'instantiate-factors': False, # cmake project by default.
 		'instantiate-only': False, # Build by default.
 		'link-only': False,
 		'cmake-path': 'cmake',
-		'gmake-path': 'make',
-		'construction-context': None,
+		'gmake-path': 'gmake',
+		'construction-context': os.environ.get('FCC') or None,
+		'llvm-path': 'llvm-config',
+		'target-route': None,
+		'pwd': pwd,
 	}
-	oeg = recognition.legacy(restricted, required, argv)
-	remainder = recognition.merge(config, oeg)
 
-	return config, remainder
+	oeg = recognition.legacy(restricted, required, argv)
+
+	# llvm-config
+	remainder = recognition.merge(config, oeg)
+	if remainder:
+		llvm_path = config['llvm-path'] = remainder[0]
+	else:
+		llvm_path = config['llvm-path']
+
+	# Default option; the llvm-config path.
+	if llvm_path[:1] in './':
+		# If absolute or dot-leading relative, use pwd.
+		config['llvm-config'] = pwd@llvm_path
+	else:
+		# Otherwise, scan PATH for the executable.
+		for exe in executables(llvm_path):
+			config['llvm-config'] = exe
+			break
+		else:
+			print('ERROR: ' + repr(llvm_path) + " not found in path.")
+			raise SystemExit(1)
+
+	# -x option.
+	if config['target-directory'] is not None:
+		config['target-route'] = pwd@config['target-directory']
+	else:
+		config['target-route'] = (pwd@config['construction-context'])@'.llvm/build'
+
+	return config
 
 def main(inv:process.Invocation) -> process.Exit:
 	pwd = process.fs_pwd()
-	config, remainder = configure(restricted, required, inv.argv)
+	config = configure(pwd, restricted, required, inv.argv)
+	update_build = config['update-build']
 
-	target = config['target-directory']
-	llvmconfig, = remainder
-	if target is None:
-		# Default to PREFIX/fault.
-		route = (pwd@llvmconfig) ** 2 / 'fault'
-	else:
-		route = pwd@target
+	# Get the libraries and interfaces needed out of &query
+	config['llvm-config'].fs_require('x') # --llvm-config
+	v, src, merge, export, bindir, ipqd = instrumentation(config['llvm-config'])
+
+	bindir = files.root@bindir.strip()
+	if (bindir/'llvm-config').fs_type() != 'void':
+		# Prefer a more canonical path if it is present.
+		config['llvm-config'] = bindir/'llvm-config'
+
+	ccv = ipqd['cc-version'].strip("c+")
+	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
+
+	route = config['target-route']
+	llvm = config['llvm-config']
+	print('Selected LLVM installation(--llvm-config): ' + str(llvm))
 
 	# Identify ipquery.cc, delineate.c
 	factors.load()
@@ -461,25 +511,35 @@ def main(inv:process.Invocation) -> process.Exit:
 	mpd, mpj, ifp = factors.split(pj.factor.container + ['machines', 'include'])
 	inc = mpd.route // mpj.factor // ifp
 
-	# Get the libraries and interfaces needed out of &query
-	v, src, merge, export, bindir, ipqd = instrumentation(files.root@llvmconfig)
-	ccv = ipqd['cc-version'].strip("c+")
-	ccf = ipqd['cc-flags'].split('std=' + ipqd['cc-version'])[1].strip()
-
 	# Link tools to construction context.
+	links_exist = None
+	pd_tool_exists = None
 	cctx = config['construction-context']
 	if cctx:
-		print('Linking LLVM tools to construction context: ' + str(cctx))
-		link_tools(pwd@cctx, files.root@(bindir.strip()), route)
+		print('Linking LLVM tools to construction context(-X): ' + str(cctx))
+		links_exist, pd_tool_exists = link_tools(pwd@cctx, bindir, route)
+		if not pd_tool_exists:
+			print('WARNING: llvm-profdata tool does not exist; coverage data will not be processed.')
 
 		if config['link-only']:
 			return inv.exit(0)
 	else:
 		if config['link-only']:
-			print('ERROR: no construction context referenced for link only setup.')
+			print('ERROR: no construction context (-X) referenced for link only setup.')
 			return inv.exit(1)
 		else:
 			print('NOTE: no construction context referenced, no links will be created.')
+
+	if update_build:
+		# Default is to update whatever is instantiated.
+		pass
+	else:
+		# If the configured links exist, a build is already present.
+		if links_exist:
+			print('NOTE: Using existing build.')
+			return inv.exit(0)
+		else:
+			print('NOTE: Links do not exist, updating build.')
 
 	if not config['instantiate-factors']:
 		icmake(route, ccv, ccf, inc)
@@ -489,15 +549,24 @@ def main(inv:process.Invocation) -> process.Exit:
 	if config['instantiate-only']:
 		return inv.exit(0)
 
+	print('Selected target directory(-x): ' + str(route))
 	os.chdir(str(route))
 	os.environ['PWD'] = str(route)
 	userpwd = pwd
 	pwd = route
 
+	# Find make tools.
+	cmake = find(pwd, config['cmake-path'])
+	print('Using cmake: ' + str(cmake))
+	gmake = find(pwd, config['gmake-path'], 'make')
+	print('Using gmake: ' + str(gmake))
+
 	# Perform build.
-	status = system(config['cmake-path'], '.')
+	status = system(cmake, '.')
 	if status != 0:
 		inv.exit(status)
-	status = system(config['gmake-path'])
+	status = system(gmake)
 	if status != 0:
 		inv.exit(status)
+
+	return inv.exit(0)

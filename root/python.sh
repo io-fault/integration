@@ -6,6 +6,7 @@
 cd "$FAULT_PYTHON_PATH"
 fault_dir="$(pwd)"
 container_dir="$(dirname "$fault_dir")"
+ccpath="$container_dir/sys"
 
 prefix="$PYTHON_PREFIX"
 pylib="python$PYTHON_VERSION$PYTHON_ABI"
@@ -71,6 +72,7 @@ bootstrap_extension ()
 		\
 		"-D_DEFAULT_SOURCE" \
 		\
+		'-DCC_PATH="'"$ccpath"'"' \
 		'-DF_PRODUCT_PATH="'"$container_dir"'"' \
 		"-DFV_SYSTEM=$defsys" \
 		"-DFV_ARCHITECTURE=$defarch" \

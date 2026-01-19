@@ -7,11 +7,45 @@
 # In order for this tool to operate safely, commas present in JSON strings must be escaped.
 """
 
+import sys
 import os
 from fault.system import files
 from fault.system import process
-from fault.system import execution
-from ..metrics import coverage
+
+def extract_regions(target, cc, executable, spm):
+	from fault.system import execution
+	from ..metrics import coverage
+
+	# Iterate over the coverage tools and extract the coverage region data.
+	fd = os.open(target/'.regions', os.O_WRONLY|os.O_CREAT)
+	try:
+		for mapper in (cc/'.coverage-tools').fs_iterfiles():
+			exepath = str(mapper)
+			name = mapper.identifier
+			ki = execution.KInvocation(exepath, [exepath, "regions", str(executable)])
+
+			try:
+				pid = ki.spawn(fdmap=[(0, 0), (fd, 1), (2, 2)])
+			except FileNotFoundError:
+				# Suppress missing executables.
+				status = None
+				sys.stderr.write("WARNING: " + name + " coverage tool does not exist.")
+			else:
+				# Block to avoid concurrent writesi to .regions.
+				status = os.waitpid(pid, 0)
+
+			if status:
+				sys.stderr.write("WARNING: " + name + " coverage tool reported failure.")
+	finally:
+		os.close(fd)
+
+	# Split region data into areas and sources.
+	areas = {fp: set() for fp in spm}
+	with open(target/'.regions', 'r') as f:
+		areas = coverage.organize_ipquery_syntax_areas(spm, f.readlines())
+
+	# Write areas and sources for all the source files.
+	coverage.sequence_syntax_areas(spm, areas)
 
 def main(inv:process.Invocation) -> process.Exit:
 	cc, executable, target, root = map(files.Path.from_path, inv.argv)
@@ -48,24 +82,8 @@ def main(inv:process.Invocation) -> process.Exit:
 			b = b.replace(b',]', b']')
 			(target + rpath).fs_store(b)
 
-	# Iterate over the coverage tools and extract the coverage region data.
-	fd = os.open(target/'.regions', os.O_WRONLY|os.O_CREAT)
-	for mapper in (cc/'.coverage-tools').fs_iterfiles():
-		exepath = str(mapper)
-		ki = execution.KInvocation(exepath, [exepath, "regions", str(executable)])
-		pid = ki.spawn(fdmap=[(0, 0), (fd, 1), (2, 2)])
-
-		# Block to avoid concurrent writesi to .regions.
-		status = os.waitpid(pid, 0)
-	os.close(fd)
-
-	# Split region data into areas and sources.
-	areas = {fp: set() for fp in spm}
-	with open(target/'.regions', 'r') as f:
-		areas = coverage.organize_ipquery_syntax_areas(spm, f.readlines())
-
-	# Write areas and sources for all the source files.
-	coverage.sequence_syntax_areas(spm, areas)
+	# Process the coverage enabled executable image with the tooling linked in the cc.
+	extract_regions(target, cc, executable, spm)
 
 	return inv.exit(0)
 
