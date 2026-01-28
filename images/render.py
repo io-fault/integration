@@ -31,6 +31,7 @@ class Application(kcore.Context):
 			features,
 			product, projects,
 			rebuild=0,
+			switch='always',
 		):
 		self.cxn_executor = executor
 		self.cxn_features = features
@@ -40,6 +41,7 @@ class Application(kcore.Context):
 		self.cxn_product = product
 		self.cxn_projects = projects
 		self.cxn_rebuild = rebuild
+		self.cxn_switch = switch
 		self.cxn_log = transcripts.Log.stdout()
 
 	@classmethod
@@ -60,6 +62,7 @@ class Application(kcore.Context):
 
 		ctx = cc.open_fs_context(ctxdir).load().configure()
 		rebuild = int((environ.get('FPI_REBUILD') or '0').strip())
+		iswitch = environ.get('FPI_SWITCH') or 'always'
 
 		pd = lsf.Product(work)
 		pd.load() #* .product/* files
@@ -76,6 +79,7 @@ class Application(kcore.Context):
 			features,
 			pd, projects,
 			rebuild=rebuild,
+			switch=iswitch
 		)
 
 	def xact_void(self, final):
@@ -141,6 +145,7 @@ class Application(kcore.Context):
 				# but construct is normally being called in parallel.
 				processors=8,
 				reconstruct=re,
+				switch_image=(True if self.cxn_switch == 'always' else False)
 			))
 
 		self.cxn_state = iter(seq)
@@ -150,6 +155,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	inv.imports([
 		'FPI_EXECUTOR',
 		'FPI_REBUILD',
+		'FPI_SWITCH',
 	])
 
 	cxn = Application.from_command(inv.environ, inv.argv)

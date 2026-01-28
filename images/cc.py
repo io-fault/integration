@@ -48,7 +48,7 @@ def local_query(integrand, local, query):
 		return [r]
 	return list(map(str, integrand.select(query)))
 
-def prepare(command, args, log, output, input, executor=None):
+def prepare(command, args, log, output, input, retained=None, executor=None):
 	"""
 	# Given a command and its constructed arguments, interpret the
 	# standard I/O fields in &args, formulate a &libexec.KInvocation
@@ -66,6 +66,8 @@ def prepare(command, args, log, output, input, executor=None):
 		# The &files.Path identifying the file that will be created by the command.
 	# /input/
 		# The &files.Path identifying the source file being translated or the sole unit.
+	# /retained/
+		# The location, in the cache, that should be hard linked to the output.
 	"""
 	opid = next(args)
 	stdin_spec = next(args)
@@ -94,7 +96,7 @@ def prepare(command, args, log, output, input, executor=None):
 
 	xpath = executor or command[1]
 	ki = libexec.KInvocation(xpath, xargs, environ=env)
-	return (opid, output, stdin, stdout, log, (command[0], xpath, xargs), ki)
+	return (opid, output, retained, stdin, stdout, log, (command[0], xpath, xargs), ki)
 
 @tools.cachedcalls(12)
 def _ftype(itype):
@@ -317,6 +319,7 @@ class Construction(kcore.Context):
 			project,
 			factors,
 			reconstruct=0,
+			switch_image=True,
 			processors=4,
 		):
 		super().__init__()
@@ -328,6 +331,7 @@ class Construction(kcore.Context):
 		self._end_of_factors = False
 
 		self.reconstruct = reconstruct
+		self.switch_image = switch_image
 		self.failures = 0
 		self.exits = 0
 		self.c_sequence = None
@@ -501,6 +505,7 @@ class Construction(kcore.Context):
 
 			image = factor.image(vtype.variants)
 			cdr = scache(work(vtype.features, vtype.variants, factor.name))
+			rimg = (cdr / 'image')
 			locations = {
 				'construction-context-path': mechanism.context.route,
 				'factor-image': image,
@@ -510,7 +515,18 @@ class Construction(kcore.Context):
 				'work-directory': cdr,
 				'log-directory': (cdr / 'log').delimit(),
 				'unit-directory': (cdr / 'units').delimit(),
+				'retained-image': rimg,
 			}
+
+			# The image (path) used to check for stale builds.
+			# When a persistent cache is being using, this is always &rimg.
+			reference_image = image
+			if self.c_cache.retained:
+				reference_image = rimg
+			else:
+				# Transient builds need to signal &process_exit to not
+				# hard link images back into the cache.
+				rimg = None
 
 			iv = {}
 			if 'metrics' in features:
@@ -527,7 +543,7 @@ class Construction(kcore.Context):
 
 			# Identify if any requirements are newer than the target image.
 			ifpaths = [x for x in fint.required(vtype.variants) if not isinstance(x, str)]
-			new_requirements = not xfilter((image,), ifpaths)
+			new_requirements = not xfilter((reference_image,), ifpaths)
 
 			if check_image and not new_requirements:
 				# Uncached build without rebuild flag and no newer requirements.
@@ -536,7 +552,7 @@ class Construction(kcore.Context):
 				# If all sources are older than the target image and
 				# none of the requirement images are newer, clear the source
 				# list to avoid an unnecessary work.
-				if xfilter((image,), (x[1] for x in sources)):
+				if xfilter((reference_image,), (x[1] for x in sources)):
 					sources = []
 
 			self._prepare_work_directory(locations, factor.sources())
@@ -582,10 +598,18 @@ class Construction(kcore.Context):
 				q = tools.partial(local_query, fint, local)
 				render = ric(q)
 				rlog = files.Path(logs, ('Integration',))
-				ops = [prepare(cmd, render, rlog, image, src, executor=exe)]
+				ops = [prepare(cmd, render, rlog, image, src, retained=rimg, executor=exe)]
 			else:
 				# No sources translated and no requirements newer than image.
 				ops = []
+
+				# Copy or link the cached image back if possible.
+				if rimg is not None and self.switch_image:
+					# Retained images are only expected under persistent caches.
+					assert self.c_cache.retained == True
+
+					# Restore the cache image as the integrated image.
+					self.retain_image(image, rimg)
 
 			tracks.append(('render', ops))
 
@@ -617,7 +641,7 @@ class Construction(kcore.Context):
 
 	def process_execute(self, instruction, f_target_path=(lambda x: str(x))):
 		phase, factor, ins = instruction
-		opid, tfile, cin, cout, cerr, cmd, ki = ins
+		opid, tfile, rimg, cin, cout, cerr, cmd, ki = ins
 
 		pid = None
 		start_time = self.time()
@@ -632,7 +656,7 @@ class Construction(kcore.Context):
 					))
 					adjust_priority(pid)
 					sp = kdispatch.Subprocess(self._reapusage(pid), {
-						pid: (start_time, factor, cerr, opid, tfile)
+						pid: (start_time, factor, cerr, opid, tfile, rimg)
 					})
 					xact = kcore.Transaction.create(sp)
 
@@ -662,8 +686,23 @@ class Construction(kcore.Context):
 		for pid, params, status in sp.sp_report():
 			self.process_exit(pid, status, None, *params)
 
+	@staticmethod
+	def retain_image(dst, src):
+		"""
+		# Hard link or copy &src to &dst.
+		"""
+
+		try:
+			os.link(src, dst)
+		except OSError:
+			pass
+		else:
+			return
+
+		dst.fs_replace(src)
+
 	def process_exit(self, pid, delta, rusage,
-			start_time, factor, log, cmd, tfile
+			start_time, factor, log, cmd, tfile, rimg
 		):
 		ext = {}
 		stop_time = self.time()
@@ -671,6 +710,7 @@ class Construction(kcore.Context):
 		self.progress[factor] += 1
 		self.process_count -= 1
 		self.activity.add(factor)
+		image_type = tfile.fs_type()
 
 		exit_code = delta.status
 		if exit_code is None:
@@ -685,10 +725,13 @@ class Construction(kcore.Context):
 
 		# Force modification of directories for (persistent) cache checks.
 		if exit_code == 0:
-			if tfile.fs_type() == 'directory':
+			if image_type == 'directory':
 				tfile.fs_modified()
 		else:
 			self.failures += 1
+
+		if image_type != 'void' and rimg is not None:
+			self.retain_image(rimg, tfile)
 
 		if exit_code is None:
 			exit_type = 'cached'

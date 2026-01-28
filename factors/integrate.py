@@ -37,6 +37,10 @@ restricted = {
 	'-r': ('field-replace', +1, 'relevel'),
 	'-R': ('field-replace', +2, 'relevel'),
 
+	# Switch control; only relevant with caching.
+	'-s': ('field-replace', 'never', 'switch-image'),
+	'-S': ('field-replace', 'always', 'switch-image'),
+
 	# Defaults to update when missing.
 	'-u': ('field-replace', 'never', 'update-product-index'),
 	'-U': ('field-replace', 'always', 'update-product-index'),
@@ -94,6 +98,7 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
 	os.environ['FPI_REBUILD'] = str(config['relevel'])
+	os.environ['FPI_SWITCH'] = str(config['switch-image'])
 
 	projects = argv
 	features = sorted(list(config['features']))
@@ -174,6 +179,7 @@ def configure(restricted, required, argv):
 		'direct-disconnections': [],
 
 		'relevel': 0,
+		'switch-image': 'always',
 		'cache-directory': None,
 	}
 
