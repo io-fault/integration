@@ -89,6 +89,11 @@ def main(inv:process.Invocation):
 		ctx = ['--closed-frames']
 	ctx = []
 
+	# For analyze, presume persistence.
+	if config['cache-directory'] is None:
+		(pd/'.cache').fs_mkdir() # Signal integrate to use a cache.
+
+	# Prepare to forward some options to integrate.
 	for opt, (op, slot) in required.items():
 		if config[slot] is not None:
 			ctx.append(opt)
@@ -107,7 +112,7 @@ def main(inv:process.Invocation):
 	sys.stdout.flush()
 	try:
 		# Unconditionally integrate and delineate against coverage images.
-		ficmd('integrate', ['--coverage', '-Rgm', selection])
+		ficmd('integrate', ['--coverage', '-gm', selection])
 		ficmd('delineate', [selection])
 
 		if config['accuracy']:
@@ -118,7 +123,7 @@ def main(inv:process.Invocation):
 
 		# Profiling
 		if config['efficiency']:
-			ficmd('integrate', ['--profile', '-ROm', selection])
+			ficmd('integrate', ['--profile', '-Om', selection])
 			ficmd('test', [test])
 
 		# Aggregate metrics for printing.
