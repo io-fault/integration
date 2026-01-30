@@ -25,11 +25,12 @@ restricted = {
 	'-e': ('field-replace', True, 'efficiency'),
 	'-A': ('field-replace', False, 'accuracy'),
 	'-a': ('field-replace', True, 'accuracy'),
-	'--opened-frames': ('field-replace', True, 'opened-frames'),
-	'--closed-frames': ('field-replace', False, 'opened-frames'),
 
 	'-K': ('field-replace', False, 'reset-metrics'),
 	'-k': ('field-replace', True, 'reset-metrics'),
+
+	'--opened-frames': ('field-replace', True, 'opened-frames'),
+	'--closed-frames': ('field-replace', False, 'opened-frames'),
 }
 
 required = {
@@ -51,7 +52,6 @@ def execute(exe, argv):
 
 def configure(restricted, required, argv):
 	config = {
-		'opened-frames': False,
 		'processing-lanes': '4',
 		'status-monitors': None,
 		'machines-context-name': None,
@@ -63,6 +63,8 @@ def configure(restricted, required, argv):
 		'reset-metrics': True,
 		'efficiency': False,
 		'accuracy': True,
+
+		'opened-frames': False,
 	}
 
 	oeg = recognition.legacy(restricted, required, argv)
@@ -87,7 +89,6 @@ def main(inv:process.Invocation):
 		ctx = ['--opened-frames']
 	else:
 		ctx = ['--closed-frames']
-	ctx = []
 
 	# For analyze, presume persistence.
 	if config['cache-directory'] is None:

@@ -54,6 +54,9 @@ restricted = {
 	'-X': ('set-discard', 'explicit', 'test-types'),
 	'-S': ('set-discard', 'static', 'test-types'),
 	'-F': ('set-discard', 'failure', 'test-types'),
+
+	'--closed-frames': ('field-replace', False, 'opened-frames'),
+	'--opened-frames': ('field-replace', True, 'opened-frames'),
 }
 
 required = {
@@ -154,7 +157,7 @@ def test(exits, meta, log, config, cc, pdr:files.Path, argv):
 		ctl_transcript_type = 'test-conclusion-report',
 		ctl_lanes = lanes,
 		ctl_monitors = monitors,
-		ctl_opened_frames = False,
+		ctl_opened_frames = config['opened-frames'],
 		ctl_factor_types = None,
 		ctl_open_title = 'Testing ' + test_types_list + ' in ' + factor_sels + '.',
 		ctl_close_title = 'Test report summary',
@@ -176,6 +179,8 @@ def configure(restricted, required, argv):
 
 		'test-types': set(),
 		'test-filters': [],
+
+		'opened-frames': False,
 	}
 
 	oeg = recognition.legacy(restricted, required, argv)

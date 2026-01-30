@@ -47,6 +47,9 @@ restricted = {
 
 	'-c': ('field-replace', 'transient', 'cache-type'),
 	'-.': ('ignore', None, None),
+
+	'--closed-frames': ('field-replace', False, 'opened-frames'),
+	'--opened-frames': ('field-replace', True, 'opened-frames'),
 }
 
 required = {
@@ -152,7 +155,7 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 		ctl_transcript_type = 'processing-units',
 		ctl_lanes = lanes,
 		ctl_monitors = monitors,
-		ctl_opened_frames = True,
+		ctl_opened_frames = config['opened-frames'],
 		ctl_factor_types = None,
 		ctl_open_title = 'Factor Processing Instructions',
 		ctl_operating_title = 'FPI',
@@ -181,6 +184,8 @@ def configure(restricted, required, argv):
 		'relevel': 0,
 		'switch-image': 'always',
 		'cache-directory': None,
+
+		'opened-frames': False,
 	}
 
 	oeg = recognition.legacy(restricted, required, argv)
