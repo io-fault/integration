@@ -37,8 +37,15 @@
 	: factor [factor-path]
 	: format [language].[dialect]
 	: cpython-optimize [-cpy-optimize]
-	if-coverage: instrumentation coverage
-	: metrics-trap [telemetry-directory File]
+	if-metrics:
+		: metrics-trap [telemetry-directory File]
+		: instrumentation
+		:
+			if-coverage:
+				if-profile: coverage:profile
+				!: coverage
+			!:
+				if-profile: profile
 
 -pyc-reduce-1:
 	: "compile-bytecode" - -
@@ -49,4 +56,5 @@
 			: delineated archive
 		!: [unit File]
 	: format python.ast
-	: metrics-trap [telemetry-directory File]
+	if-metrics:
+		: metrics-trap [telemetry-directory File]
