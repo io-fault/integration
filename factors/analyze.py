@@ -113,7 +113,7 @@ def main(inv:process.Invocation):
 	sys.stdout.flush()
 	try:
 		# Unconditionally integrate and delineate against coverage images.
-		ficmd('integrate', ['--coverage', '-gm', selection])
+		ficmd('integrate', ['-mcoverage', '-g', selection])
 		ficmd('delineate', [selection])
 
 		if config['accuracy']:
@@ -124,7 +124,7 @@ def main(inv:process.Invocation):
 
 		# Profiling
 		if config['efficiency']:
-			ficmd('integrate', ['--profile', '-Om', selection])
+			ficmd('integrate', ['-mprofile', '-O', selection])
 			ficmd('test', [test])
 
 		# Aggregate metrics for printing.

@@ -20,14 +20,13 @@ from . import map
 
 # Added to &restricted when mode is 'executable'.
 executable_features = {
-	'-m': ('set-add', 'metrics', 'features'),
-
 	'-o': ('set-add', 'portable', 'features'),
 	'-O': ('set-add', 'optimal', 'features'),
 	'-g': ('set-add', 'debug', 'features'),
+}
 
-	'--profile': ('set-add', 'profile', 'features'),
-	'--coverage': ('set-add', 'coverage', 'features'),
+metrics_instrumentation = {
+	'-m': ('set-add', 'metrics'),
 }
 
 restricted = {
@@ -167,6 +166,7 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 def configure(restricted, required, argv):
 	config = {
 		'features': set(),
+		'metrics': set(),
 		'processing-lanes': '4',
 		'status-monitors': None,
 		'machines-context-name': 'machines',
@@ -190,6 +190,9 @@ def configure(restricted, required, argv):
 
 	oeg = recognition.legacy(restricted, required, argv)
 	remainder = recognition.merge(config, oeg)
+	if config['metrics']:
+		config['features'].add('metrics')
+		config['features'] |= config['metrics']
 
 	return config, remainder
 
@@ -198,10 +201,12 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 
 	if mode == 'executable':
 		res = restricted | executable_features
+		req = required | metrics_instrumentation
 	else:
 		res = restricted
+		req = required
 
-	config, remainder = configure(res, required, inv.argv)
+	config, remainder = configure(res, req, inv.argv)
 	config['construction-mode'] = mode
 	if features is not None:
 		config['features'] = features
