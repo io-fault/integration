@@ -195,8 +195,9 @@
 -llvm-instrumentation:
 	if-coverage:
 		: -fprofile-instr-generate -fcoverage-mapping
-	if-profile:
-		: -fprofile-instr-generate
+	!:
+		if-profile:
+			: -fprofile-instr-generate
 -llvm-instrumentation-defines:
 	: -DF_LLVM_INSTRUMENTATION
 -factor-telemetry:
@@ -212,11 +213,10 @@
 	if-debug:
 		: [-debug]
 
-	: [-llvm-instrumentation]
-	:
-		if-coverage: [-llvm-instrumentation-defines]
-		if-profile: [-llvm-instrumentation-defines]
-		if-metrics: [-factor-telemetry]
+	if-metrics:
+		: [-llvm-instrumentation]
+		: [-factor-telemetry]
+		: [-llvm-instrumentation-defines]
 
 	: [-language-injections]
 
