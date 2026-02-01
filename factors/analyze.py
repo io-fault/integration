@@ -1,7 +1,8 @@
 """
 # Analyze the accuracy and efficiency of a set of projects.
 
-# Procedure performing the necessary tasks for collecting measurements using the
+# Procedure performing the necessary tasks for collecting project metrics
+# using the specified tests and preparing the data for report publication.
 """
 import os
 import sys
