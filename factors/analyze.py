@@ -82,7 +82,7 @@ def main(inv:process.Invocation):
 	config, argv = configure(restricted, required, inv.argv)
 	env, exepath, xargv = query.dispatch('fictl')
 	xargv = xargv[1:]
-	selection, test = argv
+	selection, *tests = argv
 
 	pd = pwd@config['product-directory']
 	if config['opened-frames']:
@@ -117,7 +117,8 @@ def main(inv:process.Invocation):
 		ficmd('delineate', [selection])
 
 		if config['accuracy']:
-			ficmd('test', [test])
+			for test in tests:
+				ficmd('test', [test])
 		else:
 			# Still need delineated forms.
 			ficmd('delineate', [selection])
@@ -125,7 +126,8 @@ def main(inv:process.Invocation):
 		# Profiling
 		if config['efficiency']:
 			ficmd('integrate', ['-mprofile', '-O', selection])
-			ficmd('test', [test])
+			for test in tests:
+				ficmd('test', [test])
 
 		# Aggregate metrics for printing.
 		# Reprocessing is necessary here in order to ignore the cache.
