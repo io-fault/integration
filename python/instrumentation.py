@@ -311,6 +311,7 @@ def compile(factor, source, path, constants,
 		hash=module.hash_syntax,
 		filter=visit,
 		record=None,
+		instrumentation=set(),
 	):
 	"""
 	# Compile Python source of a module into an instrumented &types.CodeObject
@@ -332,6 +333,7 @@ def compile(factor, source, path, constants,
 	constants.extend([
 		('__factor__', factor),
 		('__source_hash__', hash(source)),
+		('__metrics__', instrumentation),
 	])
 	return module.inject(tree, constants)
 

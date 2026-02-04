@@ -57,9 +57,10 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 		compiler = module.compile
 	else:
 		from functools import partial
-		from . import instrumentation
+		from .instrumentation import compile as icompile
 		optimize = 0
-		compiler = partial(instrumentation.compile, record=set())
+		itypes = instrumentation
+		compiler = partial(icompile, record=set(), instrumentation=itypes)
 
 	factor_name = parameters.pop('factor', None)
 
