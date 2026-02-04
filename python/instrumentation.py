@@ -94,9 +94,21 @@ if True:
 	import os as _fi_os
 
 	_fi_counters__ = _fi_cl.Counter()
-	_fi_identity = _fi_os.environ.get('METRICS_IDENTITY') or ''
 
-	def _fi_record(counters=_fi_counters__, origin=_fi_identity, Retry=32):
+	def _fi_mkdir(path, Retry=32):
+		import os
+		for x in range(Retry):
+			try:
+				os.makedirs(path)
+			except FileExistsError:
+				# Tests should be able to run in parallel, so expect runtime conflicts.
+				pass
+			else:
+				break
+		return path
+
+	def _fi_identify_path(mtype):
+		# .metrics/../{mtype}/{pid}/{module}/{project}/{factor}/{test}
 		import sys, os, collections
 
 		if 'METRICS_ISOLATION' in os.environ:
@@ -111,9 +123,8 @@ if True:
 
 		if 'METRICS_CAPTURE' in os.environ:
 			# If capture is defined, qualify with the module name.
-			# .metrics/../{pid}/{module}/{project}/{factor}/{test}/.fault-syntax-counters
 			path = os.environ['METRICS_CAPTURE']
-			path += '/coverage'
+			path += '/' + mtype
 			path += '/' + pid
 			path += '/' + __name__
 		else:
@@ -124,22 +135,22 @@ if True:
 			except NameError:
 				return
 
-			# .metrics/../coverage/{pid}/{project}/{factor}/{test}/.fault-syntax-counters
 			# Resolve __metrics_trap__ global at exit in order to allow the runtime
 			# to designate it given compile time absence.
 			path = __metrics_trap__
-			path += '/coverage'
+			path += '/' + mtype
 			path += '/' + pid
 
 		path += '/' + os.environ.get('METRICS_IDENTITY', '.fault-python')
-		path += '/.fault-syntax-counters'
-		for x in range(Retry):
-			try:
-				os.makedirs(path)
-			except FileExistsError:
-				pass
-			else:
-				break
+		return path
+
+	def _fi_alloc_dir(mtype, subdir, *, mk=_fi_mkdir, cp=_fi_identify_path):
+		return mk(cp(mtype) + '/' + subdir)
+	del _fi_mkdir, _fi_identify_path
+
+	def _fi_record_coverage(counters=_fi_counters__, adir=_fi_alloc_dir):
+		path = adir('coverage', '.fault-syntax-counters')
+		import sys, os, collections
 
 		# Vectorize the counters.
 		events = collections.defaultdict(list)
@@ -167,7 +178,7 @@ if True:
 			for x in sources:
 				f.writelines(['%d\\n' %(c,) for c in occurrences[x]])
 
-	_fi_ae.register(_fi_record)
+	_fi_ae.register(_fi_record_coverage)
 
 	try:
 		_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
@@ -179,7 +190,8 @@ if True:
 		return rob
 
 	# Limit names left in the module globals.
-	del _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_record, _fi_identity
+	del _fi_os, _fi_ft, _fi_cl, _fi_ae
+	del _fi_record_coverage
 """.strip() + '\n'
 
 count_boolop_expression = "(_FI_INCREMENT__(((__file__, %r),)) or INSTRUMENTATION_ERROR)"
