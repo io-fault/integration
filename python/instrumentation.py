@@ -109,11 +109,6 @@ if True:
 		# .metrics/../{mtype}/{pid}/{module}/{project}/{factor}/{test}
 		import sys, os, collections
 
-		if 'METRICS_ISOLATION' in os.environ:
-			mid = os.environ['METRICS_ISOLATION']
-		else:
-			mid = 'unspecified'
-
 		if 'PROCESS_IDENTITY' in os.environ:
 			pid = os.environ['PROCESS_IDENTITY']
 		else:
@@ -149,6 +144,12 @@ if True:
 	_fi_counters__ = _fi_cl.Counter()
 	if 'coverage' in __metrics__:
 		def _fi_record_coverage(counters=_fi_counters__, adir=_fi_alloc_dir):
+			import os
+			if 'METRICS_ISOLATION' in os.environ:
+				mid = os.environ['METRICS_ISOLATION']
+			else:
+				mid = 'unspecified'
+
 			path = adir('coverage', '.fault-syntax-counters')
 			import sys, os, collections
 
