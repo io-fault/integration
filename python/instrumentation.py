@@ -86,14 +86,12 @@ def visit(node, parent=None, field=None, index=None, sequencing=source.sequence_
 		else:
 			pass
 
-coverage_module_context = """
+module_context = """
 if True:
 	import collections as _fi_cl
 	import atexit as _fi_ae
 	import functools as _fi_ft
 	import os as _fi_os
-
-	_fi_counters__ = _fi_cl.Counter()
 
 	def _fi_mkdir(path, Retry=32):
 		import os
@@ -148,50 +146,52 @@ if True:
 		return mk(cp(mtype) + '/' + subdir)
 	del _fi_mkdir, _fi_identify_path
 
-	def _fi_record_coverage(counters=_fi_counters__, adir=_fi_alloc_dir):
-		path = adir('coverage', '.fault-syntax-counters')
-		import sys, os, collections
+	_fi_counters__ = _fi_cl.Counter()
+	if 'coverage' in __metrics__:
+		def _fi_record_coverage(counters=_fi_counters__, adir=_fi_alloc_dir):
+			path = adir('coverage', '.fault-syntax-counters')
+			import sys, os, collections
 
-		# Vectorize the counters.
-		events = collections.defaultdict(list)
-		occurrences = collections.defaultdict(list)
-		for (fp, area), v in counters.items():
-			events[fp].append(area)
-			occurrences[fp].append(v)
+			# Vectorize the counters.
+			events = collections.defaultdict(list)
+			occurrences = collections.defaultdict(list)
+			for (fp, area), v in counters.items():
+				events[fp].append(area)
+				occurrences[fp].append(v)
 
-		# Sequence the sources for an index.
-		# The contents of the vectors will be emitted according to this list.
-		sources = list(events.keys())
-		sources.sort()
+			# Sequence the sources for an index.
+			# The contents of the vectors will be emitted according to this list.
+			sources = list(events.keys())
+			sources.sort()
 
-		# Index designating sources and the number of counters.
-		# For Python, this will normally (always) be a single line.
-		# Append as PROCESS_IDENTITY may be intentionally redundant.
-		with open(path + '/sources', 'a') as f:
-			f.writelines(['%s %d %s\\n' %(mid, len(events[x]), x) for x in sources])
+			# Index designating sources and the number of counters.
+			# For Python, this will normally (always) be a single line.
+			# Append as PROCESS_IDENTITY may be intentionally redundant.
+			with open(path + '/sources', 'a') as f:
+				f.writelines(['%s %d %s\\n' %(mid, len(events[x]), x) for x in sources])
 
-		with open(path + '/areas', 'a') as f:
-			for x in sources:
-				f.writelines(['%d %d %d %d\\n' % k for k in events[x]])
+			with open(path + '/areas', 'a') as f:
+				for x in sources:
+					f.writelines(['%d %d %d %d\\n' % k for k in events[x]])
 
-		with open(path + '/counts', 'a') as f:
-			for x in sources:
-				f.writelines(['%d\\n' %(c,) for c in occurrences[x]])
+			with open(path + '/counts', 'a') as f:
+				for x in sources:
+					f.writelines(['%d\\n' %(c,) for c in occurrences[x]])
 
-	_fi_ae.register(_fi_record_coverage)
+		_fi_ae.register(_fi_record_coverage)
 
-	try:
-		_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
-	except:
-		_FI_INCREMENT__ = _fi_counters__.update
+		try:
+			_FI_INCREMENT__ = _fi_ft.partial(_fi_cl._count_elements, _fi_counters__)
+		except:
+			_FI_INCREMENT__ = _fi_counters__.update
 
-	def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
-		C(((F, area),))
-		return rob
+		def _FI_COUNT__(area, rob, F=__file__, C=_FI_INCREMENT__):
+			C(((F, area),))
+			return rob
+		del _fi_record_coverage
 
 	# Limit names left in the module globals.
-	del _fi_os, _fi_ft, _fi_cl, _fi_ae
-	del _fi_record_coverage
+	del _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_alloc_dir
 """.strip() + '\n'
 
 count_boolop_expression = "(_FI_INCREMENT__(((__file__, %r),)) or INSTRUMENTATION_ERROR)"
@@ -250,7 +250,7 @@ def construct_initialization_nodes(ln_offset, path="/dev/null"):
 	# Construct instrumentation initialization nodes for injection into an &ast.Module body.
 	"""
 
-	nodes = ast.parse(coverage_module_context, path)
+	nodes = ast.parse(module_context, path)
 	source.node_shift_line(nodes, ln_offset)
 	return nodes
 
