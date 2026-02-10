@@ -79,6 +79,7 @@ def delineate(output, origin, params):
 
 	factor_name = params.pop('factor', None)
 	encoding = params.pop('encoding', 'utf-8')
+	params['instrumentation'] = {'coverage'}
 
 	aset = set()
 	with open(origin, 'r', encoding=encoding) as f:
