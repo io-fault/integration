@@ -8,6 +8,16 @@ import functools
 from . import module
 from . import source
 
+try:
+	FunctionTypes = (ast.FunctionDef, ast.AsyncFunctionDef)
+except AttributeError:
+	FunctionTypes = (ast.FunctionDef,)
+
+ContainerTypes = (ast.Module, ast.ClassDef)
+
+# Profile suspend/resume nodes.
+SuspendClasses = (ast.Yield, ast.YieldFrom, ast.Await)
+
 BranchNodes = (
 	ast.BoolOp,
 	ast.IfExp,
@@ -141,8 +151,8 @@ if True:
 		return mk(cp(mtype) + '/' + subdir)
 	del _fi_mkdir, _fi_identify_path
 
-	_fi_counters__ = _fi_cl.Counter()
 	if 'coverage' in __metrics__:
+		_fi_counters__ = _fi_cl.Counter()
 		def _fi_record_coverage(counters=_fi_counters__, adir=_fi_alloc_dir):
 			import os
 			if 'METRICS_ISOLATION' in os.environ:
@@ -191,6 +201,40 @@ if True:
 			return rob
 		del _fi_record_coverage
 
+	if 'profile' in __metrics__:
+		_fi_timings__ = _fi_cl.defaultdict(list)
+		def _fi_record_profile(timings=_fi_timings__, adir=_fi_alloc_dir):
+			def name(module, object_path):
+				if module == __name__:
+					return object_path or '-'
+				else:
+					return '/'.join((module or '-', object_path or '-'))
+			path = adir('profile', '.fault-timing-deltas')
+			with open(path + '/timings', 'a') as f:
+				for src, times in timings.items():
+					cfactor, celement, element = src
+					f.write("%s: %s\\n" %(element, name(cfactor, celement)))
+					f.writelines("\t%d-%d\\n" %(time, delta) for time, delta in times)
+
+		try:
+			from fault.system.clocks import Monotonic as _fi_mclock
+		except ImportError:
+			from time import perf_counter_ns as _FI_CLOCK_SNAPSHOT__
+		else:
+			_FI_CLOCK_SNAPSHOT__ = _fi_mclock().get
+			del _fi_mclock
+		_fi_ae.register(_fi_record_profile)
+
+		from threading import local as _fi_thread_local
+		_FI_PROFILE_LOCALS____ = _fi_thread_local()
+		del _fi_thread_local
+		_FI_PROFILE_COUNTER____ = _fi_cl.Counter
+
+		def _FI_NOTE_TIMING__(CID, ELEMENT, TIME, CD, LD, TS=_FI_CLOCK_SNAPSHOT__, sum=sum, TR=_fi_timings__):
+			d = TS() - TIME
+			CD[ELEMENT] += d
+			TR[(CID[0], CID[1], ELEMENT)].append((d, sum(LD.values())))
+
 	# Limit names left in the module globals.
 	del _fi_bn, _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_alloc_dir
 """.strip() + '\n'
@@ -198,24 +242,85 @@ if True:
 count_boolop_expression = "(_FI_INCREMENT__(((__file__, %r),)) or INSTRUMENTATION_ERROR)"
 count_call_expression = "_FI_COUNT__(%r,None)"
 
-# Seeks the pass for the replacement point.
+# When instrumenting a generator or coroutine, these signal functions are built to
+# record the time spent outside. Timings are recorded using the resident deltas None key.
+profile_suspension_signals = """
+if True:
+	def _fi_suspend____(V):
+		nonlocal _fi_suspend_time____
+		nonlocal _fi_caller_residency____
+		nonlocal _fi_caller_identity____
+		nonlocal _fi_resident_deltas____
+		# Forward timings to caller for tracking residency and hold timestamp for resume.
+		_fi_suspend_time____ = _FI_CLOCK_SNAPSHOT__()
+
+		_FI_PROFILE_LOCALS____.fi_profile_residency = _fi_caller_residency____
+		_FI_PROFILE_LOCALS____.fi_caller_identity = _fi_caller_identity____
+		return V
+
+	def _fi_resume____(V):
+		nonlocal _fi_suspend_time____
+		nonlocal _fi_caller_residency____
+		nonlocal _fi_caller_identity____
+		nonlocal _fi_resident_deltas____
+
+		if 'fi_profile_residency' in _FI_PROFILE_LOCALS____.__dict__:
+			_fi_caller_residency____ = _FI_PROFILE_LOCALS____.fi_profile_residency
+		else:
+			_fi_caller_residency____ = _FI_PROFILE_COUNTER____()
+		_FI_PROFILE_LOCALS____.fi_profile_residency = _fi_resident_deltas____
+
+		# Push caller identity.
+		_fi_caller_identity____ = getattr(_FI_PROFILE_LOCALS____, 'fi_caller_identity', (None, None))
+		_FI_PROFILE_LOCALS____.fi_caller_identity = (__name__, _fi_identity____)
+
+		# Update start to exclude the suspended time.
+		_fi_resident_deltas____[None] += _FI_CLOCK_SNAPSHOT__() - _fi_suspend_time____
+		_fi_suspend_time____ = None
+		return V
+"""
+
+# The root of a profiled block. Class definitions and module bodies are also instrumented.
 profile_transaction = """
 if True:
 	try:
-		_FI_ENTER__(%r)
+		_fi_suspend____ = None
+		_fi_resume____ = None
+		_fi_start_time____ = None
+		_fi_suspend_time____ = None
+		_fi_caller_residency____ = None
+		_fi_resident_deltas____ = _FI_PROFILE_COUNTER____()
+		_fi_identity____ = %r
+
+		# Push caller identity.
+		_fi_caller_identity____ = getattr(_FI_PROFILE_LOCALS____, 'fi_caller_identity', (None, None))
+		_FI_PROFILE_LOCALS____.fi_caller_identity = (__name__, _fi_identity____)
+
+		if 'fi_profile_residency' in _FI_PROFILE_LOCALS____.__dict__:
+			_fi_caller_residency____ = _FI_PROFILE_LOCALS____.fi_profile_residency
+		else:
+			_fi_caller_residency____ = _FI_PROFILE_COUNTER____()
+		_FI_PROFILE_LOCALS____.fi_profile_residency = _fi_resident_deltas____
+		_fi_start_time____ = _FI_CLOCK_SNAPSHOT__()
+
+		# Insertion point.
 		pass
 	finally:
-		_FI_EXIT__(%r)
+		# Restore
+		_FI_PROFILE_LOCALS____.fi_profile_residency = _fi_caller_residency____
+		_FI_PROFILE_LOCALS____.fi_caller_identity = _fi_caller_identity____
+
+		_FI_NOTE_TIMING__(_fi_caller_identity____, _fi_identity____, _fi_start_time____, _fi_caller_residency____, _fi_resident_deltas____)
+
+		# Class and modules bodies are instrumented, so always clean up the names.
+		del _fi_start_time____, _fi_suspend_time____
+		del _fi_caller_identity____, _fi_caller_residency____, _fi_resident_deltas____
+		del _fi_suspend____, _fi_resume____
 """
 
-profile_pause = """
-if True:
-	try:
-		_FI_SUSPEND__(%r)
-		pass
-	finally:
-		_FI_CONTINUE__(%r)
-"""
+# Expression source for calling the suspension signals.
+profile_suspend_expression = "_fi_suspend____(None)"
+profile_resume_expression = "_fi_resume____(None)"
 
 def construct_call_increment(node, area, path='/dev/null', lineno=1):
 	s = count_call_expression % (area,)
@@ -235,16 +340,21 @@ def construct_boolop_increment(node, area, path='/dev/null', lineno=1):
 	update = functools.partial(expr.value.values.__setitem__, 1)
 	return expr, update
 
-def construct_profile_trap(identifier, container, nodes, path='/dev/null', lineno=1):
-	src = profile %(identifier,identifier)
+def construct_profile_trap(identifier, container, nodes, path='/dev/null', lineno=1, prefix=[]):
+	src = profile_transaction %(identifier,)
 	tree = ast.parse(src, path)
-	trap = tree.body[0].body[0]
+	trap = tree.body[0].body[0] # try: block
 
-	trap.body[1:1] = nodes
+	trap.body[-1:-1] = prefix + nodes
 	assert isinstance(trap.body[-1], ast.Pass)
 	del trap.body[-1]
 
 	return trap
+
+def construct_profile_trap_suspend(identifier, container, nodes, path='/dev/null', lineno=1):
+	src = profile_suspension_signals
+	signals = ast.parse(src, path).body[0].body
+	return construct_profile_trap(identifier, container, nodes, prefix=signals, path=path, lineno=lineno)
 
 def construct_initialization_nodes(ln_offset, path="/dev/null"):
 	"""
@@ -305,7 +415,82 @@ def apply(record, path, noded):
 	else:
 		area = node._f_area
 
-	return instrument(record, path, noded, area)
+	instrument(record, path, noded, area)
+
+def find_suspend_expressions(node, isinstance=isinstance):
+	"""
+	# Visit the descending nodes in &node looking for yields and awaits.
+	"""
+
+	if hasattr(node, 'value') and isinstance(node.value, SuspendClasses):
+		yield node
+
+	# Descend uncondtionally; even when matches are found, they can be nested.
+	for sub in ast.iter_child_nodes(node):
+		yield from find_suspend_expressions(sub)
+
+def qualify_node_paths(path, fields):
+	"""
+	# Qualify definitions nodes with their qualified path and
+	# yield them for profile instrumentation.
+	"""
+
+	for node in fields:
+		if isinstance(node, ContainerTypes):
+			node._f_path = path + [node.name]
+			yield from qualify_node_paths(node._f_path, ast.iter_child_nodes(node))
+		elif isinstance(node, FunctionTypes):
+			node._f_path = path + [node.name]
+			yield node
+		else:
+			yield from qualify_node_paths(path, ast.iter_child_nodes(node))
+
+def inject_suspend_expressions(node):
+	suspend_call = ast.parse(profile_suspend_expression).body[0].value
+	resume_call = ast.parse(profile_resume_expression).body[0].value
+
+	yield_expr = node.value
+	resume_call.args[0] = yield_expr
+
+	if yield_expr.value is not None:
+		suspend_call.args[0] = yield_expr.value or suspend_call.args[0]
+	yield_expr.value = suspend_call
+
+	return resume_call
+
+def walk_within(tree, exceptions):
+	"""
+	# Walk the nodes of &tree without descending into any &exceptions types.
+
+	# Primarily used by profiling to avoid instrumenting nested functions.
+	"""
+
+	for n in ast.iter_child_nodes(tree):
+		if isinstance(n, exceptions):
+			continue
+		yield n
+		yield from walk_within(n, exceptions)
+
+def inject_profiling_nodes(tree):
+	"""
+	# Modify the definitions in &tree to record the execution times.
+	"""
+
+	# Gather functions and qualify their nodes with their class paths.
+	qualified = list(qualify_node_paths([], ast.iter_child_nodes(tree)))
+
+	# Inject instrumentation into functions.
+	for node in qualified:
+		suspensions = 0
+		if isinstance(node, FunctionTypes):
+			for sn in walk_within(node, FunctionTypes):
+				if isinstance(getattr(sn, 'value', None), SuspendClasses):
+					sn.value = inject_suspend_expressions(sn)
+					suspensions += 1
+
+		replaced = construct_profile_trap_suspend('.'.join(node._f_path), None, node.body)
+		del node.body[:]
+		node.body.append(replaced)
 
 def compile(factor, source, path, constants,
 		parse=source.parse,
@@ -315,20 +500,37 @@ def compile(factor, source, path, constants,
 		instrumentation=set(),
 	):
 	"""
-	# Compile Python source of a module into an instrumented &types.CodeObject
+	# Compile the Python source of a module, &source, into an AST with the requested
+	# &instrumentation.
 	"""
 	srclines, tree, nodes = parse(source, path, filter=visit)
 
-	for noded in nodes:
-		if not hasattr(noded[0], '_f_area'):
-			continue
-		if isinstance(noded[0], (ast.expr_context, ast.slice)):
-			continue
+	# Coverage before profiling.
+	if 'coverage' in instrumentation:
+		for noded in nodes:
+			if not hasattr(noded[0], '_f_area'):
+				continue
+			if isinstance(noded[0], (ast.expr_context, ast.slice)):
+				continue
 
-		apply(record, path, noded)
+			apply(record, path, noded)
 
-	# Insert profiling or coverage header before constants.
-	tree.body[0:0] = construct_initialization_nodes(len(srclines)).body
+	if 'profile' in instrumentation:
+		tree.name = factor
+		inject_profiling_nodes(tree)
+		init_body = construct_initialization_nodes(len(srclines)).body
+		tree.body[0:0] = init_body
+
+		# Handle module body as a one off
+		init_node_count = len(init_body)
+		module_profile = construct_profile_trap("", None, tree.body[init_node_count:])
+		del tree.body[init_node_count:]
+		tree.body.append(module_profile)
+	else:
+		# Insert instrumentation initialization.
+		assert 'coverage' in instrumentation
+		init_body = construct_initialization_nodes(len(srclines)).body
+		tree.body[0:0] = init_body
 
 	# Add hash and canonical factor path.
 	constants.extend([
