@@ -113,15 +113,14 @@ def main(inv:process.Invocation):
 
 	sys.stdout.flush()
 	try:
-		# Unconditionally integrate and delineate against coverage images.
-		ficmd('integrate', ['-mcoverage', '-g', selection])
-		ficmd('delineate', [selection])
-
+		# Coverage
 		if config['accuracy']:
+			ficmd('integrate', ['-mcoverage', '-g', selection])
+			ficmd('delineate', ['-mcoverage', selection])
 			for test in tests:
 				ficmd('test', [test])
 		else:
-			# Still need delineated forms.
+			# Still need the delineated images.
 			ficmd('delineate', [selection])
 
 		# Profiling
