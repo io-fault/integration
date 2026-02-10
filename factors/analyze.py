@@ -116,7 +116,7 @@ def main(inv:process.Invocation):
 		# Coverage
 		if config['accuracy']:
 			ficmd('integrate', ['-mcoverage', '-g', selection])
-			ficmd('delineate', [selection])
+			ficmd('delineate', ['-mcoverage', selection])
 			for test in tests:
 				ficmd('test', [test])
 		else:
