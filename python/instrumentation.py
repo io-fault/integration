@@ -92,12 +92,12 @@ if True:
 	import atexit as _fi_ae
 	import functools as _fi_ft
 	import os as _fi_os
+	import builtins as _fi_bn
 
-	def _fi_mkdir(path, Retry=32):
-		import os
+	def _fi_mkdir(path, Retry=32, range=_fi_bn.range, makedirs=_fi_os.makedirs):
 		for x in range(Retry):
 			try:
-				os.makedirs(path)
+				makedirs(path)
 			except FileExistsError:
 				# Tests should be able to run in parallel, so expect runtime conflicts.
 				pass
@@ -192,7 +192,7 @@ if True:
 		del _fi_record_coverage
 
 	# Limit names left in the module globals.
-	del _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_alloc_dir
+	del _fi_bn, _fi_os, _fi_ft, _fi_cl, _fi_ae, _fi_alloc_dir
 """.strip() + '\n'
 
 count_boolop_expression = "(_FI_INCREMENT__(((__file__, %r),)) or INSTRUMENTATION_ERROR)"
