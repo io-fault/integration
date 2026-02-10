@@ -337,15 +337,3 @@ def compile(factor, source, path, constants,
 		('__metrics__', instrumentation),
 	])
 	return module.inject(tree, constants)
-
-if __name__ == '__main__':
-	from . import bytecode
-	import sys
-	import os
-	out, src = sys.argv[1:]
-
-	st = os.stat(src)
-	with open(src) as f:
-		co = compile(None, f.read(), src, (), filter=visit)
-
-	bytecode.store(out, co, st.st_mtime, st.st_size)
