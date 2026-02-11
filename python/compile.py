@@ -71,7 +71,7 @@ def mkast(target, origin, language, dialect, optimize, instrumentation, paramete
 	with open(target, 'wb') as out:
 		pickle.dump((str(origin), ast), out)
 
-def delineate(output, origin, params):
+def delineate(output, origin, metrics, params):
 	from . import instrumentation
 	from . import delineate
 	fpath = params['factor'].split('.')
@@ -79,7 +79,8 @@ def delineate(output, origin, params):
 
 	factor_name = params.pop('factor', None)
 	encoding = params.pop('encoding', 'utf-8')
-	params['instrumentation'] = {'coverage'}
+	metrics_trap = params.pop('metrics-trap', None)
+	params['instrumentation'] = metrics
 
 	aset = set()
 	with open(origin, 'r', encoding=encoding) as f:
@@ -122,7 +123,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		if delineated == 'archive':
 			archive(output, source)
 		elif delineated == 'json':
-			delineate(output, source, params)
+			delineate(output, source, instrumentation, params)
 		else:
 			raise ValueError("unrecognized delineation format")
 	else:

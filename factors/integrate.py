@@ -204,7 +204,7 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 		req = required | metrics_instrumentation
 	else:
 		res = restricted
-		req = required
+		req = required | metrics_instrumentation
 
 	config, remainder = configure(res, req, inv.argv)
 	config['construction-mode'] = mode
