@@ -46,6 +46,7 @@
 				!: coverage
 			!:
 				if-profile: profile
+				!: ""
 
 -pyc-reduce-1:
 	: "compile-bytecode" - -
