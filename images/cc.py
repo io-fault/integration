@@ -727,11 +727,13 @@ class Construction(kcore.Context):
 		if exit_code == 0:
 			if image_type == 'directory':
 				tfile.fs_modified()
+
+			if image_type != 'void' and rimg is not None:
+				# Render command returned non-zero exit and the new image exists.
+				self.retain_image(rimg, tfile)
 		else:
 			self.failures += 1
 
-		if image_type != 'void' and rimg is not None:
-			self.retain_image(rimg, tfile)
 
 		if exit_code is None:
 			exit_type = 'cached'
