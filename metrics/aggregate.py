@@ -131,6 +131,54 @@ def integrate_coverage_capture(regions, output, cache, telemetry, delineated, pf
 	with (output/'constituents').fs_open('w') as f:
 		json.dump(structure_coverage(consolidated), f)
 
+def integrate_captured_ru(output, telemetry):
+	from fault.status.transport import structure
+	ct = telemetry / 'profile'
+	if ct.fs_type() != 'directory':
+		# No profile data.
+		return
+
+	totals = collections.defaultdict(list)
+	for x in capture.find_record_sets(ct):
+		path, segment = x
+
+		if segment.identifier != '.fault-timing-deltas':
+			# Only format currently supported.
+			continue
+
+		producer = tuple(segment.container)
+		fsc = path // segment
+
+		dtimers = (fsc/'timings')
+		if dtimers.fs_type() == 'data':
+			with dtimers.fs_open('r') as dt:
+				dtimers_src = dt.read()
+
+			for element, data in structure(dtimers_src):
+				idx = tuple(element.split('.'))
+				ctx = data[0]
+				for timepair in data[1:]:
+					ctime, dtime = map(int, timepair.split('-'))
+					rtime = ctime - dtime
+					totals[element].append(ctime)
+					totals[element].append(rtime)
+
+	rtimings = []
+	for element in totals:
+		cstats = calculations.statistics(totals[element][0::2], scale=1000).summary()
+		rstats = calculations.statistics(totals[element][1::2], scale=1000).summary()
+		ncalls = cstats['count']
+		ctime = cstats['average-value']
+		cmax = cstats['maximum-value']
+		cmin = cstats['minimum-value']
+		rtime = rstats['average-value']
+		rpercent = (rtime / (ctime or 1)) * 100
+		rtimings.append((element, ctime, ncalls, rpercent, cmin, cmax))
+
+	rtimings.sort(reverse=True, key=(lambda x: x[2]))
+	with (output).fs_open('w') as f:
+		json.dump(rtimings, f)
+
 def main(inv:process.Invocation) -> process.Exit:
 	output, cache, telemetry, dimage, project, factor, *src = inv.argv # Factor Image and the Compilation Cache directory.
 	od = inv.fs_pwd@output
@@ -145,5 +193,6 @@ def main(inv:process.Invocation) -> process.Exit:
 	integrate_test_reports(od, cd, td, dd)
 	regions = integrate_coverage_maps(od, cd, td, dd, project, factor)
 	integrate_coverage_capture(regions, od, cd, td, dd, project, factor)
+	integrate_captured_ru(od/'profile-timings', td)
 
 	return inv.exit(0)
