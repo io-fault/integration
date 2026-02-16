@@ -164,21 +164,6 @@ def integrate_lcounters(index, fsc, lcounters):
 		if isolation and srcfile and counters:
 			src.write(f"{isolation} {counters} {srcfile}\n")
 
-def factor_records(root):
-	"""
-	# Scan the tree for data files and select the segment
-	# from &root that can be used to identify the origin of
-	# the record.
-
-	# Yields the path and segment identifying the data record.
-	"""
-
-	# Essentially, scan for directories containing regular files.
-	for d, files in root.fs_index():
-		qpath = d.segment(root)
-		if files and qpath.identifier[:1] == '.':
-			yield root, qpath
-
 def identify_source_areas(path):
 	"""
 	# Scan the directory for nodes containing regular files.
@@ -188,14 +173,6 @@ def identify_source_areas(path):
 		for d, df in subdir.fs_index():
 			if df:
 				yield d
-
-def identify_captured_metrics(path):
-	"""
-	# Scan each data set for capture records.
-	"""
-
-	for dataset in path.fs_list('void')[0]:
-		yield from factor_records(dataset)
 
 def join_fault_syntax_areas(sources, areas, types, *, Type=dict):
 	ra = {}

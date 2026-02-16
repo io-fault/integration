@@ -12,6 +12,7 @@ from fault.system import files
 
 from . import calculations
 from . import coverage
+from . import capture
 
 first = operator.itemgetter(0)
 
@@ -98,7 +99,7 @@ def integrate_coverage_capture(regions, output, cache, telemetry, delineated, pf
 	# However, tests may execute subprocesses,
 	# so consolidation across PIDs is necessary.
 	consolidated = collections.defaultdict(collections.Counter)
-	for x in coverage.identify_captured_metrics(ct):
+	for x in capture.find_record_sets(ct):
 		leading, segment = x
 
 		if segment.identifier != '.fault-syntax-counters':
