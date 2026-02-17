@@ -123,8 +123,10 @@ def integrate(index, types, element):
 
 				# Convert coverage-counters and coverage-zeros to values
 				# more amicable to reporting.
+				attr['metrics'] = set()
 				cc = epl.get(('coverage-counters',))
 				if cc:
+					attr['metrics'].add('coverage')
 					cc = int(cc, 10)
 					cz = int(epl.get(('coverage-zeros',)), 10)
 					if cc > 0:
@@ -133,6 +135,15 @@ def integrate(index, types, element):
 						attr['completion'] = None
 					attr['counters'] = cc
 					attr['misses'] = cz
+
+				pc = epl.get(('metrics', 'profile-count'))
+				if pc:
+					attr['metrics'].add('profile')
+					attr['profile-count'] = pc
+					attr['profile-duration'] = epl[('metrics', 'profile-duration')]
+					attr['profile-residency'] = epl[('metrics', 'profile-residency')]
+					attr['profile-minimum'] = epl[('metrics', 'profile-minimum')]
+					attr['profile-maximum'] = epl[('metrics', 'profile-maximum')]
 
 	for x in element[1]:
 		if x[0] == 'section':

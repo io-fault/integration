@@ -279,10 +279,20 @@ class Text(comethod.object):
 			ctl.append("\t\t- (source/area)`{0[0]} {0[1]} {1[0]} {1[1]}`\n".format(*area))
 
 		# Add coverage if present in annotations.
-		coverage = self.annotations.get('.'.join(path), {}).get('coverage')
+		ea = self.annotations.get('.'.join(path), {})
+
+		coverage = ea.get('coverage')
 		if coverage:
 			ctl.append("\t\t- (coverage-zeros)`{0}`\n".format(coverage[1]))
 			ctl.append("\t\t- (coverage-counters)`{0}`\n".format(coverage[0]))
+
+		profile = ea.get('profile')
+		if profile:
+			ctl.append("\t\t- (metrics/profile-duration)`{0}`\n".format(int(profile[0])))
+			ctl.append("\t\t- (metrics/profile-count)`{0}`\n".format(profile[1]))
+			ctl.append("\t\t- (metrics/profile-residency)`{0}`\n".format(profile[2]))
+			ctl.append("\t\t- (metrics/profile-minimum)`{0}`\n".format(profile[3]))
+			ctl.append("\t\t- (metrics/profile-maximum)`{0}`\n".format(profile[4]))
 
 		if element:
 			ctl.extend(render.elements([('set', element, {})], adjustment=2))
