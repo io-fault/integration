@@ -334,6 +334,48 @@ class Render(comethod.object):
 
 		return misses, c_isolation, completion
 
+	@staticmethod
+	def format_duration(nanoseconds, *, ffmt="{0:0.1f}".format) -> tuple[str, str]:
+		"""
+		# Construct a string representation of &nanoseconds suitable for display.
+		"""
+
+		ns = int(nanoseconds)
+		if ns < 1000:
+			return nanoseconds, 'ns'
+
+		us = ns / 1000
+		if us < 1000:
+			return ffmt(us), 'us'
+
+		ms = us / 1000
+		if ms < 1000:
+			return ffmt(ms), 'ms'
+
+		# For profiling, presume anything higher is unlikely and deserving a high digit count.
+		s = ms / 1000
+		if s >= 60:
+			return ffmt(s / 60), 'm'
+
+		return ffmt(s), 's'
+
+	@staticmethod
+	def format_count(quantity, *, ffmt="{0:0.1f}".format) -> tuple[str, str]:
+		"""
+		# Construct a *compact* string representation of &quantity suitable for display.
+		"""
+
+		q = int(quantity)
+		if q < 1000:
+			return str(quantity), ''
+
+		q /= 1000
+		if q < 1000:
+			return ffmt(q), 'K'
+
+		q /= 1000
+		return ffmt(q), 'M'
+
 	def document(self, subject, context, head=(), header=(), footer=(), resolver=None):
 		"""
 		# Render the HTML document from the given chapter.
