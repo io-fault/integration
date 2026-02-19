@@ -579,41 +579,42 @@ section > section > section.unspecified > h1.integrate
 	color: var(--integrated-titles);
 }
 
-/* Normally, coverage reporting; generally completion progress. */
-h1 span.element-status {
-	vertical-align: super;
-	font-size: 54%;
+/* Coverage and profiling aggregates. */
+div.element-status {
+	display: inline-block;
+	font-size: 64%;
 	color: var(--element-status);
 	font-family: monospace;
+	float: right;
+	color: var(--metrics-text-context);
 }
 
-h1 span.element-status > span.misses {
-	color: var(--incompletion-count);
-	user-select: none;
+div.element-status data {
+	color: var(--metrics-data-field);
 }
-h1 span.element-status > span.completion-isolation:after {
-	content: ':';
-	color: var(--completed);
-	user-select: none;
+
+div.element-status > div {
+	display: none;
+	text-align: left;
 }
-h1 span.element-status > span.nothing-missed {
-	color: var(--completed);
-	user-select: none;
+
+div.element-status > div:has(data) {
+	display: block;
 }
-h1 span.element-status > span.completion {
-	color: var(--completion-percentage);
-	user-select: none;
+
+div.element-status > div.profile:has(data)::before {
+	content: 'Profile: ';
+}
+
+div.element-status > div.coverage:has(data)::before {
+	content: 'Coverage: ';
+	margin-left: -0.6em;
 }
 
 /* Text and links on the other side of the title. */
 h1 > div.factor-element-meta {
 	float: right;
 	text-align: bottom;
-}
-
-/* Compensate for element production. */
-div.element-status > span.misses:after {
-	content: ' ';
 }
 
 span.abstract-type {
