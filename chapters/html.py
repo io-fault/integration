@@ -388,6 +388,7 @@ class Render(comethod.object):
 		"""
 
 		pcount = attr.get('profile-count')
+		pduration = attr.get('profile-duration')
 		if pcount is not None:
 			yield from self.element('data',
 				self.text(''.join(self.format_count(pcount))),
@@ -396,6 +397,18 @@ class Render(comethod.object):
 				('title', 'Number of times the element was executed during capture.'),
 			)
 			yield from self.text(' calls')
+			if pduration:
+				t = float(pduration)
+				if t > 0:
+					rate = (10 ** 9) / t
+					yield from self.text(' (')
+					yield from self.element('data',
+						self.text(''.join(self.format_count(rate, precision=5))),
+						('value', rate),
+						('class', 'profile-call-rate'),
+						('title', 'Calls per second achieved on average.'),
+					)
+					yield from self.text('/s)')
 
 		presidency = attr.get('profile-residency')
 		if presidency is not None:
@@ -408,7 +421,6 @@ class Render(comethod.object):
 			)
 			yield from self.text(' residency ')
 
-		pduration = attr.get('profile-duration')
 		if pduration is not None:
 			yield from self.text(' of ')
 			yield from self.element('data',
