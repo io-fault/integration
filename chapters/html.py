@@ -360,21 +360,27 @@ class Render(comethod.object):
 		return ffmt(s), 's'
 
 	@staticmethod
-	def format_count(quantity, *, ffmt="{0:0.1f}".format) -> tuple[str, str]:
+	def format_count(quantity, *, precision=8, ffmt="{0:0.1f}".format) -> tuple[str, str]:
 		"""
 		# Construct a *compact* string representation of &quantity suitable for display.
 		"""
 
-		q = int(quantity)
-		if q < 1000:
-			return str(quantity), ''
+		if isinstance(quantity, str):
+			q = int(quantity)
+		else:
+			q = quantity
 
-		q /= 1000
 		if q < 1000:
-			return ffmt(q), 'K'
+			return str(quantity)[:precision], ''
 
-		q /= 1000
-		return ffmt(q), 'M'
+		# limited logarithm
+		for p in 'KMG':
+			q /= 1000
+			if q < 1000:
+				return ffmt(q), p
+		else:
+			q /= 1000
+			return ffmt(q), 'T'
 
 	def element_profile(self, attr):
 		"""
