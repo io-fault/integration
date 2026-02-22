@@ -123,16 +123,25 @@ def integrate(index, types, element):
 
 				# Convert coverage-counters and coverage-zeros to values
 				# more amicable to reporting.
+				attr['metrics'] = set()
 				cc = epl.get(('coverage-counters',))
 				if cc:
+					attr['metrics'].add('coverage')
 					cc = int(cc, 10)
+					attr['coverage-counters'] = cc
 					cz = int(epl.get(('coverage-zeros',)), 10)
-					if cc > 0:
-						attr['completion'] = (cc - cz) / cc
-					else:
-						attr['completion'] = None
-					attr['counters'] = cc
-					attr['misses'] = cz
+					attr['coverage-missed'] = cz
+					if cc:
+						attr['coverage-percentage'] = (cc - cz) / cc
+
+				pc = epl.get(('metrics', 'profile-count'))
+				if pc:
+					attr['metrics'].add('profile')
+					attr['profile-count'] = pc
+					attr['profile-duration'] = epl[('metrics', 'profile-duration')]
+					attr['profile-residency'] = epl[('metrics', 'profile-residency')]
+					attr['profile-minimum'] = epl[('metrics', 'profile-minimum')]
+					attr['profile-maximum'] = epl[('metrics', 'profile-maximum')]
 
 	for x in element[1]:
 		if x[0] == 'section':
@@ -179,7 +188,7 @@ class PageContext():
 	pc_identifier: str
 	pc_hyperlink: str
 
-def page_heading(tree, depth, subject, context, *, progress=()):
+def page_heading(tree, depth, subject, context):
 	"""
 	# Construct the elements of a page's initial heading.
 	"""
@@ -192,7 +201,6 @@ def page_heading(tree, depth, subject, context, *, progress=()):
 					tree.escape(subject.ps_identifier),
 					('class', 'subject-identifier'),
 				),
-				progress,
 				tree.element('a',
 					tree.element('code',
 						tree.escape(subject.ps_type),
@@ -288,51 +296,173 @@ class Render(comethod.object):
 			('class', None if integrate == False else 'integrate')
 		)
 
-	def element_progress(self, attr):
+	def element_coverage(self, attr):
 		"""
-		# Render misses and completion elements normally used to represent coverage.
-
-		# [ Returns ]
-		# A triple containing the misses, isolation, and completion elements
-		# to be inserted directly after an element's title.
+		# Format the coverage metrics for display in the element's status.
 		"""
 
-		# Allow misses to exist independently of completion despite it
-		# potentially being absurd.
-		if attr.get('misses', None) is not None:
-			if attr['misses'] > 0:
-				misclass = 'misses'
-			else:
-				misclass = 'nothing-missed'
-
-			misses = self.element('span',
-				self.text(str(attr['misses'])),
-				('class', misclass),
+		percentage = attr.get('coverage-percentage')
+		if percentage is not None:
+			yield from self.element('data',
+				self.text("{0:0.1f}".format(percentage * 100)),
+				('value', percentage),
+				('class', 'coverage-percentage'),
+				('title', 'Percentage of counters with non-zero executions.'),
 			)
-		else:
-			misses = None
-			misses = ()
+			yield from self.text('%')
+
+		missed = attr.get('coverage-missed')
+		if missed is not None:
+			yield from self.text(' with ')
+			yield from self.element('data',
+				self.text(''.join(self.format_count(missed))),
+				('value', str(missed)),
+				('class', 'coverage-missed'),
+				('title', 'Number of counters with zero executions.'),
+			)
+			yield from self.text(' missed')
 
 		# Coverage as a floating point value (0-1) provided by &integrate.
-		completion = ()
-		c_isolation = ()
-		if attr.get('completion', None) is not None:
-			# Exclude the percentage when not incomplete.
-			# The zero misses count intends to succintly imply the hundred percent.
+		total = attr.get('coverage-counters')
+		if total is not None:
+			yield from self.text(' of ')
+			yield from self.element('data',
+				self.text(''.join(self.format_count(total))),
+				('value', str(total)),
+				('class', 'coverage-counters'),
+				('title', 'Identified traversable expressions in the function.'),
+			)
+			yield from self.text(' counters')
 
-			covp = attr.get('completion', 0.0)
-			if (covp - 1.0) < 0.0:
-				c_isolation = self.element('span',
-					self.text(''),
-					('class', 'completion-isolation')
-				)
-				txt = "{0}%".format(int(covp * 100))
-				completion = self.element('span',
-					self.text(txt),
-					('class', 'completion'),
-				)
+	@staticmethod
+	def format_duration(nanoseconds, *, ffmt="{0:0.1f}".format) -> tuple[str, str]:
+		"""
+		# Construct a string representation of &nanoseconds suitable for display.
+		"""
 
-		return misses, c_isolation, completion
+		ns = int(nanoseconds)
+		if ns < 1000:
+			return nanoseconds, 'ns'
+
+		us = ns / 1000
+		if us < 1000:
+			return ffmt(us), 'us'
+
+		ms = us / 1000
+		if ms < 1000:
+			return ffmt(ms), 'ms'
+
+		# For profiling, presume anything higher is unlikely and deserving a high digit count.
+		s = ms / 1000
+		if s >= 60:
+			return ffmt(s / 60), 'm'
+
+		return ffmt(s), 's'
+
+	@staticmethod
+	def format_count(quantity, *, precision=8, ffmt="{0:0.1f}".format) -> tuple[str, str]:
+		"""
+		# Construct a *compact* string representation of &quantity suitable for display.
+		"""
+
+		if isinstance(quantity, str):
+			q = int(quantity)
+		else:
+			q = quantity
+
+		if q < 1000:
+			return str(quantity)[:precision], ''
+
+		# limited logarithm
+		for p in 'KMG':
+			q /= 1000
+			if q < 1000:
+				return ffmt(q), p
+		else:
+			q /= 1000
+			return ffmt(q), 'T'
+
+	def element_profile(self, attr):
+		"""
+		# Format the profile metrics for display in the element's status.
+		"""
+
+		pcount = attr.get('profile-count')
+		pduration = attr.get('profile-duration')
+		if pcount is not None:
+			yield from self.element('data',
+				self.text(''.join(self.format_count(pcount))),
+				('value', pcount),
+				('class', 'profile-count'),
+				('title', 'Number of times the element was executed during capture.'),
+			)
+			yield from self.text(' calls')
+			if pduration:
+				t = float(pduration)
+				if t > 0:
+					rate = (10 ** 9) / t
+					yield from self.text(' (')
+					yield from self.element('data',
+						self.text(''.join(self.format_count(rate, precision=5))),
+						('value', rate),
+						('class', 'profile-call-rate'),
+						('title', 'Calls per second achieved on average.'),
+					)
+					yield from self.text('/s)')
+
+		presidency = attr.get('profile-residency')
+		if presidency is not None:
+			yield from self.text(' ')
+			yield from self.element('data',
+				self.text(presidency[:5] + '%'),
+				('value', presidency),
+				('class', 'profile-residency'),
+				('title', 'Percentage of the total cumulative duration performed within the function.'),
+			)
+			yield from self.text(' residency ')
+
+		if pduration is not None:
+			yield from self.text(' of ')
+			yield from self.element('data',
+				self.text(''.join(self.format_duration(pduration))),
+				('value', pduration),
+				('class', 'profile-duration'),
+				('title', 'Average execution duration.'),
+			)
+
+		pmaximum = attr.get('profile-maximum')
+		pminimum = attr.get('profile-minimum') or pmaximum
+		if pminimum is not None:
+			yield from self.element('span',
+				itertools.chain(
+					self.text('['),
+					self.element('data',
+						self.text(''.join(self.format_duration(pminimum))),
+						('value', pminimum),
+						('class', 'profile-minimum'),
+						('title', 'Minimum execution duration of the element.'),
+					),
+					self.escape(' -> '),
+					self.element('data',
+						self.text(''.join(self.format_duration(pmaximum))),
+						('value', pmaximum),
+						('class', 'profile-maximum'),
+						('title', 'Maximum execution duration of the element.'),
+					),
+					self.text(']'),
+				),
+				('class', 'profile-duration-range'),
+			)
+
+	def element_status(self, attr):
+		return self.element('div',
+			itertools.chain(
+				self.element('div', self.element_coverage(attr), ('class', 'coverage')),
+				self.text(' '),
+				self.element('div', self.element_profile(attr), ('class', 'profile')),
+			),
+			('class', 'element-status'),
+		)
 
 	def document(self, subject, context, head=(), header=(), footer=(), resolver=None):
 		"""
@@ -343,11 +473,7 @@ class Render(comethod.object):
 		relement, = self.input.root
 
 		attr = relement[-1]
-		eprog = self.element('span',
-			itertools.chain(*self.element_progress(attr)),
-			('class', 'element-status'),
-		)
-		phead = page_heading(self.output, 2, subject, context, progress=eprog)
+		phead = page_heading(self.output, 2, subject, context)
 		title = self.title(resolver, phead, False)
 		return self.element('html',
 			itertools.chain(
@@ -381,6 +507,7 @@ class Render(comethod.object):
 
 	def root(self, resolver, elements, attr):
 		chapter_content = list(itertools.takewhile((lambda x: x[0] != 'section'), elements))
+		yield from self.element_status(attr)
 		yield from self.abstract(resolver, chapter_content, attr)
 		yield from self.switch(resolver, elements[len(chapter_content):], attr)
 
@@ -445,11 +572,6 @@ class Render(comethod.object):
 					('class', 'title'),
 					href = href
 				),
-				self.element('span',
-					itertools.chain(*self.element_progress(attr)),
-					('class', 'element-status'),
-				),
-
 				self.element('div',
 					itertools.chain(
 						self.element('span',
@@ -469,6 +591,7 @@ class Render(comethod.object):
 			itertools.chain(
 				title,
 				self.reference_target(resolver, ref.sole[1]) if ref is not None else (),
+				self.element_status(attr),
 				self.switch(resolver, elements, attr)
 			),
 			('class', typ),

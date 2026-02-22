@@ -28,4 +28,8 @@
 	--element-status: white;
 	--completed: gray;
 	--completion-percentage: #77dd77;
+
+	/* Metrics */
+	--metrics-text-context: #A0A0A0;
+	--metrics-data-field: #fafafa;
 }

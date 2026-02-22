@@ -26,4 +26,8 @@
 	--return-type: '\2190';
 	--exception-type: '\2191';
 	--effect-type: '\2193';
+
+	/* Metrics */
+	--metrics-profile-icon: '\23F3';
+	--metrics-coverage-icon: '\1F9E9';
 }

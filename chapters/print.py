@@ -73,9 +73,19 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	else:
 		img = files.root/'var'/'empty'/'nothing'
 
+	profile_timings = {}
 	for v in variants:
 		metrics = pj.image(v.reform('metrics'), fpath)
 		if metrics.fs_type() == 'directory':
+			try:
+				with open(metrics/'profile-timings') as f:
+					profile_timings_seq = json.load(f)
+			except FileNotFoundError:
+				pass
+			else:
+				profile_timings = {x[0]: x[1:] for x in profile_timings_seq}
+				del profile_timings_seq
+
 			try:
 				careas, ccounts, ctypes = coverage.load_metrics_aggregates(metrics)
 			except FileNotFoundError:
@@ -98,6 +108,10 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 	for fmt, x in sources:
 		# Per-source, implied, per-element dictionary used by join.
 		annotations = collections.defaultdict(dict)
+
+		# Copy profiling summaries to annotations for the initial join.
+		for element in profile_timings:
+			annotations[element]['profile'] = profile_timings[element]
 
 		# Calculate path to delineation image.
 		if str(fmt) == 'http://if.fault.io/factors/meta.unknown':
