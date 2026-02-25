@@ -640,7 +640,7 @@ class Context(object):
 				yield from self.d_submodules(route.container, route.container.module(), 'cofactor')
 
 	def emit(fs, key, iterator):
-		r = fs.route(key).fs_init()
+		r = fs.route(key).fs_alloc().fs_store(b'')
 
 		with r.fs_open('wb') as f:
 			# the xml declaration prefix is not written.
