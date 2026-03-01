@@ -69,8 +69,8 @@ def delineate(output, source):
 
 def main(inv:process.Invocation) -> process.Exit:
 	out, src, *plist = inv.argv
-	output = files.Path.from_path(out)
-	source = files.Path.from_path(src)
+	output = inv.fs_pwd@out
+	source = inv.fs_pwd@src
 	params = dict(zip(plist[0::2], plist[1::2]))
 	del plist
 

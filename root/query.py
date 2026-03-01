@@ -5,13 +5,13 @@ import os
 from fault.system import files
 
 # The default fault-io installation layout.
-root_project_path = files.Path.from_absolute(__file__) ** 1
+root_project_path = (files.root@__file__) ** 1
 installation_path = root_project_path ** 3
 
 # Check for explicit designation.
 installation_envstr = os.environ.get('FAULT_INSTALLATION', '').strip() or None
 if installation_envstr is not None:
-	ipath = files.Path.from_absolute(installation_envstr)
+	ipath = (files.root@installation_envstr)
 	if ipath.fs_type() != 'directory':
 		ipath = installation_path
 else:

@@ -129,8 +129,8 @@ def clang(executable, type='executable', libdir='lib'):
 	# Extract information from the given clang &executable.
 	"""
 	warnings = []
-	root = files.Path.from_absolute('/')
-	cc_route = files.Path.from_absolute(executable)
+	root = files.root
+	cc_route = (root@executable)
 
 	# gather compiler information.
 	x = execution.prepare(type, executable, ['--version'])
@@ -146,7 +146,7 @@ def clang(executable, type='executable', libdir='lib'):
 	pid, exitcode, sdd = execution.dereference(i)
 	search_dirs_data = parse_clang_directories_1(sdd.decode('utf-8'))
 
-	ccprefix = files.Path.from_absolute(search_dirs_data['programs'][0])
+	ccprefix = root@search_dirs_data['programs'][0]
 
 	if target is None:
 		warnings.append(('target', 'no target field available from --version output'))
@@ -158,7 +158,7 @@ def clang(executable, type='executable', libdir='lib'):
 	cclib = compiler_libraries('clang', ccprefix, '.'.join(version_info), cc_route, target)
 	builtins = None
 	if cclib is None:
-		cclib = files.Path.from_relative(root, search_dirs_data['libraries'][0])
+		cclib = +(root@search_dirs_data['libraries'][0])
 		cclib = cclib / libdir / sys.platform
 
 	if sys.platform in {'darwin'}:
@@ -179,7 +179,7 @@ def clang(executable, type='executable', libdir='lib'):
 				builtins = None
 
 	libdirs = [
-		files.Path.from_relative(root, str(x).strip('/'))
+		+(root@str(x).strip('/'))
 		for x in search_dirs_data['libraries']
 	]
 

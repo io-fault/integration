@@ -519,7 +519,7 @@ class Context(object):
 	def d_module(self, factor_type, route, module, compressed=False):
 		lc = 0
 		ir = route
-		sources = [files.Path.from_absolute(module.__file__)]
+		sources = [files.root@module.__file__]
 
 		for route in sources:
 			if compressed:

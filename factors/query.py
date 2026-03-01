@@ -123,8 +123,9 @@ def connecting(config):
 	ci = []
 	cx = []
 
-	ci.extend(str(files.Path.from_path(x)) for x in config.get('interpreted-connections', ()))
-	cx.extend(str(files.Path.from_path(x)) for x in config.get('interpreted-disconnections', ()))
+	pwd = process.fs_pwd()
+	ci.extend(str(+(pwd@x)) for x in config.get('interpreted-connections', ()))
+	cx.extend(str(+(pwd@x)) for x in config.get('interpreted-disconnections', ()))
 
 	ci.extend(config.get('direct-connections', ()))
 	cx.extend(config.get('direct-disconnections', ()))
@@ -236,9 +237,10 @@ def main(inv:process.Invocation) -> process.Exit:
 	config, remainder = configure(restricted, required, inv.argv)
 
 	if config['product-directory']:
-		pdr = files.Path.from_path(config['product-directory'])
+		pdr = pwd@config['product-directory']
 	else:
 		pdr = pwd
+	pdr = +pdr
 
 	# Identify the system context to use to process factors.
 	origin, sysctx = context.resolve(config['system-context-directory'], product=pdr)

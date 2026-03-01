@@ -44,8 +44,9 @@ def connecting(config):
 	ci = []
 	cx = []
 
-	ci.extend(str(files.Path.from_path(x)) for x in config.get('interpreted-connections', ()))
-	cx.extend(str(files.Path.from_path(x)) for x in config.get('interpreted-disconnections', ()))
+	pwd = process.fs_pwd()
+	ci.extend(str(+(pwd@x)) for x in config.get('interpreted-connections', ()))
+	cx.extend(str(+(pwd@x)) for x in config.get('interpreted-disconnections', ()))
 
 	ci.extend(config.get('direct-connections', ()))
 	cx.extend(config.get('direct-disconnections', ()))

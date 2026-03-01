@@ -10,14 +10,15 @@
 	# to identify the default service directory override.
 
 # /default_route/
-	# A &Path instance pointing to the default route
+	# A &files.Path instance pointing to the default route
 	# relative to the user's home directory. (~/.fault)
 """
 import os
 import sys
 import itertools
 
-from fault.system.files import Path
+from fault.system import files
+from fault.system import process
 from fault.system import query
 from fault.system import execution as libexec
 
@@ -31,14 +32,14 @@ def identify_route(override=None):
 	"""
 
 	if override is not None:
-		return Path.from_path(override)
+		return +(process.fs_pwd()@override)
 
 	env = os.environ.get(environment)
 
 	if env is None:
-		return default_route
+		return +default_route
 
-	return Path.from_absolute(env)
+	return +(files.root@env)
 
 def service_routes(route):
 	"""
@@ -104,7 +105,7 @@ class Configuration(object):
 			if f in fm:
 				setattr(self, f, fm[f])
 
-	def __init__(self, route:Path, identifier:str):
+	def __init__(self, route:files.Path, identifier:str):
 		"""
 		# Initialize the Service structure selecting the &route as its
 		# storage location. The &route may not exist upon instantiation

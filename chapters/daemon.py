@@ -8,6 +8,7 @@ import itertools
 from dataclasses import dataclass
 
 from fault.system import files
+from fault.system import process
 from fault.web import service, system
 
 from . import html
@@ -293,7 +294,7 @@ class Corpus(service.Partition):
 			else:
 				data[key].append(x)
 
-		routes = [files.Path.from_path(x) for x in data.pop(None, ())]
+		routes = [+(process.fs_pwd()@x) for x in data.pop(None, ())]
 		return argv[0] if argv[0] != '.' else '', routes, {k:dict(zip(v[::2], v[1::2])) for k,v in data.items()}
 
 	def structure(self):
@@ -323,7 +324,7 @@ class Corpus(service.Partition):
 
 			for name, path in d.items():
 				key = '.lib/{name}.{type}'.format(name=name, type=type)
-				self.cp_resources[key] = (cotype, files.Path.from_absolute(path))
+				self.cp_resources[key] = (cotype, files.root@path)
 
 		self.cp_styles = ['.lib/' + k +'.css' for k in self.cp_parameters['css']]
 		self.cp_resources['favicon.ico'] = (None, None)

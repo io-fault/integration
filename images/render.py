@@ -45,20 +45,20 @@ class Application(kcore.Context):
 		self.cxn_log = transcripts.Log.stdout()
 
 	@classmethod
-	def from_command(Class, environ, arguments):
+	def from_command(Class, pwd, environ, arguments):
 		ctxdir, ccmode, cache_type, cache_path, ifeatures, work, fpath = arguments
-		ctxdir = files.Path.from_path(ctxdir)
-		work = files.Path.from_path(work)
+		ctxdir = +(pwd@ctxdir)
+		work = +(pwd@work)
 
 		# Optional system command intercept.
 		executor = environ.get('FPI_EXECUTOR', None)
 		features = list(tools.unique(ifeatures.split(':'), None))
 
 		if cache_type == 'transient':
-			cdi = cache.Transient(files.Path.from_path(cache_path))
+			cdi = cache.Transient(+(pwd@cache_path))
 		else:
 			assert cache_type == 'persistent'
-			cdi = cache.Persistent(files.Path.from_path(cache_path)/fpath)
+			cdi = cache.Persistent(+(pwd@cache_path/fpath))
 
 		ctx = cc.open_fs_context(ctxdir).load().configure()
 		rebuild = int((environ.get('FPI_REBUILD') or '0').strip())
@@ -158,7 +158,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		'FPI_SWITCH',
 	])
 
-	cxn = Application.from_command(inv.environ, inv.argv)
+	cxn = Application.from_command(inv.fs_pwd, inv.environ, inv.argv)
 
 	os.environ['OLDPWD'] = os.environ.get('PWD')
 	os.environ['PWD'] = str(cxn.cxn_work_directory)

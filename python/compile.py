@@ -75,7 +75,7 @@ def delineate(output, origin, metrics, params):
 	from . import instrumentation
 	from . import delineate
 	fpath = params['factor'].split('.')
-	delineate.process_source(str(output), str(origin), fpath)
+	delineate.process_source(output, str(origin), fpath)
 
 	factor_name = params.pop('factor', None)
 	encoding = params.pop('encoding', 'utf-8')
@@ -103,8 +103,8 @@ def archive(output, source):
 
 def main(inv:process.Invocation) -> process.Exit:
 	out, src, *remainder = inv.args
-	output = files.Path.from_path(out)
-	source = files.Path.from_path(src)
+	output = +(inv.fs_pwd@out)
+	source = +(inv.fs_pwd@src)
 
 	params = dict()
 	params.update(zip(remainder[0::2], remainder[1::2]))

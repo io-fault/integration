@@ -48,7 +48,7 @@ def extract_regions(target, cc, executable, spm):
 	coverage.sequence_syntax_areas(spm, areas)
 
 def main(inv:process.Invocation) -> process.Exit:
-	cc, executable, target, root = map(files.Path.from_path, inv.argv)
+	cc, executable, target, root = [+(inv.fs_pwd@x) for x in inv.argv]
 
 	# System Path map. Built from system-path files.
 	spm = {}

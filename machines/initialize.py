@@ -35,7 +35,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		sys.stderr.write("ERROR: initialize requires exactly one parameter, %d given.\n" %(len(argv),))
 		return inv.exit(1)
 
-	target = files.Path.from_path(argv[0])
+	target = inv.fs_pwd@argv[0]
 	if target.fs_type() == 'void':
 		target.fs_mkdir()
 

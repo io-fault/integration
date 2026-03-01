@@ -26,7 +26,7 @@ from .types import Target, SystemFactor, Integrand
 from ..machines import vectorcontext
 
 open_fs_context = vectorcontext.Context.from_directory
-devnull = files.Path.from_absolute(os.devnull)
+devnull = files.null
 job_priority = 10
 
 try:

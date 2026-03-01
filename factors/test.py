@@ -194,7 +194,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	config, remainder = configure(restricted, required, inv.argv)
 
 	if config['product-directory']:
-		pdr = files.Path.from_path(config['product-directory'])
+		pdr = pwd@config['product-directory']
 	else:
 		pdr = pwd
 

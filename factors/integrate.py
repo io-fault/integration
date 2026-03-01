@@ -212,9 +212,10 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 		config['features'] = features
 
 	if config['product-directory']:
-		pdr = files.Path.from_path(config['product-directory'])
+		pdr = pwd@config['product-directory']
 	else:
 		pdr = pwd
+	pdr = +pdr
 
 	# Identify the system context to use to process factors.
 	origin, cc = context.resolve(config['system-context-directory'], product=pdr)

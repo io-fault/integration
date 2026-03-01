@@ -5,6 +5,7 @@ import os
 from collections.abc import Iterator
 
 from fault.system import files
+from fault.system import process
 from ..root import query
 
 def select(
@@ -27,10 +28,10 @@ def select(
 
 	if local is not None:
 		# A, normally, user provided path.
-		yield ('local', files.Path.from_path(local))
+		yield ('local', process.fs_pwd()@local)
 
 	if os.environ.get(environment, None):
-		yield ('environment', files.Path.from_absolute(os.environ[environment]))
+		yield ('environment', files.root@os.environ[environment])
 
 	if product is not None:
 		yield ('product', product/'.system')

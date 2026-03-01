@@ -584,10 +584,9 @@ def process_source(output, input, fpath):
 	x, = s.comethod('module')(root)
 	x[2]['source-encoding'] = 'utf-8'
 
-	r = files.Path.from_path(output)
-	r.fs_mkdir()
+	output.fs_mkdir()
 
-	with (r/"elements.json").fs_open('w') as f:
+	with (output/"elements.json").fs_open('w') as f:
 		json.dump(x, f)
 
 	keys = []
@@ -598,10 +597,10 @@ def process_source(output, input, fpath):
 		keys.append(k)
 		docs.append(v)
 
-	with (r/"documented.json").fs_open('w') as f:
+	with (output/"documented.json").fs_open('w') as f:
 		json.dump(keys, f)
 
-	with (r/"documentation.json").fs_open('w') as f:
+	with (output/"documentation.json").fs_open('w') as f:
 		json.dump(docs, f)
 
 	keys = []
@@ -612,13 +611,13 @@ def process_source(output, input, fpath):
 		keys.append([x for x in k if x is not None])
 		data.append(v)
 
-	with (r/"data.json").fs_open('w') as f:
+	with (output/"data.json").fs_open('w') as f:
 		json.dump([keys, data], f, cls=LEncoder)
 
 def main(inv:process.Invocation) -> process.Exit:
 	target, source, fpath = inv.args
 	fpath = fpath.split('.')
-	process_source(target, source, fpath)
+	process_source(+(inv.fs_pwd@target), source, fpath)
 	return inv.exit(0)
 
 if __name__ == '__main__':

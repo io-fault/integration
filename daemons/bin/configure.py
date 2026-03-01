@@ -8,7 +8,7 @@ import os
 import sys
 
 from fault.context import string
-from fault.system.files import Path
+from fault.system import files
 from fault.system import process
 
 from .. import service
@@ -203,7 +203,7 @@ def main(inv:process.Invocation) -> process.Exit:
 		dsrc = 'default'
 	else:
 		# from env
-		fiod = Path.from_absolute(fiod)
+		fiod = files.root@fiod
 		dsrc = 'environment'
 
 	if not inv.argv:
