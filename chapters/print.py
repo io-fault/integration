@@ -127,7 +127,7 @@ def r_factor(sx, prefixes, variants, req, ctx, pj, pjdir, fpath, type, requireme
 		srcindex.append((rpathstr, fmt.language, fmt.dialect))
 
 		# Coverage Data
-		apath = str(x)
+		apath = x.fs_path_string()
 		areas = careas.pop(apath, {})
 		types = ctypes.pop(apath, "")
 		counts = ccounts.pop(apath, {})

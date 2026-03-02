@@ -617,7 +617,7 @@ def process_source(output, input, fpath):
 def main(inv:process.Invocation) -> process.Exit:
 	target, source, fpath = inv.args
 	fpath = fpath.split('.')
-	process_source(+(inv.fs_pwd@target), source, fpath)
+	process_source(+(inv.fs_pwd@target), (+(inv.fs_pwd@source)).fs_path_string(), fpath)
 	return inv.exit(0)
 
 if __name__ == '__main__':

@@ -37,7 +37,7 @@ def write_coverage_mapping(path, cmd, areaset):
 	unique.sort()
 
 	with (cmd/'sources').fs_open('w') as f:
-		f.write(str(len(unique)) + ' ' + str(path))
+		f.write(str(len(unique)) + ' ' + path.fs_path_string())
 
 	with (cmd/'areas').fs_open('w') as f:
 		for area in unique:
@@ -75,7 +75,8 @@ def delineate(output, origin, metrics, params):
 	from . import instrumentation
 	from . import delineate
 	fpath = params['factor'].split('.')
-	delineate.process_source(output, str(origin), fpath)
+	origin_path = origin.fs_path_string()
+	delineate.process_source(output, origin_path, fpath)
 
 	factor_name = params.pop('factor', None)
 	encoding = params.pop('encoding', 'utf-8')
@@ -89,7 +90,7 @@ def delineate(output, origin, metrics, params):
 	write_coverage_mapping(origin, output, aset)
 
 	with open(output/'system-path', 'w') as f:
-		f.write(str(origin))
+		f.write(origin_path)
 
 def replicate(target, origin):
 	(target).fs_alloc().fs_mkdir()
