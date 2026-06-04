@@ -22,6 +22,7 @@
 	: extension
 	: executable
 	: archive
+	: elements
 
 -context-identity:
 	: CC_TYPE=fault
@@ -124,6 +125,9 @@
 
 -archive-factors:
 	: [http://if.fault.io/factors/system.archive#factor-image]
+
+-elements-factors:
+	: [http://if.fault.io/factors/system.elements#factor-image]
 
 # Non-component requirements.
 -linker-requirements:
@@ -266,6 +270,9 @@
 	it-extension:
 		: -shared -Xlinker --unresolved-symbols=ignore-all
 
+	it-elements:
+		: -Xlinker -r
+
 -gnu-instrumentation:
 	# meta.metrics does not support collecting data from the gnu toolchain.
 	if-coverage:
@@ -291,6 +298,7 @@
 	: [-system-context]
 	: [-linker-requirements]
 	: [units File]
+	: -Xlinker [-elements-factors]
 	: -Wl,-)
 
 -llvm-ld-elf:
@@ -306,6 +314,7 @@
 	: [-linker-requirements]
 
 	: -o [factor-image File]
+	: -Xlinker [-elements-factors]
 	: [units File]
 
 -macho-itype-switch:
@@ -317,6 +326,9 @@
 
 	it-extension:
 		: -bundle -undefined dynamic_lookup
+
+	it-elements:
+		: -r
 
 -macho-rpath:
 	# Requirements of factor.
@@ -334,6 +346,7 @@
 	: [-macho-requirements]
 
 	: -o [factor-image File]
+	: -Xlinker [-elements-factors]
 	: [units File]
 
 -archive-delineated:
