@@ -9,18 +9,9 @@
 	// /BASE64_FREE/
 		// A malloc selection macro.
 */
-#ifndef _FAULT_BASE_64_H_
-#define _FAULT_BASE_64_H_
-
-// API (can be static inline or exported)
-#ifndef BASE64_API
-	#define BASE64_API(TYPE) static inline TYPE
-#endif
-
-// Internal Interfaces (should be static inline)
-#ifndef BASE64_ISI
-	#define BASE64_ISI(TYPE) static inline TYPE
-#endif
+#include <stddef.h>
+#include <stdbool.h>
+#include <inttypes.h>
 
 #ifndef BASE64_MALLOC
 	#define BASE64_MALLOC(S) malloc(S)
@@ -39,12 +30,7 @@
 	// a 6-bit value. The pad characters are considered
 	// out of bounds, but are generally unused.
 */
-const static uint8_t * const base64_digit_index = (const uint8_t *)
-	"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"abcdefghijklmnopqrstuvwxyz"
-	"0123456789+/=============="
-	"=========================="
-	"========================";
+const static uint8_t * const base64_digit_index;
 
 /**
 	// Index to identify the 6-bit value of a base-64 digit.
@@ -52,45 +38,32 @@ const static uint8_t * const base64_digit_index = (const uint8_t *)
 	// The pad character is considered zero under decoding and
 	// is relied upon.
 */
-const static uint8_t base64_value_index[128] = {
-	// 0-39
-	64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-	64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-	64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
-	64, 64, 64, 64, 64, 64, 64, 64, 64, 64,
+const static uint8_t base64_value_index[128];
 
-	64, 64, 64, // 40-42
-	// 43: "+"
-	62,
-	64, 64, 64, // 44-46
-	// 47: "/"
-	63,
-	// 48-57, "0-9"
-	52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+/**
+	// State used by &base64_buffer_digits. While a few abstractions
+	// are provided to control this structure, it is not intended
+	// to be opaque.
 
-	// 58-60
-	64, 64, 64,
-	// 61: "="
-	0,
-	// 62-64
-	64, 64, 64,
+	// [ Elements ]
+	// /d_buffer_length/
+		// Allocation size of &d_buffer.
+	// /d_buffer_offset/
+		// The current write position of buffered digits in &d_buffer.
+		// The difference between &d_buffer_length being the remaining space.
+	// /d_message_length/
+		// Maximum number of bytes to process in &d_message.
+	// /d_message_offset/
+		// Current read position in &d_message.
+	// /d_buffer/
+		// The buffer holding the digits identified in &d_message.
+		// The allocation should be a multiple of four in order to
+		// allow buffer cycle events
+*/
+struct Base64_DigitBuffer;
 
-	// 65-89: A-Z
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-	10, 11, 12, 13, 14, 15, 16, 17, 18, 19,
-	20, 21, 22, 23, 24, 25,
-
-	// 90-96
-	64, 64, 64, 64, 64, 64,
-
-	// 97-122: a-z
-	26, 27, 28, 29, 30, 31, 32, 33, 34, 35,
-	36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
-	46, 47, 48, 49, 50, 51,
-
-	// 123-127
-	64, 64, 64, 64, 64
-};
+#define _FAULT_BASE64_INTERNAL_
+#include <fault/base-64.h>
 
 /**
 	// Lookup a base-64 6-bit value using the &base64_value_index.
@@ -121,7 +94,7 @@ base64_digit(int8_t value)
 	// a NUL-terminated maximum and append pad characters
 	// when not a fully aligned on a multiple of three.
 */
-BASE64_ISI(size_t)
+BASE64_API(size_t)
 base64_encoded_size(size_t decoded_size)
 {
 	size_t w = (decoded_size + 2) / 3;
@@ -138,7 +111,7 @@ base64_encoded_size(size_t decoded_size)
 	// The decoding interfaces here will normally allocate
 	// a NUL-terminated maximum and return the usage size.
 */
-BASE64_ISI(size_t)
+BASE64_API(size_t)
 base64_decoded_size(size_t encoded_size)
 {
 	size_t w = (encoded_size + 3) / 4;
@@ -514,38 +487,6 @@ base64_seek_exception(const uint8_t *message, size_t offset, size_t length)
 }
 
 /**
-	// State used by &base64_buffer_digits. While a few abstractions
-	// are provided to control this structure, it is not intended
-	// to be opaque.
-
-	// [ Elements ]
-	// /d_buffer_length/
-		// Allocation size of &d_buffer.
-	// /d_buffer_offset/
-		// The current write position of buffered digits in &d_buffer.
-		// The difference between &d_buffer_length being the remaining space.
-	// /d_message_length/
-		// Maximum number of bytes to process in &d_message.
-	// /d_message_offset/
-		// Current read position in &d_message.
-	// /d_buffer/
-		// The buffer holding the digits identified in &d_message.
-		// The allocation should be a multiple of four in order to
-		// allow buffer cycle events
-	
-*/
-struct Base64_DigitBuffer {
-	size_t d_buffer_length;
-	size_t d_buffer_offset;
-
-	size_t d_message_length;
-	size_t d_message_offset;
-
-	uint8_t *d_buffer;
-	const uint8_t *d_message;
-};
-
-/**
 	// Initialize a &Base64_DigitBuffer structure allocating
 	// &dbuf.d_buffer with four times the given &seqlimit.
 */
@@ -775,8 +716,6 @@ base64_data_uri(const uint8_t *media_type, const uint8_t *data, size_t length)
 #define base64_data_uri_string(MT, D) base64_data_uri(MT, D, strlen(D))
 #define base64_data_uri_constant(MT, D) base64_data_uri(MT, D, sizeof(D)-1)
 
-typedef void (*base64_transfer_t)(void *context, uint8_t *digits, size_t count);
-
 /**
 	// Continuously transfer encoded source data to a target function and context.
 
@@ -963,4 +902,3 @@ base64_transfer_encoded(uint8_t state[4], base64_transfer_t tf, void *context, .
 
 	return(r);
 }
-#endif
