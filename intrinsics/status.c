@@ -18,7 +18,6 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 
-#define _FAULT_STATUS_INTERNAL_
 #include <fault/status/requirements.h>
 #include <fault/status.h>
 

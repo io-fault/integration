@@ -5,6 +5,10 @@
 #include <fault/test.h>
 #include <fault/status.h>
 
+#define STF_FREE free
+#define STF_MALLOC malloc
+#define STF_REALLOC realloc
+
 /**
 	// Validate that the macro is processing the long strings as anticipated.
 

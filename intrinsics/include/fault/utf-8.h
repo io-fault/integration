@@ -15,7 +15,7 @@
 	// Visibility and linkage control define for a few internal functions.
 */
 #ifndef UTF8_ISI
-	#define UTF8_ISI(TYPE) static inline TYPE
+	#define UTF8_ISI(TYPE) extern inline TYPE
 #endif
 
 #include "utf-8/context.h"

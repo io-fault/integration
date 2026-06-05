@@ -1,8 +1,6 @@
 #define STF_PROTOCOL "http://fault.io/protocol/status/frames"
 
 typedef const uint8_t * stf_string_t;
-const stf_string_t stf_protocol;
-const stf_string_t stf_protocol_ttyn1_declaration;
 
 #define _STF_REFLECT(...) __VA_ARGS__
 #define _STF_VOID(...)

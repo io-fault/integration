@@ -7,6 +7,9 @@
 #include <fault/test.h>
 #include <fault/base-64.h>
 
+#define BASE64_FREE free
+#define BASE64_MALLOC malloc
+
 Test(base64_seek_digit)
 {
 	char *msg = base64_encode_string("A fragmented base-64 message.");

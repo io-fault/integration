@@ -7,7 +7,6 @@
 #include <inttypes.h>
 #include <sys/types.h>
 
-#define _FAULT_UTF8_INTERNAL_
 #include <fault/utf-8.h>
 
 /**

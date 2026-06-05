@@ -57,3 +57,9 @@ struct Base64_DigitBuffer {
 };
 
 typedef void (*base64_transfer_t)(void *context, uint8_t *digits, size_t count);
+
+#define base64_encode_constant(S) base64_encode(&((int[]){0})[0], S, sizeof(S)-1)
+#define base64_decode_constant(S) base64_decode(&((int[]){0})[0], S, sizeof(S)-1)
+
+#define base64_data_uri_string(MT, D) base64_data_uri(MT, D, strlen(D))
+#define base64_data_uri_constant(MT, D) base64_data_uri(MT, D, sizeof(D)-1)

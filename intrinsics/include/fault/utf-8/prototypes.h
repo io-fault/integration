@@ -37,7 +37,6 @@ utf8_sequence_length(uint32_t cp);
 UTF8_API(size_t)
 utf8_sequence_codepoint(uint8_t *cv, uint32_t cp);
 
-#ifdef _FAULT_UTF8_INTERNAL_
 UTF8_ISI(size_t)
 utf8_sequence_codepoint_1(uint8_t *cv, uint32_t cp);
 
@@ -49,4 +48,3 @@ utf8_sequence_codepoint_3(uint8_t *cv, uint32_t cp);
 
 UTF8_ISI(size_t)
 utf8_sequence_codepoint_4(uint8_t *cv, uint32_t cp);
-#endif

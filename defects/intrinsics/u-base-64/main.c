@@ -5,6 +5,8 @@
 #include <fault/test.h>
 #include <fault/base-64.h>
 
+#define BASE64_FREE free
+#define BASE64_MALLOC malloc
 #define sized(S) sizeof(S) - 1, S
 
 typedef struct {

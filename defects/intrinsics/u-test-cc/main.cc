@@ -6,7 +6,9 @@
 #include <string>
 
 #include <fault/libc.h>
+extern "C" {
 #include <fault/test.h>
+}
 
 Test(cc_main_invocation)
 {

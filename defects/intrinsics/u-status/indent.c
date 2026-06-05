@@ -7,6 +7,7 @@
 #include <fault/test.h>
 #include <fault/status.h>
 
+#define STF_FREE free
 #define SZB(NAME, DATA) struct iovec NAME = {(char *) DATA, sizeof(DATA)}
 
 static inline int

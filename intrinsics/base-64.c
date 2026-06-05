@@ -62,7 +62,6 @@ const static uint8_t base64_value_index[128];
 */
 struct Base64_DigitBuffer;
 
-#define _FAULT_BASE64_INTERNAL_
 #include <fault/base-64.h>
 
 /**
@@ -162,9 +161,6 @@ base64_decode_unit(uint8_t decoded[3], const uint8_t encoded[4])
 	iv = base64_value(encoded[3]);
 	decoded[2] |= iv;
 }
-
-#define base64_encode_constant(S) base64_encode(&((int[]){0})[0], S, sizeof(S)-1)
-#define base64_decode_constant(S) base64_decode(&((int[]){0})[0], S, sizeof(S)-1)
 
 /**
 	// Encode &length bytes of &source into &encoded.
@@ -712,9 +708,6 @@ base64_data_uri(const uint8_t *media_type, const uint8_t *data, size_t length)
 
 	return(uri);
 }
-
-#define base64_data_uri_string(MT, D) base64_data_uri(MT, D, strlen(D))
-#define base64_data_uri_constant(MT, D) base64_data_uri(MT, D, sizeof(D)-1)
 
 /**
 	// Continuously transfer encoded source data to a target function and context.

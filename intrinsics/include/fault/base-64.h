@@ -27,7 +27,7 @@
 
 // Internal Interfaces (should be static inline)
 #ifndef BASE64_ISI
-	#define BASE64_ISI(TYPE) static inline TYPE
+	#define BASE64_ISI(TYPE) extern inline TYPE
 #endif
 
 #include "base-64/context.h"

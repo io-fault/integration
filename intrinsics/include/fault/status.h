@@ -8,7 +8,8 @@
 #endif
 
 #ifndef STF_ISI
-	#define STF_ISI(TYPE) static inline TYPE
+	#define STF_ISI(TYPE) extern inline TYPE
 #endif
+
 #include "status/prototypes.h"
 #endif

@@ -37,7 +37,6 @@ base64_encoded_size(size_t decoded_size);
 BASE64_API(size_t)
 base64_decoded_size(size_t encoded_size);
 
-#ifdef _FAULT_BASE64_INTERNAL_
 BASE64_ISI(uint8_t)
 base64_value(int8_t digit);
 
@@ -67,4 +66,3 @@ base64_digitbuffer_set_message(struct Base64_DigitBuffer *dbuf, const uint8_t *m
 
 BASE64_ISI(void)
 base64_digitbuffer_release(struct Base64_DigitBuffer *dbuf);
-#endif

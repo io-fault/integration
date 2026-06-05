@@ -47,7 +47,6 @@ _ttyn1_log_transaction(int fd, ttyn1_transaction_parameters, ...);
 STF_API(int)
 _ttyn1_log_message(int fd, ttyn1_message_parameters, ...);
 
-#ifdef _FAULT_STATUS_INTERNAL_
 STF_ISI(size_t)
 _stf_calculate_type_code(uint8_t *buffer, uint32_t code);
 
@@ -56,4 +55,3 @@ stf_type_identifier(int64_t code);
 
 STF_ISI(stf_string_t)
 stf_type_symbol(int64_t code);
-#endif
