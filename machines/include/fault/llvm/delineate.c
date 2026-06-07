@@ -1137,6 +1137,85 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	return(ra);
 }
 
+struct CommentScanContext
+{
+	CXString comment;
+	bool set;
+};
+
+static enum CXChildVisitResult
+scan_first_comment(CXCursor cursor, CXCursor parent, CXClientData cd)
+{
+	struct CommentScanContext *ctx = (struct CommentScanContext *) cd;
+	CXSourceLocation location = clang_getCursorLocation(cursor);
+
+	// Strictly interested in the main file.
+	if (clang_Location_isFromMainFile(location) == 0)
+		return(CXChildVisit_Continue);
+
+	ctx->comment = clang_Cursor_getRawCommentText(cursor);
+	if (clang_getCString(ctx->comment) != NULL)
+	{
+		ctx->set = true;
+		return(CXChildVisit_Break);
+	}
+
+	return(CXChildVisit_Recurse);
+}
+
+static bool
+print_first_comment(struct Image *ctx, CXTranslationUnit u)
+{
+	CXCursor c = clang_getTranslationUnitCursor(u);
+	CXSourceRange extent = clang_getCursorExtent(c);
+	CXToken *tokens = NULL;
+	CXString comment;
+	struct CommentScanContext csc;
+	unsigned index, count = 0;
+	bool found = false;
+
+	csc.set = false;
+	clang_visitChildren(c, scan_first_comment, (CXClientData) &csc);
+
+	clang_tokenize(u, extent, &tokens, &count);
+	for (index = 0; index < count; ++index)
+	{
+		CXTokenKind kind = clang_getTokenKind(tokens[index]);
+
+		if (kind == CXToken_Comment)
+		{
+			const char *cstr;
+			comment = clang_getTokenSpelling(u, tokens[index]);
+			cstr = clang_getCString(comment);
+
+			if (csc.set == true && strcmp(cstr, clang_getCString(csc.comment)) == 0)
+			{
+				// First comment associated with a node is the first comment token.
+				found = false;
+				break;
+			}
+
+			if (strncmp("/**", cstr, sizeof("/**")-1) == 0)
+			{
+				fputs("[],", ctx->doce);
+				fputs("[\x22", ctx->docs);
+				print_text(ctx->docs, cstr, true);
+				fputs("\x22],", ctx->docs);
+			}
+
+			clang_disposeString(comment);
+			found = true;
+			break;
+		}
+	}
+
+	clang_disposeTokens(u, tokens, count);
+	if (csc.set == true)
+		clang_disposeString(csc.comment);
+
+	return(found);
+}
+
 int
 main(int argc, const char *argv[])
 {
@@ -1213,6 +1292,8 @@ main(int argc, const char *argv[])
 	print_enter(ctx.docs);
 	print_enter(ctx.doce);
 	print_enter(ctx.expr);
+
+	print_first_comment(&ctx, u);
 
 	print_enter(ctx.elements);
 	{
