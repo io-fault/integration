@@ -810,7 +810,12 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			// so when the cursor is not inside an include and is not in the
 			// main file, it is known to be inside of an expansion.
 		*/
-		if (ctx->include_depth == 0)
+		if (ctx->include_depth > 0)
+		{
+			/* Do not delineate elements not in the main file. */
+			return(CXChildVisit_Recurse);
+		}
+		else
 		{
 			CXSourceRange range = clang_getCursorExtent(cursor);
 			CXSourceLocation start = clang_getRangeStart(range);
@@ -826,9 +831,17 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 				/* Hold final range to use as expansion node. */
 				ctx->curs.xrange = range;
 			}
-		}
+			else
+			{
+				/* Outside of main file. */
+				return(CXChildVisit_Recurse);
+			}
 
-		return(CXChildVisit_Recurse);
+			/*
+				// The presumed location is in the main file.
+				// Fall through to allow normal element processing to take place.
+			*/
+		}
 	}
 	else if (ctx->include_depth > 0)
 	{
