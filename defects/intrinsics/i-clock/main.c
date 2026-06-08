@@ -6,6 +6,7 @@
 #include <time.h>
 #include <fault/libc.h>
 #include <fault/clock.h>
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 Test(clock_precision)

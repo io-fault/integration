@@ -2,6 +2,7 @@
 	// Validate fault/base-64.h encoding and decoding.
 */
 #include <fault/libc.h>
+#include <fault/metrics.h>
 #include <fault/test.h>
 #include <fault/base-64.h>
 

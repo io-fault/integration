@@ -2,6 +2,7 @@
 	// Validate Status Frame headers.
 */
 #include <fault/libc.h>
+#include <fault/metrics.h>
 #include <fault/test.h>
 #include <fault/status.h>
 

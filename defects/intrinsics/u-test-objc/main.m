@@ -2,7 +2,7 @@
 	// Validate Objective-C compatibility as primary source file.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 #if __APPLE__

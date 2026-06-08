@@ -7,6 +7,7 @@
 
 #include <fault/libc.h>
 extern "C" {
+#include <fault/metrics.h>
 #include <fault/test.h>
 }
 
