@@ -1279,7 +1279,7 @@ main(int argc, const char *argv[])
 
 	err = clang_parseTranslationUnit2(idx, NULL, argv, argc, NULL, 0,
 		CXTranslationUnit_DetailedPreprocessingRecord, &u);
-	if (err != 0)
+	if (err != CXError_Success)
 		return(1);
 
 	rc = clang_getTranslationUnitCursor(u);
