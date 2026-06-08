@@ -767,6 +767,24 @@ print_collection(struct Image *ctx, CXCursor cursor, CXClientData cd, const char
 	print_close(ctx->elements, (char *) element_name);
 }
 
+static enum CXChildVisitResult
+scan_support_annotation(CXCursor cursor, CXCursor parent, CXClientData cd)
+{
+	bool *ctx = (bool *) cd;
+
+	if (clang_getCursorKind(cursor) == CXCursor_AnnotateAttr)
+	{
+		CXString astr = clang_getCursorSpelling(cursor);
+		if (strcmp("support-element", clang_getCString(astr)) == 0)
+		{
+			*ctx = true;
+			return(CXChildVisit_Break);
+		}
+	}
+
+	return(CXChildVisit_Continue);
+}
+
 /**
 	// Visit the declaration nodes emitting structure and documentation strings.
 */
@@ -952,10 +970,14 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 		case CXCursor_FunctionDecl:
 		{
+			bool support = false;
 			if (clang_isCursorDefinition(cursor) == 0)
 				return(ra);
 
-			print_comment(ctx, cursor);
+			clang_visitChildren(cursor, scan_support_annotation, &support);
+			if (!support)
+				print_comment(ctx, cursor);
+
 			print_open(ctx->elements, "function");
 
 			print_enter(ctx->elements);
@@ -969,7 +991,8 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 				print_spelling_identifier(ctx->elements, cursor);
 				print_attribute_start(ctx->elements, "area");
 				print_source_location(ctx->elements, clang_getCursorExtent(cursor));
-				print_documented(ctx->elements, cursor);
+				if (!support)
+					print_documented(ctx->elements, cursor);
 			}
 			print_attributes_close(ctx->elements);
 

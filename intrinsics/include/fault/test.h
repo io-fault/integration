@@ -657,6 +657,7 @@ extern const char *_h_tmpdir_root;
 
 #define _TEST_RECORD_CONSTRUCTOR(NAME, FILE, LINE, INDEX) \
 	static void __attribute__((constructor)) \
+	__attribute__((annotate("support-element"))) \
 	_h_##NAME##_add(void) { \
 		struct HarnessTestRecord *tfr; \
 		struct TestIdentity *ti; \
