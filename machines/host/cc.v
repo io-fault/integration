@@ -204,6 +204,11 @@
 			: -fprofile-instr-generate
 -llvm-instrumentation-defines:
 	: -DF_LLVM_INSTRUMENTATION
+-llvm-link-instrumentation:
+	it-elements:
+		# Don't include instrumentation flags when incremental.
+	!:
+		: [-llvm-instrumentation]
 -factor-telemetry:
 	: -DF_TELEMETRY=""""[telemetry-directory File]""""
 
@@ -286,7 +291,7 @@
 
 	# Rather than guarding, trigger failure with gnu tooling.
 	# If LLVM instrumentation is somehow available, continue normally.
-	: [-llvm-instrumentation]
+	: [-llvm-link-instrumentation]
 	# [-gnu-instrumentation]
 
 	: [-elf-legacy-format-control]
@@ -305,7 +310,7 @@
 	: "link-elf-image" - -
 	verbose: -v
 
-	: [-llvm-instrumentation]
+	: [-llvm-link-instrumentation]
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
 	: [-elf-rpath]
@@ -338,9 +343,8 @@
 	: "link-macho-image" - -
 	verbose: -v
 	: -shared
-
-	: [-llvm-instrumentation]
 	: -Xlinker [-macho-itype-switch]
+	: [-llvm-link-instrumentation]
 	: [-system-context]
 	: -Xlinker [-macho-rpath]
 	: [-macho-requirements]
