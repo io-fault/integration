@@ -1175,7 +1175,7 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 struct CommentScanContext
 {
-	CXString comment;
+	CXSourceRange comment;
 	bool set;
 };
 
@@ -1183,20 +1183,26 @@ static enum CXChildVisitResult
 scan_first_comment(CXCursor cursor, CXCursor parent, CXClientData cd)
 {
 	struct CommentScanContext *ctx = (struct CommentScanContext *) cd;
-	CXSourceLocation location = clang_getCursorLocation(cursor);
+	CXSourceLocation start;
+	CXSourceRange area;
 
-	// Strictly interested in the main file.
-	if (clang_Location_isFromMainFile(location) == 0)
-		return(CXChildVisit_Continue);
-
-	ctx->comment = clang_Cursor_getRawCommentText(cursor);
-	if (clang_getCString(ctx->comment) != NULL)
+	area = clang_Cursor_getCommentRange(cursor);
+	if (clang_Range_isNull(area))
 	{
-		ctx->set = true;
-		return(CXChildVisit_Break);
+		/* No comment */
+		return(CXChildVisit_Recurse);
 	}
 
-	return(CXChildVisit_Recurse);
+	start = clang_getRangeStart(area);
+	if (!clang_Location_isFromMainFile(start))
+	{
+		/* Only comments in the main file. */
+		return(CXChildVisit_Continue);
+	}
+
+	ctx->set = true;
+	ctx->comment = area;
+	return(CXChildVisit_Break);
 }
 
 static bool
@@ -1205,7 +1211,6 @@ print_first_comment(struct Image *ctx, CXTranslationUnit u)
 	CXCursor c = clang_getTranslationUnitCursor(u);
 	CXSourceRange extent = clang_getCursorExtent(c);
 	CXToken *tokens = NULL;
-	CXString comment;
 	struct CommentScanContext csc;
 	unsigned index, count = 0;
 	bool found = false;
@@ -1221,16 +1226,21 @@ print_first_comment(struct Image *ctx, CXTranslationUnit u)
 		if (kind == CXToken_Comment)
 		{
 			const char *cstr;
-			comment = clang_getTokenSpelling(u, tokens[index]);
-			cstr = clang_getCString(comment);
+			CXSourceRange area = clang_getTokenExtent(u, tokens[index]);
+			CXString comment;
 
-			if (csc.set == true && strcmp(cstr, clang_getCString(csc.comment)) == 0)
+			if (csc.set == true)
 			{
-				// First comment associated with a node is the first comment token.
-				found = false;
-				break;
+				if (clang_equalRanges(csc.comment, area))
+				{
+					/* First comment associated with a node is the first comment token. */
+					found = false;
+					break;
+				}
 			}
 
+			comment = clang_getTokenSpelling(u, tokens[index]);
+			cstr = clang_getCString(comment);
 			if (strncmp("/**", cstr, sizeof("/**")-1) == 0)
 			{
 				fputs("[],", ctx->doce);
@@ -1246,9 +1256,6 @@ print_first_comment(struct Image *ctx, CXTranslationUnit u)
 	}
 
 	clang_disposeTokens(u, tokens, count);
-	if (csc.set == true)
-		clang_disposeString(csc.comment);
-
 	return(found);
 }
 
