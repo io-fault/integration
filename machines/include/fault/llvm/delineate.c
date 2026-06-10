@@ -767,6 +767,24 @@ print_collection(struct Image *ctx, CXCursor cursor, CXClientData cd, const char
 	print_close(ctx->elements, (char *) element_name);
 }
 
+static enum CXChildVisitResult
+scan_support_annotation(CXCursor cursor, CXCursor parent, CXClientData cd)
+{
+	bool *ctx = (bool *) cd;
+
+	if (clang_getCursorKind(cursor) == CXCursor_AnnotateAttr)
+	{
+		CXString astr = clang_getCursorSpelling(cursor);
+		if (strcmp("support-element", clang_getCString(astr)) == 0)
+		{
+			*ctx = true;
+			return(CXChildVisit_Break);
+		}
+	}
+
+	return(CXChildVisit_Continue);
+}
+
 /**
 	// Visit the declaration nodes emitting structure and documentation strings.
 */
@@ -792,7 +810,12 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 			// so when the cursor is not inside an include and is not in the
 			// main file, it is known to be inside of an expansion.
 		*/
-		if (ctx->include_depth == 0)
+		if (ctx->include_depth > 0)
+		{
+			/* Do not delineate elements not in the main file. */
+			return(CXChildVisit_Recurse);
+		}
+		else
 		{
 			CXSourceRange range = clang_getCursorExtent(cursor);
 			CXSourceLocation start = clang_getRangeStart(range);
@@ -808,9 +831,17 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 				/* Hold final range to use as expansion node. */
 				ctx->curs.xrange = range;
 			}
-		}
+			else
+			{
+				/* Outside of main file. */
+				return(CXChildVisit_Recurse);
+			}
 
-		return(CXChildVisit_Recurse);
+			/*
+				// The presumed location is in the main file.
+				// Fall through to allow normal element processing to take place.
+			*/
+		}
 	}
 	else if (ctx->include_depth > 0)
 	{
@@ -952,10 +983,14 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 
 		case CXCursor_FunctionDecl:
 		{
+			bool support = false;
 			if (clang_isCursorDefinition(cursor) == 0)
 				return(ra);
 
-			print_comment(ctx, cursor);
+			clang_visitChildren(cursor, scan_support_annotation, &support);
+			if (!support)
+				print_comment(ctx, cursor);
+
 			print_open(ctx->elements, "function");
 
 			print_enter(ctx->elements);
@@ -969,7 +1004,8 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 				print_spelling_identifier(ctx->elements, cursor);
 				print_attribute_start(ctx->elements, "area");
 				print_source_location(ctx->elements, clang_getCursorExtent(cursor));
-				print_documented(ctx->elements, cursor);
+				if (!support)
+					print_documented(ctx->elements, cursor);
 			}
 			print_attributes_close(ctx->elements);
 
@@ -1137,6 +1173,92 @@ visitor(CXCursor cursor, CXCursor parent, CXClientData cd)
 	return(ra);
 }
 
+struct CommentScanContext
+{
+	CXSourceRange comment;
+	bool set;
+};
+
+static enum CXChildVisitResult
+scan_first_comment(CXCursor cursor, CXCursor parent, CXClientData cd)
+{
+	struct CommentScanContext *ctx = (struct CommentScanContext *) cd;
+	CXSourceLocation start;
+	CXSourceRange area;
+
+	area = clang_Cursor_getCommentRange(cursor);
+	if (clang_Range_isNull(area))
+	{
+		/* No comment */
+		return(CXChildVisit_Recurse);
+	}
+
+	start = clang_getRangeStart(area);
+	if (!clang_Location_isFromMainFile(start))
+	{
+		/* Only comments in the main file. */
+		return(CXChildVisit_Continue);
+	}
+
+	ctx->set = true;
+	ctx->comment = area;
+	return(CXChildVisit_Break);
+}
+
+static bool
+print_first_comment(struct Image *ctx, CXTranslationUnit u)
+{
+	CXCursor c = clang_getTranslationUnitCursor(u);
+	CXSourceRange extent = clang_getCursorExtent(c);
+	CXToken *tokens = NULL;
+	struct CommentScanContext csc;
+	unsigned index, count = 0;
+	bool found = false;
+
+	csc.set = false;
+	clang_visitChildren(c, scan_first_comment, (CXClientData) &csc);
+
+	clang_tokenize(u, extent, &tokens, &count);
+	for (index = 0; index < count; ++index)
+	{
+		CXTokenKind kind = clang_getTokenKind(tokens[index]);
+
+		if (kind == CXToken_Comment)
+		{
+			const char *cstr;
+			CXSourceRange area = clang_getTokenExtent(u, tokens[index]);
+			CXString comment;
+
+			if (csc.set == true)
+			{
+				if (clang_equalRanges(csc.comment, area))
+				{
+					/* First comment associated with a node is the first comment token. */
+					found = false;
+					break;
+				}
+			}
+
+			comment = clang_getTokenSpelling(u, tokens[index]);
+			cstr = clang_getCString(comment);
+			if (strncmp("/**", cstr, sizeof("/**")-1) == 0)
+			{
+				fputs("[],", ctx->doce);
+				fputs("[\x22", ctx->docs);
+				print_text(ctx->docs, cstr, true);
+				fputs("\x22],", ctx->docs);
+			}
+
+			clang_disposeString(comment);
+			found = true;
+			break;
+		}
+	}
+
+	clang_disposeTokens(u, tokens, count);
+	return(found);
+}
+
 int
 main(int argc, const char *argv[])
 {
@@ -1177,7 +1299,7 @@ main(int argc, const char *argv[])
 
 	err = clang_parseTranslationUnit2(idx, NULL, argv, argc, NULL, 0,
 		CXTranslationUnit_DetailedPreprocessingRecord, &u);
-	if (err != 0)
+	if (err != CXError_Success)
 		return(1);
 
 	rc = clang_getTranslationUnitCursor(u);
@@ -1213,6 +1335,8 @@ main(int argc, const char *argv[])
 	print_enter(ctx.docs);
 	print_enter(ctx.doce);
 	print_enter(ctx.expr);
+
+	print_first_comment(&ctx, u);
 
 	print_enter(ctx.elements);
 	{

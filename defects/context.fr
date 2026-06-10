@@ -1,1 +1,5 @@
+http://fault.io/integration/intrinsics/include
 http://fault.io/integration/machines/include
+http://fault.io/integration/intrinsics/utf-8
+http://fault.io/integration/intrinsics/base-64
+http://fault.io/integration/intrinsics/status

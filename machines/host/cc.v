@@ -22,6 +22,7 @@
 	: extension
 	: executable
 	: archive
+	: elements
 
 -context-identity:
 	: CC_TYPE=fault
@@ -125,6 +126,9 @@
 -archive-factors:
 	: [http://if.fault.io/factors/system.archive#factor-image]
 
+-elements-factors:
+	: [http://if.fault.io/factors/system.elements#factor-image]
+
 # Non-component requirements.
 -linker-requirements:
 	: -L[http://if.fault.io/factors/system.library#image-directory]
@@ -200,6 +204,11 @@
 			: -fprofile-instr-generate
 -llvm-instrumentation-defines:
 	: -DF_LLVM_INSTRUMENTATION
+-llvm-link-instrumentation:
+	it-elements:
+		# Don't include instrumentation flags when incremental.
+	!:
+		: [-llvm-instrumentation]
 -factor-telemetry:
 	: -DF_TELEMETRY=""""[telemetry-directory File]""""
 
@@ -266,6 +275,9 @@
 	it-extension:
 		: -shared -Xlinker --unresolved-symbols=ignore-all
 
+	it-elements:
+		: -Xlinker -r
+
 -gnu-instrumentation:
 	# meta.metrics does not support collecting data from the gnu toolchain.
 	if-coverage:
@@ -279,7 +291,7 @@
 
 	# Rather than guarding, trigger failure with gnu tooling.
 	# If LLVM instrumentation is somehow available, continue normally.
-	: [-llvm-instrumentation]
+	: [-llvm-link-instrumentation]
 	# [-gnu-instrumentation]
 
 	: [-elf-legacy-format-control]
@@ -291,13 +303,14 @@
 	: [-system-context]
 	: [-linker-requirements]
 	: [units File]
+	: -Xlinker [-elements-factors]
 	: -Wl,-)
 
 -llvm-ld-elf:
 	: "link-elf-image" - -
 	verbose: -v
 
-	: [-llvm-instrumentation]
+	: [-llvm-link-instrumentation]
 	: [-elf-legacy-format-control]
 	: [-elf-itype-switch]
 	: [-elf-rpath]
@@ -306,6 +319,7 @@
 	: [-linker-requirements]
 
 	: -o [factor-image File]
+	: -Xlinker [-elements-factors]
 	: [units File]
 
 -macho-itype-switch:
@@ -318,6 +332,9 @@
 	it-extension:
 		: -bundle -undefined dynamic_lookup
 
+	it-elements:
+		: -r
+
 -macho-rpath:
 	# Requirements of factor.
 	: -rpath [http://if.fault.io/factors/system.directory#factor-image]
@@ -326,14 +343,14 @@
 	: "link-macho-image" - -
 	verbose: -v
 	: -shared
-
-	: [-llvm-instrumentation]
 	: -Xlinker [-macho-itype-switch]
+	: [-llvm-link-instrumentation]
 	: [-system-context]
 	: -Xlinker [-macho-rpath]
 	: [-macho-requirements]
 
 	: -o [factor-image File]
+	: -Xlinker [-elements-factors]
 	: [units File]
 
 -archive-delineated:

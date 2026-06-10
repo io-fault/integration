@@ -208,7 +208,7 @@ class Context(object):
 
 	def cc_unit_name_delta(self, vtype, itype):
 		# Unit name adjustments.
-		initctx = vf.Context(*vtype.context())
+		initctx = vf.Context(self._conclusions(vtype, itype, None), self._constants(vtype, itype, None))
 		exe, adapter, idx = self._read_merged(
 			initctx,
 			vtype.section, vtype.variants,
@@ -229,7 +229,7 @@ class Context(object):
 
 	def cc_integration_types(self, vtype, itype):
 		# Supported integration types.
-		ctx = vf.Context(*vtype.context())
+		ctx = vf.Context(self._conclusions(vtype, itype, None), self._constants(vtype, itype, None))
 		try:
 			exe, adapter, idx = self._read_merged(
 				ctx, vtype.section, vtype.variants, 'Render', itype, None
@@ -300,9 +300,8 @@ class Context(object):
 		else:
 			l = set()
 
-		return l | {
-			'it-' + itype.factor.identifier,
-		} | vtype.conclusions()
+		l.add('it-' + itype.factor.identifier)
+		return l | vtype.conclusions()
 
 	def _compose(self, vctx, section, composition, itype, name, fallback):
 		idx = {}
