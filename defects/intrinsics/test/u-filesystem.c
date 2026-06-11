@@ -3,8 +3,6 @@
 */
 #include <fault/libc.h>
 
-#define TEST_SUITE_EXTENSION
-#define _TEST_HARNESS_FUNCTIONS
 #include <fault/test.h>
 #include <fault/harness.h>
 

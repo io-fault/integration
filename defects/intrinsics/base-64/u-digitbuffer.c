@@ -3,7 +3,6 @@
 */
 #include <fault/libc.h>
 
-#define TEST_SUITE_EXTENSION
 #include <fault/test.h>
 #include <fault/base-64.h>
 

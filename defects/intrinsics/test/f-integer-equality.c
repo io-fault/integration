@@ -3,7 +3,6 @@
 */
 #include <fault/libc.h>
 
-#define TEST_SUITE_EXTENSION
 #include <fault/test.h>
 
 #define note_failed_exit() fprintf(stderr, "CRITICAL: test did not exit after contending absurdity\n")
