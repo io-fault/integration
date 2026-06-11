@@ -3,9 +3,14 @@ http://if.fault.io/factors/meta
 	references.fr text lines
 http://if.fault.io/factors/system
 	references.sr text lines
-	elements.m c17 objective-c
-	elements.c 2011 c
-	elements.cc 2014 c++
+	executable.m c17 objective-c
+		oc
+		context
+	executable.c 2011 c
+		context
+	executable.cc 2014 c++
+		cc
+		context
 	void.h header c
 http://if.fault.io/factors/python
 	module.py psf-v3
