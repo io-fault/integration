@@ -29,6 +29,7 @@
 	void __llvm_profile_reset_counters(void);
 	void __llvm_profile_set_filename(const char *);
 	void __llvm_profile_initialize_file(void);
+	void fault_metrics_cycle(void);
 
 	// Link stack for creating links to the captured data.
 	struct _fault_metrics_chain {
@@ -186,6 +187,18 @@
 			posix_spawn_file_actions_destroy(&fa);
 			waitpid(pid, &status, 0);
 		}
+
+		void
+		fault_metrics_cycle(void)
+		{
+			__llvm_profile_write_file();
+			__llvm_profile_reset_counters();
+			_fault_llvm_telemetry_convert();
+			_fault_update_telemetry();
+
+			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
+				ls->update();
+		}
 	#else
 		static void __attribute__((destructor))
 		_fault_metrics_link_counters(void)
@@ -212,4 +225,6 @@
 		atexit(_fault_llvm_telemetry_dispatch);
 	}
 	#endif
+#else
+	static void fault_metrics_cycle(void) {}
 #endif
