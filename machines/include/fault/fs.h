@@ -1,7 +1,6 @@
 /**
 	// High-level aggregate filesystem operations.
 */
-
 #include <string.h>
 #include <limits.h>
 #include <sys/stat.h>
@@ -10,6 +9,7 @@
 #include <unistd.h>
 
 typedef enum {
+	fs_mkdir_defaults = 0,
 	fs_mkdir_start_forwards = 1 << 0,
 	fs_mkdir_dirty_failure = 1 << 1
 } fs_mkdir_ctl;
@@ -193,7 +193,7 @@ fs_alloc(fs_mkdir_ctl ctlopt, const char *dirpath, const mode_t dmode)
 static int
 fs_mkdir(const char *dirpath)
 {
-	int c = fs_alloc(0, dirpath, S_IRWXU|S_IRWXG|S_IRWXO);
+	int c = fs_alloc(fs_mkdir_defaults, dirpath, S_IRWXU|S_IRWXG|S_IRWXO);
 	if (c < 0)
 		return(c);
 
