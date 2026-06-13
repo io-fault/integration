@@ -2,7 +2,7 @@
 	// Validate stf_indent_text.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 #include <fault/status.h>
 

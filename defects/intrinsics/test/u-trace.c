@@ -2,7 +2,7 @@
 	// Exercise trace modifier.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 Test(trace)

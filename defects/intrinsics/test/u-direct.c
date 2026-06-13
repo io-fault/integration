@@ -2,7 +2,7 @@
 	// Validate that the proxies are compensating for the invasive macros.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 static int

@@ -4,7 +4,7 @@
 	// The outer contentions validate that the inner test returns the expected status.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 Test(always_passed_equality)
