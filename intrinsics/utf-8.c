@@ -8,6 +8,10 @@
 #include <sys/types.h>
 
 #include <fault/utf-8.h>
+#if __INCLUDE_LEVEL__ == 0
+	#define FAULT_METRICS_LINKED
+	#include <fault/metrics.h>
+#endif
 
 /**
 	// Look up the name of an error type.

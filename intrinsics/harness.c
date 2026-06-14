@@ -30,6 +30,11 @@
 #include <fault/base-64.h>
 #include <fault/status.h>
 
+#if __INCLUDE_LEVEL__ == 0
+	#define FAULT_METRICS_LINKED
+	#include <fault/metrics.h>
+#endif
+
 /**
 	// C++ compatibility.
 */
