@@ -105,10 +105,10 @@ def plan(prefixes, keywords, factors:lsf.Context, ctl:map.Controls, identifier):
 		if system.fs_type() == 'void':
 			cmd = xargv + [
 				'fault.test.analyze',
-				str(test_project.factor), test_fp
+				pj_fp, test_fp
 			]
 		else:
-			cmd = [str(system), str(system)]
+			cmd = [str(system), pj_fp, test_fp]
 
 		ki = KInvocation(cmd[0], cmd, environ=env)
 		yield (pj_fp, (test_fp,), xid, ki)
