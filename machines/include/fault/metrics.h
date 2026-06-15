@@ -179,6 +179,7 @@
 
 			// Prepare l-counters, and switch the metrics isolation.
 			fd = open(_fault_lcounters, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
+			dprintf(fd, "%s&%s\n", lseek(fd, 0, SEEK_END) ? "\n" : "", _fault_metrics_isolation);
 
 			// Extract counters from the merged data.
 			posix_spawn_file_actions_init(&fa);
