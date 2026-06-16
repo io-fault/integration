@@ -136,16 +136,23 @@ def integrate_lcounters(index, fsc, lcounters):
 		areas = stack.enter_context((fsc/'areas').fs_open('a'))
 
 		for line in lcounters:
+			line = line.lstrip()
+			if not line:
+				# Whitespace only; no @*, &*, or decimal counters.
+				continue
+			# Expect newline termination.
+			line = line.removesuffix('\n')
+
 			if line[:1] == '@':
 				# Change file.
 				if isolation and srcfile and counters:
 					src.write(f"{isolation} {counters} {srcfile}\n")
-				srcfile = line[1:].strip()
+				srcfile = line[1:]
 			elif line[:1] == '&':
 				# Change isolation
 				if isolation and srcfile and counters:
 					src.write(f"{isolation} {counters} {srcfile}\n")
-				isolation = line[1:].strip()
+				isolation = line[1:]
 			else:
 				ln, co, count = map(int, line.split())
 				try:
