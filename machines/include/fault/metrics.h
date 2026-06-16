@@ -8,7 +8,11 @@
 		// data is transmitted.
 */
 
-/**
+/* Metrics control interfaces */
+void fault_metrics_identify(const char *);
+void fault_metrics_transmit(void);
+
+/*
 	// fault-metrics LLVM profile support.
 */
 #if defined(F_LLVM_INSTRUMENTATION) && defined(F_TELEMETRY)
@@ -29,8 +33,6 @@
 	void __llvm_profile_reset_counters(void);
 	void __llvm_profile_set_filename(const char *);
 	void __llvm_profile_initialize_file(void);
-	void fault_metrics_cycle(void);
-	void fault_metrics_inherit(const char *);
 
 	// Link stack for creating links to the captured data.
 	struct _fault_metrics_chain {
@@ -135,7 +137,7 @@
 	}
 
 	#ifndef FAULT_METRICS_LINKED
-		static void __attribute__((destructor))
+		static void
 		_fault_llvm_telemetry_convert(void)
 		{
 			pid_t pid = 0;
@@ -190,20 +192,22 @@
 			waitpid(pid, &status, 0);
 		}
 
-		void
-		fault_metrics_cycle(void)
+		static void __attribute__((destructor))
+		_fault_metrics_commit(void)
 		{
-			__llvm_profile_write_file();
-			__llvm_profile_reset_counters();
 			_fault_llvm_telemetry_convert();
-			_fault_update_telemetry();
-
-			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
-				ls->update();
 		}
 
 		void
-		fault_metrics_inherit(const char *mid)
+		fault_metrics_transmit(void)
+		{
+			__llvm_profile_write_file();
+			__llvm_profile_reset_counters();
+			_fault_metrics_commit();
+		}
+
+		void
+		fault_metrics_identify(const char *mid)
 		{
 			setenv("METRICS_IDENTITY", mid, 1);
 			_fault_update_telemetry();
@@ -238,6 +242,9 @@
 	}
 	#endif
 #else
-	static void fault_metrics_inherit(const char *) {}
-	static void fault_metrics_cycle(void) {}
+	#ifndef FAULT_METRICS_LINKED
+		/* Not an elements factor, symbols will be needed by harness. */
+		void fault_metrics_identify(const char *) {}
+		void fault_metrics_transmit(void) {}
+	#endif
 #endif

@@ -1497,20 +1497,27 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 	h_configure_tmpdir(stf_receiver, (stf_string_t) suite, HARNESS_FS_TMPDIR_ROOT);
 
 	/* Associate metrics captured so far with the suite. */
-	fault_metrics_inherit(suite);
+	fault_metrics_identify(suite);
+	fault_metrics_transmit();
 
 	for (current = root->next; current != NULL; current = current->next)
 	{
 		enum TestConclusion tc;
 
-		/* Overwrite the test identifier. */
+		/*
+			// Update metric identity before the test.
+			// Doing so before is not strictly necessary for the captured data,
+			// but it is necessary to properly capture data in any subprocesses
+			// created by the test.
+		*/
 		snprintf(metrics_identity + suitelen, max_idlen, "%s",
 			current->htr_identity->ti_symbol);
-		setenv("METRICS_IDENTITY", metrics_identity, 1);
-		fault_metrics_cycle();
+		fault_metrics_identify(metrics_identity);
 
 		tc = htest(stf_receiver, suite, &contentions,
 			(struct TestControls *) &default_controls, current);
+
+		fault_metrics_transmit();
 
 		test_count += 1;
 
@@ -1530,13 +1537,7 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 		}
 	}
 
-	/* Flush the final test metrics before switching back to the suite. */
-	if (test_count > 0)
-	{
-		setenv("METRICS_IDENTITY", suite, 1);
-		fault_metrics_cycle();
-	}
-
+	fault_metrics_identify(suite); // Exit will transmit.
 	ttyn1_log_close_transaction(stf_receiver, NULL, suite, NULL,
 		TTYN_SYNOPSIS(
 			"%s: %u contentions across %u tests; "
