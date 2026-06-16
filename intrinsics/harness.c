@@ -1496,9 +1496,8 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 
 	h_configure_tmpdir(stf_receiver, (stf_string_t) suite, HARNESS_FS_TMPDIR_ROOT);
 
-	/* Cycle any collected metrics into the default trap. */
-	setenv("METRICS_IDENTITY", suite, 1);
-	fault_metrics_cycle();
+	/* Associate metrics captured so far with the suite. */
+	fault_metrics_inherit(suite);
 
 	for (current = root->next; current != NULL; current = current->next)
 	{

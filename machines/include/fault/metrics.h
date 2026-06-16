@@ -30,6 +30,7 @@
 	void __llvm_profile_set_filename(const char *);
 	void __llvm_profile_initialize_file(void);
 	void fault_metrics_cycle(void);
+	void fault_metrics_inherit(const char *);
 
 	// Link stack for creating links to the captured data.
 	struct _fault_metrics_chain {
@@ -200,6 +201,16 @@
 			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
 				ls->update();
 		}
+
+		void
+		fault_metrics_inherit(const char *mid)
+		{
+			setenv("METRICS_IDENTITY", mid, 1);
+			_fault_update_telemetry();
+
+			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
+				ls->update();
+		}
 	#else
 		static void __attribute__((destructor))
 		_fault_metrics_link_counters(void)
@@ -227,5 +238,6 @@
 	}
 	#endif
 #else
+	static void fault_metrics_inherit(const char *) {}
 	static void fault_metrics_cycle(void) {}
 #endif
