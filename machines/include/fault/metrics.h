@@ -129,14 +129,23 @@ void fault_metrics_transmit(void);
 		#undef _f_empty_string
 	}
 
-	static void __attribute__((constructor))
-	_fault_llvm_telemetry_init(void)
-	{
-		_fault_update_telemetry();
-		pthread_atfork(NULL, NULL, _fault_update_telemetry);
-	}
-
 	#ifndef FAULT_METRICS_LINKED
+		static void
+		_fault_metrics_update(void)
+		{
+			_fault_update_telemetry();
+
+			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
+				ls->update();
+		}
+
+		static void __attribute__((constructor(999)))
+		_fault_llvm_telemetry_init(void)
+		{
+			_fault_metrics_update();
+			pthread_atfork(NULL, NULL, _fault_metrics_update);
+		}
+
 		static void
 		_fault_llvm_telemetry_convert(void)
 		{
@@ -210,20 +219,17 @@ void fault_metrics_transmit(void);
 		fault_metrics_identify(const char *mid)
 		{
 			setenv("METRICS_IDENTITY", mid, 1);
-			_fault_update_telemetry();
-
-			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
-				ls->update();
+			_fault_metrics_update();
 		}
 	#else
-		static void __attribute__((destructor))
+		static void
 		_fault_metrics_link_counters(void)
 		{
 			_fault_update_telemetry();
 			symlink(_fault_metrics_link, _fault_lcounters);
 		}
 
-		static void __attribute__((constructor))
+		static void __attribute__((constructor(900)))
 		_fault_metrics_link_chain(void)
 		{
 			static struct _fault_metrics_chain link;
