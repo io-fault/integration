@@ -26,8 +26,9 @@ void fault_metrics_transmit(void);
 	#include <errno.h>
 	#include <fcntl.h>
 	#include <pthread.h>
-	#include <fault/fs.h>
 	#include <sys/sysctl.h>
+	#include <fault/fs.h>
+	#include <fault/symbols.h>
 
 	void __llvm_profile_write_file(void);
 	void __llvm_profile_reset_counters(void);
@@ -45,7 +46,7 @@ void fault_metrics_transmit(void);
 	#ifndef FAULT_METRICS_LINKED
 		static char _fault_llvm_imd[4096 * 2];
 		static char _fault_llvm_imr[4096 * 2];
-		struct _fault_metrics_chain *_fault_metrics_link_stack = NULL;
+		struct _fault_metrics_chain * CONCEAL(_fault_metrics_link_stack) = NULL;
 	#else
 		extern struct _fault_metrics_chain *_fault_metrics_link_stack;
 	#endif
