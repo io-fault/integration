@@ -238,15 +238,6 @@ void fault_metrics_transmit(void);
 			_fault_metrics_link_stack = &link;
 		}
 	#endif
-
-	#if 0
-	static void __attribute__((constructor))
-	_fault_llvm_telemetry_register(void)
-	{
-		/* Defer file assignment in case of environment changes. */
-		atexit(_fault_llvm_telemetry_dispatch);
-	}
-	#endif
 #else
 	#ifndef FAULT_METRICS_LINKED
 		/* Not an elements factor, symbols will be needed by harness. */
