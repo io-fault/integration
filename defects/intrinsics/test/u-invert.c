@@ -2,7 +2,7 @@
 	// Evaluate inverted contentions.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 Test(not_strcmpf)

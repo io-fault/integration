@@ -2,7 +2,7 @@
 	// Validate filesystem tools.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 #include <fault/harness.h>
 

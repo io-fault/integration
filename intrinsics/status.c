@@ -20,7 +20,10 @@
 
 #include <fault/status/requirements.h>
 #include <fault/status.h>
-
+#if __INCLUDE_LEVEL__ == 0
+	#define FAULT_METRICS_LINKED
+	#include <fault/metrics.h>
+#endif
 const stf_string_t stf_protocol = (stf_string_t) STF_PROTOCOL;
 const stf_string_t stf_protocol_ttyn1_declaration = (stf_string_t)
 	"[!? PROTOCOL: " STF_PROTOCOL " tty-notation-1]";

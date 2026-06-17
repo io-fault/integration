@@ -64,6 +64,11 @@ struct Base64_DigitBuffer;
 
 #include <fault/base-64.h>
 
+#if __INCLUDE_LEVEL__ == 0
+	#define FAULT_METRICS_LINKED
+	#include <fault/metrics.h>
+#endif
+
 /**
 	// Lookup a base-64 6-bit value using the &base64_value_index.
 */

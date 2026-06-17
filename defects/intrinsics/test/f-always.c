@@ -4,7 +4,7 @@
 	// Check `test(-)` behavior with true contentions.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 #define note_failed_exit() fprintf(stderr, "CRITICAL: test did not exit after contending absurdity\n")

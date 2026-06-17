@@ -2,7 +2,7 @@
 	// Validate Status Frame TTYN.1 Interfaces.
 */
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 #include <fault/status.h>
 

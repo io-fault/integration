@@ -7,7 +7,7 @@
 
 #include <fault/utf-8.h>
 #include <fault/libc.h>
-
+#include <fault/metrics.h>
 #include <fault/test.h>
 
 /**

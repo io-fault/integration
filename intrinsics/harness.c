@@ -30,6 +30,11 @@
 #include <fault/base-64.h>
 #include <fault/status.h>
 
+#if __INCLUDE_LEVEL__ == 0
+	#define FAULT_METRICS_LINKED
+	#include <fault/metrics.h>
+#endif
+
 /**
 	// C++ compatibility.
 */
@@ -1452,17 +1457,35 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 	};
 	#undef _TCM_INIT
 
+	char *metrics_identity;
 	struct HarnessTestRecord * const root = &_h_function_zero;
 	struct HarnessTestRecord *current;
 	int total = 0, test_count = 0, contentions = 0;
 	int passed = 0, failed = 0, skipped = 0;
+	size_t max_idlen = 0, suitelen = 0;
 
-	current = root->next;
-	while (current != NULL)
+	/* Find the maximum identifier length for the metrics identity. */
+	for (current = root->next; current != NULL; current = current->next)
 	{
+		size_t l = strlen(current->htr_identity->ti_symbol);
 		++total;
-		current = current->next;
+		if (l > max_idlen)
+			max_idlen = l;
 	}
+
+	suitelen = strlen(suite) + 1;
+	metrics_identity = malloc(suitelen + max_idlen + 1);
+	if (metrics_identity == NULL)
+	{
+		ttyn1_log_declaration(stf_receiver, NULL, "harness");
+		ttyn1_log_error(stf_receiver, NULL, "harness",
+			TTYN_SYNOPSIS("could not allocate memory (%d bytes) for qualified test identifier.",
+				suitelen + max_idlen + 1),
+			TTYN_EXTENSION()
+		);
+		return(2);
+	}
+	snprintf(metrics_identity, suitelen + 1, "%s/", suite);
 
 	ttyn1_log_declaration(stf_receiver, NULL, suite);
 	ttyn1_log_open_transaction(stf_receiver, NULL, suite,
@@ -1473,12 +1496,28 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 
 	h_configure_tmpdir(stf_receiver, (stf_string_t) suite, HARNESS_FS_TMPDIR_ROOT);
 
-	current = root->next;
-	while (current != NULL)
+	/* Associate metrics captured so far with the suite. */
+	fault_metrics_identify(suite);
+	fault_metrics_transmit();
+
+	for (current = root->next; current != NULL; current = current->next)
 	{
 		enum TestConclusion tc;
+
+		/*
+			// Update metric identity before the test.
+			// Doing so before is not strictly necessary for the captured data,
+			// but it is necessary to properly capture data in any subprocesses
+			// created by the test.
+		*/
+		snprintf(metrics_identity + suitelen, max_idlen, "%s",
+			current->htr_identity->ti_symbol);
+		fault_metrics_identify(metrics_identity);
+
 		tc = htest(stf_receiver, suite, &contentions,
 			(struct TestControls *) &default_controls, current);
+
+		fault_metrics_transmit();
 
 		test_count += 1;
 
@@ -1496,10 +1535,9 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 				passed += 1;
 			break;
 		}
-
-		current = current->next;
 	}
 
+	fault_metrics_identify(suite); // Exit will transmit.
 	ttyn1_log_close_transaction(stf_receiver, NULL, suite, NULL,
 		TTYN_SYNOPSIS(
 			"%s: %u contentions across %u tests; "
@@ -1507,6 +1545,8 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 			suite, contentions, test_count, failed, skipped, passed),
 		TTYN_EXTENSION()
 	);
+
+	free(metrics_identity);
 	return(0);
 }
 
@@ -1516,14 +1556,35 @@ main(int argc, char *argv[])
 	enum TestDispatchStrategy tdm = td_sequential;
 	TestDispatch hdispatch = NULL;
 	TestExit hexit = NULL;
+	char *suite = NULL;
+	bool allocated = false;
+	int exit = 256;
 
-	#if defined(TEST_SUITE_IDENTITY)
-		const char *suite = TEST_SUITE_IDENTITY;
-	#elif defined(FACTOR_PATH_STR)
-		const char *suite = F_PROJECT_PATH_STR "/" F_FACTOR_STR;
-	#else
-		const char *suite = argv[0];
-	#endif
+	if (argc > 1)
+	{
+		const char *project = argv[1];
+		const char *factor = argc > 2 ? argv[2] : "";
+		size_t suitelen;
+
+		suitelen = (strlen(project) + strlen(factor) + 2);
+
+		suite = malloc(suitelen);
+		if (suite == NULL)
+		{
+			ttyn1_log_declaration(TEST_STATUS_FRAME_RECEIVER, NULL, "harness");
+			ttyn1_log_error(TEST_STATUS_FRAME_RECEIVER, NULL, "harness",
+				TTYN_SYNOPSIS("could not allocate memory (%d bytes) for suite identifier.", suitelen),
+				TTYN_EXTENSION()
+			);
+			return(2);
+		}
+
+		allocated = true;
+		if (snprintf(suite, suitelen, "%s/%s", project, factor) < 0)
+			return(2);
+	}
+	else
+		suite = "/";
 
 	switch (tdm)
 	{
@@ -1533,6 +1594,10 @@ main(int argc, char *argv[])
 		break;
 	}
 
-	return(harness_execute_tests(TEST_STATUS_FRAME_RECEIVER, suite, hdispatch, hexit));
+	exit = harness_execute_tests(TEST_STATUS_FRAME_RECEIVER, suite, hdispatch, hexit);
+	if (allocated)
+		free(suite);
+
+	return(exit);
 }
 #endif /* __HARNESS_INTERFACE__ */
