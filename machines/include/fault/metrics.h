@@ -36,7 +36,7 @@ void fault_metrics_transmit(void);
 
 	// Link stack for creating links to the captured data.
 	struct _fault_metrics_chain {
-		void (*update)(void);
+		void (*update)(const char *);
 		struct _fault_metrics_chain *next;
 	};
 
@@ -45,10 +45,8 @@ void fault_metrics_transmit(void);
 	#ifndef FAULT_METRICS_LINKED
 		static char _fault_llvm_imd[4096 * 2];
 		static char _fault_llvm_imr[4096 * 2];
-		char *_fault_metrics_link = _fault_lcounters;
 		struct _fault_metrics_chain *_fault_metrics_link_stack = NULL;
 	#else
-		extern char *_fault_metrics_link;
 		extern struct _fault_metrics_chain *_fault_metrics_link_stack;
 	#endif
 
@@ -136,7 +134,7 @@ void fault_metrics_transmit(void);
 			_fault_update_telemetry();
 
 			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
-				ls->update();
+				ls->update(_fault_lcounters);
 		}
 
 		static void __attribute__((constructor(999)))
@@ -223,10 +221,10 @@ void fault_metrics_transmit(void);
 		}
 	#else
 		static void
-		_fault_metrics_link_counters(void)
+		_fault_metrics_link_counters(const char *primary)
 		{
 			_fault_update_telemetry();
-			symlink(_fault_metrics_link, _fault_lcounters);
+			symlink(primary, _fault_lcounters);
 		}
 
 		static void __attribute__((constructor(900)))
