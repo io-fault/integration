@@ -1443,6 +1443,12 @@ harness_test(int stf_receiver, const char *suite, int *contentions, struct TestC
 	return(t->conclusion);
 }
 
+void telemetry_identify(const char *identity);
+void telemetry_enable(void);
+void telemetry_disable(void);
+void telemetry_discard(void);
+void telemetry_transmit(void);
+
 /**
 	// Execute the collected tests.
 */
@@ -1497,8 +1503,8 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 	h_configure_tmpdir(stf_receiver, (stf_string_t) suite, HARNESS_FS_TMPDIR_ROOT);
 
 	/* Associate metrics captured so far with the suite. */
-	fault_metrics_identify(suite);
-	fault_metrics_transmit();
+	telemetry_identify(suite);
+	telemetry_transmit();
 
 	for (current = root->next; current != NULL; current = current->next)
 	{
@@ -1512,12 +1518,12 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 		*/
 		snprintf(metrics_identity + suitelen, max_idlen, "%s",
 			current->htr_identity->ti_symbol);
-		fault_metrics_identify(metrics_identity);
+		telemetry_identify(metrics_identity);
 
 		tc = htest(stf_receiver, suite, &contentions,
 			(struct TestControls *) &default_controls, current);
 
-		fault_metrics_transmit();
+		telemetry_transmit();
 
 		test_count += 1;
 
@@ -1537,7 +1543,7 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 		}
 	}
 
-	fault_metrics_identify(suite); // Exit will transmit.
+	telemetry_identify(suite); // Exit will transmit.
 	ttyn1_log_close_transaction(stf_receiver, NULL, suite, NULL,
 		TTYN_SYNOPSIS(
 			"%s: %u contentions across %u tests; "
