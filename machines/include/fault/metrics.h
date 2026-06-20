@@ -1,5 +1,5 @@
 /**
-	// Control telemetry locations for supported instrumentation frameworks.
+	// Telemetry control for factors built with metrics captures.
 
 	// [ Integration Control Defines ]
 	// /FAULT_METRICS_LINKED/
@@ -7,10 +7,6 @@
 		// factor and that only a link should be created when the captured
 		// data is transmitted.
 */
-
-/* Metrics control interfaces */
-void fault_metrics_identify(const char *);
-void fault_metrics_transmit(void);
 
 /*
 	// fault-metrics LLVM profile support.
@@ -138,13 +134,6 @@ void fault_metrics_transmit(void);
 				ls->update(_fault_lcounters);
 		}
 
-		static void __attribute__((constructor(999)))
-		_fault_llvm_telemetry_init(void)
-		{
-			_fault_metrics_update();
-			pthread_atfork(NULL, NULL, _fault_metrics_update);
-		}
-
 		static void
 		_fault_llvm_telemetry_convert(void)
 		{
@@ -206,7 +195,7 @@ void fault_metrics_transmit(void);
 			_fault_llvm_telemetry_convert();
 		}
 
-		void
+		static void
 		fault_metrics_transmit(void)
 		{
 			__llvm_profile_write_file();
@@ -214,11 +203,44 @@ void fault_metrics_transmit(void);
 			_fault_metrics_commit();
 		}
 
-		void
+		static void
 		fault_metrics_identify(const char *mid)
 		{
-			setenv("METRICS_IDENTITY", mid, 1);
 			_fault_metrics_update();
+		}
+
+		static void fault_metrics_identify(const char *);
+		static void fault_metrics_transmit(void);
+
+		struct telemetry_controls {
+			void (*identify)(const char *);
+			void (*transmit)(void);
+			void (*discard)(void);
+			void (*enable)(void);
+			void (*disable)(void);
+
+			struct telemetry_controls *next;
+		};
+
+		struct telemetry_controls _telemetry_controls = {
+			fault_metrics_identify,
+			fault_metrics_transmit,
+			__llvm_profile_reset_counters,
+			NULL,
+		};
+
+		// Optional. Usually provided by the executable.
+		void telemetry_register(struct telemetry_controls *) __attribute__((weak));
+
+		static void __attribute__((constructor(999)))
+		_fault_llvm_telemetry_init(void)
+		{
+			// Register with telemetry if available.
+			if (telemetry_register != NULL)
+				telemetry_register(&_telemetry_controls);
+
+			_fault_metrics_update();
+			pthread_atfork(NULL, NULL, _fault_metrics_update);
 		}
 	#else
 		static void
@@ -236,11 +258,5 @@ void fault_metrics_transmit(void);
 			link.update = _fault_metrics_link_counters;
 			_fault_metrics_link_stack = &link;
 		}
-	#endif
-#else
-	#ifndef FAULT_METRICS_LINKED
-		/* Not an elements factor, symbols will be needed by harness. */
-		void fault_metrics_identify(const char *) {}
-		void fault_metrics_transmit(void) {}
 	#endif
 #endif

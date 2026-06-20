@@ -4,3 +4,4 @@ http://fault.io/integration/intrinsics/utf-8
 http://fault.io/integration/intrinsics/base-64
 http://fault.io/integration/intrinsics/status
 http://fault.io/integration/intrinsics/harness
+http://fault.io/integration/intrinsics/telemetry
