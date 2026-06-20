@@ -14,6 +14,8 @@
 #if defined(F_LLVM_INSTRUMENTATION) && defined(F_TELEMETRY)
 	#include <stdio.h>
 	#include <stdlib.h>
+	#include <stdint.h>
+	#include <inttypes.h>
 	#include <sys/types.h>
 	#include <unistd.h>
 	#include <string.h>
@@ -57,7 +59,7 @@
 	{
 		#define _f_empty_string(X) (X == NULL || strlen(X) == 0)
 		int ifbuflen;
-		char pibuf[32];
+		char pibuf[6 + (5 * (sizeof(intmax_t) / 2))];
 		const char *mcp = getenv("METRICS_CAPTURE");
 		const char *pid = getenv("PROCESS_IDENTITY");
 		const char *mid = getenv("METRICS_IDENTITY");
@@ -78,8 +80,15 @@
 		if (_f_empty_string(pid))
 		{
 			// PROCESS_IDENTITY; usually drawn from the actual PID.
+			pid_t curpid = getpid();
 			pid = pibuf;
-			snprintf(pibuf, sizeof(pibuf), "%ld", (long) getpid());
+			#define _PID_FMT(P) \
+				_Generic(P, int32_t: "%" PRId32, uint32_t: "%" PRIu32, uintmax_t: "%" PRIuMAX, default: "%" PRIdMAX)
+			#define _PID_CAST(P) \
+				_Generic(P, int32_t: P, uint32_t: P, uintmax_t: P, default: (intmax_t) P)
+			snprintf(pibuf, sizeof(pibuf), _PID_FMT(curpid), _PID_CAST(curpid));
+			#undef _PID_FMT
+			#undef _PID_CAST
 		}
 
 		if (_f_empty_string(mid))
@@ -102,6 +111,7 @@
 		snprintf(_factor_metrics_isolation, sizeof(_factor_metrics_isolation),
 			"%s", mi
 		);
+
 		#ifndef FAULT_METRICS_LINKED
 			snprintf(_fault_lcounters, sizeof(_fault_lcounters),
 				"%s/%s/%s/.fault-syntax-counters/l-counters",
