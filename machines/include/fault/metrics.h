@@ -32,27 +32,26 @@
 	void __llvm_profile_initialize_file(void);
 
 	// Link stack for creating links to the captured data.
-	struct _fault_metrics_chain {
+	struct _factor_metrics_chain {
 		void (*update)(const char *);
-		struct _fault_metrics_chain *next;
+		struct _factor_metrics_chain *next;
 	};
 
-	static char _fault_metrics_isolation[512];
+	static char _factor_metrics_isolation[512];
 	static char _fault_lcounters[4096 * 2];
 	#ifndef FAULT_METRICS_LINKED
 		static char _fault_llvm_imd[4096 * 2];
 		static char _fault_llvm_imr[4096 * 2];
-		struct _fault_metrics_chain * CONCEAL(_fault_metrics_link_stack) = NULL;
+		struct _factor_metrics_chain * CONCEAL(_factor_metrics_link_stack) = NULL;
 	#else
-		extern struct _fault_metrics_chain *_fault_metrics_link_stack;
+		extern struct _factor_metrics_chain *_factor_metrics_link_stack;
 	#endif
 
 	/**
-		// Assign the target profdata file.
-		// Performed atexit, registered by _fault_llvm_telemetry_register.
+		// Update the filesystem locations used to transmit the captured metrics.
 	*/
 	static void
-	_fault_update_telemetry(void)
+	_factor_metrics_update_telemetry(void)
 	{
 		#define _f_empty_string(X) (X == NULL || strlen(X) == 0)
 		int ifbuflen;
@@ -98,7 +97,7 @@
 		}
 
 		// Copy for the conversion (destructor) function.
-		snprintf(_fault_metrics_isolation, sizeof(_fault_metrics_isolation),
+		snprintf(_factor_metrics_isolation, sizeof(_factor_metrics_isolation),
 			"%s", mi
 		);
 		snprintf(_fault_lcounters, sizeof(_fault_lcounters),
@@ -126,16 +125,16 @@
 
 	#ifndef FAULT_METRICS_LINKED
 		static void
-		_fault_metrics_update(void)
+		_factor_metrics_identify(const char *)
 		{
-			_fault_update_telemetry();
+			_factor_metrics_update_telemetry();
 
-			for (struct _fault_metrics_chain *ls = _fault_metrics_link_stack; ls != NULL; ls = ls->next)
+			for (struct _factor_metrics_chain *ls = _factor_metrics_link_stack; ls != NULL; ls = ls->next)
 				ls->update(_fault_lcounters);
 		}
 
 		static void
-		_fault_llvm_telemetry_convert(void)
+		_fault_llvm_metrics_convert(void)
 		{
 			pid_t pid = 0;
 			int fd = -1, status = -1;
@@ -179,7 +178,7 @@
 
 			// Prepare l-counters, and switch the metrics isolation.
 			fd = open(_fault_lcounters, O_WRONLY|O_CREAT|O_APPEND, S_IRUSR|S_IWUSR);
-			dprintf(fd, "%s&%s\n", lseek(fd, 0, SEEK_END) ? "\n" : "", _fault_metrics_isolation);
+			dprintf(fd, "%s&%s\n", lseek(fd, 0, SEEK_END) ? "\n" : "", _factor_metrics_isolation);
 
 			// Extract counters from the merged data.
 			posix_spawn_file_actions_init(&fa);
@@ -189,28 +188,21 @@
 			waitpid(pid, &status, 0);
 		}
 
+		// Executed (destructor) after LLVM performs its default &__llvm_profile_write_file.
 		static void __attribute__((destructor))
-		_fault_metrics_commit(void)
+		_factor_metrics_commit(void)
 		{
-			_fault_llvm_telemetry_convert();
+			// Run merge and ipq appending to l-counters.
+			_fault_llvm_metrics_convert();
 		}
 
 		static void
-		fault_metrics_transmit(void)
+		_factor_metrics_transmit(void)
 		{
 			__llvm_profile_write_file();
 			__llvm_profile_reset_counters();
-			_fault_metrics_commit();
+			_factor_metrics_commit();
 		}
-
-		static void
-		fault_metrics_identify(const char *mid)
-		{
-			_fault_metrics_update();
-		}
-
-		static void fault_metrics_identify(const char *);
-		static void fault_metrics_transmit(void);
 
 		struct telemetry_controls {
 			void (*identify)(const char *);
@@ -222,9 +214,9 @@
 			struct telemetry_controls *next;
 		};
 
-		struct telemetry_controls _telemetry_controls = {
-			fault_metrics_identify,
-			fault_metrics_transmit,
+		struct telemetry_controls _factor_metrics_controls = {
+			_factor_metrics_identify,
+			_factor_metrics_transmit,
 			__llvm_profile_reset_counters,
 			NULL,
 		};
@@ -232,31 +224,37 @@
 		// Optional. Usually provided by the executable.
 		void telemetry_register(struct telemetry_controls *) __attribute__((weak));
 
+		static void
+		_factor_metrics_update_identity(void)
+		{
+			_factor_metrics_identify(NULL);
+		}
+
 		static void __attribute__((constructor(999)))
-		_fault_llvm_telemetry_init(void)
+		_factor_metrics_initialize(void)
 		{
 			// Register with telemetry if available.
 			if (telemetry_register != NULL)
-				telemetry_register(&_telemetry_controls);
+				telemetry_register(&_factor_metrics_controls);
 
-			_fault_metrics_update();
-			pthread_atfork(NULL, NULL, _fault_metrics_update);
+			_factor_metrics_update_telemetry();
+			pthread_atfork(NULL, NULL, _factor_metrics_update_identity);
 		}
 	#else
 		static void
-		_fault_metrics_link_counters(const char *primary)
+		_factor_metrics_link_identify(const char *primary)
 		{
-			_fault_update_telemetry();
+			_factor_metrics_update_telemetry();
 			symlink(primary, _fault_lcounters);
 		}
 
 		static void __attribute__((constructor(900)))
-		_fault_metrics_link_chain(void)
+		_factor_metrics_link_chain(void)
 		{
-			static struct _fault_metrics_chain link;
-			link.next = _fault_metrics_link_stack;
-			link.update = _fault_metrics_link_counters;
-			_fault_metrics_link_stack = &link;
+			static struct _factor_metrics_chain link;
+			link.next = _factor_metrics_link_stack;
+			link.update = _factor_metrics_link_identify;
+			_factor_metrics_link_stack = &link;
 		}
 	#endif
 #endif
