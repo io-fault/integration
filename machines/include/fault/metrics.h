@@ -43,8 +43,10 @@
 		static char _fault_llvm_imd[4096 * 2];
 		static char _fault_llvm_imr[4096 * 2];
 		struct _factor_metrics_chain * CONCEAL(_factor_metrics_link_stack) = NULL;
+		const char * CONCEAL(_factor_metrics_primary) = FACTOR_PATH_STR;
 	#else
 		extern struct _factor_metrics_chain *_factor_metrics_link_stack;
+		extern const char *_factor_metrics_primary;
 	#endif
 
 	/**
@@ -86,7 +88,7 @@
 
 			// The dot-prefix here is significant as it will cause aggregate
 			// to pass over the data. Test runners are expected to set this
-			// to the factor and element path.
+			// to the factor and element path with telemetry_identify.
 			mid = ".fault-llvm";
 		}
 
@@ -100,10 +102,26 @@
 		snprintf(_factor_metrics_isolation, sizeof(_factor_metrics_isolation),
 			"%s", mi
 		);
-		snprintf(_fault_lcounters, sizeof(_fault_lcounters),
-			"%s/%s/%s/.fault-syntax-counters/l-counters",
-			mcp, pid, mid
-		);
+		#ifndef FAULT_METRICS_LINKED
+			snprintf(_fault_lcounters, sizeof(_fault_lcounters),
+				"%s/%s/%s/.fault-syntax-counters/l-counters",
+				mcp, pid, mid
+			);
+		#else
+			/*
+				// When linking to the primary factor's l-counters,
+				// the linked factor needs to be qualified by the primary
+				// in order to avoid losing information. In cases where
+				// multiple DSO's are present, the collected metrics will be
+				// written to multiple locations. If the linked factor is
+				// used by more than one DSO and unqualified, the first link
+				// will be the only link.
+			*/
+			snprintf(_fault_lcounters, sizeof(_fault_lcounters),
+				"%s/%s:%s/%s/.fault-syntax-counters/l-counters",
+				mcp, pid, _factor_metrics_primary, mid
+			);
+		#endif
 
 		// Allocate directories for l-counters and LLVM data files.
 		fs_alloc(fs_mkdir_defaults, _fault_lcounters, S_IRWXU|S_IRWXG|S_IRWXO);
