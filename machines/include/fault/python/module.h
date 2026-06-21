@@ -38,7 +38,7 @@
 #endif
 
 #define FAULT_METRICS_FUNCTIONS()
-#if FV_COVERAGE()
+#ifdef IF_coverage
 	#if __clang__
 		#undef FAULT_METRICS_FUNCTIONS
 		#include "metrics/llvm.h"
@@ -47,7 +47,7 @@
 	#endif
 #endif
 
-#if FV_INJECTIONS()
+#ifdef IF_coverage
 	#define DEFINE_MODULE_GLOBALS \
 		PyObj __ERRNO_RECEPTACLE__; \
 		PyObj __PYTHON_RECEPTACLE__; \

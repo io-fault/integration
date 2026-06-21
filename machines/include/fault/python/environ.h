@@ -146,7 +146,7 @@
 
 typedef PyObject * PyObj;
 
-#if FV_INJECTIONS()
+#ifdef IF_coverage
 	extern PyObj __ERRNO_RECEPTACLE__;
 	extern PyObj __PYTHON_RECEPTACLE__;
 #endif

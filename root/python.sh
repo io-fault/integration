@@ -76,7 +76,6 @@ bootstrap_extension ()
 		'-DF_PRODUCT_PATH="'"$container_dir"'"' \
 		"-DFV_SYSTEM=$defsys" \
 		"-DFV_ARCHITECTURE=$defarch" \
-		"-DFV_INTENTION=debug" \
 		\
 		"-DF_FACTOR_NAME=$modname" \
 		"-DF_PROJECT_PATH=$projectfactor" \

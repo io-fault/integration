@@ -2,7 +2,7 @@
 	# Support for failure injection for coverage purposes.
 */
 
-#if FV_INJECTIONS()
+#ifdef IF_coverage
 extern PyObj __ERRNO_RECEPTACLE__;
 extern PyObj __PYTHON_RECEPTACLE__;
 
