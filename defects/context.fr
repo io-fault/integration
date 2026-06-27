@@ -5,3 +5,4 @@ http://fault.io/integration/intrinsics/base-64
 http://fault.io/integration/intrinsics/status
 http://fault.io/integration/intrinsics/harness
 http://fault.io/integration/intrinsics/telemetry
+http://fault.io/integration/intrinsics/hash
