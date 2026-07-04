@@ -1516,7 +1516,7 @@ harness_execute_tests(int stf_receiver, const char *suite, TestDispatch htest, T
 			// but it is necessary to properly capture data in any subprocesses
 			// created by the test.
 		*/
-		snprintf(metrics_identity + suitelen, max_idlen, "%s",
+		snprintf(metrics_identity + suitelen, max_idlen+1, "%s",
 			current->htr_identity->ti_symbol);
 		telemetry_identify(metrics_identity);
 
