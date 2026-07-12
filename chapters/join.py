@@ -400,7 +400,10 @@ class Text(comethod.object):
 
 		# Generate elements for each parameter,
 		# and join with the documentation associated with the &element.
+		yielded = set()
 		for pid, pelement in parameters:
+			yielded.add(pid)
+
 			if pid in documented:
 				yield pid, True, documented_field_item('parameter',
 					resolve, element,
@@ -412,6 +415,17 @@ class Text(comethod.object):
 					resolve, element,
 					pelement, pid
 				)
+
+		# Documented, but not present in the delineated element.
+		for pid in documented:
+			# Loop and filter attempting to maintain insertion order.
+			if pid in yielded:
+				continue
+
+			yield pid, True, documented_field_item('parameter',
+				resolve, None, None, pid,
+				documented[pid][1]
+			)
 
 	def section(self, rdepth, rmult, path):
 		p = render.section_path(rdepth, rmult, *path)
