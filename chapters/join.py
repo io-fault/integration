@@ -223,6 +223,20 @@ def undocumented_field_item(cast, resolve, context, element, identifier, documen
 
 	return i
 
+def collect_parameters(elements):
+	"""
+	# Construct a sequence of identifier-element pairs for processing by &Text.r_parameters.
+	"""
+
+	parameters = []
+	try:
+		for n in elements:
+			if n and n[0] in {'parameter'}:
+				parameters.append((n[2]['identifier'], n))
+	except:
+		del parameters[:]
+	return parameters
+
 class Text(comethod.object):
 	"""
 	# Linked chapter construction for factor elements.
@@ -307,11 +321,12 @@ class Text(comethod.object):
 			self.setdocs((), doc, section='Elements')
 			r = doc.root[0]
 
-			pd, params = section_items(doc, 'Parameters')
-			if params:
+			params = collect_parameters(r[1])
+			pd, docparams = section_items(doc, 'Parameters')
+			if docparams:
 				pi = pd[1]
 				del pi[:]
-				for nid, p_documented, i in self.r_parameters(factor, (), r, params):
+				for nid, p_documented, i in self.r_parameters(factor, (), params, docparams):
 					pi.append(i)
 
 			# Rewrite ambiguous references found in the documentation.
@@ -381,11 +396,12 @@ class Text(comethod.object):
 
 		if doc:
 			self.setdocs(path, doc, section='Elements')
-			pd, params = section_items(doc, 'Parameters')
-			if params:
+			params = collect_parameters(subelements)
+			pd, docparams = section_items(doc, 'Parameters')
+			if docparams:
 				pi = pd[1]
 				del pi[:]
-				for nid, p_documented, i in self.r_parameters(elements, (), r, params):
+				for nid, p_documented, i in self.r_parameters(elements, (), params, docparams):
 					pi.append(i)
 
 			# Rewrite ambiguous references found in the documentation.
@@ -492,13 +508,7 @@ class Text(comethod.object):
 		typdata = list(map(property_item, describe_type(resolve, element)))
 		yield from self.r_control(path, element, documented=bool(doc), element=typdata)
 
-		parameters = []
-		try:
-			for n in element[1]:
-				if n and n[0] in {'parameter'}:
-					parameters.append((n[2]['identifier'], n))
-		except:
-			del parameters[:]
+		parameters = collect_parameters(element[1])
 
 		# Structure documentation and identify documented parameters.
 		documented = set()
