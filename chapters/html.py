@@ -779,11 +779,14 @@ class Render(comethod.object):
 				else:
 					typannotation = ()
 
-				# Check for not-documented literal.
+				# Check for not-documented literal while allowing a
+				# couple preceding elements such as set directories.
 				try:
-					vp = ipara(v[1][0])
-					if vp[0].type.endswith('/control/absent'):
-						documented = False
+					for e in v[1][:3]:
+						if e[0] == 'paragraph':
+							vp = ipara(e)
+							if vp[0].type.endswith('/control/absent'):
+								documented = False
 				except:
 					pass
 		else:
