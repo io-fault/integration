@@ -276,7 +276,7 @@
 		: -shared -Xlinker --unresolved-symbols=ignore-all
 
 	it-elements:
-		: -Xlinker -r
+		: -Xlinker -r -nodefaultlibs -nostdlib -nostartfiles
 
 -gnu-instrumentation:
 	# meta.metrics does not support collecting data from the gnu toolchain.
