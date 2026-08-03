@@ -6,6 +6,16 @@
 	#define TEST_STATUS_FRAME_RECEIVER STDOUT_FILENO
 #endif
 
+#if (defined(__gnu_linux__) && !defined(_GNU_SOURCE)) || defined(__APPLE__)
+	/*
+		// Use local memrchr.
+
+		// Apple doesn't provide (2025) and GNU only when _GNU_SOURCE is defined.
+	*/
+#else
+	#define TEST_DISABLE_LOCAL_MEMRCHR
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -58,8 +68,7 @@
 	#define HARNESS_FS_RM_PATH "/bin/rm"
 #endif
 
-#if defined(__APPLE__) && !defined(TEST_DISABLE_LOCAL_MEMRCHR)
-	// Not found in recent (2025) macOS versions.
+#if !defined(TEST_DISABLE_LOCAL_MEMRCHR)
 	static inline void *
 	memrchr(void *memory, int c, size_t s)
 	{
