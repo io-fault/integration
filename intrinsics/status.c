@@ -13,6 +13,7 @@
 #include <wchar.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
 #include <sys/uio.h>
 #include <sys/types.h>
 #include <sys/time.h>

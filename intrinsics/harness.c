@@ -28,11 +28,12 @@
 #include <wchar.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
+#include <sys/time.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
 #include <sys/types.h>
-#include <sys/time.h>
 #include <sys/resource.h>
 
 #include <fault/utf-8.h>
