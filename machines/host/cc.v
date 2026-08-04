@@ -31,6 +31,7 @@
 -gcc-diagnostics:
 	: -fmax-errors=[error-limit env.ERRLIMIT]
 	: -fdiagnostics-color=always
+	: -Wno-error=incompatible-pointer-types
 	: -w
 	: -W[-gcc-warnings]
 	: -Werror=[-gcc-errors]
@@ -52,6 +53,7 @@
 	: -fmax-errors=[error-limit env.ERRLIMIT]
 	: -fcolor-diagnostics -fansi-escape-codes
 	: -Wno-unknown-warning-option
+	: -Wno-error=incompatible-pointer-types
 	: -w
 	: -W[-clang-warnings]
 	: -Werror=[-clang-errors]

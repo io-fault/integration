@@ -63,6 +63,7 @@ bootstrap_extension ()
 	sofile="${modname}.${platsuffix}"
 	intdir="../../extensions/__f-int__/$defsys-$defarch/"
 	compile ${CC:-cc} -w \
+		-Wno-error=incompatible-pointer-types \
 		-o "../../$sofile" \
 		"-I$PYTHON_INCLUDE" \
 		"-I$FAULT_SYSTEM_PATH/machines/include" \
