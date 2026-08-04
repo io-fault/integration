@@ -43,7 +43,7 @@
 	: main
 
 -gcc-errors:
-	: implicit
+	: implicit-function-declaration
 	: uninitialized
 	: null-dereference
 	: init-self
