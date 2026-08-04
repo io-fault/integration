@@ -56,7 +56,7 @@ Test(_stf_calculate_type_code)
 */
 Test(stf_type_symbol_lookup)
 {
-	#define ET(F, L, ...) \
+	#define ET(F, L, C, ...) \
 		test->strcmp(STF_EVENT_TYPE_SYMBOL_STRING(__VA_ARGS__), \
 			stf_type_symbol(STF_EVENT_TYPE_CODE(F, L)));
 		STF_EVENTS(ET)
@@ -71,7 +71,7 @@ Test(stf_type_symbol_lookup)
 */
 Test(stf_type_identifier_lookup)
 {
-	#define ET(F, L, ...) \
+	#define ET(F, L, C, ...) \
 		test->strcmp(F L, stf_type_identifier(STF_EVENT_TYPE_CODE(F, L)));
 		STF_EVENTS(ET)
 	#undef ET

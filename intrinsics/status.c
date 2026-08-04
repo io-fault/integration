@@ -61,8 +61,8 @@ stf_type_identifier(int64_t code)
 {
 	switch (code)
 	{
-		#define ET(TID1, TID2, ...) \
-			case STF_EVENT_TYPE_CODE(TID1, TID2): \
+		#define ET(TID1, TID2, IC, ...) \
+			case IC: \
 				return((stf_string_t) TID1 TID2); \
 			break;
 			STF_EVENTS(ET)
@@ -88,8 +88,8 @@ stf_type_symbol(int64_t code)
 {
 	switch (code)
 	{
-		#define ET(TID1, TID2, ...) \
-			case STF_EVENT_TYPE_CODE(TID1, TID2): \
+		#define ET(TID1, TID2, IC, ...) \
+			case IC: \
 				return((stf_string_t) STF_EVENT_TYPE_SYMBOL_STRING(__VA_ARGS__)); \
 			break;
 			STF_EVENTS(ET)
