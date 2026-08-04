@@ -431,9 +431,13 @@ class Construction(kcore.Context):
 		logs = locations['log-directory']
 
 		workdir = ftr.container
-		try:
-			workdir.fs_mkdir()
-		except FileExistsError:
+		while workdir.fs_type() == 'void':
+			try:
+				workdir.fs_alloc().fs_mkdir()
+			except FileExistsError:
+				workdir.fs_real().fs_require('/') # Work path has non-directory file.
+				continue
+		else:
 			workdir.fs_require('/')
 
 		emitted = set((units, logs))
