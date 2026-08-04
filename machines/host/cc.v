@@ -138,6 +138,7 @@
 	: -l[-system-libraries]
 	: -L[-library-directories]
 	: -l[-library-names]
+	: -Xlinker -rpath=[http://if.fault.io/factors/system.library#image-directory]
 	: -l:[-library-factors]
 	: -l:[-archive-factors]
 
