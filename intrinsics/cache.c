@@ -125,6 +125,14 @@
 	// /f/
 		// A pointer to the cache's mapping function: &cache_record_f.
 */
+#ifndef CACHE_INLINE
+	/**
+		// Control the inlining behavior of internal functions
+		// and some interfaces.
+	*/
+	#define CACHE_INLINE inline __attribute__((always_inline))
+#endif
+
 #ifndef CACHE_SOURCE_TEMPLATE
 	#include <fault/cache/context.h>
 	#include <fault/libc.h>
@@ -196,7 +204,7 @@
 	// Allow dependents to override these for link time templating.
 	#define CACHE_DEFAULT_PARAMETER \
 		CACHE_PARAMETER_QUALIFIERS \
-		extern inline __attribute__((weak))
+		extern CACHE_GCC_UNSUPPORTED(inline) __attribute__((weak))
 
 	/**
 		// The size of a record's key.
@@ -328,7 +336,8 @@
 	cache_record_scan_distributions(NAME, CACHE) \
 	cache_record_scan_distribution_records(NAME, CACHE->records, CACHE->counts)
 
-extern inline __attribute__((always_inline))
+extern
+CACHE_GCC_UNSUPPORTED(CACHE_INLINE)
 cache_key_identity_t
 cache_default_hash(void *pointer, size_t length)
 {
@@ -339,32 +348,32 @@ cache_default_hash(void *pointer, size_t length)
 	#endif
 }
 
-static inline __attribute__((always_inline)) int
+static CACHE_INLINE int
 cache_key_distribution(cache_storage_t *c, cache_key_t *key)
 {
 	cache_key_identity_t ki = cache_key_identify(key);
 	return(cache_distribution_index(c, ki));
 }
 
-static inline __attribute__((always_inline)) cache_record_t
+static CACHE_INLINE cache_record_t
 cache_record_previous(cache_record_t r)
 {
 	return(((void *) r) - cache_record_size());
 }
 
-static inline __attribute__((always_inline)) cache_record_t
+static CACHE_INLINE cache_record_t
 cache_record_next(cache_record_t r)
 {
 	return(((void *) r) + cache_record_size());
 }
 
-static inline __attribute__((always_inline)) cache_record_t
+static CACHE_INLINE cache_record_t
 cache_record_index(cache_record_t r, size_t index)
 {
 	return(((void *) r) + (cache_record_size() * index));
 }
 
-static inline __attribute__((always_inline)) bool
+static CACHE_INLINE bool
 cache_record_usage_threshold(cache_record_t r)
 {
 	if (r->r_usage.u_hit + r->r_usage.u_missed > CACHE_USAGE_THRESHOLD)
@@ -386,14 +395,14 @@ cache_record_usage_threshold(cache_record_t r)
 	else \
 		X = CACHE_UMETRIC_LIMIT;
 
-static inline __attribute__((always_inline)) bool
+static CACHE_INLINE bool
 cache_record_hit(cache_record_t r)
 {
 	CACHE_UMETRIC_INCREMENT(r->r_usage.u_hit, 1)
 	return(cache_record_usage_threshold(r));
 }
 
-static inline __attribute__((always_inline)) bool
+static CACHE_INLINE bool
 cache_record_miss(cache_record_t r)
 {
 	CACHE_UMETRIC_INCREMENT(r->r_usage.u_missed, 1)
@@ -465,7 +474,8 @@ cache_record_set_value(cache_record_t r, cache_value_t *v)
 /**
 	// Whether the key in the record matches the given key, &k, and its identity, &ki.
 */
-CACHE_INTERFACE_QUALIFIERS bool __attribute__((always_inline))
+CACHE_GCC_UNSUPPORTED(CACHE_INLINE)
+CACHE_INTERFACE_QUALIFIERS bool
 cache_record_matches(cache_record_t r, cache_key_t *k, cache_key_identity_t ki)
 {
 	if (ki != r->r_identity)
@@ -480,7 +490,8 @@ cache_record_matches(cache_record_t r, cache_key_t *k, cache_key_identity_t ki)
 /**
 	// Move the records' data into the other.
 */
-CACHE_INTERFACE_QUALIFIERS void __attribute__((always_inline))
+CACHE_GCC_UNSUPPORTED(CACHE_INLINE)
+CACHE_INTERFACE_QUALIFIERS void
 cache_record_swap(cache_record_t r1, cache_record_t r2)
 {
 	cache_record_t copy_space = alloca(cache_record_size());
@@ -493,7 +504,8 @@ cache_record_swap(cache_record_t r1, cache_record_t r2)
 /**
 	// Copy the key and its identity into the record and reset the usage counters.
 */
-CACHE_INTERFACE_QUALIFIERS cache_record_t __attribute__((always_inline))
+CACHE_GCC_UNSUPPORTED(CACHE_INLINE)
+CACHE_INTERFACE_QUALIFIERS cache_record_t
 cache_record_initialize(cache_record_t r, cache_key_t *k, cache_key_identity_t ki)
 {
 	r->r_usage.u_hit = 1;
