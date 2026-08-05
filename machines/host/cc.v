@@ -255,7 +255,8 @@
 	: [-header-switch]
 
 -elf-legacy-format-default:
-	: -Wl,--enable-new-dtags,--eh-frame-hdr
+	it-elements:
+	!: -Wl,--enable-new-dtags,--eh-frame-hdr
 
 -elf-legacy-format-control:
 	: [-elf-legacy-format-default]

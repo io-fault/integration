@@ -14,10 +14,25 @@ python.sh
 ) >"$FAULT_LIBEXEC_PATH/fault-dispatch"
 chmod a+x "$FAULT_LIBEXEC_PATH/fault-dispatch"
 
+# Detect compiler driver and type.
+if test x"$CC" = x""
+then
+	CC="$(which cc 2>/dev/null || which clang 2>/dev/null || which gcc 2>/dev/null)"
+fi
+
+# Detect clang.
+(echo "int i=((int)__clang__+1);") | "$CC" -x c -c - -o /dev/null >/dev/null 2>/dev/null
+if test $? -eq 0
+then
+	CDTYPE=llvm-clang
+else
+	CDTYPE=gnu-cc
+fi
+
 # Build project index; ./intregration twice for the generated machines context.
 f_fictl query -D "$PYTHON_PRODUCT" -U -I "$SYSTEM_PRODUCT" || exit
 f_fictl query -D "$SYSTEM_PRODUCT" -U -I "$PYTHON_PRODUCT" || exit
-f_pyx python system.machines.initialize || exit
+f_pyx python system.machines.initialize -d"$CC" -t"$CDTYPE" "$SYSTEMCONTEXT" || exit
 f_fictl query -D "$SYSTEMCONTEXT" -U -I "$SYSTEM_PRODUCT" || exit
 f_fictl query -D "$INTERFACE_PRODUCT" -U -I "$SYSTEM_PRODUCT" || exit
 

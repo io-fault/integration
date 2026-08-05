@@ -15,18 +15,24 @@ restricted = {
 
 required = {
 	'-C': ('field-replace', 'cc-dirpath'),
+
+	# Compiler driver.
+	'-d': ('field-replace', 'cd-path'),
+	'-t': ('field-replace', 'cd-type'),
 }
 
-def perform(target_directory:files.Path):
+def perform(cdpath:files.Path, cdtype:str, target_directory:files.Path):
 	from .host import construction as cci
 	from fault.system import factors
 	factors.context.load()
 	factors.context.configure()
-	cci.mkcc(target_directory)
+	cci.mkcc(target_directory, (cdpath, cdtype))
 
 def main(inv:process.Invocation) -> process.Exit:
 	config = {
 		'machines': [],
+		'cd-path': '/usr/bin/clang', # Compiler Driver; system linker interface + compiler.
+		'cd-type': None, # llvm-clang or gnu-cc
 	}
 	optr = recognition.legacy(restricted, required, inv.argv)
 	argv = recognition.merge(config, optr)
@@ -39,7 +45,19 @@ def main(inv:process.Invocation) -> process.Exit:
 	if target.fs_type() == 'void':
 		target.fs_mkdir()
 
-	perform(target)
+	cdpath = config['cd-path']
+	cdtype = config['cd-type']
+	if cdtype is None:
+		if 'clang' in cdpath:
+			cdtype = 'llvm-clang'
+		elif 'gcc' in cdpath:
+			cdtype = 'gnu-cc'
+		else:
+			# clang tends to be more permissive so use gcc terms
+			# when the type is unspecified.
+			cdtype = 'gnu-cc'
+
+	perform(inv.fs_pwd@cdpath, cdtype, target)
 
 	return inv.exit(0)
 

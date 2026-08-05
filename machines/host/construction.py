@@ -116,10 +116,15 @@ def define(name, *types):
 		s += '\n'
 	return s
 
-def form_host_target(hlinker):
+def form_host_target(hlinker, cdtype):
 	target = ""
 	target += comment("Options for the selected CC. Included regardless of language.")
-	target += constant('-system-cc-options', "[-clang-diagnostics]")
+	if cdtype == 'llvm-clang':
+		target += constant('-system-cc-options', "[-clang-diagnostics]")
+	elif cdtype == 'gnu-cc':
+		target += constant('-system-cc-options', "[-gcc-diagnostics]")
+	else:
+		target += constant('-system-cc-options')
 
 	target += "\n"
 	target += comment("Directory paths (-isystem) to system headers.")
@@ -144,11 +149,12 @@ def form_host_target(hlinker):
 	)
 
 	target += "\n"
-	target += comment("One of: -apple-ld-macho -gnu-ld-elf -llvm-ld-elf")
+	target += comment("One of: [-apple-ld-macho] [-gnu-ld-elf] [-llvm-ld-elf]")
 	target += comment("Linker backend should be designated here as well if desired.")
-	target += comment("However, it and the option must be matched with the corresponding adapter.")
-	target += comment("-fuse-ld=llvm|bfd|gold")
-	target += constant('-cc-select-ld-interface', hlinker)
+	target += define('-cc-select-ld-interface',
+		('never', '-fuse-ld=llvm|bfd|gold'),
+		('', hlinker),
+	)
 
 	return target
 
@@ -189,14 +195,15 @@ def form_host_type():
 	)
 	return common
 
-def host(route, context, hlinker, hsystem, harch, factor='type', name='host.cc', cc='/usr/bin/cc'):
+def host(route, context, hlinker, hsystem, harch, hdriver, factor='type', name='host.cc'):
+	cdpath, cdtype = hdriver
 	sv = lsf.types.Variants(hsystem, harch)
 	pd = lsf.Product(route)
 
 	machine_cc = getsource(machines_project, name)
-	cc_default = system(cc)
+	cc_default = system(cdpath.fs_path_string())
 
-	target = form_host_target(hlinker)
+	target = form_host_target(hlinker, cdtype)
 	variants = form_variants(hsystem, harch, modes=['executable', 'delineation'])
 	common = form_host_type()
 
@@ -471,8 +478,9 @@ def execution_project(context, system, python):
 		]),
 	]
 
-def mkvectors(context, route, name='machines'):
+def mkvectors(context, route, hdriver, name='machines'):
 	soles = [
+		mksole('cd', 'vector.system', system(hdriver[0].fs_path_string())),
 		mksole('usr-cc', 'vector.system', system('/usr/bin/cc')),
 		mksole('usr-ar', 'vector.system', system('/usr/bin/ar')),
 		mksole('bin-cp', 'vector.system', system('/bin/cp')),
@@ -499,7 +507,7 @@ def mkvectors(context, route, name='machines'):
 
 	# Host Machine
 	pi = mkinfo(context + '.host', 'host')
-	pj = mkproject(pi, route, context, 'host', *host(route, context, hlink, hsys, harch))
+	pj = mkproject(pi, route, context, 'host', *host(route, context, hlink, hsys, harch, hdriver))
 	factory.instantiate(*pj)
 
 	# Python Machine
@@ -515,6 +523,6 @@ def mkvectors(context, route, name='machines'):
 	pj = mkproject(pi, route, context, 'execution', *execution_project(context, hid, pid))
 	factory.instantiate(*pj)
 
-def mkcc(route, context_name='machines'):
-	mkvectors(context_name, route)
+def mkcc(route, hdriver, context_name='machines'):
+	mkvectors(context_name, route, hdriver)
 	iproduct(route, [x.route for x in factors.context.product_sequence])
