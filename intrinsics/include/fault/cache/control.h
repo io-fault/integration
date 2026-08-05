@@ -61,7 +61,7 @@
 	#define CACHE_MEMORY_REALLOCATE(C, P, S) realloc(P, S)
 #endif
 
-#ifndef CACHE_MEMORY_RELEASE(C, S)
+#ifndef CACHE_MEMORY_RELEASE
 	/**
 		// Release allocated memory with respect to a cache. Defaults to &free.
 	*/
