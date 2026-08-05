@@ -139,7 +139,9 @@ def form_host_target(hlinker):
 
 	target += "\n"
 	target += comment("Compiler flags used to select the target architecture.")
-	target += constant('-cc-select-architecture', "-march=native")
+	target += define('-cc-select-architecture',
+		('never', "-march=native"),
+	)
 
 	target += "\n"
 	target += comment("One of: -apple-ld-macho -gnu-ld-elf -llvm-ld-elf")

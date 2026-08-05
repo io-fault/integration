@@ -234,6 +234,7 @@
 
 	# Target defined options.
 	: [-system-cc-options]
+	: [-cc-select-architecture]
 
 	# Position capability: PIC or PIE.
 	: [-positioning-format]
