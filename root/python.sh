@@ -67,11 +67,13 @@ bootstrap_extension ()
 		-o "../../$sofile" \
 		"-I$PYTHON_INCLUDE" \
 		"-I$FAULT_SYSTEM_PATH/machines/include" \
+		"-I$FAULT_SYSTEM_PATH/intrinsics/include" \
 		"-I$PYTHON_MACHINE/include" \
 		"-I$fault_dir/system/include" \
 		"-I$prefix/include" \
 		\
-		"-D_DEFAULT_SOURCE" \
+		"-D_DEFAULT_SOURCE=1" \
+		"-DFAULT_BOOTSTRAP=1" \
 		\
 		'-DCC_PATH="'"$ccpath"'"' \
 		'-DF_PRODUCT_PATH="'"$container_dir"'"' \
