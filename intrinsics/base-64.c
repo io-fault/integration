@@ -777,11 +777,15 @@ base64_transfer_encoded_v(uint8_t state[4], base64_transfer_t tf, void *context,
 
 			// Not enough data for a unit? Continue or exit for more.
 			if (state[0] < dunit)
+			{
+				assert(available == 0);
 				continue;
+			}
 
 			// Transfer unit and update write position.
 			base64_encode_unit(wbp, state+1);
 			wbp += eunit;
+			assert(capacity >= eunit);
 			capacity -= eunit;
 
 			// Reset state.
@@ -806,7 +810,10 @@ base64_transfer_encoded_v(uint8_t state[4], base64_transfer_t tf, void *context,
 		}
 
 		// available is aligned(*dunit); transfer until done.
-		while (available > 0)
+		assert(available % dunit == 0);
+		// Unconditionally enter the loop in order to make sure
+		// the write buffer has a chance to be flushed.
+		do
 		{
 			size_t xfer;
 
@@ -840,7 +847,7 @@ base64_transfer_encoded_v(uint8_t state[4], base64_transfer_t tf, void *context,
 				assert(capacity > 0);
 				assert(capacity <= sizeof(write_buffer));
 			}
-		}
+		} while (available > 0);
 	}
 
 	rbp = (uint8_t *) vl->iov_base;
