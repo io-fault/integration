@@ -38,6 +38,8 @@ f_fictl query -D "$INTERFACE_PRODUCT" -U -I "$SYSTEM_PRODUCT" || exit
 
 f_fictl integrate -L4 -D "$SYSTEMCONTEXT" -X "$SYSTEMCONTEXT" \
 	machines
+f_fictl integrate -L1 -D "$(dirname "$FAULT_SYSTEM_PATH")" -X "$SYSTEMCONTEXT" \
+	system.intrinsics
 
 f_fictl integrate -L8 -D "$(dirname "$FAULT_PYTHON_PATH")" -X "$SYSTEMCONTEXT" \
 	"$FAULT_CONTEXT_NAME"
