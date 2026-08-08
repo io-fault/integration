@@ -7,3 +7,4 @@ http://fault.io/integration/intrinsics/harness
 http://fault.io/integration/intrinsics/telemetry
 http://fault.io/integration/intrinsics/hash
 http://fault.io/integration/intrinsics/cache
+http://fault.io/integration/intrinsics/query
