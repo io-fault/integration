@@ -57,7 +57,7 @@ Test(combine_maximums)
 
 Test(combine_sums)
 {
-	int r;
+	int c;
 	process_metrics_t pm[] = {
 		{PMTC(2, 2, 2, 2, 2), PMTT(20.0, 2*20.0, 3*20.0)},
 		{PMTC(3, 3, 3, 3, 3), PMTT(30.0, 2*30.0, 3*30.0)},
@@ -65,8 +65,8 @@ Test(combine_sums)
 	};
 	process_metrics_t r = {0,};
 
-	r = process_metrics_combine(&r, (process_metrics_t *[]){&pm[0], &pm[1], &pm[2], NULL});
-	test->equality(3, r);
+	c = process_metrics_combine(&r, (process_metrics_t *[]){&pm[0], &pm[1], &pm[2], NULL});
+	test->equality(3, c);
 	test->equality(9, r.process_count);
 	test->equality(9, r.thread_count);
 	test->equality(9, r.zombie_count);
