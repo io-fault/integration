@@ -6,6 +6,95 @@
 #include <Python.h>
 #include <structmember.h>
 
+/**
+	// Toggle the type to and from a (PyObject *).
+*/
+#define PyObject_Recast(CTYP, OB) _Generic((OB), \
+		PyObject *: (CTYP) OB, \
+		CTYP: (PyObject *) OB \
+	)
+
+#define Py_FORMAT_CODE(V) _Generic((V), \
+	char *: "s", \
+	char: "b", \
+	short: "h", \
+	int: "i", \
+	long: "l", \
+	long long: "L", \
+	unsigned char: "B", \
+	unsigned short: "H" \
+	unsigned int: "I", \
+	unsigned long: "k", \
+	unsigned long long: "K", \
+	Py_ssize_t: "n", \
+	float: "f", \
+	double: "d", \
+	PyObject *: "O", \
+	default: "" \
+)
+
+#define Py_MEMBER_TYPE(V) _Generic((V), \
+	char: T_CHAR, \
+	short: T_SHORT, \
+	signed int: T_INT, \
+	long: T_LONG, \
+	long long: T_LONGLONG, \
+	unsigned char: T_UBYTE, \
+	unsigned int: T_UINT, \
+	unsigned long: T_ULONG, \
+	unsigned long long: T_ULONGLONG, \
+	float: T_FLOAT, \
+	double: T_DOUBLE, \
+	char *: T_STRING, \
+	PyObject *: T_OBJECT \
+)
+
+#define _Py_DecoyFloat(V) _Generic((V), \
+	float: V, \
+	double: V, \
+	default: 0.0 \
+)
+
+#define _Py_DecoyInteger(V) _Generic((V), \
+	float: 0, \
+	double: 0, \
+	void *: 0, \
+	char *: 0, \
+	PyObject *: 0, \
+	default: V \
+)
+
+#define _Py_DecoyPointer(V) _Generic((V), \
+	float: NULL, \
+	double: NULL, \
+	default: V \
+)
+
+#define Py_NEW_LONG(V) _Generic((V), \
+	char *: PyLong_FromString((const char *) _Py_DecoyPointer(V), NULL, 10), \
+	char: PyLong_FromLong((long) V), \
+	short: PyLong_FromLong((long) V), \
+	int: PyLong_FromLong((long) V), \
+	long: PyLong_FromLong((long) V), \
+	long long: PyLong_FromLongLong(_Py_DecoyInteger(V)), \
+	unsigned char: PyLong_FromUnsignedLong((unsigned long) V), \
+	unsigned short: PyLong_FromUnsignedLong((unsigned long) V), \
+	unsigned int: PyLong_FromUnsignedLong((unsigned long) V), \
+	unsigned long: PyLong_FromUnsignedLong((unsigned long) V), \
+	unsigned long long: PyLong_FromUnsignedLongLong(_Py_DecoyInteger(V)), \
+	double: PyLong_FromDouble(_Py_DecoyFloat(V)), \
+	float: PyLong_FromDouble(_Py_DecoyFloat(V)), \
+	PyObject *: PyObject_CallOneArg((PyObject *) &PyLong_Type, (PyObject *) _Py_DecoyPointer(V)) \
+)
+
+#define Py_NEW_VALUE(V) _Generic((V), \
+	char *: PyUnicode_FromString((const char *) _Py_DecoyPointer(V)), \
+	double: PyFloat_FromDouble(_Py_DecoyFloat(V)), \
+	float: PyFloat_FromDouble(_Py_DecoyFloat(V)), \
+	PyObject *: PyObject_CallOneArg((PyObject *) Py_TYPE(_Py_DecoyPointer(V)), (PyObject *) _Py_DecoyPointer(V)), \
+	default: Py_NEW_LONG(V) \
+)
+
 #define PY_VBEFORE(MAJOR, MINOR) \
 	(PY_MAJOR_VERSION < MAJOR || (PY_MAJOR_VERSION == MAJOR && PY_MINOR_VERSION < MINOR))
 #define PY_VAFTER(MAJOR, MINOR) \
