@@ -49,5 +49,11 @@ struct ProcessMetrics {
 
 typedef struct ProcessMetrics process_metrics_t;
 
+/**
+	// Accessor for generic switches and offset calculations.
+*/
+#define ProcessMetrics_Field(NAME) (((process_metrics_t *)0)->NAME)
+int process_metrics_combine(process_metrics_t *, process_metrics_t **);
+
 int process_usage_scan(process_metrics_t *, pid_t, size_t limit);
 size_t process_executable_path(char *buf, size_t buflen, pid_t);

@@ -98,6 +98,59 @@ typedef union ProcessMetricTypes pmetric_types_u;
 */
 typedef struct ProcessMetrics process_metrics_t;
 
+/**
+	// Aggregate the given source metrics, &src, into &av;
+
+	// [ Parameters ]
+	// /av/
+		// The memory to write the aggregate into.
+	// /src/
+		// NULL-terminated array of process_metrics_t pointers.
+		// `(process_metric_t *[]){&A, &B, NULL}`.
+	// [ Returns ]
+	// The number of records processed from &src.
+*/
+int
+process_metrics_combine(process_metrics_t *av, process_metrics_t **src)
+{
+	pmetric_time_t duration = av->maximum_elapsed_time;
+	int i;
+
+	// Expand average for sum.
+	av->average_memory *= av->process_count;
+	av->average_maximum_memory *= av->process_count;
+
+	for (i = 0; src[i] != NULL; ++i)
+	{
+		process_metrics_t *c = src[i];
+		pmetric_count_t units = c->process_count == 0 ? 1 : c->process_count;
+
+		av->process_count += c->process_count;
+		av->thread_count += c->thread_count;
+		av->zombie_count += c->zombie_count;
+		av->suspended_count += c->suspended_count;
+		av->locked_count += c->locked_count;
+
+		av->total_cumulative_time += c->total_cumulative_time;
+		av->total_user_time += c->total_user_time;
+		av->total_system_time += c->total_system_time;
+
+		if (av->maximum_elapsed_time < c->maximum_elapsed_time)
+			av->maximum_elapsed_time = c->maximum_elapsed_time;
+		if (av->maximum_memory < c->maximum_memory)
+			av->maximum_memory = c->maximum_memory;
+
+		av->average_memory += c->average_memory * c->process_count;
+		av->average_maximum_memory += c->average_maximum_memory * c->process_count;
+	}
+
+	// Redistribute the temporarily held total.
+	av->average_memory /= av->process_count;
+	av->average_maximum_memory /= av->process_count;
+
+	return(i);
+}
+
 #ifndef SQ_PROCESS_USAGE_INTERFACE
 	/**
 		// Signal for (process usage) interface selection override.
