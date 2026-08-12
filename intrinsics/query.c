@@ -424,12 +424,7 @@ process_metrics_combine(process_metrics_t *av, process_metrics_t **src)
 	int
 	process_usage_scan(process_metrics_t *report, pid_t id, size_t limit)
 	{
-		pid_t *cpids;
-		int n;
 		const size_t ds = sizeof(pid_t) * limit;
-
-		cpids = alloca(ds);
-		cpids[0] = id;
 
 		#if 0
 			int current;
@@ -446,8 +441,16 @@ process_metrics_combine(process_metrics_t *av, process_metrics_t **src)
 			} while (current < n);
 		#endif
 
-		n = proc_listpgrppids(id, &cpids[1], ds - sizeof(id));
-		measure_process_usage(report, cpids, n + 1);
+		if (id >= 0)
+			measure_process_usage(report, &id, 1);
+		else
+		{
+			int n;
+			pid_t *cpids = alloca(ds);
+			n = proc_listpgrppids(-id, cpids, ds);
+			measure_process_usage(report, cpids, n);
+		}
+
 		return(0);
 	}
 
