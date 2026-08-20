@@ -6,6 +6,8 @@
 	#define _GNU_SOURCE
 #endif
 
+#include <assert.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -16,10 +18,13 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <time.h>
+#include <string.h>
+#include <stdatomic.h>
 #include <sys/time.h>
 #include <sys/param.h>
 #include <sys/user.h>
 #include <sys/types.h>
+#include <pwd.h>
 
 #include <fault/query.h>
 
@@ -854,3 +859,337 @@ process_metrics_combine(process_metrics_t *av, process_metrics_t **src)
 		return(0);
 	}
 #endif
+
+/**
+	// Vector for filesystem paths.
+
+	// [ Parameters ]
+	// /path_count/
+		// Number of paths in the vector.
+	// /path_maximum_length/
+		// The length, bytes, of the longest path in the vector.
+	// /path_strings/
+		// The &NULL terminated array of NUL terminated path strings.
+*/
+typedef struct PathVector path_vector_t;
+
+static path_vector_t *
+_split_paths(const char *paths, const char separator)
+{
+	size_t bytecount = 0, sepcount = 0;
+	size_t i, maxlen = 0;
+	char *pathv_buf, *path_strings;
+	char **pathv_refs;
+	char *c = paths;
+	path_vector_t *pv;
+
+	while (*c)
+	{
+		if (*c == separator)
+			++sepcount;
+		else
+			++bytecount;
+
+		++c;
+	}
+	assert(sepcount + bytecount == strlen(paths));
+
+	// +2, one for the trailing field and one for termination.
+	pathv_buf = malloc(sizeof(*pv) + (sepcount + 2) * sizeof(char *) + bytecount + sepcount + 1);
+	if (pathv_buf == NULL)
+		return(NULL);
+
+	pv = pathv_buf;
+	pathv_buf += offsetof(path_vector_t, path_strings);
+	pathv_refs = (char **) pathv_buf;
+
+	path_strings = pathv_buf + ((sepcount + 2) * sizeof(char *));
+	memcpy(path_strings, paths, sepcount + bytecount);
+	path_strings[sepcount + bytecount] = '\0';
+
+	i = 0;
+	pathv_refs[i] = path_strings;
+	while (path_strings = strchr(path_strings, separator))
+	{
+		size_t l;
+		++i;
+
+		// Terminate at the separator and advance for next strchr.
+		path_strings[0] = '\0';
+		path_strings += 1;
+
+		pathv_refs[i] = path_strings;
+
+		l = pathv_refs[i] - pathv_refs[i-1];
+		if (l > maxlen)
+			maxlen = l;
+	}
+	pathv_refs[i + 1] = NULL;
+
+	pv->path_count = i + 1;
+	pv->path_maximum_length = maxlen;
+
+	assert(pathv_refs == pathv_buf);
+	return(pv);
+}
+
+/**
+	// Split the PATH environment variable.
+*/
+path_vector_t *
+executable_paths(const char *pathenv)
+{
+	return(_split_paths(getenv(pathenv ? pathenv : "PATH"), ':'));
+}
+
+/**
+	// Scan the path vector for executables.
+
+	// [ Parameters ]
+	// /buffer/
+		// The memory to write the path to. If no executable is found,
+		// it will be set to an empty string.
+	// /length/
+		// The number of bytes available in &buffer for writing the path.
+	// /pv/
+		// The path vector; likely allocated and initialized by &executable_paths.
+	// /exename/
+		// The executable name to scan for.
+	// /index/
+		// The path index in &pv to start scanning at.
+
+	// [ Returns ]
+	// The path index plus one that the executable was found in.
+	// Zero if no path contained the executable, and a negative
+	// index if the buffer did not have enough space for the path.
+*/
+int
+executable_scan(char *buffer, size_t length, path_vector_t *pv, const char *exename, int index)
+{
+	size_t exelen = strlen(exename);
+	size_t prefix = pv->path_maximum_length;
+
+	if (index >= pv->path_count)
+		return(0);
+
+	while (pv->path_strings[index] != NULL)
+	{
+		size_t l;
+
+		l = strlen(pv->path_strings[index]);
+		if (exelen + l + 2 > length)
+			return(-(index + 1));
+
+		memcpy(buffer, pv->path_strings[index], l);
+		buffer[l] = '/';
+		memcpy(buffer + l + 1, exename, exelen);
+		buffer[l + exelen + 1] = '\0';
+
+		if (access(buffer, X_OK) == 0)
+			return(index + 1);
+
+		++index;
+	}
+
+	buffer[0] = '\0';
+	return(0);
+}
+
+/**
+	// Find the first executable with the name, &exename.
+
+	// [ Returns ]
+	// A malloc-allocated pointer to a string identifying the
+	// absolute path to the executable, or &NULL when
+	// the executable could not be found or memory could not be allocated.
+
+	// Caller is responsible to &free the allocation.
+*/
+const char *
+executable_first(const char *exename)
+{
+	char *buffer;
+	size_t length;
+	int index;
+
+	path_vector_t *pv;
+	pv = executable_paths(NULL);
+	if (pv == NULL)
+		return(NULL);
+
+	length = pv->path_maximum_length + strlen(exename) + 2;
+	buffer = malloc(length);
+	index = executable_scan(buffer, length, pv, exename, 0);
+	free(pv);
+
+	if (index < 1)
+	{
+		free(buffer);
+		buffer = NULL;
+	}
+
+	return(buffer);
+}
+
+/**
+	// Common user information.
+	// Repacked `struct passwd` from POSIX `pwd.h`.
+
+	// [ Parameters ]
+	// /u_identifier/
+		// The numeric identifier of the user.
+	// /u_name/
+		// The string identifier of the user.
+	// /u_home/
+		// The path to the user's home directory.
+	// /u_shell/
+		// The path to the user's login shell.
+	// /u_title/
+		// The full name or comment of the user.
+		// Unprocessed contents of the `pw_gecos` field.
+	// /u_role/
+		// The login class. Empty string on linux.
+*/
+typedef struct UserProfile user_profile_t;
+
+/**
+	// Convert the &pwd record to a &user_profile_t.
+
+	// [ Returns ]
+	// A &malloc allocated pointer to the converted data.
+	// Caller is responsible to &free the allocation.
+*/
+user_profile_t *
+user_profile_convert_pwd(struct passwd *pwd)
+{
+	user_profile_t *u;
+	size_t ul;
+
+	#define ULENGTHS(UF, PWF) size_t UF##l = PWF(pwd) ? strlen(PWF(pwd)) : 0;
+		USER_PROFILE_STRING_FIELDS(ULENGTHS)
+	#undef ULENGTHS
+
+	#define ULSUM(UF, PWF) + UF##l + 1
+		ul = sizeof(user_profile_t) + USER_PROFILE_STRING_FIELDS(ULSUM);
+	#undef ULSUM
+
+	u = malloc(ul);
+	if (u == NULL)
+		return(NULL);
+
+	u->u_identifier = pwd->pw_uid;
+
+	u->u_name = u->buffer;
+	u->u_home = u->u_name + namel + 1;
+	u->u_shell = u->u_home + homel + 1;
+	u->u_title = u->u_shell + shelll + 1;
+	u->u_role = u->u_title + titlel + 1;
+
+	assert((char *) u + ul <= u->u_role + rolel + 1);
+
+	#define UFCPY(UF, PWF) memcpy(u->u_##UF, PWF(pwd), UF##l);
+		USER_PROFILE_STRING_FIELDS(UFCPY)
+	#undef UFCPY
+
+	#define UFTERM(UF, PWF) *((char *) u->u_##UF + UF##l) = '\0';
+		USER_PROFILE_STRING_FIELDS(UFTERM)
+	#undef UFTERM
+
+	return(u);
+}
+
+/**
+	// Use the system's password database to fill a &user_profile_t record
+	// describing the user identified by &uid.
+
+	// [ Parameters ]
+	// /uid/
+		// The numeric user identifier to find the record with.
+
+	// [ Returns ]
+	// A &malloc allocated structure with the user's information
+	// available for access.
+
+	// When &NULL, either no matching record was found, memory could not
+	// be allocated, or the routine used to get the information returned an error.
+
+	// Caller is responsible to &free the allocation.
+*/
+user_profile_t *
+user_profile(uid_t uid)
+{
+	user_profile_t *ur;
+	struct passwd pwd, *result = NULL;
+	char *buffer;
+	int r, pwr_sz = sysconf(_SC_GETPW_R_SIZE_MAX);
+
+	buffer = malloc(pwr_sz == -1 ? 1000 * 12 : pwr_sz);
+	if (buffer == NULL)
+		return(NULL);
+
+	r = getpwuid_r(uid, &pwd, buffer, pwr_sz, &result);
+	if (r != 0 || result == NULL)
+	{
+		free(buffer);
+		return(NULL);
+	}
+
+	ur = user_profile_convert_pwd(&pwd);
+	free(buffer);
+	return(ur);
+}
+
+#if defined(__STDC_NO_ATOMICS__)
+	static user_profile_t *volatile cached_user_profile = NULL;
+#else
+	static user_profile_t *_Atomic cached_user_profile = NULL;
+#endif
+
+/**
+	// Return a cached &user_profile_t of the current user.
+
+	// The data may be used until &release_user_profile is called.
+*/
+const user_profile_t *
+current_user_profile(void)
+{
+	user_profile_t *u;
+
+	u = cached_user_profile;
+	if (u == NULL)
+	{
+		#if defined(__STDC_NO_ATOMICS__)
+			u = user_profile(getuid());
+			cached_user_profile = u;
+		#else
+			u = atomic_exchange(&cached_user_profile, user_profile(getuid()));
+		#endif
+
+		if (cached_user_profile != u && u != NULL)
+			free(u);
+	}
+
+	return((const user_profile_t *) cached_user_profile);
+}
+
+/**
+	// Reset the cached user profile retrieved by &current_user_profile.
+
+	// Use when switching users or when the data is no longer desired.
+*/
+void
+release_user_profile(void)
+{
+	user_profile_t *u;
+
+	#if defined(__STDC_NO_ATOMICS__)
+		u = cached_user_profile;
+		cached_user_profile = NULL;
+	#else
+		u = atomic_exchange(&cached_user_profile, NULL);
+	#endif
+
+	if (u == NULL)
+		return;
+	free(u);
+}
