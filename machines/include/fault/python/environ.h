@@ -22,11 +22,10 @@
 	long: "l", \
 	long long: "L", \
 	unsigned char: "B", \
-	unsigned short: "H" \
+	unsigned short: "H", \
 	unsigned int: "I", \
 	unsigned long: "k", \
 	unsigned long long: "K", \
-	Py_ssize_t: "n", \
 	float: "f", \
 	double: "d", \
 	PyObject *: "O", \
