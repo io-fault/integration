@@ -13,6 +13,7 @@ import itertools
 from fault.context import tools
 from fault.time import system as time
 from fault.system import execution as libexec
+from fault.system.query import process_usage_scan
 from fault.system import files
 from fault.internet import ri
 
@@ -639,9 +640,11 @@ class Construction(kcore.Context):
 				self.enqueue(self.continuation)
 
 	def _reapusage(self, pid, partial=functools.partial):
-		deliver = partial(self._rusage.__setitem__, pid)
-		wait = partial(libexec.waitrusage, deliver)
-		return partial(libexec.reap, sysop=wait)
+		def measure_and_reap(pid, *, rusage=self._rusage):
+			m = process_usage_scan(pid, 1)
+			rusage[pid] = m
+			return libexec.reap(pid)
+		return measure_and_reap
 
 	def process_execute(self, instruction, f_target_path=(lambda x: str(x))):
 		phase, factor, ins = instruction
@@ -705,7 +708,7 @@ class Construction(kcore.Context):
 
 		dst.fs_replace(src)
 
-	def process_exit(self, pid, delta, rusage,
+	def process_exit(self, pid, exit_code, rusage,
 			start_time, factor, log, cmd, tfile, rimg
 		):
 		ext = {}
@@ -716,7 +719,6 @@ class Construction(kcore.Context):
 		self.activity.add(factor)
 		image_type = tfile.fs_type()
 
-		exit_code = delta.status
 		if exit_code is None:
 			# Bad exit event connected.
 			self.log.warning("process exit event did not have status")
@@ -753,9 +755,9 @@ class Construction(kcore.Context):
 			work = metrics.Work(0, 0, 0, 1)
 
 		usage = metrics.Resource(
-			1, int(rusage.ru_maxrss),
+			1, int(rusage.maximum_memory),
 			# Nanosecond precision.
-			int((rusage.ru_stime + rusage.ru_utime) * (10**9)),
+			int((rusage.total_user_time + rusage.total_system_time) * (10**9)),
 			stop_time - start_time,
 		)
 
