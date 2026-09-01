@@ -6,6 +6,11 @@
 #include <Python.h>
 #include <structmember.h>
 
+// Unsafe. Intended for use under stable conditions.
+#define PyImport_ModuleState(NAME) \
+	PyModule_GetState(PyDict_GetItemString(PyImport_GetModuleDict(), NAME))
+#define Py_ModuleState() PyImport_ModuleState(PYTHON_MODULE_PATH_STR)
+
 /**
 	// Toggle the type to and from a (PyObject *).
 */
