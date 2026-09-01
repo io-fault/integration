@@ -74,6 +74,13 @@
 	#define DROP_MODULE_GLOBALS() do {} while(0)
 #endif
 
+#ifndef MODULE_DOCUMENTATION
+	#define MODULE_DOCUMENTATION NULL
+#endif
+
+#define MODULE_GC \
+	.m_traverse = m_traverse, .m_clear = m_clear, .m_free = m_free
+
 #define _py_INIT_FUNC_X(BN) CONCAT_IDENTIFIER(PyInit_, BN)
 #define _py_INIT_FUNC _py_INIT_FUNC_X(F_FACTOR_NAME)
 
@@ -84,7 +91,7 @@
 	// Invoke the new signature.
 	// Allows the user to return(NULL) regardless of Python version.
 */
-#define INIT(MODPARAM, STATE_SIZE, DOCUMENTATION) \
+#define INIT(MODPARAM, STATE_SIZE, ...) \
 	DEFINE_MODULE_GLOBALS \
 	static PyMethodDef methods[] = { \
 		FAULT_MODULE_FUNCTIONS() \
@@ -115,7 +122,7 @@
 	// Python 3.x without mod_exec
 */
 
-#define INIT(MODPARAM, STATE_SIZE, DOCUMENTATION) \
+#define INIT(MODPARAM, STATE_SIZE, ...) \
 	DEFINE_MODULE_GLOBALS \
 	static PyMethodDef methods[] = { \
 		FAULT_MODULE_FUNCTIONS() \
@@ -132,10 +139,11 @@
 	module_definition = { \
 		PyModuleDef_HEAD_INIT, \
 		.m_name = PYTHON_MODULE_PATH_STR, \
-		.m_doc = DOCUMENTATION, \
+		.m_doc = MODULE_DOCUMENTATION, \
 		.m_size = STATE_SIZE, \
 		.m_methods = methods, \
 		.m_slots = slots, \
+		__VA_ARGS__ \
 	}; \
 	\
 	static int _module_exec(PyObj MODPARAM); \
@@ -179,7 +187,7 @@ do { \
 /*
 	// Multi-phase Initialization
 */
-#define INIT(MODPARAM, STATE_SIZE, DOCUMENTATION) \
+#define INIT(MODPARAM, STATE_SIZE, ...) \
 	DEFINE_MODULE_GLOBALS \
 	static PyMethodDef methods[] = { \
 		FAULT_MODULE_FUNCTIONS() \
@@ -203,13 +211,11 @@ do { \
 	module_definition = { \
 		PyModuleDef_HEAD_INIT, \
 		PYTHON_MODULE_PATH_STR, \
-		DOCUMENTATION, \
+		MODULE_DOCUMENTATION, \
 		STATE_SIZE, \
 		methods, \
 		module_slots, \
-		NULL, \
-		NULL, \
-		NULL, \
+		__VA_ARGS__ \
 	}; \
 	\
 	_fault_reveal_symbol PyMODINIT_FUNC \
