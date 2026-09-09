@@ -20,7 +20,7 @@ from fault.internet import ri
 from fault.kernel import core as kcore
 from fault.kernel import dispatch as kdispatch
 
-from fault.transcript import metrics
+from fault.status.io import Procedure, Work, Resource, Advisory
 
 from . import graph
 from .types import Target, SystemFactor, Integrand
@@ -743,25 +743,25 @@ class Construction(kcore.Context):
 
 		if exit_code is None:
 			exit_type = 'cached'
-			work = metrics.Work(0, 0, 1, 0)
+			work = Work(0, 0, 1, 0)
 		elif exit_code == 0:
 			exit_type = 'processed'
-			work = metrics.Work(0, 1, 0, 0)
+			work = Work(0, 1, 0, 0)
 		else:
 			exit_type = 'failed'
 			with log.fs_open('r') as f:
 				ext['@failure-image'] = ['system-command-error']
 				ext['@failure-image'].extend(f.read().split('\n'))
-			work = metrics.Work(0, 0, 0, 1)
+			work = Work(0, 0, 0, 1)
 
-		usage = metrics.Resource(
+		usage = Resource(
 			1, int(rusage.maximum_memory),
 			# Nanosecond precision.
 			int((rusage.total_user_time + rusage.total_system_time) * (10**9)),
 			stop_time - start_time,
 		)
 
-		xact_metrics = metrics.Procedure(work=work, msg=metrics.Advisory(), usage=usage)
+		xact_metrics = Procedure(work=work, msg=Advisory(), usage=usage)
 		ext['@metrics'] = [xact_metrics.sequence()]
 		self.log.xact_close(str(pid), synopsis, ext)
 

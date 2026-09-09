@@ -95,7 +95,7 @@ def dispatch(exits, meta, log, config, cc, pdr:files.Path, argv):
 	# Complete build connecting requirements and updating indexes.
 	"""
 
-	from fault.transcript.metrics import Procedure
+	from fault.status.io import Procedure
 	zero = Procedure.create()
 	os.environ['PRODUCT'] = str(pdr)
 	os.environ['F_PRODUCT'] = str(cc)
@@ -226,5 +226,5 @@ def main(inv:process.Invocation, mode='executable', features=None) -> process.Ex
 		cache = (pdr/'.cache')
 
 	with contextlib.ExitStack() as ctx:
-		dispatch(ctx, map.Log.stderr(), map.Log.stdout(), config, cc, pdr, remainder)
+		dispatch(ctx, map.stf.Log.stderr(), map.stf.Log.stdout(), config, cc, pdr, remainder)
 	return inv.exit(0)

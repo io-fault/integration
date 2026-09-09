@@ -18,7 +18,7 @@ from fault.kernel import core as kcore
 from fault.kernel import system as ksystem
 
 from fault.time import system as time
-from fault.transcript import io as transcripts
+from fault.status import io as transcripts
 
 class Application(kcore.Context):
 	@property

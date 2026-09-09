@@ -202,5 +202,5 @@ def main(inv:process.Invocation) -> process.Exit:
 	origin, cc = context.resolve(config['system-context-directory'], product=pdr)
 
 	with contextlib.ExitStack() as ctx:
-		test(ctx, map.Log.stderr(), map.Log.stdout(), config, cc, pdr, remainder)
+		test(ctx, map.stf.Log.stderr(), map.stf.Log.stdout(), config, cc, pdr, remainder)
 	return inv.exit(0)

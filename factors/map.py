@@ -11,10 +11,7 @@ from fault.system import process
 from fault.system import files
 from fault.vector import recognition
 
-from fault.transcript import terminal
-from fault.transcript import execution
-from fault.transcript.io import Log
-
+from fault.status import io as stf
 from fault.system.execution import KInvocation
 from fault.project import system as lsf
 
@@ -24,11 +21,11 @@ from . import filters
 
 def frame_type(sft):
 	if sft == 'processing-units':
-		from fault.transcript import proctheme as theme
+		theme = stf.process_transactions
 	elif sft in {'test-fates', 'test-conclusion-report'}:
-		from fault.transcript import testtheme as theme
+		theme = stf.test_transactions
 	else:
-		from fault.transcript import proctheme as theme
+		theme = stf.process_transactions
 	return theme
 
 restricted = {
@@ -57,8 +54,8 @@ class Controls(object):
 	# Parameters required for performing and customizing the map operation.
 	"""
 
-	ctl_log: Log
-	ctl_meta: Log
+	ctl_log: stf.Log
+	ctl_meta: stf.Log
 	ctl_execution_product: files.Path
 	ctl_execution_factor: str
 
@@ -171,39 +168,23 @@ def execute(exits, op:Controls, queue):
 	"""
 
 	# Allocate and configure control and monitors.
-	if op.ctl_monitors > -1:
-		# Lanes may exceed monitors.
-		try:
-			control = terminal.setup()
-		except OSError:
-			# No tty associated, disabled monitor updates.
-			control = terminal.setup('/dev/null')
-		else:
-			control.configure(op.ctl_monitors+1) # +1 for the dedicated summary.
-	else:
-		# Filtering should be performed by &execution.dispatch, but
-		# maintain the invariant and hold a file descriptor.
-		control = terminal.setup('/dev/null')
-
 	theme = frame_type(op.ctl_transcript_type) # Column labels and units.
-	monitors, summary = terminal.aggregate(control, theme, op.ctl_lanes, width=160)
+	monitors, summary = stf.aggregate(theme, op.ctl_lanes)
 
 	try:
 		op.ctl_log.xact_open(op.ctl_operation_identifier, op.ctl_open_title, {})
 		op.ctl_log.flush()
 
-		execution.dispatch(
+		stf.dispatch(
 			op.ctl_meta, op.ctl_log,
 			tools.partial(op.ctl_plan, op),
-			control, monitors, summary,
+			monitors, summary,
 			op.ctl_operating_title, queue,
 			opened = op.ctl_opened_frames,
 		)
 	finally:
-		close_msg = control.render_status_text(summary, op.ctl_close_title)
+		close_msg = summary.message(op.ctl_close_title)
 		op.ctl_log.xact_close(op.ctl_operation_identifier, close_msg, {})
-		control.clear()
-		control.flush()
 
 def configure(restricted, required, argv):
 	config = {
@@ -248,7 +229,7 @@ def main(inv:process.Invocation) -> process.Exit:
 	factors.configure()
 
 	ctl = Controls(
-		Log.stdout(), Log.stderr(),
+		stf.Log.stdout(), stf.Log.stderr(),
 		xdr, config['execution-factor'],
 		ctl_plan = tools.partial(plan_select, factors),
 		ctl_argv = [],

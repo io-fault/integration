@@ -12,7 +12,7 @@ from fault.vector import recognition
 from fault.system import files
 from fault.system import process
 from fault.project import system as lsf
-from fault.transcript.io import Log
+from fault.status import io as stf
 
 from . import __name__ as project_package_name
 from . import context
@@ -246,5 +246,5 @@ def main(inv:process.Invocation) -> process.Exit:
 	origin, sysctx = context.resolve(config['system-context-directory'], product=pdr)
 
 	with contextlib.ExitStack() as ctx:
-		io(ctx, Log.stderr(), Log.stdout(), config, sysctx, pdr, remainder)
+		io(ctx, stf.Log.stderr(), stf.Log.stdout(), config, sysctx, pdr, remainder)
 	return inv.exit(0)
