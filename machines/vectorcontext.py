@@ -10,9 +10,9 @@ from dataclasses import dataclass
 
 from fault.context import tools
 from fault.system import files
-from fault.system import execution
 from fault.project import system as lsf
 from fault.vector import formulation as vf
+from fault.vector import snapshot
 
 @dataclass(eq=True, unsafe_hash=True)
 class Void(Exception):
@@ -437,7 +437,7 @@ class Context(object):
 		except Exception as error:
 			raise LookupError(factor) from error
 
-		return execution.parse_sx_plan(src.fs_load().decode('utf-8'))
+		return snapshot.structure(src.fs_load().decode('utf-8'))
 
 	def _iq(self, name):
 		# Vector Reference Query method used during initialization.

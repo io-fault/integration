@@ -9,7 +9,7 @@ from fault.project import factory
 from fault.system import files
 from fault.system import factors
 from fault.system import identity
-from fault.system import execution
+from fault.vector import snapshot
 
 from ...root import query
 from ...machines import __name__ as machines_project
@@ -74,7 +74,7 @@ clang_delineate = (query.bindir() / 'clang-delineate')
 def system(path, *args):
 	xargs = [path]
 	xargs.extend(args)
-	return ''.join(execution.serialize_sx_plan(([], path, xargs)))
+	return ''.join(snapshot.sequence(([], path, xargs)))
 
 def iproduct(route, connections):
 	"""

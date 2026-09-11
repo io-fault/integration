@@ -20,7 +20,7 @@ import itertools
 from fault.system import files
 from fault.system import process
 from fault.system import query
-from fault.system import execution as libexec
+from fault.vector import snapshot
 
 environment = 'DAEMONS'
 default_route = query.home() / '.rootd'
@@ -239,7 +239,7 @@ class Configuration(object):
 		inv_r = self.route / "if" / "invocation.txt"
 		data = inv_r.fs_load()
 		if data:
-			env, exe, params = libexec.parse_sx_plan(data.decode('utf-8'))
+			env, exe, params = snapshot.structure(data.decode('utf-8'))
 			self.executable = exe or None
 			self.parameters = params
 			self.environment = env
@@ -249,7 +249,7 @@ class Configuration(object):
 		env = self.environment or []
 		exe = self.executable or ''
 		params = self.parameters or []
-		data = ''.join(libexec.serialize_sx_plan((env, exe, params)))
+		data = ''.join(snapshot.sequence((env, exe, params)))
 
 		inv_r.fs_store(data.encode('utf-8'))
 

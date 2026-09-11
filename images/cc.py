@@ -12,7 +12,8 @@ import itertools
 
 from fault.context import tools
 from fault.time import system as time
-from fault.system import execution as libexec
+from fault.vector import snapshot
+from fault.system.execution import KInvocation, reap
 from fault.system.query import process_usage_scan
 from fault.system import files
 from fault.internet import ri
@@ -52,7 +53,7 @@ def local_query(integrand, local, query):
 def prepare(command, args, log, output, input, retained=None, executor=None):
 	"""
 	# Given a command and its constructed arguments, interpret the
-	# standard I/O fields in &args, formulate a &libexec.KInvocation
+	# standard I/O fields in &args, formulate a &KInvocation
 	# instance for execution, and prepare stdio &files.Path
 	# assignments.
 
@@ -96,7 +97,7 @@ def prepare(command, args, log, output, input, retained=None, executor=None):
 	env.update(command[0])
 
 	xpath = executor or command[1]
-	ki = libexec.KInvocation(xpath, xargs, environ=env)
+	ki = KInvocation(xpath, xargs, environ=env)
 	return (opid, output, retained, stdin, stdout, log, (command[0], xpath, xargs), ki)
 
 @tools.cachedcalls(12)
@@ -643,7 +644,7 @@ class Construction(kcore.Context):
 		def measure_and_reap(pid, *, rusage=self._rusage):
 			m = process_usage_scan(pid, 1)
 			rusage[pid] = m
-			return libexec.reap(pid)
+			return reap(pid)
 		return measure_and_reap
 
 	def process_execute(self, instruction, f_target_path=(lambda x: str(x))):
@@ -673,7 +674,7 @@ class Construction(kcore.Context):
 			('@STDIN', str(cin)),
 		]
 		env.extend(cmd[0])
-		plan = ''.join(libexec.serialize_sx_plan((env, cmd[1], cmd[2])))
+		plan = ''.join(snapshot.sequence((env, cmd[1], cmd[2])))
 
 		ext = {
 			'@metrics': ['%0+0-0/1'],

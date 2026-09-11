@@ -60,11 +60,11 @@ def dispatched(name, *argv, **environ):
 	"""
 	# Serialize an execution plan performing the given tool &name using `fault-dispatch`.
 	"""
-	from fault.system import execution
+	from fault.vector import snapshot
 	plan = dispatch(name)
 	plan[0].extend(environ.items())
 	plan[2].extend(argv)
-	return ''.join(execution.serialize_sx_plan(plan))
+	return ''.join(snapshot.sequence(plan))
 
 def system():
 	"""
