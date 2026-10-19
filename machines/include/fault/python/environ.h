@@ -368,6 +368,8 @@ PyImport_ImportAdjacent(const char *modname, const char *attribute)
 	} \
 }
 
+#define PyLoop_Continue(ITER) Py_DECREF(_PyLoop_ITEM); _PyLoop_ITEM = NULL; continue
+#define PyLoop_Break(ITER) Py_DECREF(_PyLoop_ITEM); _PyLoop_ITEM = NULL; break
 #define PyLoop_ForEachTuple(ITER, ...) \
 	_PyLoop_Iterator(_PyLoop_NULL_INJECTION, 1, PyArg_ParseTuple, PyObject_GetIter, ITER, __VA_ARGS__)
 #define PyLoop_ForEachDictItem(DICT, ...) \
